@@ -1,0 +1,460 @@
+Initialized native services in: /Users/darkryh/.gradle/native
+Initialized jansi services in: /Users/darkryh/.gradle/native
+Found daemon DaemonInfo{pid=3575, address=[36024890-a287-4c85-8f97-df645603966d port:50212, addresses:[/127.0.0.1]], state=Idle, lastBusy=1762451678954, context=DefaultDaemonContext[uid=9e547cd6-dc7d-4fe1-a13a-d3821001c299,javaHome=/Users/darkryh/Applications/Android Studio.app/Contents/jbr/Contents/Home,javaVersion=21,javaVendor=JetBrains s.r.o.,daemonRegistryDir=/Users/darkryh/.gradle/daemon,pid=3575,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=384m,-XX:+HeapDumpOnOutOfMemoryError,-Xms256m,-Xmx512m,-Dfile.encoding=UTF-8,-Duser.country=EC,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+JVM is incompatible.
+Wanted: DaemonRequestContext{jvmCriteria=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=384m, -XX:+HeapDumpOnOutOfMemoryError, -Xms256m, -Xmx512m, -Dfile.encoding=UTF-8, -Duser.country=EC, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=9e547cd6-dc7d-4fe1-a13a-d3821001c299,javaHome=/Users/darkryh/Applications/Android Studio.app/Contents/jbr/Contents/Home,javaVersion=21,javaVendor=JetBrains s.r.o.,daemonRegistryDir=/Users/darkryh/.gradle/daemon,pid=3575,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=384m,-XX:+HeapDumpOnOutOfMemoryError,-Xms256m,-Xmx512m,-Dfile.encoding=UTF-8,-Duser.country=EC,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+The client will now receive all logging from the daemon (pid: 7678). The daemon log file: /Users/darkryh/.gradle/daemon/9.1.0/daemon-7678.out.log
+Starting 16th build in daemon [uptime: 22 mins 33.814 secs, performance: 99%, GC rate: 0.00/s, heap usage: 3% of 512 MiB, non-heap usage: 41% of 384 MiB]
+Using 10 worker leases.
+Now considering [/Users/darkryh/Desktop/Libraries/Backend/katalyst] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/settings.gradle.kts'.
+Projects loaded. Root project using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/build.gradle.kts'.
+Included projects: [root project 'katalyst', project ':dependency-injection', project ':katalyst-core', project ':katalyst-ktor-support', project ':katalyst-persistence', project ':katalyst-scheduler', project ':scanner']
+
+> Configure project :
+Evaluating root project 'katalyst' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.2.20']
+Resolved plugin [id: 'io.ktor.plugin', version: '3.3.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.serialization', version: '2.2.20']
+Build a0489f71-b56e-4b16-8441-c61cd81ebe79 is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Skipping Develocity integration for Shadow plugin.
+Setting org.gradle.jvm.version attribute for shadowRuntimeElements configuration.
+Setting target JVM version to 21 for shadowRuntimeElements configuration.
+Adding shadowRuntimeElements variant to Java component.
+
+> Configure project :dependency-injection
+Evaluating project ':dependency-injection' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :katalyst-core
+Evaluating project ':katalyst-core' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/katalyst-core/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :katalyst-ktor-support
+Evaluating project ':katalyst-ktor-support' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/katalyst-ktor-support/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :katalyst-persistence
+Evaluating project ':katalyst-persistence' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/katalyst-persistence/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :katalyst-scheduler
+Evaluating project ':katalyst-scheduler' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/katalyst-scheduler/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :scanner
+Evaluating project ':scanner' using build file '/Users/darkryh/Desktop/Libraries/Backend/katalyst/scanner/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+All projects evaluated.
+Task path ':dependency-injection:test' matched project ':dependency-injection'
+Task name matched 'test'
+Selected primary task 'test' from project :dependency-injection
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/darkryh/.gradle/daemon/9.1.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Tasks to be executed: [task ':dependency-injection:checkKotlinGradlePluginConfigurationErrors', task ':katalyst-core:checkKotlinGradlePluginConfigurationErrors', task ':katalyst-core:compileKotlin', task ':katalyst-core:compileJava', task ':katalyst-core:processResources', task ':katalyst-core:classes', task ':katalyst-core:jar', task ':katalyst-ktor-support:checkKotlinGradlePluginConfigurationErrors', task ':scanner:checkKotlinGradlePluginConfigurationErrors', task ':scanner:compileKotlin', task ':scanner:compileJava', task ':scanner:processResources', task ':scanner:classes', task ':scanner:jar', task ':katalyst-ktor-support:compileKotlin', task ':katalyst-ktor-support:compileJava', task ':katalyst-ktor-support:processResources', task ':katalyst-ktor-support:classes', task ':katalyst-ktor-support:jar', task ':katalyst-persistence:checkKotlinGradlePluginConfigurationErrors', task ':katalyst-persistence:compileKotlin', task ':katalyst-persistence:compileJava', task ':katalyst-persistence:processResources', task ':katalyst-persistence:classes', task ':katalyst-persistence:jar', task ':katalyst-scheduler:checkKotlinGradlePluginConfigurationErrors', task ':katalyst-scheduler:compileKotlin', task ':katalyst-scheduler:compileJava', task ':katalyst-scheduler:processResources', task ':katalyst-scheduler:classes', task ':katalyst-scheduler:jar', task ':dependency-injection:compileKotlin', task ':dependency-injection:compileJava', task ':dependency-injection:processResources', task ':dependency-injection:classes', task ':dependency-injection:jar', task ':dependency-injection:compileTestKotlin', task ':dependency-injection:compileTestJava', task ':dependency-injection:processTestResources', task ':dependency-injection:testClasses', task ':dependency-injection:test']
+Tasks that were excluded: []
+Resolve mutations for :dependency-injection:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':dependency-injection:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :katalyst-core:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':katalyst-core:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :katalyst-core:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:compileKotlin UP-TO-DATE
+Caching disabled for task ':katalyst-core:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':katalyst-core:compileKotlin' as it is up-to-date.
+Resolve mutations for :katalyst-core:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:compileJava NO-SOURCE
+Skipping task ':katalyst-core:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-core:processResources (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:processResources NO-SOURCE
+Skipping task ':katalyst-core:processResources' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-core:classes (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:classes UP-TO-DATE
+Skipping task ':katalyst-core:classes' as it has no actions.
+Resolve mutations for :katalyst-core:jar (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-core:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-core:jar UP-TO-DATE
+Caching disabled for task ':katalyst-core:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':katalyst-core:jar' as it is up-to-date.
+work action resolve katalyst-core-0.0.1.jar (project :katalyst-core) (Thread[#1690,Execution worker,5,main]) started.
+Resolve mutations for :katalyst-ktor-support:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':katalyst-ktor-support:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :scanner:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:scanner:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':scanner:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :scanner:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:scanner:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:compileKotlin UP-TO-DATE
+Caching disabled for task ':scanner:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':scanner:compileKotlin' as it is up-to-date.
+Resolve mutations for :scanner:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:scanner:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:compileJava NO-SOURCE
+Skipping task ':scanner:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :scanner:processResources (Thread[#1690,Execution worker,5,main]) started.
+:scanner:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:processResources NO-SOURCE
+Skipping task ':scanner:processResources' as it has no source files and no previous output files.
+Resolve mutations for :scanner:classes (Thread[#1690,Execution worker,5,main]) started.
+:scanner:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:classes UP-TO-DATE
+Skipping task ':scanner:classes' as it has no actions.
+Resolve mutations for :scanner:jar (Thread[#1690,Execution worker,5,main]) started.
+:scanner:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :scanner:jar UP-TO-DATE
+Caching disabled for task ':scanner:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':scanner:jar' as it is up-to-date.
+work action resolve scanner-0.0.1.jar (project :scanner) (Thread[#1690,Execution worker,5,main]) started.
+Resolve mutations for :katalyst-ktor-support:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:compileKotlin UP-TO-DATE
+Caching disabled for task ':katalyst-ktor-support:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':katalyst-ktor-support:compileKotlin' as it is up-to-date.
+Resolve mutations for :katalyst-ktor-support:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:compileJava NO-SOURCE
+Skipping task ':katalyst-ktor-support:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-ktor-support:processResources (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:processResources NO-SOURCE
+Skipping task ':katalyst-ktor-support:processResources' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-ktor-support:classes (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:classes UP-TO-DATE
+Skipping task ':katalyst-ktor-support:classes' as it has no actions.
+Resolve mutations for :katalyst-ktor-support:jar (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-ktor-support:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-ktor-support:jar UP-TO-DATE
+Caching disabled for task ':katalyst-ktor-support:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':katalyst-ktor-support:jar' as it is up-to-date.
+work action resolve katalyst-ktor-support-0.0.1.jar (project :katalyst-ktor-support) (Thread[#1690,Execution worker,5,main]) started.
+Resolve mutations for :katalyst-persistence:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':katalyst-persistence:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :katalyst-persistence:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:compileKotlin UP-TO-DATE
+Caching disabled for task ':katalyst-persistence:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':katalyst-persistence:compileKotlin' as it is up-to-date.
+Resolve mutations for :katalyst-persistence:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:compileJava NO-SOURCE
+Skipping task ':katalyst-persistence:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-persistence:processResources (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:processResources NO-SOURCE
+Skipping task ':katalyst-persistence:processResources' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-persistence:classes (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:classes UP-TO-DATE
+Skipping task ':katalyst-persistence:classes' as it has no actions.
+Resolve mutations for :katalyst-persistence:jar (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-persistence:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-persistence:jar UP-TO-DATE
+Caching disabled for task ':katalyst-persistence:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':katalyst-persistence:jar' as it is up-to-date.
+work action resolve katalyst-persistence.jar (project :katalyst-persistence) (Thread[#1690,Execution worker,5,main]) started.
+Resolve mutations for :katalyst-scheduler:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:checkKotlinGradlePluginConfigurationErrors (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':katalyst-scheduler:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :katalyst-scheduler:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:compileKotlin UP-TO-DATE
+Caching disabled for task ':katalyst-scheduler:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':katalyst-scheduler:compileKotlin' as it is up-to-date.
+Resolve mutations for :katalyst-scheduler:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:compileJava NO-SOURCE
+Skipping task ':katalyst-scheduler:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-scheduler:processResources (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:processResources NO-SOURCE
+Skipping task ':katalyst-scheduler:processResources' as it has no source files and no previous output files.
+Resolve mutations for :katalyst-scheduler:classes (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:classes UP-TO-DATE
+Skipping task ':katalyst-scheduler:classes' as it has no actions.
+Resolve mutations for :katalyst-scheduler:jar (Thread[#1690,Execution worker,5,main]) started.
+:katalyst-scheduler:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :katalyst-scheduler:jar UP-TO-DATE
+Caching disabled for task ':katalyst-scheduler:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':katalyst-scheduler:jar' as it is up-to-date.
+work action resolve katalyst-scheduler.jar (project :katalyst-scheduler) (Thread[#1690,Execution worker,5,main]) started.
+Resolve mutations for :dependency-injection:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:compileKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:compileKotlin UP-TO-DATE
+Caching disabled for task ':dependency-injection:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':dependency-injection:compileKotlin' as it is up-to-date.
+Resolve mutations for :dependency-injection:compileJava (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:compileJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:compileJava NO-SOURCE
+Skipping task ':dependency-injection:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :dependency-injection:processResources (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:processResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:processResources NO-SOURCE
+Skipping task ':dependency-injection:processResources' as it has no source files and no previous output files.
+Resolve mutations for :dependency-injection:classes (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:classes (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:classes UP-TO-DATE
+Skipping task ':dependency-injection:classes' as it has no actions.
+Resolve mutations for :dependency-injection:jar (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:jar (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:jar UP-TO-DATE
+Caching disabled for task ':dependency-injection:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':dependency-injection:jar' as it is up-to-date.
+Resolve mutations for :dependency-injection:compileTestKotlin (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:compileTestKotlin (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:compileTestKotlin UP-TO-DATE
+Caching disabled for task ':dependency-injection:compileTestKotlin' because:
+  Build cache is disabled
+Skipping task ':dependency-injection:compileTestKotlin' as it is up-to-date.
+Resolve mutations for :dependency-injection:compileTestJava (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:compileTestJava (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:compileTestJava NO-SOURCE
+Skipping task ':dependency-injection:compileTestJava' as it has no source files and no previous output files.
+Resolve mutations for :dependency-injection:processTestResources (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:processTestResources (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:processTestResources NO-SOURCE
+Skipping task ':dependency-injection:processTestResources' as it has no source files and no previous output files.
+Resolve mutations for :dependency-injection:testClasses (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:testClasses (Thread[#1690,Execution worker,5,main]) started.
+
+> Task :dependency-injection:testClasses UP-TO-DATE
+Skipping task ':dependency-injection:testClasses' as it has no actions.
+Resolve mutations for :dependency-injection:test (Thread[#1690,Execution worker,5,main]) started.
+:dependency-injection:test (Thread[#1690,Execution worker,5,main]) started.
+Gradle Test Executor 7 started executing tests.
+Gradle Test Executor 7 finished executing tests.
+
+> Task :dependency-injection:test FAILED
+Caching disabled for task ':dependency-injection:test' because:
+  Build cache is disabled
+Task ':dependency-injection:test' is not up-to-date because:
+  Task has failed previously.
+file or directory '/Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/classes/java/test', not found
+Starting process 'Gradle Test Executor 7'. Working directory: /Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection Command: /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java -Dorg.gradle.internal.worker.tmpdir=/Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/tmp/test/work @/Users/darkryh/.gradle/.tmp/gradle-worker-classpath11223051853177107468txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=EC -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 7'
+Successfully started process 'Gradle Test Executor 7'
+
+InitializeKatalystDITest > initializeKatalystDI registers framework components STANDARD_OUT
+    13:08:54.887 [Test worker @coroutine#1] INFO CoreDIModule -- Initializing Core DI Module with database and transaction management
+    13:08:54.889 [Test worker @coroutine#1] INFO DatabaseModule -- Registering database module with provided configuration
+    13:08:54.900 [Test worker @coroutine#1] INFO DatabaseModule -- Database module registered with configuration
+    13:08:54.900 [Test worker @coroutine#1] INFO CoreDIModule -- Core DI Module initialized successfully
+    13:08:54.900 [Test worker @coroutine#1] INFO ScannerDIModule -- Initializing Scanner DI Module
+    13:08:54.900 [Test worker @coroutine#1] DEBUG ScannerDIModule -- Scanner utilities are available as direct imports
+    13:08:54.901 [Test worker @coroutine#1] DEBUG ScannerDIModule --   - KotlinMethodScanner<T>: Generic scanner for discovering methods
+    13:08:54.901 [Test worker @coroutine#1] DEBUG ScannerDIModule --   - GenericTypeExtractor: Utility for resolving generic type parameters
+    13:08:54.901 [Test worker @coroutine#1] INFO ScannerDIModule -- Scanner DI Module initialized successfully
+    13:08:54.901 [Test worker @coroutine#1] INFO DIConfiguration -- Starting new Koin context for Katalyst modules
+    13:08:54.906 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for Repository implementations
+    13:08:54.906 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:54.923 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 13 ms to scan 1 urls, producing 13 keys and 29 values
+    13:08:54.929 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 Repository implementation(s)
+    13:08:54.929 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:54.930 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
+    13:08:54.930 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestRepository
+    13:08:55.040 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered repositories component com.ead.katalyst.di.fixtures.TestRepository
+    13:08:55.040 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for Component implementations
+    13:08:55.040 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:55.043 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 3 ms to scan 1 urls, producing 13 keys and 29 values
+    13:08:55.044 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 4 Component implementation(s)
+    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.044 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 2 implementation(s)
+    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestService
+    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestValidator
+    13:08:55.046 [Test worker @coroutine#1] ERROR AutoBindingRegistrar -- Failed to register component com.ead.katalyst.di.fixtures.TestService: Cannot resolve dependency com.ead.katalyst.di.fixtures.TestValidator for com.ead.katalyst.di.fixtures.TestService
+    13:08:55.046 [Test worker @coroutine#1] DEBUG AutoBindingRegistrar -- Full error while registering com.ead.katalyst.di.fixtures.TestService
+    java.lang.IllegalStateException: Cannot resolve dependency com.ead.katalyst.di.fixtures.TestValidator for com.ead.katalyst.di.fixtures.TestService
+    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.resolveDependency(AutoBindingRegistrar.kt:131)
+    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.instantiate(AutoBindingRegistrar.kt:113)
+    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.registerAll(AutoBindingRegistrar.kt:280)
+    	at com.ead.katalyst.di.DIConfigurationKt.bootstrapKatalystDI(DIConfiguration.kt:79)
+    	at com.ead.katalyst.di.DIConfigurationKt.bootstrapKatalystDI$default(DIConfiguration.kt:55)
+    	at com.ead.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:35)
+    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+    	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+    	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+    	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+    	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+    	at com.ead.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
+    	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+    	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+    	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+    	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+    	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+    	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+    	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+    	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+    	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+    	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+    	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+    	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+    	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+    	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+    	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+    	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+    	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+    	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.runTestClass(JUnitTestClassExecutor.java:122)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:68)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:43)
+    	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestClassProcessor.processTestClass(AbstractJUnitTestClassProcessor.java:61)
+    	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.processTestClass(SuiteTestClassProcessor.java:54)
+    	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)
+    	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+    	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:92)
+    	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestClass(Unknown Source)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:177)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+    	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+    13:08:55.050 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered components component com.ead.katalyst.di.fixtures.TestValidator
+    13:08:55.050 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for KtorModule implementations
+    13:08:55.050 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:55.052 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 2 ms to scan 1 urls, producing 13 keys and 29 values
+    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 0 KtorModule implementation(s)
+    13:08:55.053 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 0 implementation(s)
+    13:08:55.053 [Test worker @coroutine#1] DEBUG AutoBindingRegistrar -- No KtorModule discovered for ktor modules
+    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for EventHandler implementations
+    13:08:55.053 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:55.054 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 1 ms to scan 1 urls, producing 13 keys and 29 values
+    13:08:55.055 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 EventHandler implementation(s)
+    13:08:55.055 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.055 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
+    13:08:55.055 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: SampleEventHandler
+    13:08:55.059 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered event handlers component com.ead.katalyst.di.fixtures.SampleEventHandler
+
+InitializeKatalystDITest > initializeKatalystDI registers framework components FAILED
+    org.koin.core.error.NoDefinitionFoundException: No definition found for type 'com.ead.katalyst.di.fixtures.TestService'. Check your Modules configuration and add missing type and/or qualifier!
+        at app//org.koin.core.resolution.CoreResolver.resolveFromContext(CoreResolver.kt:178)
+        at app//org.koin.core.scope.Scope.resolveFromContext(Scope.kt:321)
+        at app//org.koin.core.scope.Scope.stackParametersCall(Scope.kt:284)
+        at app//org.koin.core.scope.Scope.resolveInstance(Scope.kt:270)
+        at app//org.koin.core.scope.Scope.resolve(Scope.kt:243)
+        at app//org.koin.core.scope.Scope.get(Scope.kt:225)
+        at app//com.ead.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:80)
+        at app//kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at app//kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at app//kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+        at app//kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+        at app//kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+        at app//kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+        at app//kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+        at app//kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+        at app//com.ead.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
+Finished generating test XML results (0.0 secs) into: /Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/test-results/test
+Generating HTML test report...
+Finished generating test html results (0.0 secs) into: /Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/reports/tests/test
+Build a0489f71-b56e-4b16-8441-c61cd81ebe79 is closed
+14 actionable tasks: 1 executed, 13 up-to-date
+Watched directory hierarchies: [/Users/darkryh/Desktop/Libraries/Backend/katalyst]
