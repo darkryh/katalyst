@@ -2,7 +2,6 @@ package com.ead.katalyst.example
 
 import com.ead.katalyst.di.katalystApplication
 import com.ead.katalyst.example.infra.config.DatabaseConfigFactory
-import com.ead.katalyst.example.routes.configureHttp
 import io.ktor.server.application.Application
 
 /**
@@ -37,10 +36,12 @@ import io.ktor.server.application.Application
  */
 fun main(args: Array<String>) = katalystApplication(args) {
     database(DatabaseConfigFactory.config())
+    //need to specify the package base in order to make katalyst analyze whole classes/functions that use katalyst
     scanPackages("com.ead.katalyst.example")
     enableScheduler()
 }
 
+// optional keep it for ktor config but is not needed katalyst do automatic injection
 fun Application.module() {
-    configureHttp()
+    //configureManualHttp() if want to inject manually, should remove middleware from configureManualHttp fun
 }

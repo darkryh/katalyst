@@ -1,10 +1,10 @@
 package com.ead.katalyst.example.service
 
 import com.ead.katalyst.example.api.CreateUserRequest
-import com.ead.katalyst.example.domain.exception.TestException
 import com.ead.katalyst.example.domain.User
-import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.domain.UserValidator
+import com.ead.katalyst.example.domain.exception.TestException
+import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.UserEntity
 import com.ead.katalyst.example.infra.database.repositories.UserRepository
 import com.ead.katalyst.example.infra.mappers.toUser
@@ -45,12 +45,15 @@ class UserService(
     }
 
     suspend fun listUsers(): List<User> = transactionManager.transaction {
-        throw TestException("ee")
         userRepository.findAll().map { it.toUser() }
     }
 
     private suspend fun removeInactiveUsers() = transactionManager.transaction {
-        println("remove Inactive Users")
+        println("""
+            -----------------------------------------------------------------
+            SCHEDULER REMOVE_INACTIVE_USERS STARTED
+            -----------------------------------------------------------------
+        """.trimIndent())
         userRepository.deleteInactive()
     }
 
@@ -58,13 +61,25 @@ class UserService(
         scheduler.scheduleCron(
             config = ScheduleConfig(
                 taskName = "users.cleanup-inactive",
-                tags = setOf("database", "maintenance"), // optional
-                maxExecutionTime = 5.minutes, //optional
-                onSuccess = { taskName, executionTime -> //optional
+                tags = setOf("database", "maintenance"), // OPTIONAL
+                maxExecutionTime = 5.minutes, //OPTIONAL
+                onSuccess = { taskName, executionTime -> //OPTIONAL
                     println("Task '$taskName' completed successfully in $executionTime")
+                    println("""
+                    -----------------------------------------------------------------    
+                    SCHEDULER REMOVE_INACTIVE_USERS FINISHED
+                    -----------------------------------------------------------------
+                    """.trimIndent()
+                    )
                 },
-                onError = { taskName, exception, executionCount -> //optional
+                onError = { taskName, exception, executionCount -> //OPTIONAL
                     println("Task '$taskName' failed on attempt #$executionCount: ${exception.message}")
+                    println("""
+                    -----------------------------------------------------------------    
+                    SCHEDULER REMOVE_INACTIVE_USERS FINISHED
+                    -----------------------------------------------------------------
+                    """.trimIndent()
+                    )
                     // Continue scheduling on errors
                     true
                 }
@@ -75,21 +90,10 @@ class UserService(
     }
 
     private fun failingRemoveInactiveUsers() {
-        /*scheduler.scheduleCron(
-            config = ScheduleConfig(
-                taskName = "users.cleanup-inactive",
-                tags = setOf("example"), // optional
-                onSuccess = { taskName, executionTime -> //optional
-                    println("Task '$taskName' completed successfully in $executionTime")
-                },
-                onError = { taskName, exception, executionCount -> //optional
-                    println("Task '$taskName' failed on attempt #$executionCount: ${exception.message}")
-                    // Continue scheduling on errors
-                    true
-                }
-            ),
+        scheduler.scheduleCron(
+            config = ScheduleConfig(taskName = "users.failing-cleanup-inactive",),
             task = { throw TestException("test") },
             cronExpression = CronExpression("0/15 * * * * ?")
-        )*/
+        )
     }
 }

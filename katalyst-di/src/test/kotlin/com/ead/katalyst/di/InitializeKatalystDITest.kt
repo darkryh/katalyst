@@ -2,23 +2,15 @@ package com.ead.katalyst.di
 
 import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.database.DatabaseTransactionManager
-import com.ead.katalyst.di.fixtures.SampleCreatedEvent
-import com.ead.katalyst.di.fixtures.SampleEventHandler
-import com.ead.katalyst.di.fixtures.TestEntity
-import com.ead.katalyst.di.fixtures.TestRepository
-import com.ead.katalyst.di.fixtures.TestService
-import com.ead.katalyst.di.fixtures.TestTable
-import com.ead.katalyst.di.fixtures.TestValidator
+import com.ead.katalyst.di.fixtures.*
+import com.ead.katalyst.services.service.SchedulerService
 import com.ead.katalyst.tables.Table
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import org.koin.test.KoinTest
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import java.util.*
+import kotlin.test.*
 
 class InitializeKatalystDITest : KoinTest {
 
@@ -66,5 +58,60 @@ class InitializeKatalystDITest : KoinTest {
 
         eventHandler.handle(SampleCreatedEvent(TestEntity(2, "event")))
         assertEquals(1, eventHandler.handledEvents().size)
+    }
+
+    @Test
+    fun `scheduler module is registered only when enabled`() {
+        val config = DatabaseConfig(
+            url = "jdbc:h2:mem:katalyst-test-scheduler;DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+            username = "sa",
+            password = ""
+        )
+
+        val disabled = bootstrapKatalystDI(
+            databaseConfig = config,
+            enableScheduler = false,
+            scanPackages = arrayOf("com.ead.katalyst.di.fixtures")
+        )
+
+        val schedulerResolution = runCatching { disabled.get<SchedulerService>() }
+        assertTrue(schedulerResolution.isFailure, "SchedulerService should not be available when scheduler is disabled")
+
+        stopKoin()
+
+        val enabled = bootstrapKatalystDI(
+            databaseConfig = config,
+            enableScheduler = true,
+            scanPackages = arrayOf("com.ead.katalyst.di.fixtures")
+        )
+
+        assertNotNull(enabled.get<SchedulerService>())
+    }
+
+    @Test
+    fun `bootstrapKatalystDI augments existing Koin context`() {
+        stopKoin()
+        val tokenModule = module {
+            single { UUID.randomUUID() }
+        }
+        val initial = org.koin.core.context.startKoin {
+            modules(tokenModule)
+        }.koin
+        val token = initial.get<UUID>()
+
+        val config = DatabaseConfig(
+            url = "jdbc:h2:mem:katalyst-test-existing;DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+            username = "sa",
+            password = ""
+        )
+
+        val reused = bootstrapKatalystDI(
+            databaseConfig = config,
+            scanPackages = arrayOf("com.ead.katalyst.di.fixtures")
+        )
+
+        assertEquals(token, reused.get<UUID>())
     }
 }

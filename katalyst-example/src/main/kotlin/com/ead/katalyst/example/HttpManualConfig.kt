@@ -1,11 +1,14 @@
-package com.ead.katalyst.example.routes
+package com.ead.katalyst.example
 
+import com.ead.katalyst.routes.katalystMiddleware
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.*
 
-fun Application.configureHttp() {
+
+@Suppress("unused")
+fun Application.configureManualHttp() = katalystMiddleware {
     install(ContentNegotiation) {
         json()
     }

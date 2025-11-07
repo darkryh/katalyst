@@ -5,7 +5,6 @@ import com.ead.katalyst.example.api.CreateUserRequest
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 
 class UserValidator : Component {
-
     fun validate(request: CreateUserRequest) {
         val errors = buildList {
             if (request.name.isBlank()) add("Name must not be blank")

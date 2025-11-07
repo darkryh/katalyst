@@ -1,17 +1,19 @@
 package com.ead.katalyst.di.internal
 
 import com.ead.katalyst.components.Component
-import com.ead.katalyst.tables.Table
 import com.ead.katalyst.database.DatabaseTransactionManager
-import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.error.DependencyInjectionException
+import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.repositories.Repository
 import com.ead.katalyst.routes.KtorModule
-import com.ead.katalyst.services.Service
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
+import com.ead.katalyst.services.Service
 import com.ead.katalyst.services.service.SchedulerService
+import com.ead.katalyst.tables.Table
+import io.ktor.server.application.*
+import io.ktor.server.routing.*
 import org.koin.core.Koin
 import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.definition.BeanDefinition
@@ -19,25 +21,24 @@ import org.koin.core.definition.Kind
 import org.koin.core.definition.indexKey
 import org.koin.core.error.DefinitionOverrideException
 import org.koin.core.instance.SingleInstanceFactory
+import org.objectweb.asm.*
 import org.reflections.Reflections
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.util.ClasspathHelper
 import org.reflections.util.ConfigurationBuilder
 import org.reflections.util.FilterBuilder
 import org.slf4j.LoggerFactory
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.jvmErasure
-import kotlin.reflect.KMutableProperty1
-import io.ktor.server.application.Application
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.routing
-import java.lang.reflect.Method
 
 private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
 
@@ -261,6 +262,18 @@ class AutoBindingRegistrar(
 
     private fun registerRouteFunctions() {
         val methods = discoverRouteFunctions()
+            .filter { method ->
+                if (method.usesKatalystDsl()) {
+                    true
+                } else {
+                    logger.debug(
+                        "Skipping route function {}.{} – no katalyst DSL usage detected",
+                        method.declaringClass.name,
+                        method.name
+                    )
+                    false
+                }
+            }
         if (methods.isEmpty()) {
             logger.debug("No route extension functions discovered in {}", packages.joinToString())
             return
@@ -444,7 +457,7 @@ class AutoBindingRegistrar(
             scopeQualifier = scopeQualifier,
             primaryType = primaryType,
             qualifier = null,
-            definition = { instance as Any },
+            definition = { instance },
             kind = Kind.Singleton,
             secondaryTypes = secondaryTypes
         )
@@ -482,9 +495,16 @@ private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
 
 private class RouteFunctionModule(
     private val method: Method
-) : KtorModule {
+) : KtorModule, RouteModuleMarker {
 
-    override val order: Int = 0
+    // Exception handlers and middleware should be installed FIRST (negative order)
+    // Regular routes should be installed AFTER (positive order)
+    override val order: Int = when {
+        method.name.contains("exception", ignoreCase = true) -> -100  // Install exception handlers first
+        method.name.contains("middleware", ignoreCase = true) -> -50   // Then middleware
+        method.name.contains("plugin", ignoreCase = true) -> -50       // Then plugins
+        else -> 0  // Regular routes last
+    }
 
     override fun install(application: Application) {
         try {
@@ -525,5 +545,78 @@ private class RouteFunctionModule(
 
     companion object {
         private val logger = LoggerFactory.getLogger("RouteFunctionModule")
+    }
+}
+
+private val katalystDslOwners = setOf(
+    "com/ead/katalyst/routes/RoutingBuilderKt",
+    "com/ead/katalyst/routes/ExceptionHandlerBuilderKt",
+    "com/ead/katalyst/routes/MiddlewareKt"
+)
+
+private val katalystDslMethods = setOf(
+    "katalystRouting",
+    "katalystExceptionHandler",
+    "katalystMiddleware"
+)
+
+private val methodUsageCache = ConcurrentHashMap<Method, Boolean>()
+
+private fun Method.usesKatalystDsl(): Boolean =
+    methodUsageCache.computeIfAbsent(this) { method ->
+        runCatching { method.scanForKatalystDsl() }
+            .onFailure { error ->
+                LoggerFactory.getLogger("AutoBindingRegistrar")
+                    .debug(
+                        "Failed to inspect route function {}.{} for katalyst DSL usage: {}",
+                        method.declaringClass.name,
+                        method.name,
+                        error.message
+                    )
+            }
+            .getOrDefault(false)
+    }
+
+private fun Method.scanForKatalystDsl(): Boolean {
+    val className = declaringClass.name.replace('.', '/') + ".class"
+    val stream = declaringClass.classLoader?.getResourceAsStream(className)
+        ?: Thread.currentThread().contextClassLoader?.getResourceAsStream(className)
+        ?: return false
+
+    stream.use { input ->
+        val reader = ClassReader(input)
+        val targetDescriptor = Type.getMethodDescriptor(this)
+        var found = false
+
+        reader.accept(object : ClassVisitor(Opcodes.ASM9) {
+            override fun visitMethod(
+                access: Int,
+                name: String,
+                descriptor: String,
+                signature: String?,
+                exceptions: Array<out String>?
+            ): MethodVisitor? {
+                val parent = super.visitMethod(access, name, descriptor, signature, exceptions)
+                if (name != this@scanForKatalystDsl.name || descriptor != targetDescriptor) {
+                    return parent
+                }
+                return object : MethodVisitor(Opcodes.ASM9, parent) {
+                    override fun visitMethodInsn(
+                        opcode: Int,
+                        owner: String,
+                        name: String,
+                        descriptor: String,
+                        isInterface: Boolean
+                    ) {
+                        if (owner in katalystDslOwners && name in katalystDslMethods) {
+                            found = true
+                        }
+                        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+                    }
+                }
+            }
+        }, ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES)
+
+        return found
     }
 }

@@ -2,52 +2,51 @@ plugins {
     kotlin("jvm")
 }
 
-val ktor_version: String by project
-val exposed_version: String by project
-val h2_version: String by project
-
 group = "com.ead.katalyst"
 version = "0.0.1"
 
 dependencies {
-    // Core modules that this DI orchestrates
+    // Katalyst modules orchestrated by DI
     implementation(projects.katalystCore)
     implementation(projects.katalystPersistence)
     implementation(projects.katalystScheduler)
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
 
-    // Exposed (needed for table discovery and creation)
-    implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
+    // Persistence discovery support
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
 
-    // Koin DI Framework
+    // Dependency injection
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
 
-    // Ktor (for application integration)
+    // Ktor integration
     implementation(libs.ktor.server.core)
-    implementation("io.ktor:ktor-server-host-common:$ktor_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    implementation(libs.ktor.server.host.common)
+    implementation(libs.ktor.server.netty)
 
-    // Kotlin and Coroutines
+    // Language/runtime utilities
     implementation(kotlin("stdlib"))
-    implementation(libs.kotlinx.coroutines.core)
     implementation(kotlin("reflect"))
+    implementation(libs.kotlinx.coroutines.core)
 
-    // Logging
+    // Diagnostics & reflection aids
     implementation(libs.logback)
+    implementation(libs.reflections)
+    implementation(libs.asm)
 
     // Testing
     testImplementation(kotlin("test"))
     testImplementation(libs.koin.test)
-    testImplementation("org.jetbrains.exposed:exposed-core:$exposed_version")
-    testImplementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
-    testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
-    testImplementation("com.h2database:h2:$h2_version")
-
-    implementation(libs.reflections)
+    testImplementation(libs.exposed.core)
+    testImplementation(libs.exposed.dao)
+    testImplementation(libs.exposed.jdbc)
+    testImplementation(libs.h2)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.ktor.server.content.negotiation)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
 }
 
 kotlin {

@@ -2,8 +2,6 @@ package com.ead.katalyst.routes
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.application
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("ExceptionHandlerBuilder")
@@ -84,17 +82,6 @@ class ExceptionHandlerBuilder(
  */
 fun Application.katalystExceptionHandler(block: ExceptionHandlerBuilder.() -> Unit) {
     val builder = ExceptionHandlerBuilder { install(StatusPages, it) }
-    builder.block()
-    builder.build()
-}
-
-fun Route.katalystExceptionHandler(block: ExceptionHandlerBuilder.() -> Unit) {
-    val application = this.application
-    val builder = ExceptionHandlerBuilder { configuration ->
-        application.install(StatusPages) {
-            configuration()
-        }
-    }
     builder.block()
     builder.build()
 }

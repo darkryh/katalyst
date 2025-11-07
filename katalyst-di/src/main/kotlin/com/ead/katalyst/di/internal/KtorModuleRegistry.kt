@@ -11,7 +11,12 @@ object KtorModuleRegistry {
     private val modules = CopyOnWriteArrayList<KtorModule>()
 
     fun register(module: KtorModule) {
-        if (modules.none { it::class == module::class }) {
+        val alreadyRegistered = when (module) {
+            is RouteModuleMarker -> modules.any { it === module }
+            else -> modules.any { it::class == module::class }
+        }
+
+        if (!alreadyRegistered) {
             modules += module
         }
     }

@@ -7,7 +7,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 
 class UserRepository : Repository<Long, UserEntity> {
     override val table: LongIdTable = UsersTable
@@ -21,7 +21,7 @@ class UserRepository : Repository<Long, UserEntity> {
 
     fun findByEmail(email: String): UserEntity? =
         UsersTable
-            .select { UsersTable.email eq email }
+            .selectAll().where { UsersTable.email eq email }
             .limit(1)
             .firstOrNull()
             ?.let(::mapper)
@@ -32,6 +32,6 @@ class UserRepository : Repository<Long, UserEntity> {
 
     fun countActive(): Long =
         UsersTable
-            .select { UsersTable.active eq true }
+            .selectAll().where { UsersTable.active eq true }
             .count()
 }

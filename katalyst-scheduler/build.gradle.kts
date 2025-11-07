@@ -3,16 +3,23 @@ plugins {
 }
 
 dependencies {
+    // Language/runtime
     implementation(kotlin("stdlib"))
+
+    // Core modules
     implementation(projects.katalystCore)
 
+    // Dependency injection & concurrency
     implementation(libs.koin.core)
     implementation(libs.koin.core.jvm)
-implementation(libs.kotlinx.coroutines.core)
-implementation(libs.logback)
+    implementation(libs.kotlinx.coroutines.core)
 
-testImplementation(kotlin("test"))
-testImplementation(libs.kotlinx.coroutines.test)
+    // Logging
+    implementation(libs.logback)
+
+    // Testing
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.test {

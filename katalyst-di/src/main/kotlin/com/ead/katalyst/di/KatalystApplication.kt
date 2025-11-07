@@ -146,8 +146,13 @@ class KatalystApplicationBuilder {
             .onSuccess { size -> logger.debug("Auto-discovered components registered: {}", size) }
             .onFailure { error -> logger.warn("Unable to inspect auto-discovered components", error) }
 
-        val ktorModules = (KtorModuleRegistry.consume() + koin.getAll<KtorModule>())
-            .distinctBy { it::class }
+        // IMPORTANT: Keep all discovered route functions (RouteFunctionModule instances are unique by identity)
+        // Only deduplicate actual KtorModule implementations to avoid installing the same class twice
+        val registryModules = KtorModuleRegistry.consume()
+        val koinModules = koin.getAll<KtorModule>()
+            .distinctBy { it::class }  // Deduplicate KtorModule implementations only
+        val ktorModules = registryModules + koinModules
+
         logger.info("Discovered {} Ktor module(s) for installation", ktorModules.size)
         ktorModules
             .sortedBy { it.order }

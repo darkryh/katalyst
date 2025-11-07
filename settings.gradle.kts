@@ -1,6 +1,7 @@
 rootProject.name = "katalyst"
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
     }
@@ -19,3 +20,4 @@ include(":katalyst-di")
 include(":katalyst-core")
 include(":katalyst-persistence")
 include(":katalyst-scheduler")
+include(":katalyst-example")

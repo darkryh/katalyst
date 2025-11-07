@@ -3,14 +3,6 @@ package com.ead.katalyst.services.service
 import com.ead.katalyst.services.Service
 import org.koin.core.error.NoDefinitionFoundException
 
-/**
- * Provides convenient access to the shared [SchedulerService] from any Katalyst [Service].
- */
-val Service.scheduler: SchedulerService
-    get() = getKoin().get()
-
-val Service.schedulerOrNull: SchedulerService?
-    get() = runCatching { getKoin().get<SchedulerService>() }.getOrNull()
 
 fun Service.requireScheduler(): SchedulerService =
     runCatching { getKoin().get<SchedulerService>() }

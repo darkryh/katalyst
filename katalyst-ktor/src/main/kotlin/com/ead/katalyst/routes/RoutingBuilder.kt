@@ -3,14 +3,13 @@ package com.ead.katalyst.routes
 import io.ktor.server.application.Application
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.Routing
-import io.ktor.server.routing.application
 import io.ktor.server.routing.routing
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("RoutingBuilder")
 
-private fun verifyKoin(application: Application) {
-    runCatching { application.getKoinInstance() }
+private fun verifyKoin() {
+    runCatching { getKoinInstance() }
         .onSuccess { logger.debug("Koin DI container is initialized and available") }
         .onFailure {
             logger.warn(
@@ -30,7 +29,7 @@ fun Application.katalystRouting(block: Routing.() -> Unit) {
     logger.info("Starting route configuration")
 
     try {
-        verifyKoin(this)
+        verifyKoin()
         routing {
             block()
         }
@@ -49,7 +48,7 @@ fun Route.katalystRouting(block: Route.() -> Unit) {
     logger.info("Starting route configuration")
 
     try {
-        verifyKoin(application)
+        verifyKoin()
         this.apply(block)
         logger.info("Route configuration completed successfully")
     } catch (e: Exception) {
