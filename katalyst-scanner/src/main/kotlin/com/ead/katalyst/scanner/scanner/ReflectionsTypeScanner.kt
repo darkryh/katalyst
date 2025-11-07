@@ -3,7 +3,7 @@ package com.ead.katalyst.scanner.scanner
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryMetadata
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
-import com.ead.xtory.scanner.core.TypeDiscovery
+import com.ead.katalyst.scanner.core.TypeDiscovery
 import org.reflections.Reflections
 import org.reflections.util.ClasspathHelper
 import org.reflections.util.ConfigurationBuilder

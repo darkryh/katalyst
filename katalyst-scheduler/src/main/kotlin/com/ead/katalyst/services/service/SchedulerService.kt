@@ -22,38 +22,37 @@ class SchedulerService(
     }
 
     /**
-     * Schedules a task with fixed rate and interval.
+     * Schedules a task with fixed rate execution.
+     * Delay is measured between START of executions.
      *
-     * @param taskName Name of the task for logging
+     * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
-     * @param initialDelay Delay before first execution
-     * @param interval Interval between executions (ZERO for one-time execution)
+     * @param fixedRate Interval between executions (ZERO for one-time execution)
+     * @return Job that can be cancelled to stop scheduling
      */
-    fun schedule(taskName: String, task: suspend () -> Unit, initialDelay: Duration, interval: Duration) {
-        logger.debug("Scheduling task '{}' with initial delay: {}, interval: {}", taskName, initialDelay, interval)
-        launch {
-            delay(initialDelay)
+    fun schedule(
+        config: ScheduleConfig,
+        task: suspend () -> Unit,
+        fixedRate: Duration
+    ): Job {
+        require(!fixedRate.isNegative()) { "fixedRate must be >= 0" }
 
-            if (interval == Duration.ZERO) {
+        logger.debug("Scheduling task '{}' with initial delay: {}, fixed rate: {}, tags: {}",
+            config.taskName, config.initialDelay, fixedRate, config.tags)
+
+        return launch {
+            delay(config.initialDelay)
+
+            if (fixedRate == Duration.ZERO) {
                 // One-time execution
-                try {
-                    logger.debug("Starting one-time task '{}'", taskName)
-                    task()
-                    logger.info("Completed one-time task '{}'", taskName)
-                } catch (e: Exception) {
-                    logger.error("Error running one-time task '{}'", taskName, e)
-                }
+                executeTaskOnce(config, task)
             } else {
                 // Repeating execution
-                logger.debug("Starting repeating task '{}'", taskName)
+                var executionCount = 0L
+                logger.debug("Starting repeating task '{}'", config.taskName)
                 while (isActive) {
-                    try {
-                        task()
-                        logger.debug("Completed scheduled task '{}'", taskName)
-                    } catch (e: Exception) {
-                        logger.error("Error running scheduled task '{}'", taskName, e)
-                    }
-                    delay(interval)
+                    executeTask(config, task, ++executionCount)
+                    delay(fixedRate)
                 }
             }
         }
@@ -63,42 +62,36 @@ class SchedulerService(
      * Schedules a task with a fixed delay between executions.
      * The delay is measured from the end of one execution to the start of the next.
      *
-     * This is more efficient than recursively scheduling jobs because:
-     * - Only one Job per task (no accumulation)
-     * - Proper loop-based execution
-     * - Easy to cancel and cleanup
-     *
      * **Difference from fixed rate:**
      * - Fixed Rate: delay between START of executions
      * - Fixed Delay: delay between END of one execution and START of next
      *
-     * @param taskName Name of the task for logging
+     * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
-     * @param initialDelay Delay before first execution
      * @param fixedDelay Delay after completion before next execution
+     * @return Job that can be cancelled to stop scheduling
      */
     fun scheduleFixedDelay(
-        taskName: String,
+        config: ScheduleConfig,
         task: suspend () -> Unit,
-        initialDelay: Duration,
         fixedDelay: Duration
-    ) {
-        logger.info("Scheduling fixed delay task '{}' with initial delay: {}, fixed delay: {}", taskName, initialDelay, fixedDelay)
-        launch {
-            delay(initialDelay)
+    ): Job {
+        require(fixedDelay > Duration.ZERO) { "fixedDelay must be > 0" }
 
+        logger.info("Scheduling fixed delay task '{}' with initial delay: {}, fixed delay: {}, tags: {}",
+            config.taskName, config.initialDelay, fixedDelay, config.tags)
+
+        return launch {
+            delay(config.initialDelay)
+
+            var executionCount = 0L
+            logger.debug("Starting fixed delay task '{}'", config.taskName)
             while (isActive) {
-                try {
-                    logger.debug("Starting fixed delay task '{}'", taskName)
-                    task()
-                    logger.debug("Completed fixed delay task '{}'", taskName)
-                } catch (e: Exception) {
-                    logger.error("Error running fixed delay task '{}'", taskName, e)
-                }
+                executeTask(config, task, ++executionCount)
 
                 // Delay after execution before next run (this is the key difference from fixed rate)
                 if (isActive) {
-                    logger.debug("Delaying fixed delay task '{}' for {}", taskName, fixedDelay)
+                    logger.debug("Delaying fixed delay task '{}' for {}", config.taskName, fixedDelay)
                     delay(fixedDelay)
                 }
             }
@@ -107,36 +100,29 @@ class SchedulerService(
 
     /**
      * Schedules a task using a cron expression.
-     * Uses a single long-running job that calculates the next execution time dynamically.
+     * Calculates the next execution time dynamically based on the cron schedule.
      *
-     * This is more efficient than recursively scheduling jobs because:
-     * - Only one Job per task (no accumulation)
-     * - Dynamic next-execution calculation
-     * - Easy to cancel and cleanup
+     * Uses a single long-running job that is efficient and easy to cancel.
      *
-     * @param taskName Name of the task for logging
+     * @param config Configuration for the task (name, delay, timeout, timezone, error handling, etc.)
      * @param task The suspend function to execute
      * @param cronExpression The cron expression defining the schedule
-     * @param initialDelay Delay before first execution
+     * @return Job that can be cancelled to stop scheduling
      */
     fun scheduleCron(
-        taskName: String,
+        config: ScheduleConfig,
         task: suspend () -> Unit,
-        cronExpression: CronExpression,
-        initialDelay: Duration
-    ) {
-        logger.info("Scheduling cron task '{}' with expression '{}'", taskName, cronExpression)
-        launch {
-            delay(initialDelay)
+        cronExpression: CronExpression
+    ): Job {
+        logger.info("Scheduling cron task '{}' with expression '{}', timezone: {}, tags: {}",
+            config.taskName, cronExpression, config.timeZone, config.tags)
 
+        return launch {
+            delay(config.initialDelay)
+
+            var executionCount = 0L
             while (isActive) {
-                try {
-                    logger.debug("Starting cron task '{}'", taskName)
-                    task()
-                    logger.debug("Completed cron task '{}'", taskName)
-                } catch (e: Exception) {
-                    logger.error("Error running cron task '{}'", taskName, e)
-                }
+                executeTask(config, task, ++executionCount)
 
                 // Calculate next execution time
                 if (isActive) {
@@ -145,7 +131,7 @@ class SchedulerService(
                     val delayMillis = java.time.Duration.between(now, nextExecution).toMillis()
 
                     if (delayMillis > 0) {
-                        logger.debug("Next execution of cron task '{}' at {}", taskName, nextExecution)
+                        logger.debug("Next execution of cron task '{}' at {}", config.taskName, nextExecution)
                         delay(delayMillis.milliseconds)
                     }
                 }
@@ -153,7 +139,82 @@ class SchedulerService(
         }
     }
 
-    override fun close() {
-        job.cancel()
+    /**
+     * Executes a single task invocation with timeout, error handling, and callbacks.
+     */
+    private suspend fun executeTask(
+        config: ScheduleConfig,
+        task: suspend () -> Unit,
+        executionCount: Long
+    ) {
+        try {
+            logger.debug("Starting task '{}' (execution #{})", config.taskName, executionCount)
+
+            val startTime = System.currentTimeMillis()
+            val result = if (config.maxExecutionTime != null) {
+                withTimeoutOrNull(config.maxExecutionTime) {
+                    task()
+                }
+            } else {
+                task()
+                Unit
+            }
+
+            // Null result means timeout occurred
+            if (result == null && config.maxExecutionTime != null) {
+                val error = Exception("Task '${config.taskName}' exceeded max execution time: ${config.maxExecutionTime}")
+                logger.error("Task '{}' timed out after {}", config.taskName, config.maxExecutionTime, error)
+                config.onError(config.taskName, error, executionCount)
+            } else {
+                val executionTime = (System.currentTimeMillis() - startTime).milliseconds
+                logger.debug("Completed task '{}' in {} (execution #{})", config.taskName, executionTime, executionCount)
+                config.onSuccess(config.taskName, executionTime)
+            }
+        } catch (e: CancellationException) {
+            // Don't log cancellations, they're expected
+            throw e
+        } catch (e: Exception) {
+            logger.error("Error running task '{}' (execution #{})", config.taskName, executionCount, e)
+            config.onError(config.taskName, e, executionCount)
+        }
     }
+
+    /**
+     * Executes a one-time task with error handling and callbacks.
+     */
+    private suspend fun executeTaskOnce(
+        config: ScheduleConfig,
+        task: suspend () -> Unit
+    ) {
+        try {
+            logger.debug("Starting one-time task '{}'", config.taskName)
+
+            val startTime = System.currentTimeMillis()
+            val result = if (config.maxExecutionTime != null) {
+                withTimeoutOrNull(config.maxExecutionTime) {
+                    task()
+                }
+            } else {
+                task()
+                Unit
+            }
+
+            if (result == null && config.maxExecutionTime != null) {
+                val error = Exception("Task '${config.taskName}' exceeded max execution time: ${config.maxExecutionTime}")
+                logger.error("One-time task '{}' timed out after {}", config.taskName, config.maxExecutionTime, error)
+                config.onError(config.taskName, error, 1)
+            } else {
+                val executionTime = (System.currentTimeMillis() - startTime).milliseconds
+                logger.info("Completed one-time task '{}' in {}", config.taskName, executionTime)
+                config.onSuccess(config.taskName, executionTime)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Error running one-time task '{}'", config.taskName, e)
+            config.onError(config.taskName, e, 1)
+        }
+    }
+
+    override fun close() { stop() }
 }

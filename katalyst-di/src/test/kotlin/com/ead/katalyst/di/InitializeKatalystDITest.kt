@@ -7,7 +7,9 @@ import com.ead.katalyst.di.fixtures.SampleEventHandler
 import com.ead.katalyst.di.fixtures.TestEntity
 import com.ead.katalyst.di.fixtures.TestRepository
 import com.ead.katalyst.di.fixtures.TestService
+import com.ead.katalyst.di.fixtures.TestTable
 import com.ead.katalyst.di.fixtures.TestValidator
+import com.ead.katalyst.tables.Table
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
@@ -47,6 +49,8 @@ class InitializeKatalystDITest : KoinTest {
         val service = koin.get<TestService>()
         val transactionManager = koin.get<DatabaseTransactionManager>()
         val eventHandler = koin.get<SampleEventHandler>()
+        val discoveredTables = koin.getAll<Table>()
+        val exposedTables = koin.getAll<org.jetbrains.exposed.sql.Table>()
 
         assertNotNull(repository)
         assertNotNull(validator)
@@ -54,6 +58,8 @@ class InitializeKatalystDITest : KoinTest {
         assertNotNull(transactionManager)
         assertNotNull(eventHandler)
         assertTrue(service.transactionManager === transactionManager, "Service should receive injected transaction manager")
+        assertTrue(discoveredTables.any { it === TestTable }, "TestTable should be registered as Katalyst Table")
+        assertTrue(exposedTables.any { it == TestTable }, "TestTable should be registered as Exposed Table")
 
         service.create(TestEntity(id = 1, name = "test"))
         assertEquals(TestEntity(1, "test"), repository.findById(1))

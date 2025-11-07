@@ -3,7 +3,7 @@ package com.ead.katalyst.scanner.extensions
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryMetadata
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
-import com.ead.xtory.scanner.core.TypeDiscovery
+import com.ead.katalyst.scanner.core.TypeDiscovery
 import com.ead.katalyst.scanner.integration.AutoDiscoveryEngine
 import com.ead.katalyst.scanner.scanner.KotlinMethodScanner
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
@@ -26,7 +26,7 @@ import org.koin.core.Koin
  *     baseType = RouteController::class.java
  *     scanPackages("com.ead.controllers")
  *     filterMethods { metadata ->
- *         metadata.findAnnotation<RouteHandler>() != null
+ *         metadata.name.endsWith("Route")
  *     }
  * }.discoverMethods()
  *
@@ -113,8 +113,8 @@ class MethodDiscoveryBuilder<T> {
         val methodScanner = KotlinMethodScanner<T>()
 
         return classes.mapNotNull { clazz ->
-            val methods = methodScanner.discoverMethodsInClass(clazz)
-                .filter { methodFilter(it) }
+        val methods = methodScanner.discoverMethodsInClass(clazz)
+            .filter { methodFilter(it) }
 
             if (methods.isNotEmpty()) {
                 DiscoveryMetadata.from(
@@ -156,8 +156,8 @@ class MethodDiscoveryBuilder<T> {
         val methodScanner = KotlinMethodScanner<T>()
 
         return classes.mapNotNull { clazz ->
-            val methods = methodScanner.discoverMethodsInClass(clazz)
-                .filter { methodFilter(it) }
+        val methods = methodScanner.discoverMethodsInClass(clazz)
+            .filter { methodFilter(it) }
 
             if (methods.isNotEmpty()) {
                 val metadata = DiscoveryMetadata.from(
@@ -243,9 +243,7 @@ class MethodDiscoveryBuilder<T> {
  * val routes = methodDiscovery<RouteController> {
  *     baseType = RouteController::class.java
  *     scanPackages("com.ead.controllers")
- *     filterMethods { metadata ->
- *         metadata.findAnnotation<RouteHandler>() != null
- *     }
+ *     filterMethods { metadata.name.startsWith("route") }
  * }.discoverMethods()
  * ```
  *
@@ -257,34 +255,4 @@ fun <T> methodDiscovery(
     builder: MethodDiscoveryBuilder<T>.() -> Unit
 ): MethodDiscoveryBuilder<T> {
     return MethodDiscoveryBuilder<T>().apply(builder)
-}
-
-/**
- * Convenience function to discover methods with annotation filtering.
- *
- * **Usage:**
- * ```kotlin
- * val routeMethods = discoverMethodsWithAnnotation<RouteController, RouteHandler>(
- *     packages = arrayOf("com.ead.controllers"),
- *     baseType = RouteController::class.java
- * )
- * ```
- *
- * @param T The base type or marker interface
- * @param A The annotation type to filter by
- * @param packages Packages to scan
- * @param baseType The base type class
- * @return List of methods with the specified annotation
- */
-inline fun <T, reified A : Annotation> discoverMethodsWithAnnotation(
-    vararg packages: String,
-    baseType: Class<T>
-): List<MethodMetadata> {
-    return methodDiscovery<T> {
-        this.baseType = baseType
-        scanPackages(*packages)
-        filterMethods { metadata ->
-            metadata.findAnnotation<A>() != null
-        }
-    }.discoverMethods().flatMap { it.methods }
 }

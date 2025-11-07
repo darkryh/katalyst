@@ -291,11 +291,21 @@ class AutoBindingRegistrar(
 
         tables.forEach { (tableClass, instance) ->
             try {
-                // Register table with Table interface as secondary type for discovery
-                registerInstanceWithKoin(instance, tableClass, listOf(Table::class))
-                logger.info("Registered Exposed table {} with Table marker interface", tableClass.qualifiedName)
+                registerInstanceWithKoin(
+                    instance = instance,
+                    primaryType = tableClass,
+                    secondaryTypes = listOf(Table::class, org.jetbrains.exposed.sql.Table::class)
+                )
+                logger.info(
+                    "Registered Exposed table {} with Table marker interface",
+                    tableClass.qualifiedName
+                )
             } catch (e: Exception) {
-                logger.error("Failed to register Exposed table {}: {}", tableClass.qualifiedName, e.message)
+                logger.error(
+                    "Failed to register Exposed table {}: {}",
+                    tableClass.qualifiedName,
+                    e.message
+                )
                 logger.debug("Full error registering table ${tableClass.qualifiedName}", e)
             }
         }
@@ -304,58 +314,69 @@ class AutoBindingRegistrar(
     private fun discoverExposedTables(): Map<KClass<*>, Any> {
         val results = mutableMapOf<KClass<*>, Any>()
 
-        try {
+        return try {
             val urls = packages.flatMap { pkg -> ClasspathHelper.forPackage(pkg) }
-            if (urls.isEmpty()) return results
+            if (urls.isEmpty()) {
+                return results
+            }
+
+            val filter = packages.fold(FilterBuilder()) { builder, pkg ->
+                builder.includePackage(pkg)
+            }
 
             val config = ConfigurationBuilder()
                 .setUrls(urls)
-                .filterInputsBy(
-                    packages.fold(FilterBuilder()) { builder, pkg ->
-                        builder.includePackage(pkg)
-                    }
-                )
+                .filterInputsBy(filter)
                 .setScanners(SubTypesScanner(false))
 
             val reflections = Reflections(config)
-
-            // Find all classes implementing Table interface
-            val tableInterface = Class.forName("com.ead.katalyst.common.Table")
-            @Suppress("UNCHECKED_CAST")
-            val tableImplementations = reflections.getSubTypesOf(tableInterface as Class<*>)
-
+            val markerJava = Table::class.java
             val classLoader = Thread.currentThread().contextClassLoader
 
-            tableImplementations.forEach { clazz ->
+            val candidates = reflections.getSubTypesOf(org.jetbrains.exposed.sql.Table::class.java)
+            candidates.forEach { candidate ->
                 runCatching {
-                    // Load the class
-                    val loadedClass = Class.forName(clazz.name, false, classLoader)
+                    val loadedClass = Class.forName(candidate.name, false, classLoader)
+                    if (!markerJava.isAssignableFrom(loadedClass)) return@forEach
 
-                    // For Kotlin objects (singletons), access the INSTANCE field
-                    if (loadedClass.isKotlinObject()) {
-                        val instanceField = loadedClass.getDeclaredField("INSTANCE")
-                        instanceField.isAccessible = true
-                        val instance = instanceField.get(null)
-                        results[loadedClass.kotlin] = instance
-                    }
+                    val kClass = loadedClass.kotlin
+                    val instance = loadedClass.instantiateIfPossible() ?: return@forEach
+                    results[kClass] = instance
                 }.onFailure { error ->
-                    logger.debug("Could not instantiate table {}: {}", clazz.name, error.message)
+                    logger.debug(
+                        "Could not instantiate table {}: {}",
+                        candidate.name,
+                        error.message
+                    )
                 }
             }
+
+            results
         } catch (e: Exception) {
             logger.debug("Error during Exposed table discovery: {}", e.message)
+            results
         }
-
-        return results
     }
 
-    private fun Class<*>.isKotlinObject(): Boolean {
-        return try {
-            this.getDeclaredField("INSTANCE") != null
-        } catch (e: NoSuchFieldException) {
+    private fun Class<*>.instantiateIfPossible(): Any? =
+        when {
+            isKotlinObject() -> {
+                runCatching {
+                    getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
+                }.getOrNull()
+            }
+            else -> runCatching {
+                getDeclaredConstructor().apply { isAccessible = true }.newInstance()
+            }.getOrNull()
+        }
+
+    private fun Class<*>.isKotlinObject(): Boolean =
+        try {
+            getDeclaredField("INSTANCE")
+            true
+        } catch (_: NoSuchFieldException) {
             false
         }
-    }
 
     private fun discoverRouteFunctions(): List<Method> {
         if (packages.isEmpty()) return emptyList()

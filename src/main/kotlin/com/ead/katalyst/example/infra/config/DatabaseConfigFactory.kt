@@ -4,7 +4,7 @@ import com.ead.katalyst.database.DatabaseConfig
 
 object DatabaseConfigFactory {
 
-    fun fromEnvironment(): DatabaseConfig {
+    fun config(): DatabaseConfig {
         val jdbcUrl = "jdbc:postgresql://localhost:5432/postgres"
 
         return DatabaseConfig(

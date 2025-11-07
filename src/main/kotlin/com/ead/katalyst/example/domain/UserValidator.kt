@@ -2,6 +2,7 @@ package com.ead.katalyst.example.domain
 
 import com.ead.katalyst.components.Component
 import com.ead.katalyst.example.api.CreateUserRequest
+import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 
 class UserValidator : Component {
 

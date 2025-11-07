@@ -1,6 +1,6 @@
 package com.ead.katalyst.scanner.integration
 
-import com.ead.xtory.scanner.core.TypeDiscovery
+import com.ead.katalyst.scanner.core.TypeDiscovery
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 

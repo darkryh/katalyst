@@ -1,20 +1,14 @@
 package com.ead.katalyst.scanner.core
 
 import com.ead.katalyst.scanner.fixtures.*
-import com.ead.katalyst.repositories.*
-import com.ead.katalyst.common.*
-import com.ead.katalyst.services.*
-import com.ead.katalyst.validators.*
-import com.ead.katalyst.events.*
-import com.ead.katalyst.handlers.*
 import com.ead.katalyst.scanner.scanner.KotlinMethodScanner
-import com.ead.katalyst.scanner.util.GenericTypeExtractor
+import com.ead.katalyst.validators.Validator
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Comprehensive tests for Enhanced DiscoveryMetadata.
@@ -33,7 +27,7 @@ class DiscoveryMetadataTest {
         val metadata = DiscoveryMetadata.from(User::class.java)
 
         assertEquals("User", metadata.simpleName)
-        assertEquals("com.ead.katalyst.common", metadata.packageName)
+        assertEquals("com.ead.katalyst.scanner.fixtures", metadata.packageName)
         assertEquals(User::class.java, metadata.discoveredClass)
     }
 
@@ -45,18 +39,10 @@ class DiscoveryMetadataTest {
     }
 
     @Test
-    fun `should extract class annotations`() {
-        val metadata = DiscoveryMetadata.from(UserValidator::class.java)
-
-        // UserValidator doesn't have annotations, should have empty list
-        assertTrue(metadata.annotations.isEmpty() || metadata.annotations.isNotEmpty())
-    }
-
-    @Test
     fun `should create metadata with generic type extraction`() {
         val metadata = DiscoveryMetadata.from(
             UserRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         assertTrue(metadata.typeParameterMapping.isNotEmpty())
@@ -68,7 +54,7 @@ class DiscoveryMetadataTest {
     fun `should detect type parameters from generic class`() {
         val metadata = DiscoveryMetadata.from(
             UserRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         assertTrue(metadata.hasTypeParameter("E"))
@@ -80,7 +66,7 @@ class DiscoveryMetadataTest {
     fun `should get type parameters as list`() {
         val metadata = DiscoveryMetadata.from(
             UserRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         val typeParams = metadata.getTypeParameters()
@@ -94,7 +80,7 @@ class DiscoveryMetadataTest {
     fun `should return null for missing type parameter`() {
         val metadata = DiscoveryMetadata.from(
             UserRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         val missing = metadata.getTypeParameter("Z")
@@ -114,37 +100,6 @@ class DiscoveryMetadataTest {
 
         assertTrue(metadata.hasMethods())
         assertEquals(3, metadata.methods.size)
-    }
-
-    @Test
-    fun `should find method with annotation`() {
-        val scanner = KotlinMethodScanner<TestService>()
-        val methods = scanner.discoverMethodsInClass(ServiceWithAnnotatedMethods::class.java)
-
-        val metadata = DiscoveryMetadata.from(
-            ServiceWithAnnotatedMethods::class.java,
-            methods = methods
-        )
-
-        val methodWithAnnotation = metadata.findMethodWithAnnotation<TestAnnotation>()
-
-        assertNotNull(methodWithAnnotation)
-        assertEquals("handleRequest", methodWithAnnotation!!.name)
-    }
-
-    @Test
-    fun `should find all methods with annotation`() {
-        val scanner = KotlinMethodScanner<TestService>()
-        val methods = scanner.discoverMethodsInClass(AnnotatedMethods::class.java)
-
-        val metadata = DiscoveryMetadata.from(
-            AnnotatedMethods::class.java,
-            methods = methods
-        )
-
-        val requiresAuthMethods = metadata.findMethodsWithAnnotation<RequiresAuth>()
-
-        assertEquals(1, requiresAuthMethods.size)
     }
 
     @Test
@@ -190,7 +145,7 @@ class DiscoveryMetadataTest {
     fun `should generate human readable description`() {
         val metadata = DiscoveryMetadata.from(
             UserRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         val description = metadata.describe()
@@ -205,7 +160,7 @@ class DiscoveryMetadataTest {
     fun `should work with different repositories`() {
         val metadata = DiscoveryMetadata.from(
             ProductRepository::class.java,
-            baseType = Repository::class.java
+            baseType = SampleRepository::class.java
         )
 
         assertEquals(Product::class.java, metadata.getTypeParameter("E"))
@@ -266,7 +221,7 @@ class DiscoveryMetadataTest {
     fun `should handle complex type hierarchies`() {
         val metadata = DiscoveryMetadata.from(
             ConcreteRepository::class.java,
-            baseType = Class.forName("com.ead.katalyst.repositories.Repository")
+            baseType = SampleRepository::class.java
         )
 
         assertEquals(User::class.java, metadata.getTypeParameter("E"))
@@ -277,7 +232,7 @@ class DiscoveryMetadataTest {
     fun `should extract multiple type parameters correctly`() {
         val metadata = DiscoveryMetadata.from(
             NestedRepository::class.java,
-            baseType = Class.forName("com.ead.katalyst.repositories.Repository")
+            baseType = SampleRepository::class.java
         )
 
         val typeParams = metadata.getTypeParameters()

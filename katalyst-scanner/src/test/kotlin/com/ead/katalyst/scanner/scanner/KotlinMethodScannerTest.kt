@@ -1,24 +1,18 @@
 package com.ead.katalyst.scanner.scanner
 
 import com.ead.katalyst.scanner.fixtures.*
-import com.ead.katalyst.repositories.*
-import com.ead.katalyst.common.*
-import com.ead.katalyst.services.*
-import com.ead.katalyst.validators.*
-import com.ead.katalyst.events.*
-import com.ead.katalyst.handlers.*
+import com.ead.katalyst.validators.Validator
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /**
  * Comprehensive tests for KotlinMethodScanner.
  *
  * Tests:
  * - Method discovery in classes
- * - Annotation filtering
  * - Method parameter extraction
  * - Suspend function detection
  * - Grouping and filtering
@@ -88,30 +82,6 @@ class KotlinMethodScannerTest {
     }
 
     @Test
-    fun `should filter methods by annotation`() {
-        val methods = scanner.discoverMethodsInClass(
-            ServiceWithAnnotatedMethods::class.java
-        ) { metadata ->
-            metadata.findAnnotation<TestAnnotation>() != null
-        }
-
-        assertEquals(1, methods.size)
-        assertEquals("handleRequest", methods.first().name)
-    }
-
-    @Test
-    fun `should discover methods with different annotations`() {
-        val methods = scanner.discoverMethodsInClass(
-            ServiceWithAnnotatedMethods::class.java
-        ) { metadata ->
-            metadata.findAnnotation<AnotherAnnotation>() != null
-        }
-
-        assertEquals(1, methods.size)
-        assertEquals("processData", methods.first().name)
-    }
-
-    @Test
     fun `should return empty list for class with no methods`() {
         val methods = scanner.discoverMethodsInClass(EmptyService::class.java)
 
@@ -149,33 +119,6 @@ class KotlinMethodScannerTest {
         val method = scanner.findMethodByName(classes, "nonExistentMethod")
 
         kotlin.test.assertNull(method)
-    }
-
-    @Test
-    fun `should discover methods with different annotations in real world example`() {
-        val methods = scanner.discoverMethodsInClass(AnnotatedMethods::class.java)
-
-        assertEquals(4, methods.size)
-    }
-
-    @Test
-    fun `should extract annotation from method`() {
-        val methods = scanner.discoverMethodsInClass(AnnotatedMethods::class.java)
-        val protectedMethod = methods.first { it.name == "protectedMethod" }
-
-        val annotation = protectedMethod.findAnnotation<RequiresAuth>()
-        assertNotNull(annotation)
-    }
-
-    @Test
-    fun `should extract multiple different annotations`() {
-        val methods = scanner.discoverMethodsInClass(AnnotatedMethods::class.java)
-
-        val requiresAuthMethods = methods.filter { it.findAnnotation<RequiresAuth>() != null }
-        val rateLimitMethods = methods.filter { it.findAnnotation<RateLimit>() != null }
-
-        assertEquals(1, requiresAuthMethods.size)
-        assertEquals(1, rateLimitMethods.size)
     }
 
     @Test
@@ -241,19 +184,6 @@ class KotlinMethodScannerTest {
 
         // Each validator has 2 methods: validate() and getValidationErrors()
         assertEquals(4, methods.size)
-    }
-
-    @Test
-    fun `should discover handler methods from multiple classes`() {
-        val handlerScanner = KotlinMethodScanner<HttpHandler>()
-        val classes = setOf(
-            AuthHandler::class.java,
-            ApiHandler::class.java
-        )
-
-        val grouped = handlerScanner.discoverMethodsGroupedByClass(classes)
-
-        assertEquals(2, grouped.size)
     }
 
     @Test

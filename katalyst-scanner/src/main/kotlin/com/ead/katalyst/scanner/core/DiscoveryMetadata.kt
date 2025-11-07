@@ -9,15 +9,14 @@ import com.ead.katalyst.scanner.util.GenericTypeExtractor
  * This provides additional information discovered about a class that can help with:
  * - Determining if it has no-args constructor
  * - Understanding its dependencies
- * - Identifying annotations
  * - Package location
  * - Generic type information
  * - Method-level metadata
  *
  * **Features:**
- * - Class-level information: name, package, constructors, annotations
+ * - Class-level information: name, package, constructors
  * - Generic type parameters: extracted from superclass/interfaces
- * - Method metadata: discovered methods with their annotations
+ * - Method metadata: discovered methods with their structure
  * - Type parameter mapping: name -> class (e.g., "E" -> User::class.java)
  *
  * @param discoveredClass The class that was discovered
@@ -25,7 +24,6 @@ import com.ead.katalyst.scanner.util.GenericTypeExtractor
  * @param simpleName The simple name of the class (without package)
  * @param hasNoArgsConstructor Whether the class has a no-args constructor
  * @param constructorCount Number of constructors available
- * @param annotations Annotations present on the class
  * @param genericTypeArguments Generic type arguments if applicable
  * @param methods Methods discovered in this class (optional, populated on demand)
  * @param typeParameterMapping Map of type parameter name to actual class (e.g., "E" -> User::class.java)
@@ -34,47 +32,18 @@ import com.ead.katalyst.scanner.util.GenericTypeExtractor
 data class DiscoveryMetadata(
     val discoveredClass: Class<*>,
     val packageName: String,
-    val simpleName: String,
-    val hasNoArgsConstructor: Boolean = false,
-    val constructorCount: Int = 0,
-    val annotations: List<Annotation> = emptyList(),
-    val genericTypeArguments: List<String> = emptyList(),
-    val methods: List<MethodMetadata> = emptyList(),
-    val typeParameterMapping: Map<String, Class<*>> = emptyMap(),
-    val customMetadata: Map<String, Any> = emptyMap()
+   val simpleName: String,
+   val hasNoArgsConstructor: Boolean = false,
+   val constructorCount: Int = 0,
+   val genericTypeArguments: List<String> = emptyList(),
+   val methods: List<MethodMetadata> = emptyList(),
+   val typeParameterMapping: Map<String, Class<*>> = emptyMap(),
+   val customMetadata: Map<String, Any> = emptyMap()
 ) {
     /**
      * Checks if the class has any methods.
      */
     fun hasMethods(): Boolean = methods.isNotEmpty()
-
-    /**
-     * Finds the first method with a specific annotation.
-     *
-     * **Example:**
-     * ```kotlin
-     * val authMethod = metadata.findMethodWithAnnotation<RequiresAuth>()
-     * ```
-     */
-    inline fun <reified T : Annotation> findMethodWithAnnotation(): MethodMetadata? {
-        return methods.firstOrNull { method ->
-            method.annotations.filterIsInstance<T>().isNotEmpty()
-        }
-    }
-
-    /**
-     * Finds all methods with a specific annotation.
-     *
-     * **Example:**
-     * ```kotlin
-     * val authMethods = metadata.findMethodsWithAnnotation<RequiresAuth>()
-     * ```
-     */
-    inline fun <reified T : Annotation> findMethodsWithAnnotation(): List<MethodMetadata> {
-        return methods.filter { method ->
-            method.annotations.filterIsInstance<T>().isNotEmpty()
-        }
-    }
 
     /**
      * Finds a method by name.
@@ -152,7 +121,6 @@ data class DiscoveryMetadata(
          *
          * Extracts:
          * - Class information (name, package, constructors)
-         * - Class-level annotations
          * - (Optional) Methods via separate method scanner
          * - (Optional) Generic type parameters via GenericTypeExtractor
          *
@@ -189,7 +157,6 @@ data class DiscoveryMetadata(
                 simpleName = clazz.simpleName,
                 hasNoArgsConstructor = hasNoArgsConstructor,
                 constructorCount = clazz.constructors.size,
-                annotations = clazz.annotations.toList(),
                 methods = methods,
                 typeParameterMapping = typeParameterMapping
             )

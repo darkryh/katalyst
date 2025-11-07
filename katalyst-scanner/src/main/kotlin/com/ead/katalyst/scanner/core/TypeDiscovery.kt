@@ -1,4 +1,4 @@
-package com.ead.xtory.scanner.core
+package com.ead.katalyst.scanner.core
 
 import com.ead.katalyst.scanner.core.DiscoveryMetadata
 

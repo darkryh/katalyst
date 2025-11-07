@@ -8,8 +8,15 @@ dependencies {
 
     implementation(libs.koin.core)
     implementation(libs.koin.core.jvm)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.logback)
+implementation(libs.kotlinx.coroutines.core)
+implementation(libs.logback)
+
+testImplementation(kotlin("test"))
+testImplementation(libs.kotlinx.coroutines.test)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 kotlin {

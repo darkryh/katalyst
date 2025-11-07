@@ -3,6 +3,7 @@ package com.ead.katalyst.services.cron
 /**
  * Validates cron expressions efficiently without creating unnecessary objects.
  *
+ * Supports standard 6-field cron format and Quartz cron syntax with '?'.
  * Reuses the parsing logic from CronField to validate expressions.
  */
 object CronValidator {
@@ -32,12 +33,17 @@ object CronValidator {
         }
 
         // Validate each field using direct parsing (reusing CronField logic)
-        validateField(parts[0], 0..59, "second", errors)
-        validateField(parts[1], 0..59, "minute", errors)
-        validateField(parts[2], 0..23, "hour", errors)
-        validateField(parts[3], 1..31, "day of month", errors)
-        validateField(parts[4], 1..12, "month", errors)
-        validateField(parts[5], 0..6, "day of week", errors)
+        validateField(parts[0], 0..59, "second", allowQuestion = false, errors)
+        validateField(parts[1], 0..59, "minute", allowQuestion = false, errors)
+        validateField(parts[2], 0..23, "hour", allowQuestion = false, errors)
+        validateField(parts[3], 1..31, "day of month", allowQuestion = true, errors)
+        validateField(parts[4], 1..12, "month", allowQuestion = false, errors)
+        validateField(parts[5], 0..6, "day of week", allowQuestion = true, errors)
+
+        // Additional validation: at least one of day-of-month or day-of-week must be restricted
+        if (parts[3] == "?" && parts[5] == "?") {
+            errors.add("At least one of day-of-month or day-of-week must be restricted (not both '?')")
+        }
 
         return errors
     }
@@ -56,12 +62,13 @@ object CronValidator {
         expression: String,
         range: IntRange,
         fieldName: String,
+        allowQuestion: Boolean = false,
         errors: MutableList<String>
     ) {
         try {
             // Parse the field expression directly using CronField
             // This validates without creating a full CronExpression object
-            CronField(expression, range)
+            CronField(expression, range, fieldName, allowQuestion)
         } catch (e: Exception) {
             val errorMsg = e.message?.takeIf { it.isNotEmpty() } ?: "Invalid format"
             errors.add("Invalid $fieldName field '$expression': $errorMsg")

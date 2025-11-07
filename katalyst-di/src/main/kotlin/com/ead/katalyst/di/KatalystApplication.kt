@@ -5,6 +5,7 @@ import com.ead.katalyst.di.internal.KtorModuleRegistry
 import com.ead.katalyst.routes.KtorModule
 import com.ead.katalyst.components.Component
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.engine.ApplicationEngine
@@ -157,18 +158,6 @@ class KatalystApplicationBuilder {
 
         logger.info("Ktor application configured successfully")
     }
-
-    /**
-     * Check if Koin has been initialized.
-     */
-    private fun isKoinInitialized(): Boolean {
-        return try {
-            GlobalContext.get()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
 }
 
 /**
@@ -216,6 +205,9 @@ fun katalystApplication(
     block: suspend KatalystApplicationBuilder.() -> Unit
 ) {
     val logger = LoggerFactory.getLogger("katalystApplication")
+    val bootStart = System.nanoTime()
+
+    printKatalystBanner()
     val builder = KatalystApplicationBuilder()
 
     try {
@@ -229,7 +221,7 @@ fun katalystApplication(
         val serverConfig = builder.resolveServerConfiguration()
         val embeddedServer = createEmbeddedServer(args, serverConfig, logger)
 
-        embeddedServer.environment.monitor.subscribe(ApplicationStarting) { application ->
+        embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
             runCatching {
                 val wrappedApplication = application.wrap(serverConfig.applicationWrapper)
                 builder.configureApplication(wrappedApplication)
@@ -239,7 +231,12 @@ fun katalystApplication(
             }
         }
 
-        embeddedServer.environment.monitor.subscribe(ApplicationStopping) {
+        embeddedServer.monitor.subscribe(ApplicationStarted) {
+            val elapsedSeconds = (System.nanoTime() - bootStart) / 1_000_000_000.0
+            logger.info("Katalyst started in {} s (actual)", String.format("%.3f", elapsedSeconds))
+        }
+
+        embeddedServer.monitor.subscribe(ApplicationStopping) {
             runCatching { stopKoinStandalone() }
                 .onFailure { error -> logger.warn("Error while stopping Koin", error) }
         }
@@ -261,6 +258,20 @@ fun katalystApplication(
     }
 }
 
+private fun printKatalystBanner() {
+    val blue = "\u001B[94m"
+    val reset = "\u001B[0m"
+    val banner = """
+██╗  ██╗  █████╗  ████████╗  █████╗  ██╗   ██╗   ██╗ ███████╗ ████████╗
+██║ ██╔╝ ██╔══██╗ ╚══██╔══╝ ██╔══██╗ ██║   ╚██╗ ██╔╝ ██╔════╝ ╚══██╔══╝
+█████╔╝  ███████║    ██║    ███████║ ██║    ╚████╔╝  ███████╗    ██║   
+██╔═██╗  ██╔══██║    ██║    ██╔══██║ ██║     ╚██╔╝   ╚════██║    ██║   
+██║  ██╗ ██║  ██║    ██║    ██║  ██║ ███████╗ ██║    ███████║    ██║   
+╚═╝  ╚═╝ ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝ ╚══════╝ ╚═╝    ╚══════╝    ╚═╝                                                              
+    """.trimIndent()
+    println("$blue$banner$reset")
+}
+
 private fun createEmbeddedServer(
     args: Array<String>,
     serverConfiguration: ServerConfiguration,
@@ -276,52 +287,3 @@ private fun createEmbeddedServer(
             EngineMain.createServer(args)
         }
     }
-
-/**
- * Extension function to initialize Katalyst DI in Application.module().
- *
- * This is called automatically by katalystApplication, but you can use it
- * if you need to set up DI manually.
- *
- * **Usage in Application.module():**
- * ```kotlin
- * fun Application.module() {
- *     val config = DatabaseConfig(...)
- *     initializeKatalystDI(config, enableScheduler = true)
- *     // ... custom configuration
- * }
- * ```
- */
-fun Application.initializeKatalystDI(
-    databaseConfig: DatabaseConfig,
-    enableScheduler: Boolean = false,
-    scanPackages: Array<String> = emptyArray()
-) {
-    val logger = LoggerFactory.getLogger("KatalystDI")
-    logger.info("Initializing Katalyst DI in Application module")
-
-    // Install Koin if not already installed
-    if (!isKoinInstalledInApplication()) {
-        installKoinDI(
-            KatalystDIOptions(
-                databaseConfig = databaseConfig,
-                enableScheduler = enableScheduler,
-                scanPackages = scanPackages
-            )
-        )
-    }
-
-    logger.info("Katalyst DI initialized in Application module")
-}
-
-/**
- * Check if Koin is already installed in the Application.
- */
-private fun Application.isKoinInstalledInApplication(): Boolean {
-    return try {
-        GlobalContext.get()
-        true
-    } catch (e: Exception) {
-        false
-    }
-}

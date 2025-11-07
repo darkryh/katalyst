@@ -7,6 +7,7 @@ import com.ead.katalyst.repositories.PageInfo
 import com.ead.katalyst.repositories.QueryFilter
 import com.ead.katalyst.repositories.Repository
 import com.ead.katalyst.services.Service
+import com.ead.katalyst.tables.Table
 import com.ead.katalyst.validators.ValidationResult
 import com.ead.katalyst.validators.Validator
 import kotlinx.coroutines.sync.Mutex
@@ -23,7 +24,7 @@ data class TestEntity(
     val name: String
 ) : Identifiable<Long>
 
-object TestTable : LongIdTable("di_test_entities")
+object TestTable : LongIdTable("di_test_entities"), Table
 
 class TestRepository : Repository<Long, TestEntity> {
     private val data = mutableMapOf<Long, TestEntity>()

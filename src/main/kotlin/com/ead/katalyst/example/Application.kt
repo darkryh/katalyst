@@ -36,7 +36,7 @@ import io.ktor.server.application.Application
  * ```
  */
 fun main(args: Array<String>) = katalystApplication(args) {
-    database(DatabaseConfigFactory.fromEnvironment())
+    database(DatabaseConfigFactory.config())
     scanPackages("com.ead.katalyst.example")
     enableScheduler()
 }

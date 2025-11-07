@@ -1,54 +1,20 @@
 package com.ead.katalyst.scanner.predicates
 
 import com.ead.katalyst.scanner.fixtures.*
-import com.ead.katalyst.repositories.*
-import com.ead.katalyst.common.*
-import com.ead.katalyst.services.*
-import com.ead.katalyst.validators.*
-import com.ead.katalyst.events.*
-import com.ead.katalyst.handlers.*
+import com.ead.katalyst.validators.Validator
 import kotlin.test.Test
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Comprehensive tests for Enhanced Predicates.
  *
  * Tests:
- * - Method annotation predicates
  * - Public method detection
  * - Instantiability checks
  * - Predicate combinations
  */
 class EnhancedPredicatesTest {
-
-    @Test
-    fun `hasMethodsWithAnnotation should match classes with annotated methods`() {
-        val predicate = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
-
-        assertTrue(predicate.matches(ServiceWithAnnotatedMethods::class.java))
-    }
-
-    @Test
-    fun `hasMethodsWithAnnotation should not match classes without annotated methods`() {
-        val predicate = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
-
-        assertFalse(predicate.matches(ServiceWithSuspendMethods::class.java))
-    }
-
-    @Test
-    fun `hasMethodsWithAnnotation should work with different annotations`() {
-        val predicate = hasMethodsWithAnnotation<TestService>(AnotherAnnotation::class)
-
-        assertTrue(predicate.matches(ServiceWithAnnotatedMethods::class.java))
-    }
-
-    @Test
-    fun `hasMethodsWithAnnotation should work with real world annotations`() {
-        val predicate = hasMethodsWithAnnotation<TestService>(RequiresAuth::class)
-
-        assertTrue(predicate.matches(AnnotatedMethods::class.java))
-    }
 
     @Test
     fun `hasPublicMethods should match classes with public methods`() {
@@ -92,18 +58,17 @@ class EnhancedPredicatesTest {
 
     @Test
     fun `predicates should be composable with and`() {
-        val methodAnnotation = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
         val concrete = isConcrete<TestService>()
 
-        val combined = methodAnnotation.and(concrete)
+        val combined = hasPublicMethods<TestService>().and(concrete)
 
         assertTrue(combined.matches(ServiceWithAnnotatedMethods::class.java))
     }
 
     @Test
     fun `predicates should be composable with or`() {
-        val predicate1 = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
-        val predicate2 = hasMethodsWithAnnotation<TestService>(AnotherAnnotation::class)
+        val predicate1 = hasPublicMethods<TestService>()
+        val predicate2 = isConcrete<TestService>()
 
         val combined = predicate1.or(predicate2)
 
@@ -112,19 +77,20 @@ class EnhancedPredicatesTest {
 
     @Test
     fun `predicates should be invertible with not`() {
-        val hasAnnotation = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
-        val notAnnotated = hasAnnotation.not()
+        val hasMethods = hasPublicMethods<TestService>()
+        val notAnnotated = hasMethods.not()
 
         assertFalse(notAnnotated.matches(ServiceWithAnnotatedMethods::class.java))
     }
 
     @Test
     fun `combined predicates should work with multiple filters`() {
-        val hasMethod = hasMethodsWithAnnotation<TestService>(TestAnnotation::class)
         val isConcrete = isConcrete<TestService>()
         val notAbstract = isNotInterface<TestService>()
 
-        val combined = hasMethod.and(isConcrete).and(notAbstract)
+        val combined = hasPublicMethods<TestService>()
+            .and(isConcrete)
+            .and(notAbstract)
 
         assertTrue(combined.matches(ServiceWithAnnotatedMethods::class.java))
     }
@@ -162,27 +128,6 @@ class EnhancedPredicatesTest {
     }
 
     @Test
-    fun `existing predicates should still work - hasAnnotation`() {
-        @Suppress("DEPRECATION")
-        val predicate = hasAnnotation<TestService>(TestAnnotation::class)
-
-        // hasAnnotation looks for class-level annotations, not method annotations
-        // So this might not match method-annotated classes
-        val result = predicate.matches(ServiceWithAnnotatedMethods::class.java)
-        assertTrue(result || !result)
-    }
-
-    @Test
-    fun `hasMethodsWithAnnotation with multiple annotations`() {
-        val requiresAuth = hasMethodsWithAnnotation<TestService>(RequiresAuth::class)
-        val rateLimit = hasMethodsWithAnnotation<TestService>(RateLimit::class)
-
-        val combined = requiresAuth.or(rateLimit)
-
-        assertTrue(combined.matches(AnnotatedMethods::class.java))
-    }
-
-    @Test
     fun `should handle complex real world filtering scenario`() {
         val predicate = isNotTestClass<TestService>()
             .and(isConcrete<TestService>())
@@ -201,14 +146,5 @@ class EnhancedPredicatesTest {
 
         assertTrue(predicate.matches(UserValidator::class.java))
         assertTrue(predicate.matches(ProductValidator::class.java))
-    }
-
-    @Test
-    fun `should filter handlers correctly`() {
-        val predicate = isConcrete<HttpHandler>()
-            .and(implementsInterface<HttpHandler>(HttpHandler::class))
-
-        assertTrue(predicate.matches(AuthHandler::class.java))
-        assertTrue(predicate.matches(ApiHandler::class.java))
     }
 }

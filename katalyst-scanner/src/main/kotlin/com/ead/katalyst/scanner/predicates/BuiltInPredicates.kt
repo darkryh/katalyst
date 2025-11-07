@@ -44,19 +44,6 @@ fun <T> implementsInterface(interfaceClass: KClass<*>): DiscoveryPredicate<T> {
 }
 
 /**
- * Matches classes that have a specific annotation.
- *
- * @param T The base type
- * @param annotationClass The annotation class to look for
- * @return Predicate that returns true if the class has the annotation
- */
-fun <T> hasAnnotation(annotationClass: KClass<out Annotation>): DiscoveryPredicate<T> {
-    return DiscoveryPredicate { clazz ->
-        clazz.isAnnotationPresent(annotationClass.java)
-    }
-}
-
-/**
  * Matches classes in a specific package or its sub-packages.
  *
  * @param T The base type
@@ -206,41 +193,6 @@ fun <T> isNotSynthetic(): DiscoveryPredicate<T> {
  */
 fun <T> isInModule(moduleName: String): DiscoveryPredicate<T> {
     return matchesPackage(moduleName)
-}
-
-/**
- * Matches classes that have methods with a specific annotation.
- *
- * This predicate uses Kotlin reflection to check if any method in the class
- * is annotated with the given annotation.
- *
- * **Usage:**
- * ```kotlin
- * // Find controllers that have @RouteHandler methods
- * val withRoutes = hasMethodsWithAnnotation<RouteController>(RouteHandler::class)
- *
- * // Combine with other predicates
- * val combined = isNotTestClass<RouteController>()
- *     .and(hasMethodsWithAnnotation<RouteController>(RouteHandler::class))
- * ```
- *
- * @param T The base type
- * @param annotationClass The method annotation to look for
- * @return Predicate that returns true if class has methods with the annotation
- */
-fun <T> hasMethodsWithAnnotation(
-    annotationClass: KClass<out Annotation>
-): DiscoveryPredicate<T> {
-    val annotationJavaClass = annotationClass.java
-    return DiscoveryPredicate { clazz ->
-        try {
-            clazz.declaredMethods.any { method ->
-                method.isAnnotationPresent(annotationJavaClass)
-            }
-        } catch (e: Exception) {
-            false
-        }
-    }
 }
 
 /**

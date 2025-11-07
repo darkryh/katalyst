@@ -2,7 +2,7 @@ package com.ead.katalyst.scanner.extensions
 
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
-import com.ead.xtory.scanner.core.TypeDiscovery
+import com.ead.katalyst.scanner.core.TypeDiscovery
 import com.ead.katalyst.scanner.integration.AutoDiscoveryEngine
 import com.ead.katalyst.scanner.integration.KoinDiscoveryRegistry
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner

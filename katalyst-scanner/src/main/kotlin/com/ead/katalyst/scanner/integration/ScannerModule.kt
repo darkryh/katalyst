@@ -3,7 +3,7 @@ package com.ead.katalyst.scanner.integration
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
 import com.ead.katalyst.scanner.core.DiscoveryRegistry
-import com.ead.xtory.scanner.core.TypeDiscovery
+import com.ead.katalyst.scanner.core.TypeDiscovery
 import com.ead.katalyst.scanner.scanner.InMemoryDiscoveryRegistry
 import com.ead.katalyst.scanner.scanner.KotlinMethodScanner
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
