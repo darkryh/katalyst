@@ -4,12 +4,38 @@ import com.ead.katalyst.routes.KtorModule
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Tracks auto-discovered [KtorModule] instances so they can be installed
- * in the Ktor pipeline after DI bootstrap completes.
+ * Marker interface for route function modules.
+ *
+ * Used internally to differentiate route function modules (which are unique by identity)
+ * from regular KtorModule implementations (which are deduplicated by class type).
+ */
+internal interface RouteModuleMarker
+
+/**
+ * Registry for auto-discovered Ktor modules.
+ *
+ * This thread-safe registry collects [KtorModule] instances during component scanning
+ * and provides them for installation into the Ktor application pipeline after DI bootstrap.
+ *
+ * **Deduplication Strategy:**
+ * - Route function modules (marked with [RouteModuleMarker]) are compared by identity
+ * - Regular [KtorModule] implementations are deduplicated by class type
+ *
+ * **Thread Safety:**
+ * Uses [CopyOnWriteArrayList] for concurrent access during registration.
  */
 object KtorModuleRegistry {
     private val modules = CopyOnWriteArrayList<KtorModule>()
 
+    /**
+     * Registers a Ktor module for later installation.
+     *
+     * Prevents duplicate registration based on module type:
+     * - Route modules: deduplicates by object identity (===)
+     * - Regular modules: deduplicates by class type (::class)
+     *
+     * @param module The Ktor module to register
+     */
     fun register(module: KtorModule) {
         val alreadyRegistered = when (module) {
             is RouteModuleMarker -> modules.any { it === module }
@@ -21,6 +47,14 @@ object KtorModuleRegistry {
         }
     }
 
+    /**
+     * Retrieves and clears all registered modules.
+     *
+     * This method should be called once during application startup to
+     * install all discovered modules into the Ktor pipeline.
+     *
+     * @return Immutable snapshot of all registered modules
+     */
     fun consume(): List<KtorModule> {
         val snapshot = modules.toList()
         modules.clear()

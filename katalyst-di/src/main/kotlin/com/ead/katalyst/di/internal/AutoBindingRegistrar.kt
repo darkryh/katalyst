@@ -43,8 +43,31 @@ import kotlin.reflect.jvm.jvmErasure
 private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
 
 /**
- * Discovers framework components (services, repositories, validators, event handlers)
- * and registers them into the active Koin container.
+ * Auto-discovery and registration engine for Katalyst components.
+ *
+ * This class orchestrates automatic component discovery and dependency injection registration
+ * during application bootstrap. It scans specified packages for framework components and
+ * registers them in the Koin DI container.
+ *
+ * **Discovered Component Types:**
+ * - [Repository] implementations (data access layer)
+ * - [Component] implementations (general framework components)
+ * - [Table] implementations (database schema definitions)
+ * - [KtorModule] implementations (HTTP routing and middleware)
+ * - [EventHandler] implementations (event-driven logic)
+ * - Route extension functions (Ktor routing DSL functions)
+ *
+ * **Registration Strategy:**
+ * - Components are instantiated with constructor dependency injection
+ * - Dependencies are resolved from the Koin container
+ * - Well-known properties (DatabaseTransactionManager, SchedulerService) are auto-injected
+ * - Registration handles circular dependencies through deferred registration
+ *
+ * **Thread Safety:**
+ * Not thread-safe. Should only be called once during application startup.
+ *
+ * @param koin The active Koin container to register components into
+ * @param scanPackages Array of package names to scan for components
  */
 @OptIn(KoinInternalApi::class)
 class AutoBindingRegistrar(
@@ -54,6 +77,20 @@ class AutoBindingRegistrar(
 
     private val packages: List<String> = scanPackages.filter { it.isNotBlank() }
 
+    /**
+     * Discovers and registers all framework components.
+     *
+     * This method executes the complete auto-discovery process in a specific order:
+     * 1. Repositories (data access layer)
+     * 2. Components (general framework components)
+     * 3. Tables (database schema definitions)
+     * 4. Ktor modules (HTTP routing and middleware)
+     * 5. Event handlers (event-driven components)
+     * 6. Route functions (standalone routing DSL functions)
+     *
+     * Components with unresolved dependencies are deferred and retried after
+     * their dependencies become available.
+     */
     fun registerAll() {
         registerComponents(Repository::class.java, "repositories")
         registerComponents(Component::class.java, "components")
@@ -64,6 +101,20 @@ class AutoBindingRegistrar(
         registerRouteFunctions()
     }
 
+    /**
+     * Discovers and registers all concrete implementations of a component type.
+     *
+     * Uses a two-phase registration strategy:
+     * 1. Attempt to register all discovered components
+     * 2. Defer components with missing dependencies for retry
+     *
+     * Components are retried in subsequent passes until all dependencies are resolved
+     * or no progress can be made.
+     *
+     * @param T The base component type to discover
+     * @param baseType The Java class of the base type
+     * @param label Human-readable label for logging
+     */
     private inline fun <reified T : Any> registerComponents(baseType: Class<T>, label: String) {
         val pending = discoverConcreteTypes(baseType).toMutableSet()
         if (pending.isEmpty()) {
@@ -146,6 +197,15 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Scans configured packages for concrete implementations of a base type.
+     *
+     * Filters out abstract classes and interfaces, returning only instantiable types.
+     *
+     * @param T The base type to search for
+     * @param baseType The Java class of the base type
+     * @return Set of concrete implementation classes
+     */
     private fun <T : Any> discoverConcreteTypes(baseType: Class<T>): Set<Class<out T>> {
         val predicate: DiscoveryPredicate<T> = DiscoveryPredicate { candidate ->
             !Modifier.isAbstract(candidate.modifiers) && !candidate.isInterface
@@ -160,9 +220,28 @@ class AutoBindingRegistrar(
         return scanner.discover()
     }
 
+    /**
+     * Checks if a component class is already registered in Koin.
+     *
+     * @param clazz The class to check
+     * @return true if already registered, false otherwise
+     */
     private fun isAlreadyRegistered(clazz: Class<*>): Boolean =
         koin.getFromKoinOrNull(clazz.kotlin) != null
 
+    /**
+     * Creates an instance of a component using constructor injection.
+     *
+     * Selects the primary constructor or the constructor with the fewest
+     * required (non-optional) parameters. Resolves all constructor dependencies
+     * from the Koin container.
+     *
+     * @param T The component type to instantiate
+     * @param target The Kotlin class to instantiate
+     * @return A fully-constructed instance with all dependencies injected
+     * @throws IllegalStateException if no suitable constructor is found
+     * @throws DependencyInjectionException if dependencies cannot be resolved
+     */
     private fun <T : Any> instantiate(target: KClass<T>): T {
         val constructor = target.primaryConstructor ?: target.constructors
             .minByOrNull { ctor -> ctor.parameters.count { !it.isOptional && it.kind == KParameter.Kind.VALUE } }
@@ -189,6 +268,19 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Resolves a single constructor dependency from the Koin container.
+     *
+     * Special handling for:
+     * - [Koin] instances (returns the active Koin container)
+     * - Nullable types (returns null if not found)
+     *
+     * @param type The Kotlin class of the dependency
+     * @param kType The full Kotlin type including nullability
+     * @param owner The class that requires this dependency (for error messages)
+     * @return The resolved dependency instance, or null for nullable types
+     * @throws DependencyInjectionException if a required dependency cannot be resolved
+     */
     private fun resolveDependency(type: KClass<*>, kType: KType, owner: KClass<*>): Any? =
         when (type) {
             Koin::class -> koin
@@ -201,6 +293,20 @@ class AutoBindingRegistrar(
             }
         }
 
+    /**
+     * Performs property injection for well-known framework services.
+     *
+     * Auto-injects these framework services into mutable properties:
+     * - [DatabaseTransactionManager] for transaction management
+     * - [SchedulerService] for task scheduling
+     *
+     * Only injects if:
+     * 1. The property is mutable (var)
+     * 2. The property is not already initialized
+     * 3. The service is available in Koin
+     *
+     * @param instance The component instance to inject properties into
+     */
     private fun injectWellKnownProperties(instance: Any) {
         @Suppress("UNCHECKED_CAST")
         val mutableProperties = instance::class.memberProperties
@@ -230,6 +336,13 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Checks if a property has already been initialized.
+     *
+     * @param property The property to check
+     * @param instance The object instance containing the property
+     * @return true if initialized with a non-null value, false if uninitialized
+     */
     private fun propertyAlreadyInitialised(property: KMutableProperty1<Any, Any?>, instance: Any): Boolean =
         try {
             val current = property.get(instance)
@@ -238,6 +351,23 @@ class AutoBindingRegistrar(
             false
         }
 
+    /**
+     * Computes additional interface types for multi-type binding.
+     *
+     * Extracts domain-specific interfaces implemented by the component,
+     * excluding reserved framework base types to avoid registration conflicts.
+     *
+     * **Reserved types (excluded):**
+     * - [Any] (Kotlin/Java base type)
+     * - [Component] (framework marker)
+     * - [Service] (framework marker)
+     * - [Repository] (framework marker)
+     * - [EventHandler] (framework marker)
+     *
+     * @param clazz The component class to analyze
+     * @param baseType The primary base type being registered
+     * @return List of additional interfaces for secondary bindings
+     */
     private fun computeSecondaryTypes(
         clazz: KClass<*>,
         baseType: KClass<*>
@@ -260,6 +390,15 @@ class AutoBindingRegistrar(
             }
     }
 
+    /**
+     * Discovers and registers Ktor route extension functions.
+     *
+     * Scans for static functions with Route or Application as the first parameter
+     * that use Katalyst routing DSL (katalystRouting, katalystExceptionHandler, etc.).
+     *
+     * Functions are wrapped in [RouteFunctionModule] and registered in [KtorModuleRegistry]
+     * for installation during Ktor application startup.
+     */
     private fun registerRouteFunctions() {
         val methods = discoverRouteFunctions()
             .filter { method ->
@@ -290,6 +429,15 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Discovers and registers Exposed database table definitions.
+     *
+     * Scans for classes that extend both:
+     * - [org.jetbrains.exposed.sql.Table] (Exposed framework)
+     * - [Table] (Katalyst marker interface)
+     *
+     * Tables are registered in Koin and later used to initialize the database schema.
+     */
     private fun registerTables() {
         if (packages.isEmpty()) {
             logger.debug("No packages configured for scanning, skipping table discovery")
@@ -324,6 +472,18 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Scans classpath for Exposed table implementations with Katalyst marker.
+     *
+     * Uses reflection to find all classes extending [org.jetbrains.exposed.sql.Table]
+     * that also implement the [Table] marker interface.
+     *
+     * **Instantiation Strategy:**
+     * - Kotlin objects: retrieves the INSTANCE field
+     * - Regular classes: calls the no-arg constructor
+     *
+     * @return Map of table class to instantiated table object
+     */
     private fun discoverExposedTables(): Map<KClass<*>, Any> {
         val results = mutableMapOf<KClass<*>, Any>()
 
@@ -371,6 +531,15 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Attempts to instantiate a class using appropriate strategy.
+     *
+     * Handles both Kotlin objects and regular classes:
+     * - Objects: accesses the static INSTANCE field
+     * - Classes: calls the no-arg constructor
+     *
+     * @return Instance of the class, or null if instantiation fails
+     */
     private fun Class<*>.instantiateIfPossible(): Any? =
         when {
             isKotlinObject() -> {
@@ -383,6 +552,13 @@ class AutoBindingRegistrar(
             }.getOrNull()
         }
 
+    /**
+     * Checks if a class is a Kotlin object declaration.
+     *
+     * Kotlin objects have a static INSTANCE field generated by the compiler.
+     *
+     * @return true if this is a Kotlin object, false otherwise
+     */
     private fun Class<*>.isKotlinObject(): Boolean =
         try {
             getDeclaredField("INSTANCE")
@@ -391,6 +567,19 @@ class AutoBindingRegistrar(
             false
         }
 
+    /**
+     * Scans for route extension functions in top-level Kotlin files.
+     *
+     * Searches for static methods in classes ending with "Kt" (Kotlin file classes)
+     * that take [Route] or [Application] as the first parameter.
+     *
+     * **Discovery Criteria:**
+     * - Static method in a Kotlin file class (NameKt)
+     * - First parameter is Route or Application
+     * - Returns Unit or void
+     *
+     * @return List of discovered route function methods
+     */
     private fun discoverRouteFunctions(): List<Method> {
         if (packages.isEmpty()) return emptyList()
 
@@ -441,6 +630,20 @@ class AutoBindingRegistrar(
         }
     }
 
+    /**
+     * Registers a component instance in Koin with multi-type binding.
+     *
+     * Creates a singleton definition with:
+     * - Primary type: the main component type
+     * - Secondary types: additional interfaces for polymorphic resolution
+     *
+     * All types are registered to resolve to the same instance, enabling
+     * dependency injection by any of the component's interfaces.
+     *
+     * @param instance The component instance to register
+     * @param primaryType The primary class type for registration
+     * @param secondaryTypes Additional interface types for polymorphic binding
+     */
     private fun registerInstanceWithKoin(
         instance: Any,
         primaryType: KClass<*>,
@@ -485,6 +688,12 @@ class AutoBindingRegistrar(
     }
 }
 
+/**
+ * Safely retrieves an instance from Koin, returning null if not found.
+ *
+ * @param kClass The class type to retrieve
+ * @return The instance if found, null otherwise
+ */
 private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
     try {
         @Suppress("UNCHECKED_CAST")
@@ -493,6 +702,19 @@ private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
         null
     }
 
+/**
+ * Wrapper for route function methods to enable ordered installation.
+ *
+ * Wraps a static route function method ([Route] or [Application] extension)
+ * and provides ordering hints based on function naming conventions:
+ * - Exception handlers (order -100): installed first
+ * - Middleware/plugins (order -50): installed second
+ * - Regular routes (order 0): installed last
+ *
+ * This ensures proper installation order for exception handling and middleware.
+ *
+ * @property method The Java reflection method to invoke
+ */
 private class RouteFunctionModule(
     private val method: Method
 ) : KtorModule, RouteModuleMarker {
@@ -506,6 +728,15 @@ private class RouteFunctionModule(
         else -> 0  // Regular routes last
     }
 
+    /**
+     * Installs the route function into the Ktor application.
+     *
+     * Invokes the wrapped static method with the appropriate receiver:
+     * - [Application] parameter: invokes directly with the application
+     * - [Route] parameter: wraps in a routing {} block
+     *
+     * @param application The Ktor application to install routes into
+     */
     override fun install(application: Application) {
         try {
             method.isAccessible = true
@@ -548,20 +779,41 @@ private class RouteFunctionModule(
     }
 }
 
+/**
+ * Internal class names that define Katalyst routing DSL functions.
+ *
+ * Used for bytecode analysis to detect if a route function uses Katalyst DSL.
+ */
 private val katalystDslOwners = setOf(
     "com/ead/katalyst/routes/RoutingBuilderKt",
     "com/ead/katalyst/routes/ExceptionHandlerBuilderKt",
     "com/ead/katalyst/routes/MiddlewareKt"
 )
 
+/**
+ * Katalyst routing DSL method names.
+ *
+ * Route functions must call at least one of these to be registered.
+ */
 private val katalystDslMethods = setOf(
     "katalystRouting",
     "katalystExceptionHandler",
     "katalystMiddleware"
 )
 
+/**
+ * Cache for bytecode analysis results to avoid repeated scanning.
+ */
 private val methodUsageCache = ConcurrentHashMap<Method, Boolean>()
 
+/**
+ * Checks if a route function uses Katalyst routing DSL.
+ *
+ * Uses bytecode analysis (cached) to detect calls to Katalyst DSL methods.
+ * This ensures only genuine Katalyst routes are registered.
+ *
+ * @return true if the method calls Katalyst DSL functions, false otherwise
+ */
 private fun Method.usesKatalystDsl(): Boolean =
     methodUsageCache.computeIfAbsent(this) { method ->
         runCatching { method.scanForKatalystDsl() }
@@ -577,6 +829,20 @@ private fun Method.usesKatalystDsl(): Boolean =
             .getOrDefault(false)
     }
 
+/**
+ * Performs bytecode analysis to detect Katalyst DSL usage.
+ *
+ * Reads the compiled bytecode of the method and searches for method invocations
+ * to Katalyst DSL functions. This is more reliable than name-based heuristics.
+ *
+ * **Analysis Process:**
+ * 1. Loads the class bytecode
+ * 2. Finds the target method by signature
+ * 3. Scans method instructions for DSL calls
+ * 4. Returns true if any Katalyst DSL method is called
+ *
+ * @return true if Katalyst DSL methods are detected, false otherwise
+ */
 private fun Method.scanForKatalystDsl(): Boolean {
     val className = declaringClass.name.replace('.', '/') + ".class"
     val stream = declaringClass.classLoader?.getResourceAsStream(className)
