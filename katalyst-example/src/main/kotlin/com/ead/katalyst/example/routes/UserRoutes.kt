@@ -24,7 +24,7 @@ import io.ktor.server.routing.route
  * **Automatic Features:**
  * - Route function auto-discovered via katalystRouting DSL
  * - UserService automatically available via call.inject<UserService>()
- * - All service dependencies already wired (Repository, Validator, Notification, Audit services)
+ * - All service dependencies already wired (Repository, Validator, Audit services, EventBus)
  * - No manual service instantiation needed
  * - Exception handling automatically applied
  * - Transaction management handled by service
@@ -35,8 +35,6 @@ import io.ktor.server.routing.route
  *   └─> UserService (auto-injected)
  *       ├─> UserRepository (auto-injected to UserService)
  *       ├─> UserValidator (auto-injected to UserService)
- *       ├─> NotificationService (auto-injected to UserService)
- *       │   └─> EmailNotificationComponent (auto-injected to NotificationService)
  *       └─> AuditService (auto-injected to UserService)
  * ```
  *

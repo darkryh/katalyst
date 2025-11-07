@@ -3,11 +3,14 @@ package com.ead.katalyst.example.service
 import com.ead.katalyst.example.api.CreateUserRequest
 import com.ead.katalyst.example.domain.User
 import com.ead.katalyst.example.domain.UserValidator
+import com.ead.katalyst.example.domain.events.UserAuditEvent
+import com.ead.katalyst.example.domain.events.UserNotificationEvent
 import com.ead.katalyst.example.domain.exception.TestException
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.UserEntity
 import com.ead.katalyst.example.infra.database.repositories.UserRepository
 import com.ead.katalyst.example.infra.mappers.toUser
+import com.ead.katalyst.events.EventBus
 import com.ead.katalyst.services.Service
 import com.ead.katalyst.services.cron.CronExpression
 import com.ead.katalyst.services.service.ScheduleConfig
@@ -24,8 +27,8 @@ import kotlin.time.Duration.Companion.minutes
  * **Automatic Dependencies (Auto-Injected):**
  * - userRepository: UserRepository - repository for data access
  * - userValidator: UserValidator - domain validator
- * - notificationService: NotificationService - service for notifications
  * - auditService: AuditService - service for audit logging
+ * - eventBus: EventBus - event dispatcher for downstream processing
  *
  * **Built-in Service Features:**
  * - transactionManager: DatabaseTransactionManager - provided by Service interface
@@ -50,8 +53,8 @@ import kotlin.time.Duration.Companion.minutes
 class UserService(
     private val userRepository: UserRepository,
     private val userValidator: UserValidator,
-    private val notificationService: NotificationService,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val eventBus: EventBus
 ) : Service {
     private val logger = KtorSimpleLogger("UserService")
     private val scheduler = requireScheduler()
@@ -74,13 +77,11 @@ class UserService(
             )
         ).toUser()
 
-        // Automatically notify user via NotificationService
-        // This happens in the same transaction for consistency
         logger.info("User created: ${user.id} - ${user.email}")
-        notificationService.notifyUserCreated(user.email, user.name)
 
-        // Automatically audit the action via AuditService
-        auditService.logUserCreated(user.id.toString(), user.email)
+
+        eventBus.publish(UserAuditEvent.Created(userId = user.id, email = user.email))
+        eventBus.publish(UserNotificationEvent(email = user.email, name = user.name))
 
         return@transaction user
     }
@@ -89,6 +90,7 @@ class UserService(
         val user = userRepository.findById(id)?.toUser()
             ?: throw UserExampleValidationException("User with id=$id not found")
         logger.info("User retrieved: $id")
+        eventBus.publish(UserAuditEvent.GetData(userId = user.id, email = user.email))
         auditService.logApiCall("GET", "/api/users/$id", 200, 0)
 
         return@transaction user

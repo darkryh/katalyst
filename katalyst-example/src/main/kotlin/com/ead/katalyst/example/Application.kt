@@ -1,7 +1,9 @@
 package com.ead.katalyst.example
 
 import com.ead.katalyst.di.katalystApplication
+import com.ead.katalyst.eventdriven.EventMessaging
 import com.ead.katalyst.example.infra.config.DatabaseConfigFactory
+import com.ead.katalyst.messaging.stub.LoggingMessagingClientFactory
 import io.ktor.server.application.Application
 
 /**
@@ -39,6 +41,11 @@ fun main(args: Array<String>) = katalystApplication(args) {
     //need to specify the package base in order to make katalyst analyze whole classes/functions that use katalyst
     scanPackages("com.ead.katalyst.example")
     enableScheduler()
+    val messagingPublisher = EventMessaging.publisher(LoggingMessagingClientFactory("example-app"))
+    enableEvents {
+        applicationBus()
+        messaging(messagingPublisher)
+    }
     enableWebSockets()
 }
 

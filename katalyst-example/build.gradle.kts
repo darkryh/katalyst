@@ -19,7 +19,10 @@ dependencies {
     implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-scanner"))
     implementation(project(":katalyst-di"))
+    implementation(project(":katalyst-events"))
     implementation(project(":katalyst-websockets"))
+    implementation(project(":katalyst-messaging"))
+    implementation(project(":katalyst-event-driven"))
 
     // Ktor server surface
     implementation(libs.ktor.server.core)

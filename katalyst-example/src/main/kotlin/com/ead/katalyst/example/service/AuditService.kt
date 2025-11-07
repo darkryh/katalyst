@@ -102,6 +102,15 @@ class AuditService : Service {
         )
     }
 
+    suspend fun logUserInfo(userId: String, email: String) {
+        logAction(
+            actionType = "USER_INFO",
+            userId = userId,
+            action = "New user created",
+            details = mapOf("email" to email)
+        )
+    }
+
     /**
      * Logs a user update audit
      *

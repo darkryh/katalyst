@@ -72,13 +72,15 @@ class TestValidator : Validator<TestEntity> {
 
 class SampleCreatedEvent(
     val entity: TestEntity,
-    override val eventId: String = UUID.randomUUID().toString(),
+    override val eventId: UUID = UUID.randomUUID(),
     override val occurredAt: LocalDateTime = LocalDateTime.now()
 ) : DomainEvent
 
 class SampleEventHandler : EventHandler<SampleCreatedEvent> {
     private val mutex = Mutex()
     private val captured = mutableListOf<SampleCreatedEvent>()
+
+    override val eventType = SampleCreatedEvent::class
 
     override suspend fun handle(event: SampleCreatedEvent) {
         mutex.withLock {

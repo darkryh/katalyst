@@ -1,9 +1,10 @@
 package com.ead.katalyst.di
 
+import com.ead.katalyst.components.Component
 import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.di.internal.KtorModuleRegistry
+import com.ead.katalyst.events.EventConfiguration
 import com.ead.katalyst.routes.KtorModule
-import com.ead.katalyst.components.Component
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
@@ -51,6 +52,7 @@ class KatalystApplicationBuilder {
     private var databaseConfig: DatabaseConfig? = null
     private var enableScheduler: Boolean = false
     private var enableWebSockets: Boolean = false
+    private var eventConfiguration: EventConfiguration? = null
     private var componentScanPackages: Array<String> = emptyArray()
     private var serverConfig: ServerConfiguration = ServerConfiguration.netty()
 
@@ -80,6 +82,16 @@ class KatalystApplicationBuilder {
     fun enableScheduler(): KatalystApplicationBuilder {
         logger.debug("Enabling scheduler")
         this.enableScheduler = true
+        return this
+    }
+
+    /**
+     * Enable the event subsystem (application bus + optional bridge).
+     */
+    fun enableEvents(configure: EventConfiguration.() -> Unit = {}): KatalystApplicationBuilder {
+        logger.debug("Enabling events")
+        val config = EventConfiguration().apply(configure)
+        this.eventConfiguration = config
         return this
     }
 
@@ -128,16 +140,18 @@ class KatalystApplicationBuilder {
         val scanTargets = if (componentScanPackages.isNotEmpty()) componentScanPackages else emptyArray()
 
         logger.info(
-            "Initializing Katalyst DI (scheduler={}, webSockets={})",
+            "Initializing Katalyst DI (scheduler={}, webSockets={}, events={})",
             enableScheduler,
-            enableWebSockets
+            enableWebSockets,
+            eventConfiguration != null
         )
         initializeKoinStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
                 enableScheduler = enableScheduler,
                 enableWebSockets = enableWebSockets,
-                scanPackages = scanTargets
+                scanPackages = scanTargets,
+                eventConfiguration = eventConfiguration
             )
         )
         logger.info("Katalyst DI initialized successfully")

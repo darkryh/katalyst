@@ -4,6 +4,12 @@ import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
+import com.ead.katalyst.events.EventConfiguration
+import com.ead.katalyst.events.EventHandler
+import com.ead.katalyst.events.EventHandlerRegistry
+import com.ead.katalyst.events.EventTopology
+import com.ead.katalyst.events.eventModule
+import com.ead.katalyst.events.toModuleOptions
 import com.ead.katalyst.tables.Table
 import com.ead.katalyst.websockets.webSocketDIModule
 import io.ktor.server.application.Application
@@ -38,6 +44,7 @@ private val logger = LoggerFactory.getLogger("DIConfiguration")
  * - [enableScheduler]: Whether to enable task scheduling support
  * - [enableWebSockets]: Whether to enable WebSocket/Ktor plugin support
  * - [scanPackages]: Package names to scan for auto-discovery
+ * - [eventConfiguration]: Optional event bus configuration
  *
  * @property databaseConfig Database connection settings (required)
  * @property enableScheduler Enable the scheduler module (default: false)
@@ -48,7 +55,8 @@ data class KatalystDIOptions(
     val databaseConfig: DatabaseConfig,
     val enableScheduler: Boolean = false,
     val enableWebSockets: Boolean = false,
-    val scanPackages: Array<String> = emptyArray()
+    val scanPackages: Array<String> = emptyArray(),
+    val eventConfiguration: EventConfiguration? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -60,6 +68,7 @@ data class KatalystDIOptions(
         if (enableWebSockets != other.enableWebSockets) return false
         if (databaseConfig != other.databaseConfig) return false
         if (!scanPackages.contentEquals(other.scanPackages)) return false
+        if (eventConfiguration != other.eventConfiguration) return false
 
         return true
     }
@@ -69,6 +78,7 @@ data class KatalystDIOptions(
         result = 31 * result + enableWebSockets.hashCode()
         result = 31 * result + databaseConfig.hashCode()
         result = 31 * result + scanPackages.contentHashCode()
+        result = 31 * result + (eventConfiguration?.hashCode() ?: 0)
         return result
     }
 }
@@ -106,7 +116,8 @@ fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     enableScheduler: Boolean = false,
     enableWebSockets: Boolean = false,
-    scanPackages: Array<String> = emptyArray()
+    scanPackages: Array<String> = emptyArray(),
+    eventConfiguration: EventConfiguration? = null
 ): org.koin.core.Koin {
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
 
@@ -121,6 +132,10 @@ fun bootstrapKatalystDI(
 
     if (enableWebSockets) {
         modules += webSocketDIModule()
+    }
+
+    eventConfiguration?.let {
+        modules += eventModule(it.toModuleOptions())
     }
 
     val koin = currentKoinOrNull()?.also {
@@ -142,6 +157,14 @@ fun bootstrapKatalystDI(
     logger.info("Starting AutoBindingRegistrar to discover components...")
     AutoBindingRegistrar(koin, scanPackages).registerAll()
     logger.info("AutoBindingRegistrar completed")
+
+    eventConfiguration?.let {
+        val topology = koin.get<EventTopology>()
+        val registryHandlers = EventHandlerRegistry.consume()
+        val koinHandlers = runCatching { koin.getAll<EventHandler<*>>() }
+            .getOrElse { emptyList() }
+        topology.registerHandlers(registryHandlers + koinHandlers)
+    }
 
     // Now that tables are discovered and registered in Koin, create DatabaseFactory with them
     try {
@@ -209,7 +232,8 @@ fun initializeKoinStandalone(options: KatalystDIOptions): org.koin.core.Koin {
         databaseConfig = options.databaseConfig,
         enableScheduler = options.enableScheduler,
         enableWebSockets = options.enableWebSockets,
-        scanPackages = options.scanPackages
+        scanPackages = options.scanPackages,
+        eventConfiguration = options.eventConfiguration
     ).also {
         logger.info("Koin initialization completed successfully")
     }

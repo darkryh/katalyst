@@ -5,6 +5,8 @@ import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.fixtures.*
 import com.ead.katalyst.services.service.SchedulerService
 import com.ead.katalyst.tables.Table
+import com.ead.katalyst.events.EventBus
+import com.ead.katalyst.events.EventConfiguration
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
 import org.koin.core.qualifier.named
@@ -145,5 +147,28 @@ class InitializeKatalystDITest : KoinTest {
 
         val flag = koin.get<Boolean>(qualifier = named("enableWebSockets"))
         assertTrue(flag, "WebSocket flag should be true when enabled")
+    }
+
+    @Test
+    fun `events module wires handlers when enabled`() = runBlocking {
+        val koin = bootstrapKatalystDI(
+            databaseConfig = DatabaseConfig(
+                url = "jdbc:h2:mem:katalyst-test-events;DB_CLOSE_DELAY=-1",
+                driver = "org.h2.Driver",
+                username = "sa",
+                password = ""
+            ),
+            scanPackages = arrayOf("com.ead.katalyst.di.fixtures"),
+            eventConfiguration = EventConfiguration().apply { applicationBus() }
+        )
+
+        val bus = koin.get<EventBus>()
+        val handler = koin.get<SampleEventHandler>()
+        val event = SampleCreatedEvent(TestEntity(99, "event"))
+        bus.publish(event)
+
+        val handled = handler.handledEvents()
+        assertEquals(1, handled.size)
+        assertEquals(event, handled.first())
     }
 }

@@ -4,6 +4,7 @@ import com.ead.katalyst.components.Component
 import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.error.DependencyInjectionException
 import com.ead.katalyst.events.EventHandler
+import com.ead.katalyst.events.EventHandlerRegistry
 import com.ead.katalyst.repositories.Repository
 import com.ead.katalyst.routes.KtorModule
 import com.ead.katalyst.scanner.core.DiscoveryConfig
@@ -144,6 +145,9 @@ class AutoBindingRegistrar(
 
                     val secondaryTypes = computeSecondaryTypes(clazz.kotlin, baseType.kotlin)
                     registerInstanceWithKoin(instance, clazz.kotlin, secondaryTypes)
+                    if (baseType == EventHandler::class.java) {
+                        EventHandlerRegistry.register(instance as EventHandler<*>)
+                    }
                     if (baseType == KtorModule::class.java) {
                         KtorModuleRegistry.register(instance as KtorModule)
                     }

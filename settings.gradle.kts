@@ -22,3 +22,9 @@ include(":katalyst-persistence")
 include(":katalyst-scheduler")
 include(":katalyst-websockets")
 include(":katalyst-example")
+include(":katalyst-events")
+include(":katalyst-messaging")
+
+include(":katalyst-event-driven")
+
+include("katalyst-messaging-amqp")

@@ -13,6 +13,7 @@ dependencies {
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
     implementation(projects.katalystWebsockets)
+    implementation(projects.katalystEvents)
 
     // Persistence discovery support
     implementation(libs.exposed.core)
