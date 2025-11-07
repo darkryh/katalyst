@@ -26,6 +26,20 @@ import org.slf4j.LoggerFactory
  */
 private val logger = LoggerFactory.getLogger("DIConfiguration")
 
+/**
+ * Configuration options for Katalyst dependency injection.
+ *
+ * Encapsulates all settings needed to bootstrap the Katalyst DI system.
+ *
+ * **Properties:**
+ * - [databaseConfig]: Database connection configuration
+ * - [enableScheduler]: Whether to enable task scheduling support
+ * - [scanPackages]: Package names to scan for auto-discovery
+ *
+ * @property databaseConfig Database connection settings (required)
+ * @property enableScheduler Enable the scheduler module (default: false)
+ * @property scanPackages Array of package names to scan for components (default: empty)
+ */
 data class KatalystDIOptions(
     val databaseConfig: DatabaseConfig,
     val enableScheduler: Boolean = false,
@@ -53,8 +67,32 @@ data class KatalystDIOptions(
 }
 
 /**
- * Starts or augments the global Koin context with Katalyst modules, then performs
- * automatic discovery of services, repositories, validators, and event handlers.
+ * Bootstraps Katalyst dependency injection with automatic component discovery.
+ *
+ * This is the core initialization function that:
+ * 1. Loads all Katalyst modules (core, scanner, scheduler if enabled)
+ * 2. Starts or augments the global Koin context
+ * 3. Performs automatic discovery and registration of components
+ * 4. Discovers and registers database tables
+ * 5. Initializes the database schema with discovered tables
+ *
+ * **Component Discovery:**
+ * Automatically discovers and registers:
+ * - Services (Service implementations)
+ * - Repositories (Repository implementations)
+ * - Event handlers (EventHandler implementations)
+ * - Ktor modules (KtorModule implementations)
+ * - Database tables (Table implementations)
+ * - Route functions (extension functions using Katalyst DSL)
+ *
+ * **Usage Note:**
+ * This function can be called multiple times safely. If Koin is already initialized,
+ * it augments the existing context instead of creating a new one.
+ *
+ * @param databaseConfig Database connection configuration
+ * @param enableScheduler Whether to enable the scheduler module
+ * @param scanPackages Package names to scan for components
+ * @return The active Koin instance with all modules loaded
  */
 fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
@@ -218,13 +256,31 @@ fun Application.installKoinDI(
 /**
  * Builder for custom DI configurations.
  *
+ * Provides a fluent API for composing Koin modules with granular control.
+ * This is useful when you need to customize which Katalyst modules are loaded
+ * or when you want to add custom modules alongside Katalyst.
+ *
+ * **Usage Example:**
+ * ```kotlin
+ * val modules = DIConfigurationBuilder()
+ *     .database(DatabaseConfig(...))
+ *     .coreModules()
+ *     .scannerModules()
+ *     .customModules(myCustomModule)
+ *     .build()
+ * ```
  */
 class DIConfigurationBuilder {
     private val modules = mutableListOf<Module>()
     private var databaseConfig: DatabaseConfig? = null
 
     /**
-     * Supplies the database configuration used by subsequent [coreModules] calls.
+     * Sets the database configuration.
+     *
+     * This must be called before [coreModules] as it's required for database initialization.
+     *
+     * @param config Database connection settings
+     * @return This builder for method chaining
      */
     fun database(config: DatabaseConfig): DIConfigurationBuilder {
         this.databaseConfig = config
@@ -232,7 +288,17 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Includes core DI modules (services, handlers, validators).
+     * Includes core Katalyst modules.
+     *
+     * Adds the core DI module which provides:
+     * - Database connection pooling (HikariCP)
+     * - Transaction management (DatabaseTransactionManager)
+     * - Foundation for service/repository registration
+     *
+     * **Prerequisites:** [database] must be called first
+     *
+     * @return This builder for method chaining
+     * @throws IllegalStateException if database config is not set
      */
     fun coreModules(): DIConfigurationBuilder {
         val config = databaseConfig
@@ -243,7 +309,16 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Includes scanner DI modules (reflection utilities).
+     * Includes scanner modules for component discovery.
+     *
+     * Adds the scanner module which enables:
+     * - Classpath scanning for component types
+     * - Reflection-based type discovery
+     * - Generic type resolution utilities
+     *
+     * **Note:** This is typically needed for automatic component registration.
+     *
+     * @return This builder for method chaining
      */
     fun scannerModules(): DIConfigurationBuilder {
         logger.debug("Adding scanner modules")
@@ -252,7 +327,16 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Includes scheduler DI modules (task scheduling).
+     * Includes scheduler modules for task scheduling.
+     *
+     * Adds the scheduler module which provides:
+     * - SchedulerService for registering scheduled tasks
+     * - Cron-based task execution
+     * - Background job management
+     *
+     * **Note:** Services can inject SchedulerService to register scheduled tasks.
+     *
+     * @return This builder for method chaining
      */
     fun schedulerModules(): DIConfigurationBuilder {
         logger.debug("Adding scheduler modules")
@@ -261,9 +345,21 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Adds custom Koin modules.
+     * Adds custom Koin modules to the configuration.
      *
-     * @param customModules Custom modules to include
+     * Use this to include your own application-specific modules alongside
+     * Katalyst framework modules.
+     *
+     * **Example:**
+     * ```kotlin
+     * val myModule = module {
+     *     single { MyCustomService() }
+     * }
+     * builder.customModules(myModule)
+     * ```
+     *
+     * @param customModules One or more custom Koin modules to include
+     * @return This builder for method chaining
      */
     fun customModules(vararg customModules: Module): DIConfigurationBuilder {
         logger.debug("Adding {} custom module(s)", customModules.size)
@@ -272,7 +368,9 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Builds and returns the list of modules.
+     * Builds and returns the final list of modules.
+     *
+     * @return Immutable list of all configured Koin modules
      */
     fun build(): List<Module> = modules.toList()
 }
@@ -312,5 +410,10 @@ fun Application.installKoinDI(builder: DIConfigurationBuilder.() -> Unit) {
     logger.info("Koin DI installed successfully with custom configuration")
 }
 
+/**
+ * Safely retrieves the current Koin instance if one exists.
+ *
+ * @return The active Koin instance, or null if Koin is not initialized
+ */
 private fun currentKoinOrNull(): org.koin.core.Koin? =
     runCatching { org.koin.core.context.GlobalContext.get() }.getOrNull()
