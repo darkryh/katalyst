@@ -1,7 +1,9 @@
 package com.ead.katalyst.routes
 
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.ApplicationRequest
+import org.koin.core.parameter.ParametersDefinition
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Middleware")
@@ -76,58 +78,6 @@ fun Application.katalystMiddleware(block: MiddlewareBuilder.() -> Unit) {
     logger.info("Middleware configured: ${builder.getMiddlewares().size} middleware components registered")
 }
 
-/**
- * Simple logging middleware implementation.
- *
- * Logs all incoming HTTP requests.
- */
-class LoggingMiddleware : Middleware {
-    private val logger = LoggerFactory.getLogger("LoggingMiddleware")
 
-    override suspend fun process(request: ApplicationRequest): MiddlewareResult {
-        logger.info("Incoming HTTP request received")
-        return MiddlewareResult.Continue
-    }
-}
-
-/**
- * Authentication middleware stub.
- *
- * In a real implementation, this would verify JWT tokens or other auth schemes.
- */
-class AuthenticationMiddleware : Middleware {
-    private val logger = LoggerFactory.getLogger("AuthenticationMiddleware")
-
-    override suspend fun process(request: ApplicationRequest): MiddlewareResult {
-        // In real implementation, verify auth headers
-        return MiddlewareResult.Continue
-    }
-}
-
-/**
- * Rate limiting middleware stub.
- *
- * In a real implementation, this would track request rates per client.
- */
-class RateLimitingMiddleware(private val requestsPerMinute: Int = 100) : Middleware {
-    private val logger = LoggerFactory.getLogger("RateLimitingMiddleware")
-
-    override suspend fun process(request: ApplicationRequest): MiddlewareResult {
-        // In real implementation, check rate limits
-        return MiddlewareResult.Continue
-    }
-}
-
-/**
- * CORS middleware stub.
- *
- * In a real implementation, this would handle CORS headers.
- */
-class CorsMiddleware : Middleware {
-    private val logger = LoggerFactory.getLogger("CorsMiddleware")
-
-    override suspend fun process(request: ApplicationRequest): MiddlewareResult {
-        // In real implementation, handle CORS
-        return MiddlewareResult.Continue
-    }
-}
+inline fun <reified T : Any> MiddlewareBuilder.inject(noinline parameters: ParametersDefinition? = null): T =
+    getKoinInstance().get(parameters = parameters)

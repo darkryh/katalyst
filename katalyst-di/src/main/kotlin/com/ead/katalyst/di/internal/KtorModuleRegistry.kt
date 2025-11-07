@@ -4,14 +4,6 @@ import com.ead.katalyst.routes.KtorModule
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Marker interface for route function modules.
- *
- * Used internally to differentiate route function modules (which are unique by identity)
- * from regular KtorModule implementations (which are deduplicated by class type).
- */
-internal interface RouteModuleMarker
-
-/**
  * Registry for auto-discovered Ktor modules.
  *
  * This thread-safe registry collects [KtorModule] instances during component scanning

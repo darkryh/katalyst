@@ -5,6 +5,7 @@ package com.ead.katalyst.routes
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.routing.Route
+import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.parameter.ParametersDefinition
 import kotlin.LazyThreadSafetyMode
@@ -19,7 +20,7 @@ import kotlin.LazyThreadSafetyMode
  * This is more reliable than using the Ktor Koin plugin, which can create
  * separate contexts and cause dependency resolution failures.
  */
-fun getKoinInstance(): org.koin.core.Koin {
+fun getKoinInstance(): Koin {
     // Always use the global Koin context which has all registered components
     // from the Katalyst DI initialization phase
     return GlobalContext.get()

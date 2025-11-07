@@ -8,7 +8,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 
 
 @Suppress("unused")
-fun Application.configureManualHttp() = katalystMiddleware {
+fun Application.configureManualHttp(/*cannot be injected by params*/) = katalystMiddleware {
     install(ContentNegotiation) {
         json()
     }
