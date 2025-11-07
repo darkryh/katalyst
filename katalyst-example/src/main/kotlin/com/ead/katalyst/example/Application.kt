@@ -39,6 +39,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
     //need to specify the package base in order to make katalyst analyze whole classes/functions that use katalyst
     scanPackages("com.ead.katalyst.example")
     enableScheduler()
+    enableWebSockets()
 }
 
 // optional keep it for ktor config but is not needed katalyst do automatic injection

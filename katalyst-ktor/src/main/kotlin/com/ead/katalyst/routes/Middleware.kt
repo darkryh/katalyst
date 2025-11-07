@@ -48,7 +48,7 @@ interface Middleware {
 /**
  * DSL builder for configuring middleware in the application.
  */
-class MiddlewareBuilder(private val application: Application) {
+class MiddlewareBuilder(val application: Application) {
     private val middlewares = mutableListOf<Middleware>()
 
     /**

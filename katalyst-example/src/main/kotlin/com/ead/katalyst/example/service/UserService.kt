@@ -12,13 +12,48 @@ import com.ead.katalyst.services.Service
 import com.ead.katalyst.services.cron.CronExpression
 import com.ead.katalyst.services.service.ScheduleConfig
 import com.ead.katalyst.services.service.requireScheduler
+import io.ktor.util.logging.KtorSimpleLogger
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * User Service
+ *
+ * Automatically discovered and injected by Katalyst framework.
+ * Demonstrates comprehensive service-to-service dependency injection.
+ *
+ * **Automatic Dependencies (Auto-Injected):**
+ * - userRepository: UserRepository - repository for data access
+ * - userValidator: UserValidator - domain validator
+ * - notificationService: NotificationService - service for notifications
+ * - auditService: AuditService - service for audit logging
+ *
+ * **Built-in Service Features:**
+ * - transactionManager: DatabaseTransactionManager - provided by Service interface
+ * - scheduler: SchedulerService - accessed via requireScheduler()
+ *
+ * **Usage in Route Handlers:**
+ * ```kotlin
+ * post("/users") {
+ *     val service = call.inject<UserService>()
+ *     val user = service.createUser(request)
+ *     call.respond(user)
+ * }
+ * ```
+ *
+ * **Pattern Benefits:**
+ * - All dependencies automatically wired by framework
+ * - Clean separation of concerns
+ * - Easy to test (inject mock dependencies)
+ * - Transaction management handled automatically
+ * - Scheduler integration for background tasks
+ */
 class UserService(
     private val userRepository: UserRepository,
-    private val userValidator: UserValidator
+    private val userValidator: UserValidator,
+    private val notificationService: NotificationService,
+    private val auditService: AuditService
 ) : Service {
-
+    private val logger = KtorSimpleLogger("UserService")
     private val scheduler = requireScheduler()
 
     init {
@@ -32,20 +67,38 @@ class UserService(
             throw UserExampleValidationException("Email '${request.email}' is already registered")
         }
 
-        userRepository.save(
+        val user = userRepository.save(
             UserEntity(
                 name = request.name.trim(),
                 email = request.email.lowercase()
             )
         ).toUser()
+
+        // Automatically notify user via NotificationService
+        // This happens in the same transaction for consistency
+        logger.info("User created: ${user.id} - ${user.email}")
+        notificationService.notifyUserCreated(user.email, user.name)
+
+        // Automatically audit the action via AuditService
+        auditService.logUserCreated(user.id.toString(), user.email)
+
+        return@transaction user
     }
 
     suspend fun getUser(id: Long): User = transactionManager.transaction {
-        userRepository.findById(id)?.toUser() ?: throw UserExampleValidationException("User with id=$id not found")
+        val user = userRepository.findById(id)?.toUser()
+            ?: throw UserExampleValidationException("User with id=$id not found")
+        logger.info("User retrieved: $id")
+        auditService.logApiCall("GET", "/api/users/$id", 200, 0)
+
+        return@transaction user
     }
 
     suspend fun listUsers(): List<User> = transactionManager.transaction {
-        userRepository.findAll().map { it.toUser() }
+        val users = userRepository.findAll().map { it.toUser() }
+        logger.info("Listed ${users.size} users")
+        auditService.logApiCall("GET", "/api/users", 200, 0)
+        return@transaction users
     }
 
     private suspend fun removeInactiveUsers() = transactionManager.transaction {
@@ -85,15 +138,15 @@ class UserService(
                 }
             ),
             task = { removeInactiveUsers() },
-            cronExpression = CronExpression("0/2 * * * * ?")
+            cronExpression = CronExpression("0/30 * * * * ?")
         )
     }
 
     private fun failingRemoveInactiveUsers() {
         scheduler.scheduleCron(
             config = ScheduleConfig(taskName = "users.failing-cleanup-inactive",),
-            task = { throw TestException("test") },
-            cronExpression = CronExpression("0/15 * * * * ?")
+            task = { throw TestException("test exception threw on purpose") },
+            cronExpression = CronExpression("0/45 * * * * ?")
         )
     }
 }

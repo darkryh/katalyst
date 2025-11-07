@@ -786,6 +786,7 @@ private class RouteFunctionModule(
  */
 private val katalystDslOwners = setOf(
     "com/ead/katalyst/routes/RoutingBuilderKt",
+    "com/ead/katalyst/routes/WebSocketBuilderKt",
     "com/ead/katalyst/routes/ExceptionHandlerBuilderKt",
     "com/ead/katalyst/routes/MiddlewareKt"
 )
@@ -797,6 +798,7 @@ private val katalystDslOwners = setOf(
  */
 private val katalystDslMethods = setOf(
     "katalystRouting",
+    "katalystWebSockets",
     "katalystExceptionHandler",
     "katalystMiddleware"
 )

@@ -8,7 +8,12 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("RoutingBuilder")
 
-private fun verifyKoin() {
+/**
+ * Verify that Koin DI container is initialized and available.
+ *
+ * Used by DSL functions to ensure Koin is ready before processing.
+ */
+fun verifyKoin() {
     runCatching { getKoinInstance() }
         .onSuccess { logger.debug("Koin DI container is initialized and available") }
         .onFailure {

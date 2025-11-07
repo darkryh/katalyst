@@ -29,8 +29,8 @@ fun getKoinInstance(): Koin {
 /**
  * Lazily resolve a dependency from Koin inside a routing tree.
  */
-inline fun <reified T : Any> Route.inject(noinline parameters: ParametersDefinition? = null): Lazy<T> =
-    lazy(LazyThreadSafetyMode.NONE) { getKoinInstance().get(parameters = parameters) }
+inline fun <reified T : Any> Route.inject(noinline parameters: ParametersDefinition? = null): T =
+    getKoinInstance().get(parameters = parameters)
 
 /**
  * Resolve a dependency immediately from within a request handler.

@@ -7,6 +7,7 @@ import com.ead.katalyst.services.service.SchedulerService
 import com.ead.katalyst.tables.Table
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import java.util.*
@@ -113,5 +114,36 @@ class InitializeKatalystDITest : KoinTest {
         )
 
         assertEquals(token, reused.get<UUID>())
+    }
+
+    @Test
+    fun `websockets flag defaults to disabled`() {
+        val koin = bootstrapKatalystDI(
+            databaseConfig = DatabaseConfig(
+                url = "jdbc:h2:mem:katalyst-test-websocket-flag;DB_CLOSE_DELAY=-1",
+                driver = "org.h2.Driver",
+                username = "sa",
+                password = ""
+            )
+        )
+
+        val flag = koin.get<Boolean>(qualifier = named("enableWebSockets"))
+        assertFalse(flag, "WebSocket flag should default to false")
+    }
+
+    @Test
+    fun `websockets flag enabled when requested`() {
+        val koin = bootstrapKatalystDI(
+            databaseConfig = DatabaseConfig(
+                url = "jdbc:h2:mem:katalyst-test-websocket-enabled;DB_CLOSE_DELAY=-1",
+                driver = "org.h2.Driver",
+                username = "sa",
+                password = ""
+            ),
+            enableWebSockets = true
+        )
+
+        val flag = koin.get<Boolean>(qualifier = named("enableWebSockets"))
+        assertTrue(flag, "WebSocket flag should be true when enabled")
     }
 }

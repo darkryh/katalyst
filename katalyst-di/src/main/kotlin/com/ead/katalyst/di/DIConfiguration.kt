@@ -1,14 +1,16 @@
 package com.ead.katalyst.di
 
-import com.ead.katalyst.tables.Table
 import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
+import com.ead.katalyst.tables.Table
+import com.ead.katalyst.websockets.webSocketDIModule
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.qualifier.named
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
@@ -34,15 +36,18 @@ private val logger = LoggerFactory.getLogger("DIConfiguration")
  * **Properties:**
  * - [databaseConfig]: Database connection configuration
  * - [enableScheduler]: Whether to enable task scheduling support
+ * - [enableWebSockets]: Whether to enable WebSocket/Ktor plugin support
  * - [scanPackages]: Package names to scan for auto-discovery
  *
  * @property databaseConfig Database connection settings (required)
  * @property enableScheduler Enable the scheduler module (default: false)
+ * @property enableWebSockets Enable WebSocket support + plugin installation (default: false)
  * @property scanPackages Array of package names to scan for components (default: empty)
  */
 data class KatalystDIOptions(
     val databaseConfig: DatabaseConfig,
     val enableScheduler: Boolean = false,
+    val enableWebSockets: Boolean = false,
     val scanPackages: Array<String> = emptyArray()
 ) {
     override fun equals(other: Any?): Boolean {
@@ -52,6 +57,7 @@ data class KatalystDIOptions(
         other as KatalystDIOptions
 
         if (enableScheduler != other.enableScheduler) return false
+        if (enableWebSockets != other.enableWebSockets) return false
         if (databaseConfig != other.databaseConfig) return false
         if (!scanPackages.contentEquals(other.scanPackages)) return false
 
@@ -60,6 +66,7 @@ data class KatalystDIOptions(
 
     override fun hashCode(): Int {
         var result = enableScheduler.hashCode()
+        result = 31 * result + enableWebSockets.hashCode()
         result = 31 * result + databaseConfig.hashCode()
         result = 31 * result + scanPackages.contentHashCode()
         return result
@@ -91,12 +98,14 @@ data class KatalystDIOptions(
  *
  * @param databaseConfig Database connection configuration
  * @param enableScheduler Whether to enable the scheduler module
+ * @param enableWebSockets Whether to enable WebSocket/Ktor plugin support
  * @param scanPackages Package names to scan for components
  * @return The active Koin instance with all modules loaded
  */
 fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     enableScheduler: Boolean = false,
+    enableWebSockets: Boolean = false,
     scanPackages: Array<String> = emptyArray()
 ): org.koin.core.Koin {
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
@@ -110,6 +119,10 @@ fun bootstrapKatalystDI(
         modules += schedulerDIModule()
     }
 
+    if (enableWebSockets) {
+        modules += webSocketDIModule()
+    }
+
     val koin = currentKoinOrNull()?.also {
         logger.info("Loading Katalyst modules into existing Koin context")
         it.loadModules(modules, createEagerInstances = true)
@@ -119,6 +132,11 @@ fun bootstrapKatalystDI(
             modules(modules)
         }.koin
     }
+
+    val featureFlagsModule = module {
+        single<Boolean>(qualifier = named("enableWebSockets")) { enableWebSockets }
+    }
+    koin.loadModules(listOf(featureFlagsModule), createEagerInstances = true)
 
     // Register components including tables
     logger.info("Starting AutoBindingRegistrar to discover components...")
@@ -185,10 +203,12 @@ fun bootstrapKatalystDI(
 fun initializeKoinStandalone(options: KatalystDIOptions): org.koin.core.Koin {
     logger.info("Initializing Koin DI for standalone application")
     logger.debug("Scheduler enabled: {}", options.enableScheduler)
+    logger.debug("WebSockets enabled: {}", options.enableWebSockets)
 
     return bootstrapKatalystDI(
         databaseConfig = options.databaseConfig,
         enableScheduler = options.enableScheduler,
+        enableWebSockets = options.enableWebSockets,
         scanPackages = options.scanPackages
     ).also {
         logger.info("Koin initialization completed successfully")

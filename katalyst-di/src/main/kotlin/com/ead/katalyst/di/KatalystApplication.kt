@@ -50,6 +50,7 @@ class KatalystApplicationBuilder {
 
     private var databaseConfig: DatabaseConfig? = null
     private var enableScheduler: Boolean = false
+    private var enableWebSockets: Boolean = false
     private var componentScanPackages: Array<String> = emptyArray()
     private var serverConfig: ServerConfiguration = ServerConfiguration.netty()
 
@@ -79,6 +80,15 @@ class KatalystApplicationBuilder {
     fun enableScheduler(): KatalystApplicationBuilder {
         logger.debug("Enabling scheduler")
         this.enableScheduler = true
+        return this
+    }
+
+    /**
+     * Enable WebSocket support (installs Ktor WebSockets plugin + DSL).
+     */
+    fun enableWebSockets(): KatalystApplicationBuilder {
+        logger.debug("Enabling WebSockets")
+        this.enableWebSockets = true
         return this
     }
 
@@ -117,11 +127,16 @@ class KatalystApplicationBuilder {
 
         val scanTargets = if (componentScanPackages.isNotEmpty()) componentScanPackages else emptyArray()
 
-        logger.info("Initializing Katalyst DI with scheduler enabled: {}", enableScheduler)
+        logger.info(
+            "Initializing Katalyst DI (scheduler={}, webSockets={})",
+            enableScheduler,
+            enableWebSockets
+        )
         initializeKoinStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
                 enableScheduler = enableScheduler,
+                enableWebSockets = enableWebSockets,
                 scanPackages = scanTargets
             )
         )
