@@ -13,7 +13,6 @@ dependencies {
     // Internal modules leveraged by the scanner for integration tests
     implementation(projects.katalystCore)
     implementation(projects.katalystPersistence)
-    implementation(projects.katalystScheduler)
 
     // Ktor + Koin surface area used by discovery utilities
     implementation(libs.ktor.server.core)

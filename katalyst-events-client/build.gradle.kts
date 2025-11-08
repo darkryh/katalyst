@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.katalystEvents)
     implementation(projects.katalystEventsBus)
     implementation(projects.katalystEventsTransport)
+    implementation(projects.katalystDi)
 
     // Messaging contracts
     implementation(projects.katalystMessaging)

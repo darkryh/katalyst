@@ -3,16 +3,15 @@ package com.ead.katalyst.di
 import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.fixtures.*
-import com.ead.katalyst.services.service.SchedulerService
 import com.ead.katalyst.tables.Table
-import com.ead.katalyst.events.EventBus
-import com.ead.katalyst.events.EventConfiguration
+import com.ead.katalyst.di.features.KatalystFeature
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
-import org.koin.core.qualifier.named
+import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.*
 
 class InitializeKatalystDITest : KoinTest {
@@ -52,7 +51,7 @@ class InitializeKatalystDITest : KoinTest {
         assertNotNull(service)
         assertNotNull(transactionManager)
         assertNotNull(eventHandler)
-        assertTrue(service.transactionManager === transactionManager, "Service should receive injected transaction manager")
+        assertSame(service.transactionManager, transactionManager, "Service should receive injected transaction manager")
         assertTrue(discoveredTables.any { it === TestTable }, "TestTable should be registered as Katalyst Table")
         assertTrue(exposedTables.any { it == TestTable }, "TestTable should be registered as Exposed Table")
 
@@ -61,35 +60,6 @@ class InitializeKatalystDITest : KoinTest {
 
         eventHandler.handle(SampleCreatedEvent(TestEntity(2, "event")))
         assertEquals(1, eventHandler.handledEvents().size)
-    }
-
-    @Test
-    fun `scheduler module is registered only when enabled`() {
-        val config = DatabaseConfig(
-            url = "jdbc:h2:mem:katalyst-test-scheduler;DB_CLOSE_DELAY=-1",
-            driver = "org.h2.Driver",
-            username = "sa",
-            password = ""
-        )
-
-        val disabled = bootstrapKatalystDI(
-            databaseConfig = config,
-            enableScheduler = false,
-            scanPackages = arrayOf("com.ead.katalyst.di.fixtures")
-        )
-
-        val schedulerResolution = runCatching { disabled.get<SchedulerService>() }
-        assertTrue(schedulerResolution.isFailure, "SchedulerService should not be available when scheduler is disabled")
-
-        stopKoin()
-
-        val enabled = bootstrapKatalystDI(
-            databaseConfig = config,
-            enableScheduler = true,
-            scanPackages = arrayOf("com.ead.katalyst.di.fixtures")
-        )
-
-        assertNotNull(enabled.get<SchedulerService>())
     }
 
     @Test
@@ -119,56 +89,37 @@ class InitializeKatalystDITest : KoinTest {
     }
 
     @Test
-    fun `websockets flag defaults to disabled`() {
-        val koin = bootstrapKatalystDI(
-            databaseConfig = DatabaseConfig(
-                url = "jdbc:h2:mem:katalyst-test-websocket-flag;DB_CLOSE_DELAY=-1",
-                driver = "org.h2.Driver",
-                username = "sa",
-                password = ""
+    fun `features contribute modules and hooks`() {
+        val hookInvoked = AtomicBoolean(false)
+        val feature = object : KatalystFeature {
+            override val id: String = "test-feature"
+
+            override fun provideModules() = listOf(
+                module {
+                    single { FeatureMarker("alive") }
+                }
             )
-        )
 
-        val flag = koin.get<Boolean>(qualifier = named("enableWebSockets"))
-        assertFalse(flag, "WebSocket flag should default to false")
-    }
+            override fun onKoinReady(koin: Koin) {
+                koin.get<FeatureMarker>()
+                hookInvoked.set(true)
+            }
+        }
 
-    @Test
-    fun `websockets flag enabled when requested`() {
         val koin = bootstrapKatalystDI(
             databaseConfig = DatabaseConfig(
-                url = "jdbc:h2:mem:katalyst-test-websocket-enabled;DB_CLOSE_DELAY=-1",
+                url = "jdbc:h2:mem:katalyst-test-feature;DB_CLOSE_DELAY=-1",
                 driver = "org.h2.Driver",
                 username = "sa",
                 password = ""
             ),
-            enableWebSockets = true
+            features = listOf(feature)
         )
 
-        val flag = koin.get<Boolean>(qualifier = named("enableWebSockets"))
-        assertTrue(flag, "WebSocket flag should be true when enabled")
-    }
-
-    @Test
-    fun `events module wires handlers when enabled`() = runBlocking {
-        val koin = bootstrapKatalystDI(
-            databaseConfig = DatabaseConfig(
-                url = "jdbc:h2:mem:katalyst-test-events;DB_CLOSE_DELAY=-1",
-                driver = "org.h2.Driver",
-                username = "sa",
-                password = ""
-            ),
-            scanPackages = arrayOf("com.ead.katalyst.di.fixtures"),
-            eventConfiguration = EventConfiguration().apply { applicationBus() }
-        )
-
-        val bus = koin.get<EventBus>()
-        val handler = koin.get<SampleEventHandler>()
-        val event = SampleCreatedEvent(TestEntity(99, "event"))
-        bus.publish(event)
-
-        val handled = handler.handledEvents()
-        assertEquals(1, handled.size)
-        assertEquals(event, handled.first())
+        val marker = koin.get<FeatureMarker>()
+        assertEquals("alive", marker.value)
+        assertTrue(hookInvoked.get(), "Feature hook should execute once Koin is ready")
     }
 }
+
+private data class FeatureMarker(val value: String)

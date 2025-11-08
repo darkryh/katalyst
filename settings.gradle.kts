@@ -22,6 +22,7 @@ include(":katalyst-persistence")
 include(":katalyst-scheduler")
 include(":katalyst-websockets")
 include(":katalyst-example")
+include(":katalyst-migrations")
 
 // Messaging abstraction and implementations
 include(":katalyst-messaging")

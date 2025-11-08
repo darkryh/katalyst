@@ -89,7 +89,7 @@ object DIAccessPatterns {
  *             username = "user",
  *             password = "pass"
  *         ),
- *         enableScheduler = true
+ *         features = listOf(/* optional features installed by their modules */)
  *     )
  *
  *     // Now services, repositories, validators are automatically available
@@ -105,7 +105,7 @@ object KtorApplicationPattern {
     fun Application.setupDI() {
         logger.info("Setting up DI for Ktor application")
         // Developer provides their own database config
-        // and optionally enables scheduler
+        // and optionally installs additional features (migrations, scheduler, etc.)
     }
 }
 

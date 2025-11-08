@@ -12,8 +12,8 @@ import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
 import com.ead.katalyst.services.Service
-import com.ead.katalyst.services.service.SchedulerService
 import com.ead.katalyst.tables.Table
+import com.ead.katalyst.migrations.KatalystMigration
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.core.Koin
@@ -100,6 +100,7 @@ class AutoBindingRegistrar(
         registerComponents(KtorModule::class.java, "ktor modules")
         @Suppress("UNCHECKED_CAST")
         registerComponents(EventHandler::class.java as Class<EventHandler<*>>, "event handlers")
+        registerComponents(KatalystMigration::class.java, "migrations")
         registerRouteFunctions()
     }
 
@@ -303,7 +304,7 @@ class AutoBindingRegistrar(
      *
      * Auto-injects these framework services into mutable properties:
      * - [DatabaseTransactionManager] for transaction management
-     * - [SchedulerService] for task scheduling
+     * - SchedulerService (when that module is present) for task scheduling
      *
      * Only injects if:
      * 1. The property is mutable (var)
@@ -320,9 +321,11 @@ class AutoBindingRegistrar(
         mutableProperties.forEach { property ->
             val classifier = property.returnType.classifier as? KClass<*> ?: return@forEach
 
-            val value = when (classifier) {
-                DatabaseTransactionManager::class -> koin.getFromKoinOrNull(DatabaseTransactionManager::class)
-                SchedulerService::class -> koin.getFromKoinOrNull(SchedulerService::class)
+            val value = when {
+                classifier == DatabaseTransactionManager::class ->
+                    koin.getFromKoinOrNull(DatabaseTransactionManager::class)
+                schedulerServiceKClass != null && classifier == schedulerServiceKClass ->
+                    koin.getFromKoinOrNull(schedulerServiceKClass)
                 else -> null
             } ?: return@forEach
 
@@ -382,7 +385,8 @@ class AutoBindingRegistrar(
             Component::class,
             Service::class,
             Repository::class,
-            EventHandler::class
+            EventHandler::class,
+            KatalystMigration::class
         )
 
         return clazz.supertypes
@@ -706,6 +710,10 @@ private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
     } catch (_: Exception) {
         null
     }
+
+private val schedulerServiceKClass: KClass<*>? = runCatching {
+    Class.forName("com.ead.katalyst.services.service.SchedulerService").kotlin
+}.getOrNull()
 
 /**
  * Wrapper for route function methods to enable ordered installation.

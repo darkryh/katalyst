@@ -42,8 +42,6 @@ import kotlinx.serialization.json.*
 fun Route.notificationWebSocketRoutes() = katalystWebSockets {
     val user = inject<UserService>()
     webSocket("notifications") {
-        //val user = inject<UserService>()
-
         try {
             // Send welcome message to client
             send(

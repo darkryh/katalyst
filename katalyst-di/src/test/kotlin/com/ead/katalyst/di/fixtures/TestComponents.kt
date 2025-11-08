@@ -2,6 +2,7 @@ package com.ead.katalyst.di.fixtures
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventHandler
+import com.ead.katalyst.events.EventMetadata
 import com.ead.katalyst.repositories.Identifiable
 import com.ead.katalyst.repositories.PageInfo
 import com.ead.katalyst.repositories.QueryFilter
@@ -14,8 +15,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ResultRow
-import java.time.LocalDateTime
-import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -72,9 +71,10 @@ class TestValidator : Validator<TestEntity> {
 
 class SampleCreatedEvent(
     val entity: TestEntity,
-    override val eventId: UUID = UUID.randomUUID(),
-    override val occurredAt: LocalDateTime = LocalDateTime.now()
-) : DomainEvent
+    private val metadata: EventMetadata = EventMetadata.of("test.sample-created")
+) : DomainEvent {
+    override fun getMetadata(): EventMetadata = metadata
+}
 
 class SampleEventHandler : EventHandler<SampleCreatedEvent> {
     private val mutex = Mutex()

@@ -3,8 +3,8 @@ package com.ead.katalyst.di
 import com.ead.katalyst.components.Component
 import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.di.internal.KtorModuleRegistry
-import com.ead.katalyst.events.EventConfiguration
 import com.ead.katalyst.routes.KtorModule
+import com.ead.katalyst.di.features.KatalystFeature
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
@@ -45,14 +45,16 @@ import org.slf4j.LoggerFactory
  *     additionalRoutes()
  * }
  * ```
+ *
+ * Optional Katalyst modules (scheduler, events, websockets, etc.) contribute their own
+ * `enableX()` extension functions to this builder. Simply add the dependency for the
+ * feature you need and call the extension inside the [katalystApplication] block.
  */
 class KatalystApplicationBuilder {
     private val logger = LoggerFactory.getLogger("KatalystApplication")
 
     private var databaseConfig: DatabaseConfig? = null
-    private var enableScheduler: Boolean = false
-    private var enableWebSockets: Boolean = false
-    private var eventConfiguration: EventConfiguration? = null
+    private val features: MutableList<KatalystFeature> = mutableListOf()
     private var componentScanPackages: Array<String> = emptyArray()
     private var serverConfig: ServerConfiguration = ServerConfiguration.netty()
 
@@ -77,32 +79,15 @@ class KatalystApplicationBuilder {
     }
 
     /**
-     * Enable the scheduler module.
+     * Registers an optional feature (scheduler, events, websockets, etc).
      */
-    fun enableScheduler(): KatalystApplicationBuilder {
-        logger.debug("Enabling scheduler")
-        this.enableScheduler = true
+    fun feature(feature: KatalystFeature): KatalystApplicationBuilder {
+        logger.debug("Registering optional feature: {}", feature.id)
+        this.features += feature
         return this
     }
 
-    /**
-     * Enable the event subsystem (application bus + optional bridge).
-     */
-    fun enableEvents(configure: EventConfiguration.() -> Unit = {}): KatalystApplicationBuilder {
-        logger.debug("Enabling events")
-        val config = EventConfiguration().apply(configure)
-        this.eventConfiguration = config
-        return this
-    }
-
-    /**
-     * Enable WebSocket support (installs Ktor WebSockets plugin + DSL).
-     */
-    fun enableWebSockets(): KatalystApplicationBuilder {
-        logger.debug("Enabling WebSockets")
-        this.enableWebSockets = true
-        return this
-    }
+    internal fun registeredFeatures(): List<KatalystFeature> = features.toList()
 
     /**
      * Configure the server engine (Netty, Jetty, CIO).
@@ -139,19 +124,13 @@ class KatalystApplicationBuilder {
 
         val scanTargets = if (componentScanPackages.isNotEmpty()) componentScanPackages else emptyArray()
 
-        logger.info(
-            "Initializing Katalyst DI (scheduler={}, webSockets={}, events={})",
-            enableScheduler,
-            enableWebSockets,
-            eventConfiguration != null
-        )
+        val featureSummary = if (features.isEmpty()) "none" else features.joinToString { it.id }
+        logger.info("Initializing Katalyst DI (features={})", featureSummary)
         initializeKoinStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
-                enableScheduler = enableScheduler,
-                enableWebSockets = enableWebSockets,
                 scanPackages = scanTargets,
-                eventConfiguration = eventConfiguration
+                features = registeredFeatures()
             )
         )
         logger.info("Katalyst DI initialized successfully")

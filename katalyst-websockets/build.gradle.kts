@@ -8,6 +8,7 @@ version = "0.0.1"
 dependencies {
     // Share routing + DI infrastructure from katalyst-ktor
     implementation(projects.katalystKtor)
+    implementation(projects.katalystDi)
 
     // Ktor WebSocket stack
     implementation(libs.ktor.server.core)

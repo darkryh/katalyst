@@ -9,16 +9,12 @@ dependencies {
     // Katalyst modules orchestrated by DI
     implementation(projects.katalystCore)
     implementation(projects.katalystPersistence)
-    implementation(projects.katalystScheduler)
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
-    implementation(projects.katalystWebsockets)
 
     // Event system modules
     implementation(projects.katalystEvents)
     implementation(projects.katalystEventsBus)
-    implementation(projects.katalystEventsTransport)
-    implementation(projects.katalystEventsClient)
 
     // Persistence discovery support
     implementation(libs.exposed.core)

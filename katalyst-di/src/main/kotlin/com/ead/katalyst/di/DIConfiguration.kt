@@ -4,21 +4,12 @@ import com.ead.katalyst.database.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
-import com.ead.katalyst.events.EventConfiguration
-import com.ead.katalyst.events.EventHandler
-import com.ead.katalyst.events.bus.EventTopology
-import com.ead.katalyst.events.bus.EventHandlerRegistry
-import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
-import com.ead.katalyst.events.bus.eventBusModule as eventBusModuleLoader
-import com.ead.katalyst.events.transport.eventTransportModule as eventTransportModuleLoader
-import com.ead.katalyst.client.eventsClientModule as eventsClientModuleLoader
 import com.ead.katalyst.tables.Table
-import com.ead.katalyst.websockets.webSocketDIModule
+import com.ead.katalyst.di.features.KatalystFeature
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.core.qualifier.named
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
@@ -27,8 +18,9 @@ import org.slf4j.LoggerFactory
 /**
  * Complete DI Configuration for the Katalyst Application.
  *
- * Orchestrates all modules (Core, Scanner, Scheduler) and provides
- * convenient initialization methods.
+ * Orchestrates the core modules (core + scanner) and provides
+ * convenient initialization methods. Optional subsystems (scheduler, events,
+ * websockets, etc.) plug in via [KatalystFeature] implementations.
  */
 
 /**
@@ -43,22 +35,17 @@ private val logger = LoggerFactory.getLogger("DIConfiguration")
  *
  * **Properties:**
  * - [databaseConfig]: Database connection configuration
- * - [enableScheduler]: Whether to enable task scheduling support
- * - [enableWebSockets]: Whether to enable WebSocket/Ktor plugin support
  * - [scanPackages]: Package names to scan for auto-discovery
- * - [eventConfiguration]: Optional event bus configuration
+ * - [features]: Optional Katalyst feature set (scheduler, events, websockets, etc.)
  *
  * @property databaseConfig Database connection settings (required)
- * @property enableScheduler Enable the scheduler module (default: false)
- * @property enableWebSockets Enable WebSocket support + plugin installation (default: false)
  * @property scanPackages Array of package names to scan for components (default: empty)
+ * @property features Optional feature set applied during bootstrap
  */
 data class KatalystDIOptions(
     val databaseConfig: DatabaseConfig,
-    val enableScheduler: Boolean = false,
-    val enableWebSockets: Boolean = false,
     val scanPackages: Array<String> = emptyArray(),
-    val eventConfiguration: EventConfiguration? = null
+    val features: List<KatalystFeature> = emptyList()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -66,21 +53,17 @@ data class KatalystDIOptions(
 
         other as KatalystDIOptions
 
-        if (enableScheduler != other.enableScheduler) return false
-        if (enableWebSockets != other.enableWebSockets) return false
         if (databaseConfig != other.databaseConfig) return false
         if (!scanPackages.contentEquals(other.scanPackages)) return false
-        if (eventConfiguration != other.eventConfiguration) return false
+        if (features != other.features) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = enableScheduler.hashCode()
-        result = 31 * result + enableWebSockets.hashCode()
-        result = 31 * result + databaseConfig.hashCode()
+        var result = databaseConfig.hashCode()
         result = 31 * result + scanPackages.contentHashCode()
-        result = 31 * result + (eventConfiguration?.hashCode() ?: 0)
+        result = 31 * result + features.hashCode()
         return result
     }
 }
@@ -109,17 +92,14 @@ data class KatalystDIOptions(
  * it augments the existing context instead of creating a new one.
  *
  * @param databaseConfig Database connection configuration
- * @param enableScheduler Whether to enable the scheduler module
- * @param enableWebSockets Whether to enable WebSocket/Ktor plugin support
  * @param scanPackages Package names to scan for components
+ * @param features Optional feature set (scheduler, events, websockets, etc.)
  * @return The active Koin instance with all modules loaded
  */
 fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
-    enableScheduler: Boolean = false,
-    enableWebSockets: Boolean = false,
     scanPackages: Array<String> = emptyArray(),
-    eventConfiguration: EventConfiguration? = null
+    features: List<KatalystFeature> = emptyList()
 ): org.koin.core.Koin {
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
 
@@ -128,30 +108,9 @@ fun bootstrapKatalystDI(
         scannerDIModule()
     )
 
-    if (enableScheduler) {
-        modules += schedulerDIModule()
-    }
-
-    if (enableWebSockets) {
-        modules += webSocketDIModule()
-    }
-
-    // Load event modules based on configuration
-    eventConfiguration?.let { config ->
-        logger.debug("Loading event modules (enableEventBus={}, enableTransport={}, enableClient={})",
-            config.enableEventBus, config.enableTransport, config.enableClient)
-
-        if (config.enableEventBus) {
-            modules += eventBusModuleLoader()
-        }
-
-        if (config.enableTransport) {
-            modules += eventTransportModuleLoader()
-        }
-
-        if (config.enableClient) {
-            modules += eventsClientModuleLoader()
-        }
+    features.forEach { feature ->
+        logger.debug("Including feature '{}' modules", feature.id)
+        modules += feature.provideModules()
     }
 
     val koin = currentKoinOrNull()?.also {
@@ -164,22 +123,14 @@ fun bootstrapKatalystDI(
         }.koin
     }
 
-    val featureFlagsModule = module {
-        single<Boolean>(qualifier = named("enableWebSockets")) { enableWebSockets }
-    }
-    koin.loadModules(listOf(featureFlagsModule), createEagerInstances = true)
-
     // Register components including tables
     logger.info("Starting AutoBindingRegistrar to discover components...")
     AutoBindingRegistrar(koin, scanPackages).registerAll()
     logger.info("AutoBindingRegistrar completed")
 
-    eventConfiguration?.let {
-        val topology = koin.get<EventTopology>()
-        val registryHandlers = GlobalEventHandlerRegistry.consumeAll()
-        val koinHandlers = runCatching { koin.getAll<EventHandler<*>>() }
-            .getOrElse { emptyList() }
-        topology.registerHandlers(registryHandlers + koinHandlers)
+    features.forEach { feature ->
+        logger.debug("Executing onKoinReady hook for feature '{}'", feature.id)
+        feature.onKoinReady(koin)
     }
 
     // Now that tables are discovered and registered in Koin, create DatabaseFactory with them
@@ -230,8 +181,8 @@ fun bootstrapKatalystDI(
  * fun main() {
  *     val options = KatalystDIOptions(
  *         databaseConfig = DatabaseConfig(...),
- *         enableScheduler = true,
- *         scanPackages = arrayOf("com.example.app")
+ *         scanPackages = arrayOf("com.example.app"),
+ *         features = listOf(MyCustomFeature)
  *     )
  *     initializeKoinStandalone(options)
  *     // ... rest of application code
@@ -241,15 +192,12 @@ fun bootstrapKatalystDI(
  */
 fun initializeKoinStandalone(options: KatalystDIOptions): org.koin.core.Koin {
     logger.info("Initializing Koin DI for standalone application")
-    logger.debug("Scheduler enabled: {}", options.enableScheduler)
-    logger.debug("WebSockets enabled: {}", options.enableWebSockets)
+    logger.debug("Features enabled: {}", options.features.joinToString { it.id })
 
     return bootstrapKatalystDI(
         databaseConfig = options.databaseConfig,
-        enableScheduler = options.enableScheduler,
-        enableWebSockets = options.enableWebSockets,
         scanPackages = options.scanPackages,
-        eventConfiguration = options.eventConfiguration
+        features = options.features
     ).also {
         logger.info("Koin initialization completed successfully")
     }
@@ -289,8 +237,8 @@ fun stopKoinStandalone() {
  * fun Application.main() {
  *     val options = KatalystDIOptions(
  *         databaseConfig = DatabaseConfig(...),
- *         enableScheduler = true,
- *         scanPackages = arrayOf("com.example.app")
+ *         scanPackages = arrayOf("com.example.app"),
+ *         features = listOf(MyCustomFeature)
  *     )
  *     installKoinDI(options)
  * }
@@ -300,12 +248,12 @@ fun Application.installKoinDI(
     options: KatalystDIOptions
 ) {
     logger.info("Installing Koin DI for Ktor application")
-    logger.debug("Scheduler enabled: {}", options.enableScheduler)
+    logger.debug("Features enabled: {}", options.features.joinToString { it.id })
 
     bootstrapKatalystDI(
         databaseConfig = options.databaseConfig,
-        enableScheduler = options.enableScheduler,
-        scanPackages = options.scanPackages
+        scanPackages = options.scanPackages,
+        features = options.features
     )
 
     install(Koin) {}
@@ -387,24 +335,6 @@ class DIConfigurationBuilder {
     }
 
     /**
-     * Includes scheduler modules for task scheduling.
-     *
-     * Adds the scheduler module which provides:
-     * - SchedulerService for registering scheduled tasks
-     * - Cron-based task execution
-     * - Background job management
-     *
-     * **Note:** Services can inject SchedulerService to register scheduled tasks.
-     *
-     * @return This builder for method chaining
-     */
-    fun schedulerModules(): DIConfigurationBuilder {
-        logger.debug("Adding scheduler modules")
-        modules.add(schedulerDIModule())
-        return this
-    }
-
-    /**
      * Adds custom Koin modules to the configuration.
      *
      * Use this to include your own application-specific modules alongside
@@ -446,9 +376,9 @@ class DIConfigurationBuilder {
  *     installKoinDI {
  *         coreModules()
  *         scannerModules()
- *         schedulerModules()
+ *         // Optional modules can contribute their own DIConfigurationBuilder extensions.
  *     }
- *     configureSchedulerTasks()
+ *     configureApp()
  * }
  * ```
  *

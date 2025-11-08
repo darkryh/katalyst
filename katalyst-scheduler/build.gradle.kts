@@ -8,6 +8,7 @@ dependencies {
 
     // Core modules
     implementation(projects.katalystCore)
+    implementation(projects.katalystDi)
 
     // Dependency injection & concurrency
     implementation(libs.koin.core)

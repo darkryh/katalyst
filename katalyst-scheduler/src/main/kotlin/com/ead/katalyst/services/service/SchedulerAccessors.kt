@@ -10,7 +10,7 @@ fun Service.requireScheduler(): SchedulerService =
             if (error is NoDefinitionFoundException) {
                 throw IllegalStateException(
                     "SchedulerService is not registered. " +
-                        "Ensure the katalyst-scheduler module is loaded (schedulerDIModule())."
+                        "Ensure katalyst-scheduler is on the classpath and enableScheduler() was called."
                 )
             } else {
                 throw error
