@@ -14,6 +14,11 @@ import com.ead.katalyst.example.infra.mappers.toDomain
 import com.ead.katalyst.example.security.JwtSettings
 import com.ead.katalyst.events.bus.EventBus
 import com.ead.katalyst.services.Service
+import com.ead.katalyst.services.cron.CronExpression
+import com.ead.katalyst.services.service.ScheduleConfig
+import com.ead.katalyst.services.service.requireScheduler
+import io.ktor.util.logging.KtorSimpleLogger
+import kotlin.time.Duration.Companion.minutes
 
 class AuthenticationService(
     private val repository: AuthAccountRepository,
@@ -21,6 +26,13 @@ class AuthenticationService(
     private val passwordHasher: PasswordHasher,
     private val eventBus: EventBus
 ) : Service {
+
+    private val scheduler = requireScheduler()
+    private val logger = KtorSimpleLogger("AuthenticationService")
+
+    init {
+        scheduleAuthDigest()
+    }
 
     suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
         validator.validate(request)
@@ -70,4 +82,24 @@ class AuthenticationService(
             email = account.email,
             token = JwtSettings.generateToken(account.id, account.email)
         )
+
+    private fun scheduleAuthDigest() {
+        scheduler.scheduleCron(
+            config = ScheduleConfig(
+                taskName = "profiles.broadcast",
+                tags = setOf("demo"),
+                maxExecutionTime = 1.minutes
+            ),
+            task = { broadcastAuth() },
+            cronExpression = CronExpression("0 0/1 * * * ?")
+        )
+    }
+
+    private suspend fun broadcastAuth() = transactionManager.transaction {
+        val profiles = repository.findAll().map { it.toDomain() }
+        logger.info("Broadcasting ${profiles.size} user profiles")
+        profiles.forEach { profile ->
+            logger.info(" - ${profile.email} (account=${profile.id})")
+        }
+    }
 }

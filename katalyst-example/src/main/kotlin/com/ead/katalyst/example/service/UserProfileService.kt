@@ -9,7 +9,7 @@ import com.ead.katalyst.services.Service
 import com.ead.katalyst.services.cron.CronExpression
 import com.ead.katalyst.services.service.ScheduleConfig
 import com.ead.katalyst.services.service.requireScheduler
-import io.ktor.util.logging.KtorSimpleLogger
+import io.ktor.util.logging.*
 import kotlin.time.Duration.Companion.minutes
 
 class UserProfileService(
@@ -26,7 +26,6 @@ class UserProfileService(
         accountId: Long,
         displayName: String
     ): UserProfile = transactionManager.transaction {
-        println("CREATED NEW PROFILE ACCOUNT ID $accountId")
         val existing = repository.findByAccountId(accountId)
         existing?.toDomain()
             ?: repository.save(
