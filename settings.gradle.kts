@@ -22,9 +22,16 @@ include(":katalyst-persistence")
 include(":katalyst-scheduler")
 include(":katalyst-websockets")
 include(":katalyst-example")
-include(":katalyst-events")
+
+// Messaging abstraction and implementations
 include(":katalyst-messaging")
+include(":katalyst-messaging-amqp")
 
-include(":katalyst-event-driven")
+// New Event System Modules (4-layer architecture)
+// Layer 1: Event domain + Bus (local pub/sub)
+include(":katalyst-events")
+include(":katalyst-events-bus")
 
-include("katalyst-messaging-amqp")
+// Layer 2: Transport (serialization + routing) + Client (public API)
+include(":katalyst-events-transport")
+include(":katalyst-events-client")

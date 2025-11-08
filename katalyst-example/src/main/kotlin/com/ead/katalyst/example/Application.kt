@@ -1,10 +1,8 @@
 package com.ead.katalyst.example
 
 import com.ead.katalyst.di.katalystApplication
-import com.ead.katalyst.eventdriven.EventMessaging
 import com.ead.katalyst.example.infra.config.DatabaseConfigFactory
-import com.ead.katalyst.messaging.stub.LoggingMessagingClientFactory
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 
 /**
  * Main entry point for the Katalyst Ktor application.
@@ -38,18 +36,19 @@ import io.ktor.server.application.Application
  */
 fun main(args: Array<String>) = katalystApplication(args) {
     database(DatabaseConfigFactory.config())
-    //need to specify the package base in order to make katalyst analyze whole classes/functions that use katalyst
+    // Specify the package base for Katalyst component discovery
     scanPackages("com.ead.katalyst.example")
     enableScheduler()
-    val messagingPublisher = EventMessaging.publisher(LoggingMessagingClientFactory("example-app"))
+    // Enable the complete event system (bus, transport, client)
     enableEvents {
-        applicationBus()
-        messaging(messagingPublisher)
+        // Configure event modules: bus, transport, and client API
+        // All modules are enabled by default
     }
     enableWebSockets()
 }
 
-// optional keep it for ktor config but is not needed katalyst do automatic injection
+// Optional: Custom Ktor configuration (not needed for Katalyst's automatic setup)
 fun Application.module() {
-    //configureManualHttp() if want to inject manually, should remove middleware from configureManualHttp fun
+    // Katalyst automatically handles all DI and configuration
+    // Add custom routes, middleware, or plugins here if needed
 }

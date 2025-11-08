@@ -10,7 +10,7 @@ import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.UserEntity
 import com.ead.katalyst.example.infra.database.repositories.UserRepository
 import com.ead.katalyst.example.infra.mappers.toUser
-import com.ead.katalyst.events.EventBus
+import com.ead.katalyst.events.bus.EventBus
 import com.ead.katalyst.services.Service
 import com.ead.katalyst.services.cron.CronExpression
 import com.ead.katalyst.services.service.ScheduleConfig

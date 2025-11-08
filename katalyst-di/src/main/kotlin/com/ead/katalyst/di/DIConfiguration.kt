@@ -6,10 +6,12 @@ import com.ead.katalyst.database.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
 import com.ead.katalyst.events.EventConfiguration
 import com.ead.katalyst.events.EventHandler
-import com.ead.katalyst.events.EventHandlerRegistry
-import com.ead.katalyst.events.EventTopology
-import com.ead.katalyst.events.eventModule
-import com.ead.katalyst.events.toModuleOptions
+import com.ead.katalyst.events.bus.EventTopology
+import com.ead.katalyst.events.bus.EventHandlerRegistry
+import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
+import com.ead.katalyst.events.bus.eventBusModule as eventBusModuleLoader
+import com.ead.katalyst.events.transport.eventTransportModule as eventTransportModuleLoader
+import com.ead.katalyst.client.eventsClientModule as eventsClientModuleLoader
 import com.ead.katalyst.tables.Table
 import com.ead.katalyst.websockets.webSocketDIModule
 import io.ktor.server.application.Application
@@ -134,8 +136,22 @@ fun bootstrapKatalystDI(
         modules += webSocketDIModule()
     }
 
-    eventConfiguration?.let {
-        modules += eventModule(it.toModuleOptions())
+    // Load event modules based on configuration
+    eventConfiguration?.let { config ->
+        logger.debug("Loading event modules (enableEventBus={}, enableTransport={}, enableClient={})",
+            config.enableEventBus, config.enableTransport, config.enableClient)
+
+        if (config.enableEventBus) {
+            modules += eventBusModuleLoader()
+        }
+
+        if (config.enableTransport) {
+            modules += eventTransportModuleLoader()
+        }
+
+        if (config.enableClient) {
+            modules += eventsClientModuleLoader()
+        }
     }
 
     val koin = currentKoinOrNull()?.also {
@@ -160,7 +176,7 @@ fun bootstrapKatalystDI(
 
     eventConfiguration?.let {
         val topology = koin.get<EventTopology>()
-        val registryHandlers = EventHandlerRegistry.consume()
+        val registryHandlers = GlobalEventHandlerRegistry.consumeAll()
         val koinHandlers = runCatching { koin.getAll<EventHandler<*>>() }
             .getOrElse { emptyList() }
         topology.registerHandlers(registryHandlers + koinHandlers)

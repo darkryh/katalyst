@@ -2,18 +2,15 @@ plugins {
     kotlin("jvm")
 }
 
+group = "com.ead.katalyst"
+version = "0.0.1"
+
 dependencies {
     // Language/runtime
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
 
-    // Core modules
-    implementation(projects.katalystCore)
-    implementation(projects.katalystMessaging)
-
-    // Dependency injection & concurrency
-    implementation(libs.koin.core)
-    implementation(libs.koin.core.jvm)
+    // Coroutines for suspend functions
     implementation(libs.kotlinx.coroutines.core)
 
     // Logging

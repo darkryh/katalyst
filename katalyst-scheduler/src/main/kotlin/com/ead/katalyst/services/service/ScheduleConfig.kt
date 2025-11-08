@@ -19,17 +19,9 @@ import kotlin.time.Duration.Companion.ZERO
 data class ScheduleConfig(
     val taskName: String,
     val tags: Set<String> = emptySet(),
-
     val initialDelay: Duration = ZERO,
     val timeZone: ZoneId = ZoneId.systemDefault(),
-
     val maxExecutionTime: Duration? = null,
-
     val onSuccess: (taskName: String, executionTime: Duration) -> Unit = { _, _ -> },
-
-    val onError: (
-        taskName: String,
-        exception: Throwable,
-        executionCount: Long
-    ) -> Boolean = { _, _, _ -> true }
+    val onError: (taskName: String, exception: Throwable, executionCount: Long) -> Boolean = { _, _, _ -> true }
 )

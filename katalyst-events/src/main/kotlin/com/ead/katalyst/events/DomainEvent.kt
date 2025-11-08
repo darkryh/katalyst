@@ -1,17 +1,107 @@
 package com.ead.katalyst.events
 
-import java.time.LocalDateTime
-import java.util.UUID
-
 /**
- * Base contract for events emitted by the application or external transports.
+ * Base contract for all domain events in the system.
  *
- * Events carry a unique identifier plus the timestamp when they occurred so they
- * can be correlated or replayed by downstream consumers.
+ * Domain events represent something meaningful that happened in the business domain.
+ * They are immutable, past-tense descriptions of state changes.
+ *
+ * All events must carry metadata for:
+ * - Tracing and debugging (correlation IDs)
+ * - Versioning and evolution
+ * - Causality tracking
+ * - Timestamps
+ *
+ * **Usage:**
+ * Implement this interface for your domain events:
+ *
+ * ```kotlin
+ * data class UserCreatedEvent(
+ *     val userId: UUID,
+ *     val email: String,
+ *     val name: String,
+ *     override val metadata: EventMetadata = EventMetadata(
+ *         eventType = "user.created"
+ *     )
+ * ) : DomainEvent {
+ *     override fun getMetadata(): EventMetadata = metadata
+ * }
+ * ```
+ *
+ * Or use BaseDomainEvent base class for convenience:
+ *
+ * ```kotlin
+ * data class UserCreatedEvent(
+ *     val userId: UUID,
+ *     val email: String,
+ *     val name: String,
+ *     metadata: EventMetadata = EventMetadata(eventType = "user.created")
+ * ) : BaseDomainEvent(metadata)
+ * ```
+ *
+ * **Sealed Hierarchies:**
+ * For grouping related events, use sealed classes:
+ *
+ * ```kotlin
+ * sealed class UserEvent : DomainEvent {
+ *     data class UserCreatedEvent(...) : UserEvent()
+ *     data class UserDeletedEvent(...) : UserEvent()
+ *     data class UserUpdatedEvent(...) : UserEvent()
+ * }
+ *
+ * // Single handler can listen to all UserEvents:
+ * class UserAuditHandler : EventHandler<UserEvent> {
+ *     override val eventType = UserEvent::class
+ *     override suspend fun handle(event: UserEvent) { ... }
+ * }
+ * ```
  */
 interface DomainEvent {
     /**
-     * Human-readable event identifier, defaults to the Kotlin class name.
+     * Get the metadata associated with this event.
+     *
+     * Metadata includes:
+     * - Event ID (for deduplication)
+     * - Event type (for routing)
+     * - Correlation ID (for tracing)
+     * - Causation ID (for causality tracking)
+     * - Timestamps (when it occurred, when it was created)
+     * - Version (for schema evolution)
+     * - Source (which system created it)
+     *
+     * @return EventMetadata containing tracing and versioning information
      */
-    fun eventType(): String = this::class.qualifiedName ?: "UnknownEvent"
+    fun getMetadata(): EventMetadata
+
+    /**
+     * Get the event type identifier.
+     *
+     * Default implementation uses metadata's eventType field.
+     * Override if you need custom behavior.
+     *
+     * @return String identifier for this event type
+     */
+    fun eventType(): String = getMetadata().eventType
+}
+
+/**
+ * Convenient base class for events that don't need special behavior.
+ *
+ * Handles metadata management automatically.
+ *
+ * **Usage:**
+ * ```kotlin
+ * data class UserCreatedEvent(
+ *     val userId: UUID,
+ *     val email: String,
+ *     metadata: EventMetadata = EventMetadata(eventType = "user.created")
+ * ) : BaseDomainEvent(metadata)
+ * ```
+ *
+ * @param metadata The event metadata
+ */
+abstract class BaseDomainEvent(
+    private val metadata: EventMetadata
+) : DomainEvent {
+    override fun getMetadata(): EventMetadata = metadata
 }

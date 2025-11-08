@@ -13,7 +13,12 @@ dependencies {
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
     implementation(projects.katalystWebsockets)
+
+    // Event system modules
     implementation(projects.katalystEvents)
+    implementation(projects.katalystEventsBus)
+    implementation(projects.katalystEventsTransport)
+    implementation(projects.katalystEventsClient)
 
     // Persistence discovery support
     implementation(libs.exposed.core)
