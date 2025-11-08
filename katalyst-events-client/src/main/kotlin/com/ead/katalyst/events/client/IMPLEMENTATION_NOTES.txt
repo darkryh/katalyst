@@ -1,0 +1,35 @@
+KATALYST-EVENTS-CLIENT MODULE
+==============================
+
+This module is EMPTY and ready for implementation.
+
+According to OPTIMAL_EVENTS_ARCHITECTURE_REDESIGN.md, this module should contain:
+
+1. Main API:
+   - EventClient.kt (interface - main public API)
+   - EventClientImpl.kt (implementation)
+   - PublishResult.kt (sealed class with Success/Failure types)
+   - PublishException.kt (exception type)
+
+2. Configuration & Setup:
+   - EventClientConfiguration.kt (DSL configuration)
+   - EventClientBuilder.kt (builder for DI)
+   - EventClientModule.kt (Koin module)
+
+3. Retry & Resilience:
+   - RetryPolicy.kt (interface)
+   - RetryPolicies.kt (builders: noRetry, exponential, fixed)
+
+4. Extension Points:
+   - EventClientInterceptor.kt (interface)
+   - LoggingInterceptor.kt (example implementation)
+   - MetricsInterceptor.kt (example implementation)
+
+5. Consumer Support:
+   - RemoteEventConsumer.kt (for consuming external events)
+   - EventConsumerCallback.kt (handler for consumed events)
+
+This is the ONLY module applications depend on.
+All other modules are implementation details.
+
+See OPTIMAL_EVENTS_ARCHITECTURE_REDESIGN.md Module 4 section for full specifications.

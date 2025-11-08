@@ -4,6 +4,7 @@ import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.adapter.TransactionAdapterRegistry
 import com.ead.katalyst.transactions.context.TransactionEventContext
 import com.ead.katalyst.transactions.hooks.TransactionPhase
+import com.ead.katalyst.transactions.workflow.CurrentWorkflowContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,6 +12,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 /**
  * Database transaction manager for handling suspended transactions with adapter support.
@@ -116,22 +118,31 @@ class DatabaseTransactionManager(
     }
 
     /**
-     * Executes a block of code within a database transaction with hook support.
+     * Executes a block of code within a database transaction with workflow tracking support.
      *
+     * @param workflowId Optional workflow ID for operation tracking
      * @param T The return type of the block
      * @param block The suspend function to execute within the transaction
      * @return The result of the block
      * @throws Exception If the block throws or transaction fails
      */
-    override suspend fun <T> transaction(block: suspend Transaction.() -> T): T {
-        logger.debug("Starting new suspended transaction")
+    override suspend fun <T> transaction(
+        workflowId: String?,
+        block: suspend Transaction.() -> T
+    ): T {
+        // Use provided workflowId or generate a new one
+        val txId = workflowId ?: UUID.randomUUID().toString()
+        logger.debug("Starting transaction with workflowId: {}", txId)
+
+        // Set workflow context for auto-tracking
+        CurrentWorkflowContext.set(txId)
 
         // Create transaction event context for queuing events during transaction
         val transactionEventContext = TransactionEventContext()
 
         return try {
             // Phase 1: BEFORE_BEGIN adapters
-            logger.debug("Executing BEFORE_BEGIN adapters")
+            logger.debug("Executing BEFORE_BEGIN adapters for workflow: {}", txId)
             adapterRegistry.executeAdapters(TransactionPhase.BEFORE_BEGIN, transactionEventContext)
 
             // Phase 2-6: Execute the transaction with the event context
@@ -159,9 +170,10 @@ class DatabaseTransactionManager(
             logger.debug("Executing AFTER_COMMIT adapters")
             adapterRegistry.executeAdapters(TransactionPhase.AFTER_COMMIT, transactionEventContext)
 
+            logger.info("Transaction succeeded for workflow: {}", txId)
             result
         } catch (e: Exception) {
-            logger.error("Transaction failed and will be rolled back", e)
+            logger.error("Transaction failed for workflow: {} - {}", txId, e.message, e)
 
             // Phase 5: ON_ROLLBACK adapters
             logger.debug("Executing ON_ROLLBACK adapters")
@@ -182,6 +194,10 @@ class DatabaseTransactionManager(
             }
 
             throw e
+        } finally {
+            // Clear workflow context to prevent context leaks
+            CurrentWorkflowContext.clear()
+            logger.debug("Workflow context cleared for: {}", txId)
         }
     }
 

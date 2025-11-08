@@ -1,0 +1,30 @@
+KATALYST-EVENTS-TRANSPORT MODULE
+=================================
+
+This module is EMPTY and ready for implementation.
+
+According to OPTIMAL_EVENTS_ARCHITECTURE_REDESIGN.md, this module should contain:
+
+1. Serialization:
+   - EventSerializer.kt (interface)
+   - EventDeserializer.kt (interface)
+   - JsonEventSerializer.kt (implementation)
+   - JsonEventDeserializer.kt (implementation)
+   - SerializationException.kt
+
+2. Routing:
+   - EventRouter.kt (interface)
+   - RoutingStrategies.kt (builder patterns)
+   - PrefixedRouter.kt (implementation)
+   - PackageBasedRouter.kt (implementation)
+   - CustomRouter.kt (implementation)
+   - EventTypeResolver.kt (resolve type names to classes)
+
+3. Message:
+   - EventMessage.kt (transport message)
+   - EventMessageBuilder.kt (fluent builder)
+
+No async code, no network calls.
+All classes should be testable in isolation.
+
+See OPTIMAL_EVENTS_ARCHITECTURE_REDESIGN.md Module 3 section for full specifications.

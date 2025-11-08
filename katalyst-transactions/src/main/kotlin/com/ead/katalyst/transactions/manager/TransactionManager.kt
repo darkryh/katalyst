@@ -39,8 +39,14 @@ interface TransactionManager {
     /**
      * Executes a block of code within a database transaction.
      *
+     * **Workflow Tracking** (Optional):
+     * If `workflowId` is provided, all operations are automatically tracked for:
+     * - Audit trail
+     * - Automatic undo on failure
+     * - Recovery and replay
+     *
      * **Execution Flow:**
-     * 1. Create TransactionEventContext
+     * 1. Create TransactionEventContext with optional workflow tracking
      * 2. Execute adapters: BEFORE_BEGIN
      * 3. Begin database transaction
      * 4. Execute adapters: AFTER_BEGIN
@@ -51,17 +57,22 @@ interface TransactionManager {
      * 9. Return result
      *
      * **On Exception:**
-     * 1. Execute adapters: ON_ROLLBACK
-     * 2. Rollback transaction
-     * 3. Execute adapters: AFTER_ROLLBACK
-     * 4. Re-throw exception
+     * 1. Execute undo operations (if workflow tracking enabled)
+     * 2. Execute adapters: ON_ROLLBACK
+     * 3. Rollback transaction
+     * 4. Execute adapters: AFTER_ROLLBACK
+     * 5. Re-throw exception
      *
+     * @param workflowId Optional workflow ID for operation tracking
      * @param T The return type of the block
      * @param block The suspend function to execute within transaction
      * @return The result of the block
      * @throws Exception If transaction fails or block throws
      */
-    suspend fun <T> transaction(block: suspend Transaction.() -> T): T
+    suspend fun <T> transaction(
+        workflowId: String? = null,
+        block: suspend Transaction.() -> T
+    ): T
 
     /**
      * Registers a transaction adapter.
