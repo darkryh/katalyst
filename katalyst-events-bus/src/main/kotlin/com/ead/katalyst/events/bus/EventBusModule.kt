@@ -36,12 +36,21 @@ fun eventBusModule(): Module = module {
         InMemoryEventHandlerRegistry()
     }
 
-    // Register the main EventBus implementation first
-    single<EventBus> {
+    // Register ApplicationEventBus (not exposed as EventBus, used internally)
+    single<ApplicationEventBus> {
         logger.debug("Creating ApplicationEventBus singleton")
         ApplicationEventBus(
             // Uses default Dispatchers.Default for handler execution
             // and empty interceptors list (can be customized in config)
+        )
+    }
+
+    // Register TransactionAwareEventBus as the main EventBus implementation
+    // This wrapper automatically defers event publishing until after transaction commits
+    single<EventBus> {
+        logger.debug("Creating TransactionAwareEventBus (wraps ApplicationEventBus)")
+        TransactionAwareEventBus(
+            delegate = get<ApplicationEventBus>()
         )
     }
 

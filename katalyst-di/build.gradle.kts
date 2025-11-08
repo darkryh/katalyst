@@ -8,6 +8,7 @@ version = "0.0.1"
 dependencies {
     // Katalyst modules orchestrated by DI
     implementation(projects.katalystCore)
+    implementation(projects.katalystTransactions)
     implementation(projects.katalystPersistence)
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)

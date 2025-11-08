@@ -82,6 +82,23 @@ class ServiceWithOptionalParams : TestService {
     suspend fun allOptional(a: String = "default", b: Int = 0): String = a
 }
 
+// ============= Generic Repository Test Fixtures =============
+
+/**
+ * Base generic repository interface for type parameter extraction tests.
+ */
+interface SampleRepository<E, D>
+
+/**
+ * Concrete user repository implementation for testing generic type extraction.
+ */
+class UserRepository : SampleRepository<User, UserDTO>
+
+/**
+ * Concrete product repository implementation for testing generic type extraction.
+ */
+class ProductRepository : SampleRepository<Product, ProductDTO>
+
 // ============= Real-World Annotated Methods Test =============
 
 // ============= Product Model (for Repository tests) =============

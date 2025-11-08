@@ -4,9 +4,9 @@ import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.EventMetadata
 import com.ead.katalyst.repositories.Identifiable
-import com.ead.katalyst.repositories.PageInfo
-import com.ead.katalyst.repositories.QueryFilter
 import com.ead.katalyst.repositories.Repository
+import com.ead.katalyst.repositories.models.PageInfo
+import com.ead.katalyst.repositories.models.QueryFilter
 import com.ead.katalyst.services.Service
 import com.ead.katalyst.tables.Table
 import com.ead.katalyst.validators.ValidationResult
@@ -31,7 +31,7 @@ class TestRepository : Repository<Long, TestEntity> {
 
     override val table: TestTable = TestTable
 
-    override fun mapper(row: ResultRow): TestEntity =
+    override fun map(row: ResultRow): TestEntity =
         error("TestRepository operates on in-memory data and should not rely on mapper()")
 
     override fun save(entity: TestEntity): TestEntity = lock.withLock {

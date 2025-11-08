@@ -36,3 +36,5 @@ include(":katalyst-events-bus")
 // Layer 2: Transport (serialization + routing) + Client (public API)
 include(":katalyst-events-transport")
 include(":katalyst-events-client")
+
+include("katalyst-transactions")

@@ -26,6 +26,7 @@ class UserProfileService(
         accountId: Long,
         displayName: String
     ): UserProfile = transactionManager.transaction {
+        println("CREATED NEW PROFILE ACCOUNT ID $accountId")
         val existing = repository.findByAccountId(accountId)
         existing?.toDomain()
             ?: repository.save(

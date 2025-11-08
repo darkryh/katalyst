@@ -168,6 +168,35 @@ fun bootstrapKatalystDI(
         // Continue with the default DatabaseFactory created by coreDIModule
     }
 
+    // Register transaction adapters
+    try {
+        logger.info("Registering transaction adapters...")
+        val transactionManager = koin.get<DatabaseTransactionManager>()
+
+        // Register Persistence adapter (always available)
+        try {
+            val persistenceAdapter = com.ead.katalyst.database.adapter.PersistenceTransactionAdapter()
+            transactionManager.addAdapter(persistenceAdapter)
+            logger.info("Registered Persistence transaction adapter")
+        } catch (e: Exception) {
+            logger.warn("Failed to register Persistence adapter: {}", e.message)
+        }
+
+        // Register Events adapter if ApplicationEventBus is available
+        try {
+            val eventBus = koin.get<com.ead.katalyst.events.bus.ApplicationEventBus>()
+            val eventsAdapter = com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter(eventBus)
+            transactionManager.addAdapter(eventsAdapter)
+            logger.info("Registered Events transaction adapter")
+        } catch (e: Exception) {
+            logger.debug("ApplicationEventBus not available, skipping Events adapter registration: {}", e.message)
+        }
+
+        logger.info("Transaction adapter registration completed")
+    } catch (e: Exception) {
+        logger.warn("Error registering transaction adapters: {}", e.message)
+    }
+
     return koin
 }
 

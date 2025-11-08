@@ -8,6 +8,8 @@ version = "0.0.1"
 dependencies {
     // Kotlin runtime & DI infrastructure
     implementation(kotlin("stdlib"))
+    implementation(projects.katalystEvents)
+    implementation(projects.katalystTransactions)  // NEW: For transaction compatibility layer
     implementation(libs.koin.core)
 
     // Concurrency primitives

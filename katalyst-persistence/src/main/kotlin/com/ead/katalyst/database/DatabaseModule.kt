@@ -1,5 +1,6 @@
 package com.ead.katalyst.database
 
+import com.ead.katalyst.transactions.manager.DatabaseTransactionManager
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 

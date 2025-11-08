@@ -11,38 +11,10 @@ package com.ead.katalyst.components
  * - Validation helpers or other lightweight utilities
  * - Custom application components
  * - NOT for Repositories (they're data access, not components)
- *
- * **Why Component exists (Spring Boot pattern):**
- * - `@Service` marks business logic components (Spring Boot)
- * - `JpaRepository` marks data access (NOT a component)
- *
+
  * In Katalyst:
  * - `Service extends Component` = business logic component
  * - `Repository` standalone = data access interface (like JpaRepository)
- *
- * **Usage:**
- * ```kotlin
- * // ✅ Service = Component (business logic)
- * class UserService(
- *     private val userRepository: UserRepository,
- *     private val userValidator: UserValidator
- * ) : Service {
- *     override lateinit var transactionManager: DatabaseTransactionManager
- *     // ... implement service methods
- * }
- *
- * // ✅ Repository = Data Access (NOT a component)
- * class UserRepository : Repository<Long, UserEntity> {
- *     override val table = UsersTable
- *     override fun mapper(row: ResultRow): UserEntity = TODO()
- *     // ... optional custom repository methods
- * }
- *
- * // ✅ Validator = Component-backed helper
- * class UserValidator : Validator<User> {
- *     // ... implement validator methods
- * }
- * ```
  *
  * **Automatic Discovery:**
  * When the application starts:

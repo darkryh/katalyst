@@ -36,6 +36,9 @@ class AuthenticationService(
             )
         ).toDomain()
 
+
+        println("publishing new register")
+
         eventBus.publish(
             UserRegisteredEvent(
                 accountId = account.id,

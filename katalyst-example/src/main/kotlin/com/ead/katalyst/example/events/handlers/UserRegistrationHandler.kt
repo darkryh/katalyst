@@ -11,6 +11,7 @@ class UserRegistrationHandler(
     override val eventType = UserRegisteredEvent::class
 
     override suspend fun handle(event: UserRegisteredEvent) {
+        println("handler event called UserRegisteredEvent")
         userProfileService.createProfileForAccount(
             accountId = event.accountId,
             displayName = event.displayName

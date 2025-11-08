@@ -14,6 +14,7 @@ application {
 dependencies {
     // Katalyst modules
     implementation(project(":katalyst-core"))
+    implementation(project(":katalyst-transactions"))
     implementation(project(":katalyst-persistence"))
     implementation(project(":katalyst-ktor"))
     implementation(project(":katalyst-scanner"))

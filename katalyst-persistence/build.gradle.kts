@@ -9,6 +9,8 @@ dependencies {
 
     // Internal modules
     implementation(projects.katalystCore)
+    implementation(projects.katalystEvents)
+    implementation(projects.katalystTransactions)  // NEW: For DatabaseTransactionManager
 
     // Persistence stack
     implementation(libs.hikari)

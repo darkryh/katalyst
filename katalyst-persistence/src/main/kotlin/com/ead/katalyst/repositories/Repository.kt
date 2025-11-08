@@ -1,17 +1,16 @@
 package com.ead.katalyst.repositories
 
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.isAccessible
+import com.ead.katalyst.repositories.models.PageInfo
+import com.ead.katalyst.repositories.models.QueryFilter
+import com.ead.katalyst.repositories.models.SortOrder
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.SortOrder as ExposedSortOder
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 /**
  * Repository pattern interface and supporting types tailored for Exposed tables.
@@ -41,49 +40,6 @@ import org.jetbrains.exposed.sql.update
  * as needed. The framework doesn't prescribe specific exception types.
  */
 
-// ============= Query Support =============
-
-/**
- * Query builder for filtering and pagination.
- */
-data class QueryFilter(
-    val limit: Int = 50,
-    val offset: Int = 0,
-    val sortBy: String? = null,
-    val sortOrder: SortOrder = SortOrder.ASCENDING
-)
-
-/**
- * Sort order enumeration.
- */
-enum class SortOrder {
-    ASCENDING, DESCENDING
-}
-
-/**
- * Page information for paginated results.
- */
-data class PageInfo(
-    val limit: Int,
-    val offset: Int,
-    val total: Int
-) {
-    val currentPage: Int
-        get() = (offset / limit) + 1
-
-    val totalPages: Int
-        get() = (total + limit - 1) / limit
-
-    val hasNextPage: Boolean
-        get() = currentPage < totalPages
-}
-
-/**
- * Marker interface for entities managed by repositories.
- */
-interface Identifiable<Id : Comparable<Id>> {
-    val id: Id?
-}
 
 // ============= Core Repository Interface =============
 
@@ -95,17 +51,34 @@ interface Identifiable<Id : Comparable<Id>> {
  * Exposed [ResultRow] objects into DOMAIN entities. All standard CRUD functions are
  * implemented automatically using those hints.
  *
+ * **CRITICAL NAMING CONVENTION REQUIREMENT:**
+ *
+ * Column names in your table MUST exactly match entity property names when normalized.
+ * The repository uses Kotlin reflection to automatically bind entity properties to
+ * table columns by converting column names from any format (snake_case, kebab-case)
+ * to camelCase and matching against property names.
+ *
+ * ✗ WRONG: Column "user_name" + Property "userName" but abbreviating as "user_nm"
+ * ✓ CORRECT: Column "user_name" + Property "userName" (full property name)
+ *
+ * Supported naming conventions:
+ * - snake_case: "created_at_millis" ↔ Property "createdAtMillis"
+ * - kebab-case: "created-at-millis" ↔ Property "createdAtMillis"
+ * - camelCase: "createdAtMillis" ↔ Property "createdAtMillis"
+ *
  * **Usage Example:**
  * ```kotlin
  * object UsersTable : LongIdTable("users") {
  *     val name = varchar("name", 100)
  *     val email = varchar("email", 150)
+ *     val createdAtMillis = long("created_at_millis")  // Full property name, not abbreviations
  * }
  *
  * data class UserEntity(
  *     override val id: Long? = null,
  *     val name: String,
- *     val email: String
+ *     val email: String,
+ *     val createdAtMillis: Long  // Must match "created_at_millis" when converted
  * ) : Identifiable<Long>
  *
  * class UserRepository : Repository<Long, UserEntity> {
@@ -115,7 +88,8 @@ interface Identifiable<Id : Comparable<Id>> {
  *         UserEntity(
  *             id = row[table.id].value,
  *             name = row[table.name],
- *             email = row[table.email]
+ *             email = row[table.email],
+ *             createdAtMillis = row[table.createdAtMillis]
  *         )
  * }
  * ```
@@ -132,7 +106,8 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
     /**
      * Maps a database [ResultRow] to a domain [IdentifiableEntityId].
      */
-    fun mapper(row: ResultRow): IdentifiableEntityId
+    fun map(row: ResultRow): IdentifiableEntityId
+
 
     /**
      * Saves or updates an entity.
@@ -161,7 +136,7 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
             .selectAll().where { table.id eq entityId(id) }
             .limit(1)
             .firstOrNull()
-            ?.let { mapper(it) }
+            ?.let { map(it) }
 
     /**
      * Finds all entities ordered by primary key descending by default.
@@ -169,8 +144,8 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
     fun findAll(): List<IdentifiableEntityId> =
         table
             .selectAll()
-            .orderBy(table.id, org.jetbrains.exposed.sql.SortOrder.DESC)
-            .map { mapper(it) }
+            .orderBy(table.id, ExposedSortOder.DESC)
+            .map { map(it) }
 
     /**
      * Finds entities with query filter and pagination.
@@ -183,7 +158,7 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
             .selectAll()
             .orderBy(sortColumn, sortOrder)
             .limit(filter.limit, offset = filter.offset.toLong())
-            .map { mapper(it) }
+            .map { map(it) }
 
         val total = table.selectAll().count().toInt()
 
@@ -210,6 +185,13 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
 
     private fun entityId(id: Id): EntityID<Id> = EntityID(id, table)
 
+    private fun resolveSortColumn(name: String?): Column<*>? {
+        if (name.isNullOrBlank()) return null
+        return table.columns.firstOrNull {
+            it.name.equals(name, ignoreCase = true)
+        }
+    }
+
     private fun insertEntity(entity: IdentifiableEntityId): Id {
         val generatedId = table.insertAndGetId { statement ->
             statement.bindEntityColumns(entity, skipIdColumn = true)
@@ -224,35 +206,109 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
         return id
     }
 
-    private fun resolveSortColumn(name: String?): Column<*>? {
-        if (name.isNullOrBlank()) return null
-        return table.columns.firstOrNull {
-            it.name.equals(name, ignoreCase = true)
-        }
-    }
-
     private fun UpdateBuilder<*>.bindEntityColumns(entity: IdentifiableEntityId, skipIdColumn: Boolean) {
         val propertiesByName = entity::class.memberProperties.associateBy { it.name }
 
         table.columns.forEach { column ->
             if (skipIdColumn && column == table.id) return@forEach
 
-            val property = propertiesByName[column.name] ?: return@forEach
+            // Try to find property matching the column name using multiple strategies:
+            // 1. Direct name match (e.g., "email" -> "email")
+            // 2. Column name in snake_case -> Property name in camelCase (e.g., "password_hash" -> "passwordHash")
+            // 3. Column name in kebab-case -> Property name in camelCase (e.g., "password-hash" -> "passwordHash")
+            val property = propertiesByName[column.name]
+                ?: findPropertyByConvertedName(entity, column.name)
+                ?: return@forEach
+
             property.isAccessible = true
             val value = property.getter.call(entity)
 
             if (value == null && !column.columnType.nullable) {
+                println("[WARNING] Property '${property.name}' is null but column '${column.name}' is not nullable. Skipping.")
                 return@forEach
             }
 
+            println("[DEBUG] Binding column '${column.name}' to property '${property.name}' with value: $value (type: ${value?.javaClass?.simpleName})")
+
+            // Handle EntityID reference columns: automatically wrap raw ID values in EntityID
+            val valueToSet = if (value != null && column.columnType is EntityIDColumnType<*>) {
+                createEntityIDForReferenceColumn(value, column.columnType as EntityIDColumnType<*>)
+            } else {
+                value
+            }
+
             @Suppress("UNCHECKED_CAST")
-            this[column as Column<Any?>] = value
+            this[column as Column<Any?>] = valueToSet
         }
     }
 
-    private fun SortOrder.toExposed(): org.jetbrains.exposed.sql.SortOrder =
+    private fun findPropertyByConvertedName(entity: IdentifiableEntityId, columnName: String): kotlin.reflect.KProperty1<*, *>? {
+        val convertedName = columnName.toPropertyName()
+        return entity::class.memberProperties.firstOrNull { it.name == convertedName }
+    }
+
+    /**
+     * Creates an EntityID instance for a reference column using Java reflection.
+     * This bypasses Kotlin's type system to work around generic type constraints.
+     */
+    private fun createEntityIDForReferenceColumn(value: Any, columnType: EntityIDColumnType<*>): Any {
+        return try {
+            // Use reflection to access the idColumn field from EntityIDColumnType
+            val idColumnField = columnType.javaClass.getDeclaredField("idColumn")
+            idColumnField.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            val idColumn = idColumnField.get(columnType) as Column<*>
+
+            // Get the referenced table from idColumn
+            @Suppress("UNCHECKED_CAST")
+            val referencedTable = idColumn.table as IdTable<Comparable<*>>
+
+            // Use Java reflection to call the public constructor: EntityID(id: T, table: IdTable<T>)
+            // This bypasses Kotlin's compile-time type checking
+            val constructor = EntityID::class.java.getDeclaredConstructor(
+                Comparable::class.java,
+                IdTable::class.java
+            )
+            constructor.isAccessible = true
+
+            val entityId = constructor.newInstance(value as Comparable<*>, referencedTable)
+            println("[DEBUG] Successfully wrapped reference column value '$value' in EntityID")
+            entityId
+        } catch (e: Exception) {
+            println("[ERROR] Failed to create EntityID for reference column value '$value': ${e.javaClass.simpleName}: ${e.message}")
+            e.printStackTrace()
+            // Fall back to raw value (will likely cause a database error, but at least we logged it)
+            value
+        }
+    }
+
+    /**
+     * Converts column names (snake_case, kebab-case) to camelCase for property matching.
+     * Examples:
+     * - "user_name" -> "userName"
+     * - "user-name" -> "userName"
+     * - "userName" -> "userName"
+     */
+    private fun String.toPropertyName(): String {
+        return this
+            .replace("-", "_")  // Normalize kebab-case to snake_case
+            .split("_")
+            .mapIndexed { index, part ->
+                if (index == 0) part.lowercase() else part.replaceFirstChar { it.uppercase() }
+            }
+            .joinToString("")
+    }
+
+    /**
+     * Ensures a string is in camelCase format.
+     */
+    private fun String.toCamelCase(): String {
+        return this.toPropertyName()
+    }
+
+    private fun SortOrder.toExposed(): ExposedSortOder =
         when (this) {
-            SortOrder.ASCENDING -> org.jetbrains.exposed.sql.SortOrder.ASC
-            SortOrder.DESCENDING -> org.jetbrains.exposed.sql.SortOrder.DESC
+            SortOrder.ASCENDING -> ExposedSortOder.ASC
+            SortOrder.DESCENDING -> ExposedSortOder.DESC
         }
 }

@@ -10,16 +10,15 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
 
-    // Core events module
+    // Internal modules
     implementation(projects.katalystEvents)
 
-    // Transaction module for event deferral
-    implementation(projects.katalystTransactions)  // NEW
+    // Persistence stack (Exposed)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
 
-    // Dependency injection
+    // Dependency injection & concurrency
     implementation(libs.koin.core)
-
-    // Coroutines for async event handling
     implementation(libs.kotlinx.coroutines.core)
 
     // Logging
@@ -28,10 +27,7 @@ dependencies {
     // Testing
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    testImplementation(libs.koin.test.junit5)
 }
 
 kotlin {

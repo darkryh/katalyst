@@ -8,9 +8,9 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.selectAll
 
 class AuthAccountRepository : Repository<Long, AuthAccountEntity> {
-    override val table: LongIdTable = AuthAccountsTable
 
-    override fun mapper(row: ResultRow): AuthAccountEntity = AuthAccountEntity(
+    override val table: LongIdTable = AuthAccountsTable
+    override fun map(row: ResultRow): AuthAccountEntity = AuthAccountEntity(
         id = row[AuthAccountsTable.id].value,
         email = row[AuthAccountsTable.email],
         passwordHash = row[AuthAccountsTable.passwordHash],
@@ -23,5 +23,5 @@ class AuthAccountRepository : Repository<Long, AuthAccountEntity> {
             .selectAll().where { AuthAccountsTable.email eq email }
             .limit(1)
             .firstOrNull()
-            ?.let(::mapper)
+            ?.let(::map)
 }

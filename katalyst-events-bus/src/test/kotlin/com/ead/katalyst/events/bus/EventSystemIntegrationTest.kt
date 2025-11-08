@@ -24,14 +24,11 @@ import kotlin.test.assertTrue
  */
 class EventSystemIntegrationTest {
 
-    private lateinit var registry: InMemoryEventHandlerRegistry
     private lateinit var bus: ApplicationEventBus
 
     @BeforeEach
     fun setup() {
-        registry = InMemoryEventHandlerRegistry()
-        val topology = EventTopology()
-        bus = ApplicationEventBus(registry, topology)
+        bus = ApplicationEventBus()
     }
 
     @Test
@@ -54,12 +51,14 @@ class EventSystemIntegrationTest {
         val results = mutableListOf<String>()
 
         val handler1 = object : com.ead.katalyst.events.EventHandler<TestEvent> {
+            override val eventType: KClass<TestEvent> = TestEvent::class
             override suspend fun handle(event: TestEvent) {
                 results.add("handler1")
             }
         }
 
         val handler2 = object : com.ead.katalyst.events.EventHandler<TestEvent> {
+            override val eventType: KClass<TestEvent> = TestEvent::class
             override suspend fun handle(event: TestEvent) {
                 results.add("handler2")
             }
@@ -79,16 +78,20 @@ class EventSystemIntegrationTest {
     @Test
     fun `test handler registry contains registered handlers`() = runBlocking {
         // Given
+        var handlerCalled = false
         val handler = object : com.ead.katalyst.events.EventHandler<TestEvent> {
-            override suspend fun handle(event: TestEvent) {}
+            override val eventType: KClass<TestEvent> = TestEvent::class
+            override suspend fun handle(event: TestEvent) {
+                handlerCalled = true
+            }
         }
 
         // When
         bus.register(handler)
+        bus.publish(TestEvent("test"))
 
         // Then
-        val handlers = registry.getHandlers(TestEvent::class)
-        assertEquals(1, handlers.size)
+        assertTrue(handlerCalled)
     }
 
     @Test
@@ -127,18 +130,26 @@ class EventSystemIntegrationTest {
     @Test
     fun `test event handler registry auto-increments handler count`() = runBlocking {
         // Given
-        val initialSize = registry.size()
+        var callCount = 0
+        val handlers = mutableListOf<com.ead.katalyst.events.EventHandler<TestEvent>>()
 
         // When
         for (i in 1..5) {
             val handler = object : com.ead.katalyst.events.EventHandler<TestEvent> {
-                override suspend fun handle(event: TestEvent) {}
+                override val eventType: KClass<TestEvent> = TestEvent::class
+                override suspend fun handle(event: TestEvent) {
+                    callCount++
+                }
             }
+            handlers.add(handler)
             bus.register(handler)
         }
 
+        // Publish an event to trigger all handlers
+        bus.publish(TestEvent("test"))
+
         // Then
-        assertEquals(initialSize + 5, registry.size())
+        assertEquals(5, callCount)
     }
 
     /**
