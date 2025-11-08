@@ -16,9 +16,10 @@ dependencies {
     implementation(project(":katalyst-core"))
     implementation(project(":katalyst-persistence"))
     implementation(project(":katalyst-ktor"))
-    implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-scanner"))
     implementation(project(":katalyst-di"))
+    implementation(project(":katalyst-migrations"))
+    implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-websockets"))
 
     // Event system
@@ -35,6 +36,8 @@ dependencies {
     // Ktor server surface
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
     implementation(libs.ktor.server.web.sockets)
     implementation(libs.ktor.server.call.id)
     implementation(libs.ktor.serialization.kotlinx.json)

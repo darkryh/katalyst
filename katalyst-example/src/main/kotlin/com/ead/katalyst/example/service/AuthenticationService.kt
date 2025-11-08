@@ -1,0 +1,70 @@
+package com.ead.katalyst.example.service
+
+import com.ead.katalyst.example.api.AuthResponse
+import com.ead.katalyst.example.api.LoginRequest
+import com.ead.katalyst.example.api.RegisterRequest
+import com.ead.katalyst.example.component.PasswordHasher
+import com.ead.katalyst.example.domain.AuthAccount
+import com.ead.katalyst.example.domain.AuthValidator
+import com.ead.katalyst.example.domain.events.UserRegisteredEvent
+import com.ead.katalyst.example.domain.exception.UserExampleValidationException
+import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
+import com.ead.katalyst.example.infra.database.repositories.AuthAccountRepository
+import com.ead.katalyst.example.infra.mappers.toDomain
+import com.ead.katalyst.example.security.JwtSettings
+import com.ead.katalyst.events.bus.EventBus
+import com.ead.katalyst.services.Service
+
+class AuthenticationService(
+    private val repository: AuthAccountRepository,
+    private val validator: AuthValidator,
+    private val passwordHasher: PasswordHasher,
+    private val eventBus: EventBus
+) : Service {
+
+    suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
+        validator.validate(request)
+        if (repository.findByEmail(request.email) != null) {
+            throw UserExampleValidationException("Email '${request.email}' is already registered")
+        }
+
+        val account = repository.save(
+            AuthAccountEntity(
+                email = request.email.lowercase(),
+                passwordHash = passwordHasher.hash(request.password),
+                createdAtMillis = System.currentTimeMillis()
+            )
+        ).toDomain()
+
+        eventBus.publish(
+            UserRegisteredEvent(
+                accountId = account.id,
+                email = account.email,
+                displayName = request.displayName
+            )
+        )
+
+        issueToken(account)
+    }
+
+    suspend fun login(request: LoginRequest): AuthResponse = transactionManager.transaction {
+        validator.validate(request)
+
+        val account = repository.findByEmail(request.email.lowercase())
+            ?.toDomain()
+            ?: throw UserExampleValidationException("Invalid email/password combination")
+
+        if (!passwordHasher.verify(request.password, account.passwordHash)) {
+            throw UserExampleValidationException("Invalid email/password combination")
+        }
+
+        issueToken(account)
+    }
+
+    private fun issueToken(account: AuthAccount): AuthResponse =
+        AuthResponse(
+            accountId = account.id,
+            email = account.email,
+            token = JwtSettings.generateToken(account.id, account.email)
+        )
+}

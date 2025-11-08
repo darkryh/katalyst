@@ -2,9 +2,10 @@ package com.ead.katalyst.example.infra.database.entities
 
 import com.ead.katalyst.repositories.Identifiable
 
-class UserEntity(
+data class AuthAccountEntity(
     override val id: Long? = null,
-    val name: String,
     val email: String,
-    val active: Boolean = true
+    val passwordHash: String,
+    val createdAtMillis: Long,
+    val lastLoginAtMillis: Long? = null
 ) : Identifiable<Long>

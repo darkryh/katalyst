@@ -1,31 +1,23 @@
 package com.ead.katalyst.example.api
 
-import com.ead.katalyst.example.domain.User
+import com.ead.katalyst.example.domain.UserProfile
 import kotlinx.serialization.Serializable
 
-/**
- * Request payload for creating a new user.
- */
 @Serializable
-data class CreateUserRequest(
-    val name: String,
-    val email: String
-)
-
-/**
- * Simple response wrapper that hides internal persistence details.
- */
-@Serializable
-data class UserResponse(
+data class UserProfileResponse(
     val id: Long,
-    val name: String,
-    val email: String
+    val accountId: Long,
+    val displayName: String,
+    val bio: String? = null,
+    val avatarUrl: String? = null
 ) {
     companion object {
-        fun from(user: User): UserResponse = UserResponse(
-            id = user.id,
-            name = user.name,
-            email = user.email
+        fun from(profile: UserProfile) = UserProfileResponse(
+            id = profile.id,
+            accountId = profile.accountId,
+            displayName = profile.displayName,
+            bio = profile.bio,
+            avatarUrl = profile.avatarUrl
         )
     }
 }

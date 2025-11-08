@@ -2,8 +2,6 @@ package com.ead.katalyst.example.routes
 
 import com.ead.katalyst.example.api.DetailedHealthResponse
 import com.ead.katalyst.example.api.HealthStatusResponse
-import com.ead.katalyst.example.service.UserService
-import com.ead.katalyst.routes.inject
 import com.ead.katalyst.routes.katalystRouting
 import io.ktor.http.*
 import io.ktor.server.response.*
@@ -76,30 +74,17 @@ fun Route.healthCheckRoutes() = katalystRouting {
          * Real implementation would check database, cache, external services, etc.
          */
         get("/detailed") {
-            try {
-                // Example: Inject UserService to verify database connectivity
-                val userService = call.inject<UserService>()
-
-                call.respond(
-                    HttpStatusCode.OK,
-                    DetailedHealthResponse(
-                        status = "UP",
-                        services = mapOf(
-                            "database" to "CONNECTED",
-                            "scheduler" to "RUNNING"
-                        ),
-                        timestamp = System.currentTimeMillis()
-                    )
+            call.respond(
+                HttpStatusCode.OK,
+                DetailedHealthResponse(
+                    status = "UP",
+                    services = mapOf(
+                        "database" to "CONNECTED",
+                        "scheduler" to "RUNNING"
+                    ),
+                    timestamp = System.currentTimeMillis()
                 )
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.ServiceUnavailable,
-                    HealthStatusResponse(
-                        status = "DOWN",
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
-            }
+            )
         }
     }
 }
