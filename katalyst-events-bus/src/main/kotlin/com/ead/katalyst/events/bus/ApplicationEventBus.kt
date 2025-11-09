@@ -2,6 +2,7 @@ package com.ead.katalyst.events.bus
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventHandler
+import com.ead.katalyst.events.bus.EventPublishingException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
