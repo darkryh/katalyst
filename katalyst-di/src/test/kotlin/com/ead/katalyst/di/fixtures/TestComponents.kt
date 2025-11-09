@@ -4,11 +4,12 @@ import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.EventMetadata
 import com.ead.katalyst.repositories.Identifiable
-import com.ead.katalyst.repositories.Repository
+import com.ead.katalyst.repositories.TrackedRepository
 import com.ead.katalyst.repositories.models.PageInfo
 import com.ead.katalyst.repositories.models.QueryFilter
 import com.ead.katalyst.services.Service
 import com.ead.katalyst.tables.Table
+import com.ead.katalyst.transactions.workflow.OperationLog
 import com.ead.katalyst.validators.ValidationResult
 import com.ead.katalyst.validators.Validator
 import kotlinx.coroutines.sync.Mutex
@@ -25,7 +26,9 @@ data class TestEntity(
 
 object TestTable : LongIdTable("di_test_entities"), Table
 
-class TestRepository : Repository<Long, TestEntity> {
+class TestRepository(
+    operationLog: OperationLog
+) : TrackedRepository<Long, TestEntity>(operationLog) {
     private val data = mutableMapOf<Long, TestEntity>()
     private val lock = ReentrantLock()
 

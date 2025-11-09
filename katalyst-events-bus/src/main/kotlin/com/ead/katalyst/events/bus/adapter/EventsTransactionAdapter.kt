@@ -10,20 +10,20 @@ import org.slf4j.LoggerFactory
  * Transaction adapter for event publishing concerns.
  *
  * Handles event-specific transaction lifecycle:
- * - Publishing queued events after transaction commit
+ * - Publishing queued events right before the database commit (failures abort the commit)
  * - Discarding events on transaction rollback
  * - Event bus cleanup
  *
  * **Execution Priority**: 5 (medium priority - runs after persistence)
  *
  * **Phases Handled:**
- * - AFTER_COMMIT: Publish all pending events that were queued during the transaction
+ * - BEFORE_COMMIT: Publish all pending events that were queued during the transaction
  * - ON_ROLLBACK: Discard all pending events to prevent inconsistencies
  * - Other phases: No action needed
  *
  * **Event Publishing Flow:**
  * 1. During transaction: Events are queued in TransactionEventContext
- * 2. After commit: This adapter publishes all queued events
+ * 2. Immediately before commit: This adapter publishes all queued events (failures bubble up)
  * 3. On rollback: All queued events are discarded (not published)
  *
  * **Example:**
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory
  *     val user = userRepository.save(newUser)
  *     eventBus.publish(UserCreatedEvent(user.id))  // Queued, not published yet
  * }
- * // After transaction commits: UserCreatedEvent is published
+ * // Right before commit: UserCreatedEvent is published
  * // After transaction rolls back: UserCreatedEvent is discarded
  * ```
  */
@@ -48,15 +48,9 @@ class EventsTransactionAdapter(
 
     override suspend fun onPhase(phase: TransactionPhase, context: TransactionEventContext) {
         when (phase) {
-            TransactionPhase.AFTER_COMMIT -> {
-                publishPendingEvents(context)
-            }
-            TransactionPhase.ON_ROLLBACK -> {
-                discardPendingEvents(context)
-            }
-            else -> {
-                // Other phases don't require event handling
-            }
+            TransactionPhase.BEFORE_COMMIT -> publishPendingEvents(context)
+            TransactionPhase.ON_ROLLBACK -> discardPendingEvents(context)
+            else -> Unit
         }
     }
 
@@ -71,24 +65,14 @@ class EventsTransactionAdapter(
     private suspend fun publishPendingEvents(context: TransactionEventContext) {
         val pendingEvents = context.getPendingEvents()
         if (pendingEvents.isEmpty()) {
-            logger.debug("No pending events to publish after transaction commit")
+            logger.debug("No pending events to publish before transaction commit")
             return
         }
 
-        logger.debug("Publishing {} pending event(s) after transaction commit", pendingEvents.size)
+        logger.debug("Publishing {} pending event(s) before transaction commit", pendingEvents.size)
         for (event in pendingEvents) {
-            try {
-                logger.debug("Publishing event: {}", event::class.simpleName)
-                eventBus.publish(event)
-            } catch (e: Exception) {
-                logger.error(
-                    "Failed to publish event {} after commit: {}",
-                    event::class.simpleName,
-                    e.message,
-                    e
-                )
-                // Continue publishing other events even if one fails
-            }
+            logger.debug("Publishing event: {}", event::class.simpleName)
+            eventBus.publish(event)
         }
         context.clearPendingEvents()
         logger.debug("Finished publishing pending events")

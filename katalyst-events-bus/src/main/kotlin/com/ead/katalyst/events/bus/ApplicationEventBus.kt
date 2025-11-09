@@ -9,6 +9,7 @@ import kotlinx.coroutines.supervisorScope
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.Collections
 import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
@@ -64,7 +65,7 @@ class ApplicationEventBus(
 
     // Map: Event KClass -> List of handler functions
     // Using suspend (DomainEvent) -> Unit to allow generic handler invocation
-    private val listeners = ConcurrentHashMap<KClass<out DomainEvent>, CopyOnWriteArrayList<suspend (DomainEvent) -> Unit>>()
+    private val listeners = ConcurrentHashMap<KClass<out DomainEvent>, CopyOnWriteArrayList<RegisteredHandler>>()
 
     /**
      * Register a handler.
@@ -87,7 +88,12 @@ class ApplicationEventBus(
                 (handler as EventHandler<DomainEvent>).handle(event)
             }
 
-            handlerList.add(wrappedHandler)
+            handlerList.add(
+                RegisteredHandler(
+                    handlerClassName = handler::class.qualifiedName ?: handler::class.simpleName ?: handler::class.java.name,
+                    invoker = wrappedHandler
+                )
+            )
 
             logger.debug(
                 "Registered event handler {} for {}",
@@ -124,18 +130,18 @@ class ApplicationEventBus(
             }
 
             // Step 2: Publish to local handlers and measure duration
+            val handlerReport: HandlerExecutionReport
             publishDuration = measureTimeMillis {
-                publishToHandlers(event)
+                handlerReport = publishToHandlers(event)
             }
 
             // Step 3: Call afterPublish interceptors
-            val handlers = listeners[event::class] ?: emptyList<suspend (DomainEvent) -> Unit>()
             val result = PublishResult(
                 event = event,
-                handlersInvoked = handlers.size,
-                handlersSucceeded = handlers.size, // Simplified - see publishToHandlers for details
-                handlersFailed = 0,
-                failures = emptyList(),
+                handlersInvoked = handlerReport.handlersInvoked,
+                handlersSucceeded = handlerReport.handlersInvoked - handlerReport.failures.size,
+                handlersFailed = handlerReport.failures.size,
+                failures = handlerReport.failures,
                 durationMs = publishDuration
             )
 
@@ -146,6 +152,10 @@ class ApplicationEventBus(
                     logger.warn("Interceptor.afterPublish failed: {}", e.message, e)
                     // Continue even if interceptor fails
                 }
+            }
+
+            if (result.handlersFailed > 0) {
+                throw EventPublishingException(event, result.failures)
             }
 
         } catch (e: Exception) {
@@ -159,6 +169,7 @@ class ApplicationEventBus(
                     logger.warn("Interceptor.onPublishError failed: {}", ie.message, ie)
                 }
             }
+            throw e
         }
     }
 
@@ -167,22 +178,24 @@ class ApplicationEventBus(
      *
      * Uses supervisorScope to ensure all handlers execute even if some fail.
      */
-    private suspend fun publishToHandlers(event: DomainEvent) {
+    private suspend fun publishToHandlers(event: DomainEvent): HandlerExecutionReport {
         val handlers = listeners[event::class]
 
         if (handlers.isNullOrEmpty()) {
             logger.debug("No handlers registered for event: {}", event.eventType())
-            return
+            return HandlerExecutionReport(handlersInvoked = 0, failures = emptyList())
         }
 
         logger.debug("Publishing event {} to {} handler(s)", event.eventType(), handlers.size)
 
+        val failures = Collections.synchronizedList(mutableListOf<HandlerFailure>())
+
         // supervisorScope ensures that if one handler fails, others still execute
         supervisorScope {
-            handlers.forEach { handlerFunction ->
+            handlers.forEach { handler ->
                 launch(dispatcher) {
                     try {
-                        handlerFunction(event)
+                        handler.invoker(event)
                     } catch (e: Exception) {
                         logger.error(
                             "Event handler failed for {}: {}",
@@ -190,13 +203,33 @@ class ApplicationEventBus(
                             e.message,
                             e
                         )
-                        // Don't propagate - other handlers still execute
+                        failures.add(
+                            HandlerFailure(
+                                handlerClass = handler.handlerClassName,
+                                exception = e
+                            )
+                        )
                     }
                 }
             }
         }
+
+        return HandlerExecutionReport(
+            handlersInvoked = handlers.size,
+            failures = failures.toList()
+        )
     }
 }
+
+private data class RegisteredHandler(
+    val handlerClassName: String,
+    val invoker: suspend (DomainEvent) -> Unit
+)
+
+private data class HandlerExecutionReport(
+    val handlersInvoked: Int,
+    val failures: List<HandlerFailure>
+)
 
 /**
  * Resolve concrete types for a KClass.

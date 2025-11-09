@@ -76,7 +76,11 @@ class TransactionAdapterRegistry {
      * @param phase The transaction phase
      * @param context The transaction context
      */
-    suspend fun executeAdapters(phase: TransactionPhase, context: TransactionEventContext) {
+    suspend fun executeAdapters(
+        phase: TransactionPhase,
+        context: TransactionEventContext,
+        failFast: Boolean = false
+    ) {
         if (adapters.isEmpty()) {
             logger.debug("No adapters registered for phase: {}", phase)
             return
@@ -96,6 +100,9 @@ class TransactionAdapterRegistry {
                     e.message,
                     e
                 )
+                if (failFast) {
+                    throw e
+                }
                 // Continue executing other adapters even if one fails
             }
         }

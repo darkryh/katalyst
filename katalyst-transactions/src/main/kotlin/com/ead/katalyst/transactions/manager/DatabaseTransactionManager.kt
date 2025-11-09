@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.TransactionManager as ExposedTransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -130,6 +131,16 @@ class DatabaseTransactionManager(
         workflowId: String?,
         block: suspend Transaction.() -> T
     ): T {
+        // If we're already inside an Exposed transaction, just reuse it instead of starting a new one.
+        val existingTransaction = ExposedTransactionManager.currentOrNull()
+        if (existingTransaction != null) {
+            logger.debug(
+                "Joining existing transaction context (workflowId={})",
+                workflowId ?: CurrentWorkflowContext.get() ?: "unknown"
+            )
+            return block(existingTransaction)
+        }
+
         // Use provided workflowId or generate a new one
         val txId = workflowId ?: UUID.randomUUID().toString()
         logger.debug("Starting transaction with workflowId: {}", txId)
@@ -155,15 +166,17 @@ class DatabaseTransactionManager(
                 // The context element (transactionEventContext) must be inherited by the transaction block
                 newSuspendedTransaction(null, database) {
                     logger.debug("Transaction context established, executing block")
-                    block()
+                    val outcome = block()
+
+                    logger.debug("Executing BEFORE_COMMIT adapters inside transaction")
+                    adapterRegistry.executeAdapters(
+                        TransactionPhase.BEFORE_COMMIT,
+                        transactionEventContext,
+                        failFast = true
+                    )
+
+                    outcome
                 }
-            }
-
-            logger.debug("Transaction completed successfully, executing BEFORE_COMMIT adapters")
-
-            // Phase 3: BEFORE_COMMIT adapters (still in transaction context if needed)
-            withContext(transactionEventContext) {
-                adapterRegistry.executeAdapters(TransactionPhase.BEFORE_COMMIT, transactionEventContext)
             }
 
             // Phase 4: AFTER_COMMIT adapters (after transaction commits)

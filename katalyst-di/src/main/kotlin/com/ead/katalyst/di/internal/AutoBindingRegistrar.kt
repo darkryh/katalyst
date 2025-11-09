@@ -85,10 +85,11 @@ class AutoBindingRegistrar(
      * This method executes the complete auto-discovery process in a specific order:
      * 1. Repositories (data access layer)
      * 2. Components (general framework components)
-     * 3. Tables (database schema definitions)
-     * 4. Ktor modules (HTTP routing and middleware)
-     * 5. Event handlers (event-driven components)
-     * 6. Route functions (standalone routing DSL functions)
+     * 3. Services (business logic layer - depends on repositories and components)
+     * 4. Tables (database schema definitions)
+     * 5. Ktor modules (HTTP routing and middleware)
+     * 6. Event handlers (event-driven components)
+     * 7. Route functions (standalone routing DSL functions)
      *
      * Components with unresolved dependencies are deferred and retried after
      * their dependencies become available.
@@ -96,6 +97,7 @@ class AutoBindingRegistrar(
     fun registerAll() {
         registerComponents(Repository::class.java, "repositories")
         registerComponents(Component::class.java, "components")
+        registerComponents(Service::class.java, "services")
         registerTables()
         registerComponents(KtorModule::class.java, "ktor modules")
         @Suppress("UNCHECKED_CAST")

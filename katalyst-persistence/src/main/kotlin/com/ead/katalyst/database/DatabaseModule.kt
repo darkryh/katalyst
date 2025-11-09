@@ -1,6 +1,8 @@
 package com.ead.katalyst.database
 
+import com.ead.katalyst.repositories.OperationLogRepository
 import com.ead.katalyst.transactions.manager.DatabaseTransactionManager
+import com.ead.katalyst.transactions.workflow.OperationLog
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
@@ -47,6 +49,13 @@ fun databaseModule(config: DatabaseConfig) = module {
         logger.debug("Creating DatabaseTransactionManager")
         val factory = get<DatabaseFactory>()
         DatabaseTransactionManager(factory.database)
+    }
+
+    // Register OperationLog implementation backed by the shared database
+    single<OperationLog> {
+        logger.debug("Creating OperationLogRepository")
+        val factory = get<DatabaseFactory>()
+        OperationLogRepository(factory.database)
     }
 
     logger.info("Database module registered with configuration")
