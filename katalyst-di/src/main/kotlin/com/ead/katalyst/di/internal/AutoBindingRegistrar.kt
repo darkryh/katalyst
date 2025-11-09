@@ -132,60 +132,67 @@ class AutoBindingRegistrar(
      */
     private fun displayComponentDiscoverySummary() {
         try {
-            // Gather discovered components from Koin
-            // Note: Using getAll<Any>() and casting to avoid generic type parameter issues with Repository<Id, Entity>
-            val allBeans = runCatching { koin.getAll<Any>() }.getOrNull() ?: emptyList()
+            DiscoverySummary.clear()
 
-            // Filter and categorize by type
-            allBeans.forEach { bean ->
-                when (bean) {
-                    is Repository<*, *> -> {
-                        DiscoverySummary.addRepository(
-                            name = bean::class.simpleName ?: "Repository",
-                            annotation = "@Repository"
-                        )
-                    }
-                    is Service -> {
-                        DiscoverySummary.addService(
-                            name = bean::class.simpleName ?: "Service",
-                            annotation = "@Service"
-                        )
-                    }
-                    is Component -> {
-                        DiscoverySummary.addComponent(
-                            name = bean::class.simpleName ?: "Component",
-                            type = bean::class.simpleName?.replace("Component", "") ?: "Custom",
-                            annotation = "@Component"
-                        )
-                    }
-                    is Table -> {
-                        val tableName = (bean as? org.jetbrains.exposed.sql.Table)?.tableName ?: "unknown"
-                        DiscoverySummary.addDatabaseTable(tableName)
-                    }
-                    is KtorModule -> {
-                        DiscoverySummary.addKtorModule(
-                            name = bean::class.simpleName ?: "KtorModule",
-                            annotation = "@KtorModule"
-                        )
-                    }
-                    is EventHandler<*> -> {
-                        DiscoverySummary.addComponent(
-                            name = bean::class.simpleName ?: "EventHandler",
-                            type = "EventHandler",
-                            annotation = "@EventHandler"
-                        )
-                    }
-                }
+            koin.safeGetAll<Repository<*, *>>().forEach { repo ->
+                DiscoverySummary.addRepository(
+                    name = repo::class.simpleName ?: "Repository",
+                    annotation = "@Repository"
+                )
             }
 
-            // Display the consolidated summary
-            DiscoverySummary.display()
+            koin.safeGetAll<Service>().forEach { svc ->
+                DiscoverySummary.addService(
+                    name = svc::class.simpleName ?: "Service",
+                    annotation = "@Service"
+                )
+            }
 
+            koin.safeGetAll<Component>().forEach { component ->
+                DiscoverySummary.addComponent(
+                    name = component::class.simpleName ?: "Component",
+                    type = component::class.simpleName?.replace("Component", "") ?: "Custom",
+                    annotation = "@Component"
+                )
+            }
+
+            koin.safeGetAll<Table>().forEach { table ->
+                val tableName = (table as? org.jetbrains.exposed.sql.Table)?.tableName ?: table::class.simpleName
+                tableName?.let { DiscoverySummary.addDatabaseTable(it) }
+            }
+
+            koin.safeGetAll<KtorModule>().forEach { module ->
+                DiscoverySummary.addKtorModule(
+                    name = module::class.simpleName ?: "KtorModule",
+                    annotation = "@KtorModule"
+                )
+            }
+
+            koin.safeGetAll<EventHandler<*>>().forEach { handler ->
+                DiscoverySummary.addComponent(
+                    name = handler::class.simpleName ?: "EventHandler",
+                    type = "EventHandler",
+                    annotation = "@EventHandler"
+                )
+            }
+
+            koin.safeGetAll<KatalystMigration>().forEach { migration ->
+                DiscoverySummary.addComponent(
+                    name = migration::class.simpleName ?: "Migration",
+                    type = "Migration",
+                    annotation = "@Migration"
+                )
+            }
+
+            DiscoverySummary.display()
         } catch (e: Exception) {
             logger.warn("Error displaying discovery summary: {}", e.message)
             logger.debug("Full error during discovery summary display", e)
         }
     }
+
+    private inline fun <reified T : Any> Koin.safeGetAll(): List<T> =
+        runCatching { getAll<T>() }.getOrElse { emptyList() }
 
     private inline fun <reified T : Any> registerComponents(baseType: Class<T>, label: String) {
         val pending = discoverConcreteTypes(baseType).toMutableSet()

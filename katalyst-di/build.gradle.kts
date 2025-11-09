@@ -41,6 +41,7 @@ dependencies {
 
     // Diagnostics & reflection aids
     implementation(libs.logback)
+    implementation(libs.jansi)
     implementation(libs.reflections)
     implementation(libs.asm)
 

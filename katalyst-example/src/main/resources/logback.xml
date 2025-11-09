@@ -1,17 +1,25 @@
 <configuration>
+    <property name="ROOT_LOG_LEVEL" value="${ROOT_LOG_LEVEL:-INFO}"/>
+    <property name="KATALYST_LOG_LEVEL" value="${KATALYST_LOG_LEVEL:-INFO}"/>
+
+    <conversionRule conversionWord="highlight"
+        converterClass="ch.qos.logback.classic.pattern.color.HighlightingCompositeConverter" />
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        <withJansi>true</withJansi>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
-    <root level="INFO">
+    <root level="${ROOT_LOG_LEVEL}">
         <appender-ref ref="STDOUT"/>
     </root>
-    <!-- Enable DEBUG for Katalyst DI initialization -->
-    <logger name="com.ead.katalyst" level="DEBUG"/>
+    <!-- Default INFO for framework logs; override with -DKATALYST_LOG_LEVEL=DEBUG when needed -->
+    <logger name="com.ead.katalyst" level="${KATALYST_LOG_LEVEL}"/>
     <logger name="bootstrapKatalystDI" level="INFO"/>
     <logger name="DIConfiguration" level="INFO"/>
-    <logger name="AutoBindingRegistrar" level="DEBUG"/>
+    <logger name="AutoBindingRegistrar" level="INFO"/>
     <!-- Enable initializer loggers -->
     <logger name="InitializerRegistry" level="INFO"/>
     <logger name="StartupValidator" level="INFO"/>
@@ -19,6 +27,7 @@
     <logger name="MethodBytecodeValidator" level="DEBUG"/>
     <logger name="ServiceRegistry" level="DEBUG"/>
     <!-- Suppress verbose libraries -->
+    <logger name="org.reflections" level="WARN"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
 </configuration>

@@ -6,6 +6,7 @@ ktor = "3.3.1"
 koin = "3.5.6"
 exposed = "0.52.0"
 logback = "1.4.14"
+jansi = "2.4.0"
 reflections = "0.10.2"
 junit-platform = "1.10.2"
 hikari = "5.1.0"
@@ -61,6 +62,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 
 # --- Logging & diagnostics ---
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 
 # --- Messaging adapters ---
 kaccelero-core = { module = "dev.kaccelero:core-jvm", version.ref = "kaccelero" }

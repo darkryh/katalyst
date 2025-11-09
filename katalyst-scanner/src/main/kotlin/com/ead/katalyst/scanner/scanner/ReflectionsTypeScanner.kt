@@ -74,12 +74,13 @@ class ReflectionsTypeScanner<T>(
 
     override fun discover(): Set<Class<out T>> {
         return try {
+            val startTime = System.currentTimeMillis()
             val scanMessage = if (config.scanPackages.isEmpty()) {
                 "entire classpath"
             } else {
                 config.scanPackages.joinToString(", ")
             }
-            logger.info("🔍 Scanning {} for {} implementations", scanMessage, baseType.simpleName)
+            logger.debug("🔍 Scanning {} for {} implementations", scanMessage, baseType.simpleName)
 
             // Configure reflections based on scan packages
             val reflections = if (config.scanPackages.isEmpty()) {
@@ -96,7 +97,12 @@ class ReflectionsTypeScanner<T>(
             // Get all subtypes of the base type
             var implementations = reflections.getSubTypesOf(baseType)
 
-            logger.info("✓ Found {} {} implementation(s)", implementations.size, baseType.simpleName)
+            logger.info(
+                "✓ Discovered {} {} implementation(s) in {} ms",
+                implementations.size,
+                baseType.simpleName,
+                System.currentTimeMillis() - startTime
+            )
 
             // Apply predicate if provided
             config.predicate?.let { predicate ->
@@ -104,13 +110,17 @@ class ReflectionsTypeScanner<T>(
                 implementations = implementations.filter { clazz ->
                     predicate.matches(clazz)
                 }.toSet()
-                logger.info("  After predicate: {} implementation(s)", implementations.size)
+                logger.debug("After predicate: {} implementation(s)", implementations.size)
             }
 
             // Log each found implementation
             implementations.forEach { impl ->
                 logger.debug("  └─ Found: {}", impl.simpleName)
                 config.onDiscover(impl)
+            }
+
+            if (implementations.isEmpty()) {
+                logger.warn("No {} implementations matched the discovery criteria", baseType.simpleName)
             }
 
             implementations

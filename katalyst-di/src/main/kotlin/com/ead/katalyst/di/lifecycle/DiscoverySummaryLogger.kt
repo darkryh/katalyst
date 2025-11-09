@@ -2,6 +2,8 @@ package com.ead.katalyst.di.lifecycle
 
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
+import com.ead.katalyst.di.lifecycle.StartupWarningsAggregator.WarningSeverity
+import com.ead.katalyst.di.lifecycle.StartupWarnings
 
 /**
  * Consolidates component discovery output into structured summary tables.
@@ -134,7 +136,8 @@ class DiscoverySummaryLogger {
         val total = repositories.size + services.size + components.size + validators.size + ktorModules.size
 
         if (total == 0) {
-            logger.debug("No components discovered to display")
+            logger.warn("⚠ No components discovered during component scan. Check scan packages and annotations.")
+            reportEmptySections()
             return
         }
 
@@ -177,6 +180,8 @@ class DiscoverySummaryLogger {
         logger.info("")
         logger.info("✓ Component discovery complete - {} items registered", total)
         logger.info("")
+
+        reportEmptySections()
     }
 
     private fun displayComponentSection(sectionName: String, items: List<ComponentInfo>) {
@@ -233,6 +238,68 @@ class DiscoverySummaryLogger {
         validators.clear()
         databaseTables.clear()
         ktorModules.clear()
+    }
+
+    private fun reportEmptySections() {
+        data class SectionStatus(
+            val label: String,
+            val isEmpty: Boolean,
+            val severity: WarningSeverity,
+            val hint: String
+        )
+
+        val sections = listOf(
+            SectionStatus(
+                label = "repositories",
+                isEmpty = repositories.isEmpty(),
+                severity = WarningSeverity.WARNING,
+                hint = "Add @Repository implementations or include their package in scanPackages()."
+            ),
+            SectionStatus(
+                label = "services",
+                isEmpty = services.isEmpty(),
+                severity = WarningSeverity.WARNING,
+                hint = "Add @Service implementations or ensure they are on the classpath."
+            ),
+            SectionStatus(
+                label = "components",
+                isEmpty = components.isEmpty(),
+                severity = WarningSeverity.INFO,
+                hint = "Implement com.ead.katalyst.core.component.Component to register framework utilities."
+            ),
+            SectionStatus(
+                label = "validators",
+                isEmpty = validators.isEmpty(),
+                severity = WarningSeverity.INFO,
+                hint = "Annotate validation classes or extend the validator base types."
+            ),
+            SectionStatus(
+                label = "ktor modules",
+                isEmpty = ktorModules.isEmpty(),
+                severity = WarningSeverity.INFO,
+                hint = "Create KtorModule implementations to customize the HTTP pipeline."
+            ),
+            SectionStatus(
+                label = "database tables",
+                isEmpty = databaseTables.isEmpty(),
+                severity = WarningSeverity.WARNING,
+                hint = "Ensure Table objects are registered so schema initialization can run."
+            )
+        )
+
+        sections.filter { it.isEmpty }.forEach { section ->
+            val message = "No ${section.label} discovered during component scan"
+            when (section.severity) {
+                WarningSeverity.CRITICAL, WarningSeverity.WARNING -> logger.warn("⚠ {}", message)
+                WarningSeverity.INFO -> logger.info("ℹ {}", message)
+            }
+            StartupWarnings.add(
+                category = "Component Discovery",
+                message = message,
+                severity = section.severity,
+                hint = section.hint
+            )
+        }
     }
 }
 
