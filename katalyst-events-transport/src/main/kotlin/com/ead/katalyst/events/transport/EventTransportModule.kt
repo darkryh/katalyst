@@ -1,8 +1,13 @@
 package com.ead.katalyst.events.transport
 
+import com.ead.katalyst.events.transport.routing.EventRouter
+import com.ead.katalyst.events.transport.routing.RoutingStrategies
+import com.ead.katalyst.events.transport.serialization.EventDeserializer
+import com.ead.katalyst.events.transport.serialization.EventSerializer
+import com.ead.katalyst.events.transport.serialization.JsonEventDeserializer
+import com.ead.katalyst.events.transport.serialization.JsonEventSerializer
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import org.koin.core.context.GlobalContext
 import org.slf4j.LoggerFactory
 
 /**

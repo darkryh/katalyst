@@ -1,10 +1,7 @@
 package com.ead.katalyst.events.bus
 
-import com.ead.katalyst.events.DomainEvent
-import com.ead.katalyst.events.EventHandler
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import org.koin.core.context.GlobalContext
 import org.slf4j.LoggerFactory
 
 /**

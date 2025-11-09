@@ -1,10 +1,11 @@
 package com.ead.katalyst.di
 
-import com.ead.katalyst.database.DatabaseConfig
-import com.ead.katalyst.database.DatabaseTransactionManager
+import com.ead.katalyst.config.DatabaseConfig
+import com.ead.katalyst.core.transaction.DatabaseTransactionManager
 import com.ead.katalyst.di.fixtures.*
-import com.ead.katalyst.tables.Table
-import com.ead.katalyst.di.features.KatalystFeature
+import com.ead.katalyst.core.persistence.Table
+import com.ead.katalyst.di.config.bootstrapKatalystDI
+import com.ead.katalyst.di.feature.KatalystFeature
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.stopKoin
 import org.koin.core.Koin

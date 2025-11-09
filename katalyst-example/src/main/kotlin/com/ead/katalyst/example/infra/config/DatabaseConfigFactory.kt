@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.infra.config
 
-import com.ead.katalyst.database.DatabaseConfig
+import com.ead.katalyst.config.DatabaseConfig
 
 private const val ENV_DB_URL = "KATALYST_EXAMPLE_DB_URL"
 private const val ENV_DB_USERNAME = "KATALYST_EXAMPLE_DB_USERNAME"

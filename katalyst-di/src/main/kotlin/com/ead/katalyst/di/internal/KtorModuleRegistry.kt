@@ -1,6 +1,6 @@
 package com.ead.katalyst.di.internal
 
-import com.ead.katalyst.routes.KtorModule
+import com.ead.katalyst.ktor.KtorModule
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**

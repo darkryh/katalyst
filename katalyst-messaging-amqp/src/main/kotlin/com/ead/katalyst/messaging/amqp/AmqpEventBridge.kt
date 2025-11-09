@@ -3,7 +3,10 @@ package com.ead.katalyst.messaging.amqp
 import com.ead.katalyst.client.EventClientInterceptor
 import com.ead.katalyst.client.PublishResult
 import com.ead.katalyst.events.DomainEvent
-import com.ead.katalyst.events.transport.JsonEventSerializer
+import com.ead.katalyst.events.transport.serialization.JsonEventSerializer
+import com.ead.katalyst.messaging.amqp.connection.AmqpConnectionException
+import com.ead.katalyst.messaging.amqp.publisher.AmqpPublishException
+import com.ead.katalyst.messaging.amqp.publisher.KourierPublisher
 import org.slf4j.LoggerFactory
 
 /**
@@ -234,9 +237,9 @@ class AmqpEventBridge(
                 exception.message?.contains("timeout", ignoreCase = true) ?: false ||
                 exception.message?.contains("connection", ignoreCase = true) ?: false
             }
-            is java.io.IOException -> true
             is java.net.ConnectException -> true
             is java.net.SocketTimeoutException -> true
+            is java.io.IOException -> true
             else -> false
         }
     }

@@ -1,11 +1,11 @@
 package com.ead.katalyst.client
 
 import com.ead.katalyst.events.DomainEvent
-import com.ead.katalyst.events.EventValidator
-import com.ead.katalyst.events.ValidationResult
+import com.ead.katalyst.events.validation.EventValidator
+import com.ead.katalyst.events.validation.ValidationResult
 import com.ead.katalyst.events.bus.EventBus
-import com.ead.katalyst.events.transport.EventRouter
-import com.ead.katalyst.events.transport.EventSerializer
+import com.ead.katalyst.events.transport.routing.EventRouter
+import com.ead.katalyst.events.transport.serialization.EventSerializer
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import kotlin.system.measureTimeMillis

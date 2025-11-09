@@ -5,7 +5,7 @@ import com.ead.katalyst.messaging.Message
 import com.ead.katalyst.messaging.MessagingClientFactory
 import com.ead.katalyst.messaging.Producer
 import com.ead.katalyst.messaging.Consumer
-import com.ead.katalyst.messaging.RoutingConfig
+import com.ead.katalyst.messaging.routing.RoutingConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

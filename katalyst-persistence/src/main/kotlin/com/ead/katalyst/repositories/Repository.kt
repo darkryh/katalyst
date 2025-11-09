@@ -1,8 +1,8 @@
 package com.ead.katalyst.repositories
 
-import com.ead.katalyst.repositories.models.PageInfo
-import com.ead.katalyst.repositories.models.QueryFilter
-import com.ead.katalyst.repositories.models.SortOrder
+import com.ead.katalyst.repositories.model.PageInfo
+import com.ead.katalyst.repositories.model.QueryFilter
+import com.ead.katalyst.repositories.model.SortOrder
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.*

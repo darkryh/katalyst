@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.component
 
-import com.ead.katalyst.components.Component
+import com.ead.katalyst.core.component.Component
 import java.security.MessageDigest
 import java.util.Base64
 

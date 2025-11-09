@@ -1,7 +1,7 @@
 package com.ead.katalyst.scanner.predicates
 
 import com.ead.katalyst.scanner.fixtures.*
-import com.ead.katalyst.validators.Validator
+import com.ead.katalyst.core.validation.Validator
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

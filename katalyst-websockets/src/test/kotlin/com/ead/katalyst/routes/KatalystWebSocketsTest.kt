@@ -1,6 +1,7 @@
 package com.ead.katalyst.routes
 
 import com.ead.katalyst.websockets.WebSocketPluginModule
+import com.ead.katalyst.websockets.builder.katalystWebSockets
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.server.application.install

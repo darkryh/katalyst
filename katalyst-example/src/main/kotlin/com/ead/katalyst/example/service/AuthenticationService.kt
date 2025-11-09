@@ -13,10 +13,10 @@ import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
 import com.ead.katalyst.example.infra.database.repositories.AuthAccountRepository
 import com.ead.katalyst.example.infra.mappers.toDomain
 import com.ead.katalyst.example.security.JwtSettings
-import com.ead.katalyst.services.Service
-import com.ead.katalyst.services.cron.CronExpression
-import com.ead.katalyst.services.service.ScheduleConfig
-import com.ead.katalyst.services.service.requireScheduler
+import com.ead.katalyst.core.component.Service
+import com.ead.katalyst.scheduler.cron.CronExpression
+import com.ead.katalyst.scheduler.config.ScheduleConfig
+import com.ead.katalyst.scheduler.extension.requireScheduler
 import io.ktor.util.logging.*
 import kotlin.time.Duration.Companion.minutes
 

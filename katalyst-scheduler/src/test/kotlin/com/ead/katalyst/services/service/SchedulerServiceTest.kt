@@ -1,5 +1,7 @@
 package com.ead.katalyst.services.service
 
+import com.ead.katalyst.scheduler.config.ScheduleConfig
+import com.ead.katalyst.scheduler.service.SchedulerService
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

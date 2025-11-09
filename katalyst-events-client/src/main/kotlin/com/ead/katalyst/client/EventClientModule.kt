@@ -1,5 +1,10 @@
 package com.ead.katalyst.client
 
+import com.ead.katalyst.client.config.EventClientConfiguration
+import com.ead.katalyst.events.DomainEvent
+import com.ead.katalyst.events.transport.routing.EventRouter
+import com.ead.katalyst.events.transport.serialization.EventSerializer
+import com.ead.katalyst.events.validation.EventValidator
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
@@ -70,9 +75,9 @@ fun eventsClientModule(
     // Register EventClient singleton
     single<EventClient> {
         val eventBus = getOrNull<com.ead.katalyst.events.bus.EventBus>()
-        val validator = getOrNull<com.ead.katalyst.events.EventValidator<com.ead.katalyst.events.DomainEvent>>()
-        val serializer = getOrNull<com.ead.katalyst.events.transport.EventSerializer>()
-        val router = getOrNull<com.ead.katalyst.events.transport.EventRouter>()
+        val validator = getOrNull<EventValidator<DomainEvent>>()
+        val serializer = getOrNull<EventSerializer>()
+        val router = getOrNull<EventRouter>()
         val clientInterceptor = get<EventClientInterceptor>()
 
         // Extract interceptors from composite if applicable
@@ -146,9 +151,9 @@ fun eventsClientModule(
 
             override fun build(): EventClient {
                 val eventBus = getOrNull<com.ead.katalyst.events.bus.EventBus>()
-                val validator = getOrNull<com.ead.katalyst.events.EventValidator<com.ead.katalyst.events.DomainEvent>>()
-                val serializer = getOrNull<com.ead.katalyst.events.transport.EventSerializer>()
-                val router = getOrNull<com.ead.katalyst.events.transport.EventRouter>()
+                val validator = getOrNull<EventValidator<DomainEvent>>()
+                val serializer = getOrNull<EventSerializer>()
+                val router = getOrNull<EventRouter>()
 
                 return DefaultEventClient(
                     eventBus = eventBus,

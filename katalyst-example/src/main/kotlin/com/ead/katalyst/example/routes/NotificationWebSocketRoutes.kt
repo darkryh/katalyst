@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.routes
 
-import com.ead.katalyst.routes.katalystWebSockets
+import com.ead.katalyst.websockets.builder.katalystWebSockets
 import io.ktor.server.routing.Route
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame

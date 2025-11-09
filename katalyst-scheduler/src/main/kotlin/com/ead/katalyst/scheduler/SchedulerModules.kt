@@ -1,6 +1,6 @@
 package com.ead.katalyst.scheduler
 
-import com.ead.katalyst.services.service.SchedulerService
+import com.ead.katalyst.scheduler.service.SchedulerService
 import org.koin.core.module.Module
 import org.koin.dsl.module
 

@@ -1,9 +1,9 @@
 package com.ead.katalyst.services.cron
 
+import com.ead.katalyst.scheduler.cron.CronExpression
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 /**
  * COMPREHENSIVE test suite for CronExpression covering 200+ test cases.

@@ -1,18 +1,17 @@
 package com.ead.katalyst.di.internal
 
-import com.ead.katalyst.components.Component
-import com.ead.katalyst.database.DatabaseTransactionManager
-import com.ead.katalyst.error.DependencyInjectionException
+import com.ead.katalyst.core.component.Component
+import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import com.ead.katalyst.core.exception.DependencyInjectionException
 import com.ead.katalyst.events.EventHandler
-import com.ead.katalyst.events.bus.EventHandlerRegistry
 import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
 import com.ead.katalyst.repositories.Repository
-import com.ead.katalyst.routes.KtorModule
+import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
-import com.ead.katalyst.services.Service
-import com.ead.katalyst.tables.Table
+import com.ead.katalyst.core.component.Service
+import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.migrations.KatalystMigration
 import io.ktor.server.application.*
 import io.ktor.server.routing.*

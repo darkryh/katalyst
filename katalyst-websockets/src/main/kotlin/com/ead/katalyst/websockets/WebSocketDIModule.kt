@@ -1,6 +1,6 @@
 package com.ead.katalyst.websockets
 
-import com.ead.katalyst.routes.KtorModule
+import com.ead.katalyst.ktor.KtorModule
 import org.koin.dsl.module
 
 /**

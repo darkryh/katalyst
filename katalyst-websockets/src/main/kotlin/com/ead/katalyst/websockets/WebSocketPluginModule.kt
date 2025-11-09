@@ -6,7 +6,7 @@ import io.ktor.server.websocket.WebSockets
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
-import com.ead.katalyst.routes.KtorModule
+import com.ead.katalyst.ktor.KtorModule
 
 private val logger = LoggerFactory.getLogger("WebSocketPluginModule")
 

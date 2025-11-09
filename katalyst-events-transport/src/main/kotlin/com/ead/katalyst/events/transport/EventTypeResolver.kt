@@ -1,6 +1,7 @@
 package com.ead.katalyst.events.transport
 
 import com.ead.katalyst.events.DomainEvent
+import com.ead.katalyst.events.transport.exception.EventDeserializationException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 

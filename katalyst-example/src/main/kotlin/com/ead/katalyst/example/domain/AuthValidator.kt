@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.domain
 
-import com.ead.katalyst.components.Component
+import com.ead.katalyst.core.component.Component
 import com.ead.katalyst.example.api.LoginRequest
 import com.ead.katalyst.example.api.RegisterRequest
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException

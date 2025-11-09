@@ -1,7 +1,7 @@
 package com.ead.katalyst.websockets
 
 import com.ead.katalyst.di.KatalystApplicationBuilder
-import com.ead.katalyst.di.features.KatalystFeature
+import com.ead.katalyst.di.feature.KatalystFeature
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named

@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.middleware
 
-import com.ead.katalyst.routes.katalystMiddleware
+import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

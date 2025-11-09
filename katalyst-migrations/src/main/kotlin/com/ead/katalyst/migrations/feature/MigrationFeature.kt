@@ -1,6 +1,6 @@
 package com.ead.katalyst.migrations.feature
 
-import com.ead.katalyst.di.features.KatalystFeature
+import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.migrations.options.MigrationOptions
 import com.ead.katalyst.migrations.runner.MigrationRunner

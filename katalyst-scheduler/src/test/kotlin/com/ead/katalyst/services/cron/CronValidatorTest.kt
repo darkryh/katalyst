@@ -1,5 +1,6 @@
 package com.ead.katalyst.services.cron
 
+import com.ead.katalyst.scheduler.cron.CronValidator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

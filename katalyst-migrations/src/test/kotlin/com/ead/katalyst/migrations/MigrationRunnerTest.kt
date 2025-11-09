@@ -1,6 +1,6 @@
 package com.ead.katalyst.migrations
 
-import com.ead.katalyst.database.DatabaseConfig
+import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.migrations.options.MigrationOptions
 import com.ead.katalyst.migrations.runner.MigrationRunner

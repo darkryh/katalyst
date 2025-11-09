@@ -2,7 +2,8 @@ package com.ead.katalyst.messaging.amqp
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventMetadata
-import kotlinx.coroutines.runBlocking
+import com.ead.katalyst.messaging.amqp.config.AmqpConfiguration
+import com.ead.katalyst.messaging.amqp.connection.AmqpConnectionException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

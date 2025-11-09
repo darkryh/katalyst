@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.middleware
 
-import com.ead.katalyst.routes.katalystMiddleware
+import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.*
 import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.request.*

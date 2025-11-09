@@ -1,7 +1,7 @@
 package com.ead.katalyst.example.middleware
 
 import com.ead.katalyst.example.security.JwtSettings
-import com.ead.katalyst.routes.katalystMiddleware
+import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.Application
 
 @Suppress("unused")

@@ -1,7 +1,7 @@
 package com.ead.katalyst.scanner.fixtures
 
-import com.ead.katalyst.validators.ValidationResult
-import com.ead.katalyst.validators.Validator
+import com.ead.katalyst.core.validation.ValidationResult
+import com.ead.katalyst.core.validation.Validator
 
 // ============= Test-Only Domain Models =============
 

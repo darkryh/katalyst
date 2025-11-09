@@ -2,6 +2,10 @@ package com.ead.katalyst.events.transport
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventMetadata
+import com.ead.katalyst.events.transport.routing.EventRouter
+import com.ead.katalyst.events.transport.routing.RoutingStrategies
+import com.ead.katalyst.events.transport.serialization.JsonEventDeserializer
+import com.ead.katalyst.events.transport.serialization.JsonEventSerializer
 import com.ead.katalyst.messaging.DestinationType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach

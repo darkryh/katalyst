@@ -4,7 +4,8 @@ import com.ead.katalyst.client.EventClientInterceptor
 import com.ead.katalyst.client.PublishResult
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventMetadata
-import com.ead.katalyst.events.transport.JsonEventSerializer
+import com.ead.katalyst.events.transport.serialization.JsonEventSerializer
+import com.ead.katalyst.messaging.amqp.config.AmqpConfiguration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.BeforeEach

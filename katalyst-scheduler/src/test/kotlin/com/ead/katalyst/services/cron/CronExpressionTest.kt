@@ -1,5 +1,6 @@
 package com.ead.katalyst.services.cron
 
+import com.ead.katalyst.scheduler.cron.CronExpression
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals

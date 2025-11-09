@@ -3,7 +3,7 @@ package com.ead.katalyst.example.exceptionHandler
 import com.ead.katalyst.example.api.ErrorResponse
 import com.ead.katalyst.example.domain.exception.TestException
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
-import com.ead.katalyst.routes.katalystExceptionHandler
+import com.ead.katalyst.ktor.builder.katalystExceptionHandler
 import io.ktor.http.*
 import io.ktor.server.application.Application
 import io.ktor.server.response.*

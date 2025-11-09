@@ -1,6 +1,6 @@
 package com.ead.katalyst.example.infra.database.tables
 
-import com.ead.katalyst.tables.Table
+import com.ead.katalyst.core.persistence.Table
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 

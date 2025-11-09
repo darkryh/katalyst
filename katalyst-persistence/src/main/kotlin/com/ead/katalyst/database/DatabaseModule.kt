@@ -1,6 +1,7 @@
 package com.ead.katalyst.database
 
-import com.ead.katalyst.repositories.OperationLogRepository
+import com.ead.katalyst.config.DatabaseConfig
+import com.ead.katalyst.repositories.implementation.OperationLogRepository
 import com.ead.katalyst.transactions.manager.DatabaseTransactionManager
 import com.ead.katalyst.transactions.workflow.OperationLog
 import org.koin.dsl.module

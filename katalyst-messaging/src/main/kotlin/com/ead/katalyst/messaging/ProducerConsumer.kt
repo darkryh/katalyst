@@ -1,5 +1,7 @@
 package com.ead.katalyst.messaging
 
+import com.ead.katalyst.messaging.routing.RoutingConfig
+
 interface Producer {
     suspend fun send(destination: Destination, message: Message, routing: RoutingConfig? = null)
 }

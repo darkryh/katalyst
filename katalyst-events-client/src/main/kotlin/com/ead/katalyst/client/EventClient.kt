@@ -66,7 +66,7 @@ interface EventClient {
      *
      * @param event The event to publish
      * @return PublishResult indicating success or failure
-     * @throws ClientException for unrecoverable errors
+     * @throws com.ead.katalyst.client.exception.ClientException for unrecoverable errors
      */
     suspend fun publish(event: DomainEvent): PublishResult
 
@@ -221,7 +221,7 @@ interface EventClientBuilder {
      * Build the configured EventClient.
      *
      * @return Ready-to-use EventClient instance
-     * @throws ClientConfigurationException if configuration is invalid
+     * @throws com.ead.katalyst.client.exception.ClientConfigurationException if configuration is invalid
      */
     fun build(): EventClient
 }

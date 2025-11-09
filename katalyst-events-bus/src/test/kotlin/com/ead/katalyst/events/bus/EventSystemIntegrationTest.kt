@@ -2,8 +2,8 @@ package com.ead.katalyst.events.bus
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventMetadata
-import com.ead.katalyst.events.EventValidator
-import com.ead.katalyst.events.ValidationResult
+import com.ead.katalyst.events.validation.EventValidator
+import com.ead.katalyst.events.validation.ValidationResult
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 import org.junit.jupiter.api.BeforeEach
