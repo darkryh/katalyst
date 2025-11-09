@@ -3,6 +3,10 @@ package com.ead.katalyst.scheduler.lifecycle
 import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.di.internal.ServiceRegistry
 import com.ead.katalyst.di.lifecycle.ApplicationInitializer
+import com.ead.katalyst.scheduler.exception.SchedulerDiscoveryException
+import com.ead.katalyst.scheduler.exception.SchedulerInvocationException
+import com.ead.katalyst.scheduler.exception.SchedulerServiceNotAvailableException
+import com.ead.katalyst.scheduler.exception.SchedulerValidationException
 import com.ead.katalyst.scheduler.job.SchedulerJobHandle
 import org.koin.core.Koin
 import org.objectweb.asm.*
@@ -85,6 +89,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 logger.info("║ ✓ PHASE 2 SKIPPED: Scheduler not enabled          ║")
                 logger.info("╚════════════════════════════════════════════════════╝")
                 logger.info("")
+                // Log as debug, don't throw - scheduler is optional
+                logger.debug("SchedulerService not found in Koin, scheduler will not be initialized")
                 return
             }
             logger.info("✓ SchedulerService available")
@@ -173,7 +179,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
                     logger.error("    ✗ {} FAILED: {}", signature, e.message)
                     failureCount++
                     throw SchedulerInvocationException(
-                        "Failed to invoke scheduler method $signature", e
+                        message = "Failed to invoke scheduler method $signature: ${e.message}",
+                        cause = e
                     )
                 }
             }
@@ -184,7 +191,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
 
             if (failureCount > 0) {
                 throw SchedulerInvocationException(
-                    "Scheduler invocation encountered $failureCount error(s)"
+                    message = "Scheduler invocation encountered $failureCount error(s). See logs above for details."
                 )
             }
 
@@ -309,12 +316,6 @@ internal class SchedulerInitializer : ApplicationInitializer {
         }.getOrNull() ?: throw IllegalStateException("SchedulerService class not found")
     }
 }
-
-/**
- * Exception thrown when scheduler method invocation fails.
- */
-class SchedulerInvocationException(message: String, cause: Throwable? = null) :
-    RuntimeException(message, cause)
 
 /**
  * Validates scheduler methods via bytecode analysis.

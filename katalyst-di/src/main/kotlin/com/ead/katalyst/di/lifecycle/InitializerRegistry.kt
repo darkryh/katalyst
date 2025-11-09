@@ -38,6 +38,18 @@ internal class InitializerRegistry(private val koin: Koin) {
      */
     suspend fun invokeAll() {
         try {
+            logger.info("")
+            logger.info("╔════════════════════════════════════════════════════╗")
+            logger.info("║ APPLICATION INITIALIZATION STARTING               ║")
+            logger.info("║                                                    ║")
+            logger.info("║ Phase 3: Component Discovery & Registration       ║")
+            logger.info("║ Phase 4: Database Schema Initialization           ║")
+            logger.info("║ Phase 5: Transaction Adapter Registration         ║")
+            logger.info("║ Phase 6: Application Initialization Hooks         ║")
+            logger.info("║                                                    ║")
+            logger.info("╚════════════════════════════════════════════════════╝")
+            logger.info("")
+
             // Built-in initializers (always present)
             val builtInInitializers = mutableListOf<ApplicationInitializer>(
                 StartupValidator()
@@ -50,7 +62,7 @@ internal class InitializerRegistry(private val koin: Koin) {
 
             logger.debug("Discovered {} ApplicationInitializer(s) from Koin", discoveredInitializers.size)
             discoveredInitializers.forEach { init ->
-                logger.debug("  Found: {}", init.initializerId)
+                logger.debug("  Found: {} (order={})", init.initializerId, init.order)
             }
 
             // Combine all initializers
@@ -59,23 +71,32 @@ internal class InitializerRegistry(private val koin: Koin) {
             // Sort by order (lower first)
             initializers.sortBy { it.order }
 
-            logger.info("Registered {} initializer(s):", initializers.size)
+            logger.info("")
+            logger.info("╔════════════════════════════════════════════════════╗")
+            logger.info("║ PHASE 6: INITIALIZATION HOOKS ({} total)          ║", initializers.size)
+            logger.info("╚════════════════════════════════════════════════════╝")
+            logger.info("")
+
             initializers.forEach { init ->
-                logger.info("  [Order: {}] {}",
-                    String.format("%4d", init.order),
-                    init.initializerId)
+                logger.info("  [Order: {:>4d}] {}", init.order, init.initializerId)
             }
             logger.info("")
 
             // Execute each initializer with fail-fast error handling
             initializers.forEach { initializer ->
+                val startTime = System.currentTimeMillis()
+
+                logger.info("⏱  Starting: {}", initializer.initializerId)
+
                 runCatching {
                     initializer.onApplicationReady(koin)
                 }.onFailure { e ->
+                    val duration = System.currentTimeMillis() - startTime
+
                     logger.error("")
                     logger.error("╔════════════════════════════════════════════════════╗")
                     logger.error("║ ✗ INITIALIZATION FAILED                           ║")
-                    logger.error("║ Failed at: {}", initializer.initializerId)
+                    logger.error("║ Failed at: {} ({} ms)", initializer.initializerId, duration)
                     logger.error("║ Reason: {}", e.message)
                     logger.error("╚════════════════════════════════════════════════════╝")
                     logger.error("")
@@ -92,16 +113,22 @@ internal class InitializerRegistry(private val koin: Koin) {
                     }
                     throw initException
                 }
+
+                val duration = System.currentTimeMillis() - startTime
+                logger.info("✓  Completed: {} ({} ms)", initializer.initializerId, duration)
             }
 
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
             logger.info("║ ✓ APPLICATION INITIALIZATION COMPLETE            ║")
             logger.info("║                                                    ║")
-            logger.info("║   • All components instantiated                    ║")
-            logger.info("║   • Database operational                           ║")
-            logger.info("║   • Scheduler tasks registered                     ║")
-            logger.info("║   • Application ready for traffic                  ║")
+            logger.info("║ Status: READY FOR TRAFFIC                          ║")
+            logger.info("║                                                    ║")
+            logger.info("║ ✓ All components instantiated                     ║")
+            logger.info("║ ✓ Database operational & schema ready             ║")
+            logger.info("║ ✓ Transaction adapters configured                 ║")
+            logger.info("║ ✓ Scheduler tasks registered & running            ║")
+            logger.info("║ ✓ All initializer hooks completed                 ║")
             logger.info("║                                                    ║")
             logger.info("╚════════════════════════════════════════════════════╝")
             logger.info("")
