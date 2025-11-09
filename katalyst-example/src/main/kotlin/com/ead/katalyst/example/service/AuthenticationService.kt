@@ -12,7 +12,7 @@ import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
 import com.ead.katalyst.example.infra.database.repositories.AuthAccountRepository
 import com.ead.katalyst.example.infra.mappers.toDomain
-import com.ead.katalyst.example.security.JwtSettings
+import com.ead.katalyst.example.config.security.JwtSettings
 import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.scheduler.cron.CronExpression
 import com.ead.katalyst.scheduler.config.ScheduleConfig
@@ -29,10 +29,6 @@ class AuthenticationService(
 
     private val scheduler = requireScheduler()
     private val logger = KtorSimpleLogger("AuthenticationService")
-
-    init {
-        scheduleAuthDigest()
-    }
 
     suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
         validator.validate(request)
@@ -83,17 +79,16 @@ class AuthenticationService(
             token = JwtSettings.generateToken(account.id, account.email)
         )
 
-    private fun scheduleAuthDigest() {
-        scheduler.scheduleCron(
-            config = ScheduleConfig(
-                taskName = "profiles.broadcast",
-                tags = setOf("demo"),
-                maxExecutionTime = 1.minutes
-            ),
-            task = { broadcastAuth() },
-            cronExpression = CronExpression("0 0/1 * * * ?")
-        )
-    }
+    @Suppress("unused")
+    fun scheduleAuthDigest() = scheduler.scheduleCron(
+        config = ScheduleConfig(
+            taskName = "profiles.broadcast",
+            tags = setOf("demo"),
+            maxExecutionTime = 1.minutes
+        ),
+        task = { broadcastAuth() },
+        cronExpression = CronExpression("0 0/1 * * * ?")
+    )
 
     private suspend fun broadcastAuth() = transactionManager.transaction {
         val profiles = repository.findAll().map { it.toDomain() }

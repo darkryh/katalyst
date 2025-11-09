@@ -69,7 +69,9 @@ class KatalystApplicationBuilder {
      */
     fun database(config: DatabaseConfig): KatalystApplicationBuilder {
         logger.debug("Database configuration supplied for Katalyst DI")
+
         this.databaseConfig = config
+
         return this
     }
 
@@ -78,18 +80,23 @@ class KatalystApplicationBuilder {
      */
     fun scanPackages(vararg packages: String): KatalystApplicationBuilder {
         logger.debug("Setting component scan packages: {}", packages.joinToString(", "))
+
         @Suppress("UNCHECKED_CAST")
         val copy = packages.clone() as Array<String>
+
         this.componentScanPackages = copy
+
         return this
     }
 
     /**
-     * Registers an optional feature (scheduler, events, websockets, etc).
+     * Registers an optional feature (scheduler, events, websockets, etc.).
      */
     fun feature(feature: KatalystFeature): KatalystApplicationBuilder {
         logger.debug("Registering optional feature: {}", feature.id)
+
         this.features += feature
+
         return this
     }
 
@@ -102,7 +109,9 @@ class KatalystApplicationBuilder {
      */
     fun withServerConfig(config: ServerConfiguration): KatalystApplicationBuilder {
         logger.debug("Setting server configuration: {}", config.engineType)
+
         this.serverConfig = config
+
         return this
     }
 
@@ -113,9 +122,14 @@ class KatalystApplicationBuilder {
      */
     fun withServerConfig(builder: ServerConfigurationBuilder.() -> Unit): KatalystApplicationBuilder {
         logger.debug("Setting server configuration with builder")
+
         val configBuilder = ServerConfigurationBuilder()
+
         configBuilder.builder()
+
+
         this.serverConfig = configBuilder.build()
+
         return this
     }
 

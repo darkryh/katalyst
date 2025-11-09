@@ -9,7 +9,7 @@ import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
 /**
- * Public feature object so applications can opt-in via [KatalystDIOptions].
+ * Public feature object so applications can opt in via [com.ead.katalyst.di.config.KatalystDIOptions].
  */
 object WebSocketFeature : KatalystFeature {
     private val logger = LoggerFactory.getLogger("WebSocketFeature")

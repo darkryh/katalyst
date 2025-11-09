@@ -1,7 +1,7 @@
 package com.ead.katalyst.example.routes
 
 import com.ead.katalyst.example.api.dto.UserProfileResponse
-import com.ead.katalyst.example.security.AuthPrincipal
+import com.ead.katalyst.example.config.security.AuthPrincipal
 import com.ead.katalyst.example.service.UserProfileService
 import com.ead.katalyst.ktor.builder.katalystRouting
 import com.ead.katalyst.ktor.extension.ktInject

@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.security
+package com.ead.katalyst.example.config.security
 
 import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.Application

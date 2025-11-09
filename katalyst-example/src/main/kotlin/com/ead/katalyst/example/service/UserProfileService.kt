@@ -17,10 +17,6 @@ class UserProfileService(
     private val scheduler = requireScheduler()
     private val logger = KtorSimpleLogger("UserProfileService")
 
-    init {
-        scheduleProfileDigest()
-    }
-
     suspend fun createProfileForAccount(
         accountId: Long,
         displayName: String
@@ -49,16 +45,15 @@ class UserProfileService(
             repository.findByAccountId(accountId)?.toDomain()
         }
 
-    private fun scheduleProfileDigest() {
-        scheduler.scheduleCron(
-            config = ScheduleConfig(
-                taskName = "profiles.broadcast",
-                tags = setOf("demo")
-            ),
-            task = { broadcastProfiles() },
-            cronExpression = CronExpression("0 0/1 * * * ?")
-        )
-    }
+    @Suppress("unused")
+    fun scheduleProfileDigest() = scheduler.scheduleCron(
+        config = ScheduleConfig(
+            taskName = "profiles.broadcast",
+            tags = setOf("demo")
+        ),
+        task = { broadcastProfiles() },
+        cronExpression = CronExpression("0 0/1 * * * ?")
+    )
 
     private suspend fun broadcastProfiles() = transactionManager.transaction {
         val profiles = repository.findAll().map { it.toDomain() }

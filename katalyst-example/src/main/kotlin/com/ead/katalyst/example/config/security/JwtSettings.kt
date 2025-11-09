@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.security
+package com.ead.katalyst.example.config.security
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -6,9 +6,8 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.Principal
-import io.ktor.server.auth.authentication
-import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
+import java.util.Date
 
 object JwtSettings {
     private val secret = System.getenv("JWT_SECRET") ?: "local-secret"
@@ -47,7 +46,7 @@ object JwtSettings {
             .withAudience(audience)
             .withClaim("accountId", accountId)
             .withClaim("email", email)
-            .withExpiresAt(java.util.Date(System.currentTimeMillis() + expirationSeconds * 1000))
+            .withExpiresAt(Date(System.currentTimeMillis() + expirationSeconds * 1000))
             .sign(algorithm)
 }
 
