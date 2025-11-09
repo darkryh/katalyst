@@ -70,44 +70,88 @@ class TransactionAdapterRegistry {
     /**
      * Execute all adapters for a specific transaction phase.
      *
-     * Adapters execute in priority order (high → low). If an adapter throws an exception,
-     * it is logged and other adapters continue to execute. No exception is propagated.
+     * Adapters execute in priority order (high → low). Tracks execution results including
+     * successes and failures. Critical adapter failures cause TransactionAdapterException
+     * to be thrown when failFast=true.
      *
      * @param phase The transaction phase
      * @param context The transaction context
+     * @param failFast If true, throw exception on critical adapter failure
+     * @return Execution results for monitoring and debugging
      */
     suspend fun executeAdapters(
         phase: TransactionPhase,
         context: TransactionEventContext,
         failFast: Boolean = false
-    ) {
+    ): PhaseExecutionResults {
         if (adapters.isEmpty()) {
             logger.debug("No adapters registered for phase: {}", phase)
-            return
+            return PhaseExecutionResults(phase, emptyList())
         }
 
         logger.debug("Executing {} adapter(s) for phase: {}", adapters.size, phase)
+        val results = mutableListOf<AdapterExecutionResult>()
 
         for (adapter in adapters) {
+            val startTime = System.currentTimeMillis()
             try {
                 logger.debug("Executing adapter {} for phase {}", adapter.name(), phase)
                 adapter.onPhase(phase, context)
+
+                val duration = System.currentTimeMillis() - startTime
+                results.add(
+                    AdapterExecutionResult(
+                        adapter = adapter,
+                        phase = phase,
+                        success = true,
+                        error = null,
+                        duration = duration
+                    )
+                )
+                logger.debug(
+                    "Adapter {} executed successfully in {}ms",
+                    adapter.name(),
+                    duration
+                )
             } catch (e: Exception) {
+                val duration = System.currentTimeMillis() - startTime
                 logger.error(
-                    "Error in transaction adapter {} during {}: {}",
+                    "Error in transaction adapter {} during {} ({}ms): {}",
                     adapter.name(),
                     phase,
+                    duration,
                     e.message,
                     e
                 )
-                if (failFast) {
-                    throw e
+
+                results.add(
+                    AdapterExecutionResult(
+                        adapter = adapter,
+                        phase = phase,
+                        success = false,
+                        error = e,
+                        duration = duration
+                    )
+                )
+
+                // If critical adapter fails and failFast is enabled, throw exception immediately
+                if (failFast && adapter.isCritical()) {
+                    val criticalFailures = results.filter { !it.success && it.adapter.isCritical() }
+                    val failedNames = criticalFailures.map { it.adapter.name() }.joinToString(", ")
+                    throw TransactionAdapterException(
+                        "Critical adapter(s) failed during $phase: $failedNames",
+                        e
+                    )
                 }
-                // Continue executing other adapters even if one fails
+
+                // Continue executing other adapters (non-critical failures don't stop execution)
             }
         }
 
         logger.debug("Finished executing adapters for phase: {}", phase)
+        val executionResults = PhaseExecutionResults(phase, results)
+        logger.debug("Phase execution summary: {}", executionResults.getSummary())
+        return executionResults
     }
 
     /**

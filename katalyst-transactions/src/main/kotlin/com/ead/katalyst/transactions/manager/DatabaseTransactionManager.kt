@@ -54,18 +54,19 @@ import java.util.UUID
  * 4. Begin Exposed transaction
  * 5. Execute AFTER_BEGIN adapters
  * 6. Execute user block
- * 7. Execute BEFORE_COMMIT adapters (still in TX)
- * 8. Commit database transaction
- * 9. AFTER_COMMIT hooks (outside TX)
- * 10. Return result
+ * 7. Execute BEFORE_COMMIT_VALIDATION adapters (NEW - P0 critical validation)
+ * 8. Execute BEFORE_COMMIT adapters (still in TX)
+ * 9. Commit database transaction
+ * 10. AFTER_COMMIT hooks (outside TX)
+ * 11. Return result
  *
  * Or on error:
- * 1-5. (same as above)
- * 6. Exception thrown in block
- * 7. ON_ROLLBACK hooks
- * 8. Rollback database transaction
- * 9. AFTER_ROLLBACK hooks
- * 10. Re-throw exception
+ * 1-6. (same as above)
+ * 7. Exception thrown in block or validation fails
+ * 8. ON_ROLLBACK hooks
+ * 9. Rollback database transaction
+ * 10. AFTER_ROLLBACK hooks
+ * 11. Re-throw exception
  * ```
  *
  * **Example Usage:**
@@ -168,6 +169,17 @@ class DatabaseTransactionManager(
                     logger.debug("Transaction context established, executing block")
                     val outcome = block()
 
+                    // Phase 3: BEFORE_COMMIT_VALIDATION adapters (P0 Critical)
+                    // NEW: Validate critical aspects (e.g., all pending events have handlers)
+                    // This phase MUST succeed or transaction rolls back
+                    logger.debug("Executing BEFORE_COMMIT_VALIDATION adapters inside transaction")
+                    adapterRegistry.executeAdapters(
+                        TransactionPhase.BEFORE_COMMIT_VALIDATION,
+                        transactionEventContext,
+                        failFast = true
+                    )
+
+                    // Phase 4: BEFORE_COMMIT adapters (still in TX)
                     logger.debug("Executing BEFORE_COMMIT adapters inside transaction")
                     adapterRegistry.executeAdapters(
                         TransactionPhase.BEFORE_COMMIT,
@@ -179,7 +191,7 @@ class DatabaseTransactionManager(
                 }
             }
 
-            // Phase 4: AFTER_COMMIT adapters (after transaction commits)
+            // Phase 5: AFTER_COMMIT adapters (after transaction commits)
             logger.debug("Executing AFTER_COMMIT adapters")
             adapterRegistry.executeAdapters(TransactionPhase.AFTER_COMMIT, transactionEventContext)
 

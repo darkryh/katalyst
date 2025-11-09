@@ -1015,6 +1015,7 @@ class TransactionPerformanceTest {
 
 ## Summary
 
+
 Your transaction system is **well-designed but needs P0/P1 improvements before production**:
 
 - **P0 (Critical)**: Fix partial event publishing and adapter failures

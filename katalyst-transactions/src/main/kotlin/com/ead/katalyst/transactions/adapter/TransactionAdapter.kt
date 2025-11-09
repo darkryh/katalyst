@@ -88,4 +88,21 @@ interface TransactionAdapter {
      * @return Priority value (default: 0)
      */
     fun priority(): Int = 0
+
+    /**
+     * Indicates if this adapter is critical to transaction consistency.
+     *
+     * Critical adapters:
+     * - Failures prevent transaction commit
+     * - Failures cause transaction rollback
+     * - Examples: EventsAdapter (event publishing must succeed)
+     *
+     * Non-critical adapters:
+     * - Failures are logged but don't affect transaction
+     * - Failures don't prevent commit
+     * - Examples: LoggingAdapter, CachingAdapter
+     *
+     * @return true if failures should rollback the transaction, false otherwise (default: false)
+     */
+    fun isCritical(): Boolean = false
 }

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory
  * **Phases Handled:**
  * - BEFORE_BEGIN: Prepare database connection and resources
  * - AFTER_BEGIN: Log transaction start and validate isolation level
+ * - BEFORE_COMMIT_VALIDATION: No-op (let other adapters validate) (NEW - P0)
  * - BEFORE_COMMIT: Validate state and flush pending writes
  * - AFTER_COMMIT: Connection cleanup and state reset
  * - ON_ROLLBACK: Clear pending writes and reset transaction state
@@ -41,6 +42,12 @@ class PersistenceTransactionAdapter : TransactionAdapter {
                 logger.debug("Transaction started, validating connection")
                 // Log transaction ID, validate isolation level
                 // Connection is now active and within transaction context
+            }
+            TransactionPhase.BEFORE_COMMIT_VALIDATION -> {
+                logger.debug("Before commit validation phase - persistence no-op")
+                // No-op for persistence adapter
+                // Other adapters (e.g., Events) handle critical validation
+                // NEW - P0: Event Publishing Validation
             }
             TransactionPhase.BEFORE_COMMIT -> {
                 logger.debug("Preparing to commit transaction")

@@ -105,6 +105,19 @@ class ApplicationEventBus(
     }
 
     /**
+     * Check if handlers are registered for an event type.
+     *
+     * Used for validation to ensure event can be published before transaction commits.
+     *
+     * @param event The event to check
+     * @return True if at least one handler is registered, false otherwise
+     */
+    fun hasHandlers(event: DomainEvent): Boolean {
+        val handlers = listeners[event::class]
+        return !handlers.isNullOrEmpty()
+    }
+
+    /**
      * Publish an event to all interested handlers.
      *
      * @param event The event to publish

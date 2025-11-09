@@ -58,10 +58,22 @@ package com.ead.katalyst.events
  */
 interface DomainEvent {
     /**
+     * Unique identifier for this event instance.
+     *
+     * Used for deduplication: if a service retries a transaction,
+     * the same event ID ensures the event is not published twice.
+     *
+     * Default: UUID.randomUUID().toString()
+     * Can be overridden to provide specific event IDs.
+     *
+     * NEW - P0 Critical Fix: Event Deduplication
+     */
+    val eventId: String
+
+    /**
      * Get the metadata associated with this event.
      *
      * Metadata includes:
-     * - Event ID (for deduplication)
      * - Event type (for routing)
      * - Correlation ID (for tracing)
      * - Causation ID (for causality tracking)

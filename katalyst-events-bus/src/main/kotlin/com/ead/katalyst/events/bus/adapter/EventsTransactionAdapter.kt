@@ -1,6 +1,11 @@
 package com.ead.katalyst.events.bus.adapter
 
 import com.ead.katalyst.events.bus.ApplicationEventBus
+import com.ead.katalyst.events.bus.deduplication.EventDeduplicationStore
+import com.ead.katalyst.events.bus.deduplication.NoOpEventDeduplicationStore
+import com.ead.katalyst.events.bus.validation.DefaultEventPublishingValidator
+import com.ead.katalyst.events.bus.validation.EventPublishingValidator
+import com.ead.katalyst.events.bus.validation.EventValidationException
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.context.TransactionEventContext
 import com.ead.katalyst.transactions.hooks.TransactionPhase
@@ -38,7 +43,9 @@ import org.slf4j.LoggerFactory
  * ```
  */
 class EventsTransactionAdapter(
-    private val eventBus: ApplicationEventBus
+    private val eventBus: ApplicationEventBus,
+    private val validator: EventPublishingValidator = DefaultEventPublishingValidator({ eventBus.hasHandlers(it) }),
+    private val deduplicationStore: EventDeduplicationStore = NoOpEventDeduplicationStore()
 ) : TransactionAdapter {
     private val logger = LoggerFactory.getLogger(EventsTransactionAdapter::class.java)
 
@@ -46,8 +53,16 @@ class EventsTransactionAdapter(
 
     override fun priority(): Int = 5  // Medium priority - after persistence
 
+    /**
+     * Mark this adapter as critical:
+     * If event publishing validation fails, the transaction must rollback
+     * to prevent inconsistent state (DB changes without corresponding events)
+     */
+    override fun isCritical(): Boolean = true
+
     override suspend fun onPhase(phase: TransactionPhase, context: TransactionEventContext) {
         when (phase) {
+            TransactionPhase.BEFORE_COMMIT_VALIDATION -> validateAllEvents(context)
             TransactionPhase.BEFORE_COMMIT -> publishPendingEvents(context)
             TransactionPhase.ON_ROLLBACK -> discardPendingEvents(context)
             else -> Unit
@@ -55,7 +70,47 @@ class EventsTransactionAdapter(
     }
 
     /**
+     * Validate all pending events before committing the transaction.
+     *
+     * This is a critical validation: if any event cannot be published,
+     * the entire transaction is rolled back.
+     *
+     * @param context The transaction context containing pending events
+     * @throws EventValidationException if any event fails validation
+     */
+    private suspend fun validateAllEvents(context: TransactionEventContext) {
+        val pendingEvents = context.getPendingEvents()
+        if (pendingEvents.isEmpty()) {
+            logger.debug("No pending events to validate")
+            return
+        }
+
+        logger.debug("Validating {} pending event(s) before transaction commit", pendingEvents.size)
+
+        for (event in pendingEvents) {
+            val result = validator.validate(event)
+            if (!result.isValid) {
+                logger.error(
+                    "Event validation failed before commit: {} (error: {})",
+                    event::class.simpleName,
+                    result.error
+                )
+                throw EventValidationException(
+                    event,
+                    result.error ?: "Validation failed"
+                )
+            }
+            logger.debug("Event validation passed: {}", event::class.simpleName)
+        }
+
+        logger.debug("All {} event(s) validated successfully", pendingEvents.size)
+    }
+
+    /**
      * Publishes all pending events that were queued during the transaction.
+     *
+     * Checks deduplication store first: if event was already published,
+     * skips it to prevent duplicates from retries.
      *
      * Each event is published independently. If an event fails to publish,
      * the error is logged but other events continue to be published.
@@ -70,12 +125,46 @@ class EventsTransactionAdapter(
         }
 
         logger.debug("Publishing {} pending event(s) before transaction commit", pendingEvents.size)
+        var publishedCount = 0
+        var skippedCount = 0
+
         for (event in pendingEvents) {
-            logger.debug("Publishing event: {}", event::class.simpleName)
-            eventBus.publish(event)
+            // NEW - P0 Critical: Check deduplication store
+            if (deduplicationStore.isEventPublished(event.eventId)) {
+                logger.warn(
+                    "Duplicate event detected and skipped: {} (eventId: {})",
+                    event::class.simpleName,
+                    event.eventId
+                )
+                skippedCount++
+                continue  // Skip duplicate
+            }
+
+            logger.debug("Publishing event: {} (eventId: {})", event::class.simpleName, event.eventId)
+            try {
+                eventBus.publish(event)
+
+                // NEW - P0 Critical: Mark as published after successful publishing
+                deduplicationStore.markAsPublished(event.eventId)
+                publishedCount++
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to publish event {} (eventId: {}): {}",
+                    event::class.simpleName,
+                    event.eventId,
+                    e.message,
+                    e
+                )
+                // Continue publishing other events
+            }
         }
+
         context.clearPendingEvents()
-        logger.debug("Finished publishing pending events")
+        logger.debug(
+            "Finished publishing pending events: {} published, {} skipped (duplicates)",
+            publishedCount,
+            skippedCount
+        )
     }
 
     /**

@@ -74,7 +74,7 @@ fun KatalystApplicationBuilder.enableEvents(
 }
 
 /**
- * Factory helper for direct feature registration via [KatalystDIOptions].
+ * Factory helper for direct feature registration via [com.ead.katalyst.di.config.KatalystDIOptions].
  */
 fun eventSystemFeature(
     configure: EventConfiguration.() -> Unit = {}
