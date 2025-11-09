@@ -16,6 +16,7 @@ rabbitmq-ktor = "1.3.6"
 kaccelero = "0.6.8"
 kourier = "0.2.7"
 kotlinx-serialization = "1.6.3"
+testcontainers = "1.19.0"
 
 [libraries]
 # --- HTTP stack (Ktor server, serialization, and testing) ---
@@ -66,3 +67,4 @@ kaccelero-core = { module = "dev.kaccelero:core-jvm", version.ref = "kaccelero" 
 kaccelero-messaging-amqp = { module = "dev.kaccelero:messaging-amqp-jvm", version.ref = "kaccelero" }
 kourier-amqp-robust = { module = "dev.kourier:amqp-client-robust-jvm", version.ref = "kourier" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
