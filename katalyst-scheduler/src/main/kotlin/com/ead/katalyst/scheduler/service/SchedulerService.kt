@@ -2,6 +2,8 @@ package com.ead.katalyst.scheduler.service
 
 import com.ead.katalyst.scheduler.config.ScheduleConfig
 import com.ead.katalyst.scheduler.cron.CronExpression
+import com.ead.katalyst.scheduler.job.SchedulerJobHandle
+import com.ead.katalyst.scheduler.job.asSchedulerHandle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,13 +39,13 @@ class SchedulerService(
      * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
      * @param fixedRate Interval between executions (ZERO for one-time execution)
-     * @return Job that can be cancelled to stop scheduling
+     * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
     fun schedule(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         fixedRate: Duration
-    ): Job {
+    ): SchedulerJobHandle {
         require(!fixedRate.isNegative()) { "fixedRate must be >= 0" }
 
         logger.debug("Scheduling task '{}' with initial delay: {}, fixed rate: {}, tags: {}",
@@ -64,7 +66,7 @@ class SchedulerService(
                     delay(fixedRate)
                 }
             }
-        }
+        }.asSchedulerHandle()
     }
 
     /**
@@ -78,13 +80,13 @@ class SchedulerService(
      * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
      * @param fixedDelay Delay after completion before next execution
-     * @return Job that can be cancelled to stop scheduling
+     * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
     fun scheduleFixedDelay(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         fixedDelay: Duration
-    ): Job {
+    ): SchedulerJobHandle {
         require(fixedDelay > Duration.Companion.ZERO) { "fixedDelay must be > 0" }
 
         logger.info("Scheduling fixed delay task '{}' with initial delay: {}, fixed delay: {}, tags: {}",
@@ -104,7 +106,7 @@ class SchedulerService(
                     delay(fixedDelay)
                 }
             }
-        }
+        }.asSchedulerHandle()
     }
 
     /**
@@ -116,13 +118,13 @@ class SchedulerService(
      * @param config Configuration for the task (name, delay, timeout, timezone, error handling, etc.)
      * @param task The suspend function to execute
      * @param cronExpression The cron expression defining the schedule
-     * @return Job that can be cancelled to stop scheduling
+     * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
     fun scheduleCron(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         cronExpression: CronExpression
-    ): Job {
+    ): SchedulerJobHandle {
         logger.info("Scheduling cron task '{}' with expression '{}', timezone: {}, tags: {}",
             config.taskName, cronExpression, config.timeZone, config.tags)
 
@@ -145,7 +147,7 @@ class SchedulerService(
                     }
                 }
             }
-        }
+        }.asSchedulerHandle()
     }
 
     /**

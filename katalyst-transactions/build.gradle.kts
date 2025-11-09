@@ -28,6 +28,12 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.koin.test.junit5)
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.platform.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 kotlin {

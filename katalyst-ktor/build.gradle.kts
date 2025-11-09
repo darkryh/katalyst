@@ -13,6 +13,7 @@ dependencies {
     // Katalyst modules
     implementation(projects.katalystCore)
     implementation(projects.katalystScanner)
+    implementation(projects.katalystKtorEngine)
 
     // Ktor
     implementation(libs.ktor.server.core)

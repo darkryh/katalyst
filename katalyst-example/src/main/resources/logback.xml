@@ -9,8 +9,15 @@
     </root>
     <!-- Enable DEBUG for Katalyst DI initialization -->
     <logger name="com.ead.katalyst" level="DEBUG"/>
-    <logger name="bootstrapKatalystDI" level="DEBUG"/>
+    <logger name="bootstrapKatalystDI" level="INFO"/>
+    <logger name="DIConfiguration" level="INFO"/>
     <logger name="AutoBindingRegistrar" level="DEBUG"/>
+    <!-- Enable initializer loggers -->
+    <logger name="InitializerRegistry" level="INFO"/>
+    <logger name="StartupValidator" level="INFO"/>
+    <logger name="SchedulerMethodInvoker" level="INFO"/>
+    <logger name="MethodBytecodeValidator" level="DEBUG"/>
+    <logger name="ServiceRegistry" level="DEBUG"/>
     <!-- Suppress verbose libraries -->
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>

@@ -23,6 +23,10 @@ dependencies {
     implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-websockets"))
 
+    // Ktor engine implementation
+    implementation(project(":katalyst-ktor-engine"))
+    implementation(project(":katalyst-ktor-engine-netty"))
+
     // Event system
     implementation(project(":katalyst-events"))
     implementation(project(":katalyst-events-bus"))

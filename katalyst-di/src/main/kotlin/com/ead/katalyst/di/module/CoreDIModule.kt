@@ -2,6 +2,8 @@ package com.ead.katalyst.di.module
 
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.database.databaseModule
+import com.ead.katalyst.di.lifecycle.ApplicationInitializer
+import com.ead.katalyst.di.lifecycle.EngineInitializer
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
@@ -41,5 +43,9 @@ fun coreDIModule(config: DatabaseConfig): Module = module {
     val logger = LoggerFactory.getLogger("CoreDIModule")
     logger.info("Initializing Core DI Module with database and transaction management")
     includes(databaseModule(config))
+
+    // Register EngineInitializer for Ktor engine discovery and initialization
+    single<ApplicationInitializer> { EngineInitializer() }
+
     logger.info("Core DI Module initialized successfully")
 }

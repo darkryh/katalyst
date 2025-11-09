@@ -13,6 +13,7 @@ import com.ead.katalyst.events.bus.ApplicationEventBus
 import com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
@@ -115,6 +116,20 @@ fun bootstrapKatalystDI(
         scannerDIModule()
     )
 
+    // Automatically load Netty engine module if available on classpath
+    try {
+        val nettyModuleClass = Class.forName("com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt")
+        val getNettyModuleMethod = nettyModuleClass.getMethod("getNettyEngineModuleInstance")
+        val nettyModule = getNettyModuleMethod.invoke(null) as? Module
+        if (nettyModule != null) {
+            logger.debug("Netty engine module found on classpath, including it")
+            modules.add(nettyModule)
+        }
+    } catch (e: Exception) {
+        logger.debug("Netty engine module not available: {}", e.javaClass.simpleName)
+        // Continue without it - alternative engine implementations will be tried
+    }
+
     features.forEach { feature ->
         logger.debug("Including feature '{}' modules", feature.id)
         modules += feature.provideModules()
@@ -202,6 +217,23 @@ fun bootstrapKatalystDI(
         logger.info("Transaction adapter registration completed")
     } catch (e: Exception) {
         logger.warn("Error registering transaction adapters: {}", e.message)
+    }
+
+    // ✅ NEW: Execute application initialization lifecycle
+    // This runs after all DI is complete and database is ready
+    try {
+        logger.info("Starting application initialization lifecycle...")
+        val registry = com.ead.katalyst.di.lifecycle.InitializerRegistry(koin)
+
+        // Must block - initialization must complete synchronously
+        runBlocking {
+            registry.invokeAll()
+        }
+
+        logger.info("Application initialization lifecycle completed")
+    } catch (e: Exception) {
+        logger.error("Fatal error during application initialization", e)
+        throw e
     }
 
     return koin

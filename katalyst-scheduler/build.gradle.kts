@@ -5,6 +5,7 @@ plugins {
 dependencies {
     // Language/runtime
     implementation(kotlin("stdlib"))
+    implementation(kotlin("reflect"))
 
     // Core modules
     implementation(projects.katalystCore)
@@ -14,6 +15,9 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.core.jvm)
     implementation(libs.kotlinx.coroutines.core)
+
+    // Bytecode analysis for scheduler method discovery
+    implementation(libs.asm)
 
     // Logging
     implementation(libs.logback)

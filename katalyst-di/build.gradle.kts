@@ -13,6 +13,9 @@ dependencies {
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
 
+    // Ktor engine abstraction (decoupled from specific engine implementations)
+    implementation(projects.katalystKtorEngine)
+
     // Event system modules
     implementation(projects.katalystEvents)
     implementation(projects.katalystEventsBus)

@@ -137,6 +137,16 @@ class AutoBindingRegistrar(
 
                 if (isAlreadyRegistered(clazz)) {
                     logger.debug("Skipping {} - already registered", clazz.name)
+                    // Still register in ServiceRegistry if this is a Service
+                    if (baseType == Service::class.java) {
+                        runCatching {
+                            val instance = koin.getFromKoinOrNull(clazz.kotlin)
+                            if (instance is Service) {
+                                ServiceRegistry.register(instance)
+                                logger.debug("Registered already-instantiated service {} in ServiceRegistry", clazz.name)
+                            }
+                        }
+                    }
                     iterator.remove()
                     progressMade = true
                     continue
@@ -153,6 +163,9 @@ class AutoBindingRegistrar(
                     }
                     if (baseType == KtorModule::class.java) {
                         KtorModuleRegistry.register(instance as KtorModule)
+                    }
+                    if (baseType == Service::class.java) {
+                        ServiceRegistry.register(instance as Service)
                     }
                     logger.info("Registered {} component {}", label, clazz.name)
                     if (koin.getFromKoinOrNull(clazz.kotlin) == null) {
