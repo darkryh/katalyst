@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.middleware
+package com.ead.katalyst.example.config
 
 import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.*

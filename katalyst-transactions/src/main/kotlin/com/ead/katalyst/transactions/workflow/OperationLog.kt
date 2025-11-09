@@ -11,7 +11,7 @@ package com.ead.katalyst.transactions.workflow
  *
  * **Async Behavior**:
  * All write operations should be non-blocking. The caller should not wait
- * for the write to complete before continuing with the transaction.
+ * for to write to complete before continuing with the transaction.
  */
 interface OperationLog {
 

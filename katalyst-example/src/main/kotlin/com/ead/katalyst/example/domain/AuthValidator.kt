@@ -1,8 +1,8 @@
 package com.ead.katalyst.example.domain
 
 import com.ead.katalyst.core.component.Component
-import com.ead.katalyst.example.api.LoginRequest
-import com.ead.katalyst.example.api.RegisterRequest
+import com.ead.katalyst.example.api.dto.LoginRequest
+import com.ead.katalyst.example.api.dto.RegisterRequest
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 
 class AuthValidator : Component {

@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.events.handlers
+package com.ead.katalyst.example.domain.events.handlers
 
 import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.example.domain.events.UserRegisteredEvent

@@ -1,6 +1,5 @@
 package com.ead.katalyst.repositories
 
-import com.ead.katalyst.repositories.Identifiable
 import com.ead.katalyst.transactions.workflow.CurrentWorkflowContext
 import com.ead.katalyst.transactions.workflow.OperationLog
 import org.slf4j.LoggerFactory
@@ -9,7 +8,7 @@ import org.slf4j.LoggerFactory
  * Base repository class that automatically tracks all operations for workflow purposes.
  *
  * **Auto-Tracking Behavior**:
- * When CurrentWorkflowContext is set (within a transactionManager.transaction call),
+ * When CurrentWorkflowContext is set (within a transactionManager. Transaction call),
  * all repository operations are automatically logged for:
  * - Audit trail
  * - Automatic undo on failure
@@ -31,13 +30,13 @@ import org.slf4j.LoggerFactory
  * Operation logging is async and non-blocking. Repositories don't wait for
  * the log write to complete before returning to the caller.
  *
- * @param ID Entity ID type (must be Comparable)
+ * @param Id Entity ID type (must be Comparable)
  * @param T Entity type (must implement Identifiable<ID>)
  * @param operationLog The operation log for tracking
  */
-abstract class TrackedRepository<ID : Comparable<ID>, T : Identifiable<ID>>(
+abstract class TrackedRepository<Id : Comparable<Id>, T : Identifiable<Id>>(
     protected val operationLog: OperationLog
-) : Repository<ID, T> {
+) : Repository<Id, T> {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -47,8 +46,8 @@ abstract class TrackedRepository<ID : Comparable<ID>, T : Identifiable<ID>>(
      * Automatically logs the operation to the current workflow (if active).
      * Non-blocking: Returns immediately, logging happens async.
      *
-     * @param operation Operation type (INSERT, UPDATE, DELETE, etc)
-     * @param resourceType Type of resource (User, Order, etc)
+     * @param operation Operation type (INSERT, UPDATE, DELETE, etc.)
+     * @param resourceType Type of resource (User, Order, etc.)
      * @param resourceId ID of the resource (optional)
      * @param action The actual operation to perform
      * @return Result of the action
@@ -56,7 +55,7 @@ abstract class TrackedRepository<ID : Comparable<ID>, T : Identifiable<ID>>(
     protected suspend fun <R> tracked(
         operation: String,
         resourceType: String,
-        resourceId: ID? = null,
+        resourceId: Id? = null,
         action: suspend () -> R
     ): R {
         // Execute the actual operation

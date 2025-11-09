@@ -1,7 +1,7 @@
 package com.ead.katalyst.example.routes
 
-import com.ead.katalyst.example.api.DetailedHealthResponse
-import com.ead.katalyst.example.api.HealthStatusResponse
+import com.ead.katalyst.example.api.dto.DetailedHealthResponse
+import com.ead.katalyst.example.api.dto.HealthStatusResponse
 import com.ead.katalyst.ktor.builder.katalystRouting
 import io.ktor.http.*
 import io.ktor.server.response.*

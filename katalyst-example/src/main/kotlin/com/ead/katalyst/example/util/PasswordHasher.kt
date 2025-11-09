@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.component
+package com.ead.katalyst.example.util
 
 import com.ead.katalyst.core.component.Component
 import java.security.MessageDigest

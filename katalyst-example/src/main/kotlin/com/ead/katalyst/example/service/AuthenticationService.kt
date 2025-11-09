@@ -1,10 +1,10 @@
 package com.ead.katalyst.example.service
 
 import com.ead.katalyst.events.bus.EventBus
-import com.ead.katalyst.example.api.AuthResponse
-import com.ead.katalyst.example.api.LoginRequest
-import com.ead.katalyst.example.api.RegisterRequest
-import com.ead.katalyst.example.component.PasswordHasher
+import com.ead.katalyst.example.api.dto.AuthResponse
+import com.ead.katalyst.example.api.dto.LoginRequest
+import com.ead.katalyst.example.api.dto.RegisterRequest
+import com.ead.katalyst.example.util.PasswordHasher
 import com.ead.katalyst.example.domain.AuthAccount
 import com.ead.katalyst.example.domain.AuthValidator
 import com.ead.katalyst.example.domain.events.UserRegisteredEvent

@@ -799,10 +799,10 @@ private class RouteFunctionModule(
  * Used for bytecode analysis to detect if a route function uses Katalyst DSL.
  */
 private val katalystDslOwners = setOf(
-    "com/ead/katalyst/routes/RoutingBuilderKt",
-    "com/ead/katalyst/routes/WebSocketBuilderKt",
-    "com/ead/katalyst/routes/ExceptionHandlerBuilderKt",
-    "com/ead/katalyst/routes/MiddlewareKt"
+    "com/ead/katalyst/ktor/builder/RoutingBuilderKt",
+    "com/ead/katalyst/websockets/builder/WebSocketBuilderKt",
+    "com/ead/katalyst/ktor/builder/ExceptionHandlerBuilderKt",
+    "com/ead/katalyst/ktor/middleware/MiddlewareKt"
 )
 
 /**

@@ -1,16 +1,15 @@
 package com.ead.katalyst.example.service
 
+import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.example.domain.UserProfile
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.UserProfileEntity
 import com.ead.katalyst.example.infra.database.repositories.UserProfileRepository
 import com.ead.katalyst.example.infra.mappers.toDomain
-import com.ead.katalyst.core.component.Service
-import com.ead.katalyst.scheduler.cron.CronExpression
 import com.ead.katalyst.scheduler.config.ScheduleConfig
+import com.ead.katalyst.scheduler.cron.CronExpression
 import com.ead.katalyst.scheduler.extension.requireScheduler
 import io.ktor.util.logging.*
-import kotlin.time.Duration.Companion.minutes
 
 class UserProfileService(
     private val repository: UserProfileRepository
@@ -54,8 +53,7 @@ class UserProfileService(
         scheduler.scheduleCron(
             config = ScheduleConfig(
                 taskName = "profiles.broadcast",
-                tags = setOf("demo"),
-                maxExecutionTime = 1.minutes
+                tags = setOf("demo")
             ),
             task = { broadcastProfiles() },
             cronExpression = CronExpression("0 0/1 * * * ?")

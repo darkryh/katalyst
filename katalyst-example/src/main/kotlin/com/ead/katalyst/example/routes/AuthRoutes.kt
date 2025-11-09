@@ -1,7 +1,7 @@
 package com.ead.katalyst.example.routes
 
-import com.ead.katalyst.example.api.LoginRequest
-import com.ead.katalyst.example.api.RegisterRequest
+import com.ead.katalyst.example.api.dto.LoginRequest
+import com.ead.katalyst.example.api.dto.RegisterRequest
 import com.ead.katalyst.example.service.AuthenticationService
 import com.ead.katalyst.ktor.builder.katalystRouting
 import com.ead.katalyst.ktor.extension.ktInject

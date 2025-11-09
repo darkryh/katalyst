@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.api
+package com.ead.katalyst.example.api.dto
 
 import com.ead.katalyst.example.domain.UserProfile
 import kotlinx.serialization.Serializable

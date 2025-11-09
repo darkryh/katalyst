@@ -1,6 +1,5 @@
-package com.ead.katalyst.example.middleware
+package com.ead.katalyst.example.security
 
-import com.ead.katalyst.example.security.JwtSettings
 import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.Application
 

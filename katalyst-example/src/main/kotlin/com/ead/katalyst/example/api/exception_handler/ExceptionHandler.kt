@@ -1,6 +1,6 @@
-package com.ead.katalyst.example.exceptionHandler
+package com.ead.katalyst.example.api.exception_handler
 
-import com.ead.katalyst.example.api.ErrorResponse
+import com.ead.katalyst.example.api.dto.ErrorResponse
 import com.ead.katalyst.example.domain.exception.TestException
 import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.ktor.builder.katalystExceptionHandler
