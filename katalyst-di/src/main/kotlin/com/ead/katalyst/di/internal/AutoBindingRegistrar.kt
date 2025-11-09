@@ -5,7 +5,7 @@ import com.ead.katalyst.core.transaction.DatabaseTransactionManager
 import com.ead.katalyst.core.exception.DependencyInjectionException
 import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
-import com.ead.katalyst.repositories.Repository
+import com.ead.katalyst.repositories.CrudRepository
 import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
@@ -14,7 +14,6 @@ import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.di.lifecycle.DiscoverySummary
-import com.ead.katalyst.di.lifecycle.DiscoverySummaryLogger
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.core.Koin
@@ -53,7 +52,7 @@ private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
  * registers them in the Koin DI container.
  *
  * **Discovered Component Types:**
- * - [Repository] implementations (data access layer)
+ * - [CrudRepository] implementations (data access layer)
  * - [Component] implementations (general framework components)
  * - [Table] implementations (database schema definitions)
  * - [KtorModule] implementations (HTTP routing and middleware)
@@ -96,7 +95,7 @@ class AutoBindingRegistrar(
      * their dependencies become available.
      */
     fun registerAll() {
-        registerComponents(Repository::class.java, "repositories")
+        registerComponents(CrudRepository::class.java, "repositories")
         registerComponents(Component::class.java, "components")
         registerComponents(Service::class.java, "services")
         registerTables()
@@ -134,7 +133,7 @@ class AutoBindingRegistrar(
         try {
             DiscoverySummary.clear()
 
-            koin.safeGetAll<Repository<*, *>>().forEach { repo ->
+            koin.safeGetAll<CrudRepository<*, *>>().forEach { repo ->
                 DiscoverySummary.addRepository(
                     name = repo::class.simpleName ?: "Repository",
                     annotation = "@Repository"
@@ -458,7 +457,7 @@ class AutoBindingRegistrar(
      * - [Any] (Kotlin/Java base type)
      * - [Component] (framework marker)
      * - [Service] (framework marker)
-     * - [Repository] (framework marker)
+     * - [CrudRepository] (framework marker)
      * - [EventHandler] (framework marker)
      *
      * @param clazz The component class to analyze
@@ -473,7 +472,7 @@ class AutoBindingRegistrar(
             Any::class,
             Component::class,
             Service::class,
-            Repository::class,
+            CrudRepository::class,
             EventHandler::class,
             KatalystMigration::class
         )

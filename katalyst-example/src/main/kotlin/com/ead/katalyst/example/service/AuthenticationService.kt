@@ -44,9 +44,6 @@ class AuthenticationService(
             )
         ).toDomain()
 
-
-        println("publishing new register")
-
         eventBus.publish(
             UserRegisteredEvent(
                 accountId = account.id,
@@ -82,7 +79,7 @@ class AuthenticationService(
     @Suppress("unused")
     fun scheduleAuthDigest() = scheduler.scheduleCron(
         config = ScheduleConfig(
-            taskName = "profiles.broadcast",
+            taskName = "authentication.broadcast",
             tags = setOf("demo"),
             maxExecutionTime = 1.minutes
         ),

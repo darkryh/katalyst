@@ -2,29 +2,29 @@ package com.ead.katalyst.example.infra.database.repositories
 
 import com.ead.katalyst.example.infra.database.entities.UserProfileEntity
 import com.ead.katalyst.example.infra.database.tables.UserProfilesTable
-import com.ead.katalyst.repositories.TrackedRepository
-import com.ead.katalyst.transactions.workflow.OperationLog
+import com.ead.katalyst.repositories.CrudRepository
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.selectAll
 
 /**
- * Repository for UserProfile entities with automatic operation tracking.
+ * Repository for UserProfile entities.
  *
- * All CRUD operations are automatically logged to the operation log via the TrackedRepository base class.
- * This enables automatic rollback on transaction failure.
+ * Transactions are handled at the service layer via transactionManager.
+ * All service operations are executed within a transaction context that ensures:
+ * - Database changes are committed together
+ * - Events are published only after successful commit
+ * - Rollback discards all changes and queued events
  *
  * **Usage in Transactions**:
  * ```kotlin
  * transactionManager.transaction(workflowId) {
- *     userProfileRepository.save(profile)  // Automatically tracked
- *     userProfileRepository.findByAccountId(123)  // Not tracked (read-only)
+ *     userProfileRepository.save(profile)
+ *     userProfileRepository.findByAccountId(123)
  * }
  * ```
  */
-class UserProfileRepository(
-    operationLog: OperationLog
-) : TrackedRepository<Long, UserProfileEntity>(operationLog) {
+class UserProfileRepository : CrudRepository<Long, UserProfileEntity> {
 
     override val table: LongIdTable = UserProfilesTable
 

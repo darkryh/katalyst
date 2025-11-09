@@ -2,29 +2,29 @@ package com.ead.katalyst.example.infra.database.repositories
 
 import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
 import com.ead.katalyst.example.infra.database.tables.AuthAccountsTable
-import com.ead.katalyst.repositories.TrackedRepository
-import com.ead.katalyst.transactions.workflow.OperationLog
+import com.ead.katalyst.repositories.CrudRepository
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.selectAll
 
 /**
- * Repository for AuthAccount entities with automatic operation tracking.
+ * Repository for AuthAccount entities.
  *
- * All CRUD operations are automatically logged to the operation log via the TrackedRepository base class.
- * This enables automatic rollback on transaction failure.
+ * Transactions are handled at the service layer via transactionManager.
+ * All service operations are executed within a transaction context that ensures:
+ * - Database changes are committed together
+ * - Events are published only after successful commit
+ * - Rollback discards all changes and queued events
  *
  * **Usage in Transactions**:
  * ```kotlin
  * transactionManager.transaction(workflowId) {
- *     authAccountRepository.save(account)  // Automatically tracked
- *     authAccountRepository.findByEmail("test@example.com")  // Not tracked (read-only)
+ *     authAccountRepository.save(account)
+ *     authAccountRepository.findByEmail("test@example.com")
  * }
  * ```
  */
-class AuthAccountRepository(
-    operationLog: OperationLog
-) : TrackedRepository<Long, AuthAccountEntity>(operationLog) {
+class AuthAccountRepository : CrudRepository<Long, AuthAccountEntity> {
 
     override val table: LongIdTable = AuthAccountsTable
 

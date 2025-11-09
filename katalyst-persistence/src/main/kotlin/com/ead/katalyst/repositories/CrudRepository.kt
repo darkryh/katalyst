@@ -97,7 +97,7 @@ import kotlin.reflect.jvm.isAccessible
  * @param Id Primary key type managed by the table
  * @param IdentifiableEntityId Domain model returned by repository methods
  */
-interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id>> {
+interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id>> {
     /**
      * Reference to the Exposed table that backs this repository.
      */
@@ -224,11 +224,8 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
             val value = property.getter.call(entity)
 
             if (value == null && !column.columnType.nullable) {
-                println("[WARNING] Property '${property.name}' is null but column '${column.name}' is not nullable. Skipping.")
                 return@forEach
             }
-
-            println("[DEBUG] Binding column '${column.name}' to property '${property.name}' with value: $value (type: ${value?.javaClass?.simpleName})")
 
             // Handle EntityID reference columns: automatically wrap raw ID values in EntityID
             val valueToSet = if (value != null && column.columnType is EntityIDColumnType<*>) {
@@ -272,10 +269,8 @@ interface Repository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id
             constructor.isAccessible = true
 
             val entityId = constructor.newInstance(value as Comparable<*>, referencedTable)
-            println("[DEBUG] Successfully wrapped reference column value '$value' in EntityID")
             entityId
         } catch (e: Exception) {
-            println("[ERROR] Failed to create EntityID for reference column value '$value': ${e.javaClass.simpleName}: ${e.message}")
             e.printStackTrace()
             // Fall back to raw value (will likely cause a database error, but at least we logged it)
             value

@@ -28,7 +28,7 @@ import java.util.UUID
  *
  * **Architecture:**
  * Services use this manager to execute repository operations within a transaction.
- * Repositories do NOT have suspend functions - they execute synchronously within
+ * Repositories do NOT have suspended functions - they execute synchronously within
  * the transaction context provided by this manager.
  *
  * Modules register `TransactionAdapter` instances to handle their concerns:
