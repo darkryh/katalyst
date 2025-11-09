@@ -2,6 +2,7 @@ package com.ead.katalyst.di.lifecycle
 
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
+import com.ead.katalyst.di.lifecycle.BootstrapProgress
 
 /**
  * Registry for managing application initialization lifecycle.
@@ -37,6 +38,9 @@ internal class InitializerRegistry(private val koin: Koin) {
      * - Executes sequentially with fail-fast error handling
      */
     suspend fun invokeAll() {
+        // PHASE 6: Application Initialization Hooks
+        BootstrapProgress.startPhase(6)
+
         try {
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
@@ -133,8 +137,11 @@ internal class InitializerRegistry(private val koin: Koin) {
             logger.info("╚════════════════════════════════════════════════════╝")
             logger.info("")
 
+            BootstrapProgress.completePhase(6, "All application initialization hooks completed")
+
         } catch (e: Exception) {
             logger.error("Fatal error during initialization", e)
+            BootstrapProgress.failPhase(6, e)
             throw e
         }
     }

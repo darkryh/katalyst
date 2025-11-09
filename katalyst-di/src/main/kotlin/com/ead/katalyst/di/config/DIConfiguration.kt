@@ -11,6 +11,9 @@ import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.module.scannerDIModule
 import com.ead.katalyst.events.bus.ApplicationEventBus
 import com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter
+import com.ead.katalyst.di.lifecycle.BootstrapProgress
+import com.ead.katalyst.di.lifecycle.StartupWarnings
+import com.ead.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import kotlinx.coroutines.runBlocking
@@ -146,16 +149,25 @@ fun bootstrapKatalystDI(
     }
 
     // Register components including tables
-    logger.info("Starting AutoBindingRegistrar to discover components...")
-    AutoBindingRegistrar(koin, scanPackages).registerAll()
-    logger.info("AutoBindingRegistrar completed")
+    // PHASE 3: Component Discovery & Registration
+    BootstrapProgress.startPhase(3)
+    try {
+        logger.info("Starting AutoBindingRegistrar to discover components...")
+        AutoBindingRegistrar(koin, scanPackages).registerAll()
+        logger.info("AutoBindingRegistrar completed")
+        BootstrapProgress.completePhase(3, "Discovered repositories, services, components, and validators")
+    } catch (e: Exception) {
+        BootstrapProgress.failPhase(3, e)
+        throw e
+    }
 
     features.forEach { feature ->
         logger.debug("Executing onKoinReady hook for feature '{}'", feature.id)
         feature.onKoinReady(koin)
     }
 
-    // Now that tables are discovered and registered in Koin, create DatabaseFactory with them
+    // PHASE 4: Database Schema Initialization
+    BootstrapProgress.startPhase(4)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from Koin...")
         val discoveredTables = koin.getAll<Table>()
@@ -184,22 +196,28 @@ fun bootstrapKatalystDI(
                 logger.info("Registered DatabaseFactory with {} Exposed table(s)", exposedTables.size)
             }
         }
+        BootstrapProgress.completePhase(4, "Database schema initialized with ${discoveredTables.size} tables")
     } catch (e: Exception) {
         logger.warn("Error discovering tables or creating DatabaseFactory: {}", e.message)
         logger.debug("Full error during table discovery", e)
-        // Continue with the default DatabaseFactory created by coreDIModule
+        BootstrapProgress.failPhase(4, e)
+        throw e
     }
 
-    // Register transaction adapters
+    // PHASE 5: Transaction Adapter Registration
+    BootstrapProgress.startPhase(5)
     try {
         logger.info("Registering transaction adapters...")
         val transactionManager = koin.get<DatabaseTransactionManager>()
+
+        var adaptersRegistered = 0
 
         // Register Persistence adapter (always available)
         try {
             val persistenceAdapter = PersistenceTransactionAdapter()
             transactionManager.addAdapter(persistenceAdapter)
             logger.info("Registered Persistence transaction adapter")
+            adaptersRegistered++
         } catch (e: Exception) {
             logger.warn("Failed to register Persistence adapter: {}", e.message)
         }
@@ -210,13 +228,23 @@ fun bootstrapKatalystDI(
             val eventsAdapter = EventsTransactionAdapter(eventBus)
             transactionManager.addAdapter(eventsAdapter)
             logger.info("Registered Events transaction adapter")
+            adaptersRegistered++
         } catch (e: Exception) {
             logger.debug("ApplicationEventBus not available, skipping Events adapter registration: {}", e.message)
+            StartupWarnings.add(
+                category = "Optional Adapters",
+                message = "Events transaction adapter not available",
+                severity = StartupWarningsAggregator.WarningSeverity.INFO,
+                hint = "Add katalyst-events dependency to enable event-driven transactions"
+            )
         }
 
-        logger.info("Transaction adapter registration completed")
+        logger.info("Transaction adapter registration completed with {} adapter(s)", adaptersRegistered)
+        BootstrapProgress.completePhase(5, "Registered $adaptersRegistered transaction adapter(s)")
     } catch (e: Exception) {
         logger.warn("Error registering transaction adapters: {}", e.message)
+        BootstrapProgress.failPhase(5, e)
+        throw e
     }
 
     // ✅ NEW: Execute application initialization lifecycle

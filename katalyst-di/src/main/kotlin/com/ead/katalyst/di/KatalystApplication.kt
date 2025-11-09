@@ -12,6 +12,7 @@ import com.ead.katalyst.di.internal.KtorModuleRegistry
 import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.lifecycle.StartupWarnings
+import com.ead.katalyst.di.lifecycle.BootstrapProgress
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
@@ -256,11 +257,15 @@ fun katalystApplication(
         val embeddedServer = createEmbeddedServer(args, serverConfig, logger)
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
+            // PHASE 7: Ktor Engine Startup
+            BootstrapProgress.startPhase(7)
+
             runCatching {
                 val wrappedApplication = application.wrap(serverConfig.applicationWrapper)
                 builder.configureApplication(wrappedApplication)
             }.onFailure { error ->
                 logger.error("Failed to configure Ktor application", error)
+                BootstrapProgress.failPhase(7, error)
                 throw error
             }
         }
@@ -268,6 +273,9 @@ fun katalystApplication(
         embeddedServer.monitor.subscribe(ApplicationStarted) {
             val elapsedSeconds = (System.nanoTime() - bootStart) / 1_000_000_000.0
             logger.info("Katalyst started in {} s (actual)", String.format("%.3f", elapsedSeconds))
+
+            BootstrapProgress.completePhase(7, "Ktor server is listening")
+            BootstrapProgress.displayProgressSummary()
         }
 
         embeddedServer.monitor.subscribe(ApplicationStopping) {
