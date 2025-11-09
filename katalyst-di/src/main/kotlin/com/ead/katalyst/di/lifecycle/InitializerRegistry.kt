@@ -78,7 +78,7 @@ internal class InitializerRegistry(private val koin: Koin) {
             logger.info("")
 
             initializers.forEach { init ->
-                logger.info("  [Order: {:>4d}] {}", init.order, init.initializerId)
+                logger.info("  [Order: {}] {}", String.format("%4d", init.order), init.initializerId)
             }
             logger.info("")
 
@@ -120,9 +120,9 @@ internal class InitializerRegistry(private val koin: Koin) {
 
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ APPLICATION INITIALIZATION COMPLETE            ║")
+            logger.info("║ ✓ INITIALIZATION HOOKS COMPLETE                   ║")
             logger.info("║                                                    ║")
-            logger.info("║ Status: READY FOR TRAFFIC                          ║")
+            logger.info("║ Status: Waiting for Ktor server start...           ║")
             logger.info("║                                                    ║")
             logger.info("║ ✓ All components instantiated                     ║")
             logger.info("║ ✓ Database operational & schema ready             ║")

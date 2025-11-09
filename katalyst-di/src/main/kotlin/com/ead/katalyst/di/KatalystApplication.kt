@@ -11,6 +11,7 @@ import com.ead.katalyst.di.config.wrap
 import com.ead.katalyst.di.internal.KtorModuleRegistry
 import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.di.feature.KatalystFeature
+import com.ead.katalyst.di.lifecycle.StartupWarnings
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
@@ -284,7 +285,24 @@ fun katalystApplication(
 
         embeddedServer.start(wait = true)
 
-        logger.info("Katalyst application started successfully")
+        // Display any aggregated startup warnings before completion banner
+        StartupWarnings.display()
+
+        logger.info("")
+        logger.info("╔════════════════════════════════════════════════════╗")
+        logger.info("║ ✓ APPLICATION STARTUP COMPLETE                    ║")
+        logger.info("║                                                    ║")
+        logger.info("║ Status: READY FOR TRAFFIC                          ║")
+        logger.info("║                                                    ║")
+        logger.info("║ ✓ Ktor server listening                            ║")
+        logger.info("║ ✓ All components instantiated                     ║")
+        logger.info("║ ✓ Database operational & schema ready             ║")
+        logger.info("║ ✓ Transaction adapters configured                 ║")
+        logger.info("║ ✓ Scheduler tasks registered & running            ║")
+        logger.info("║ ✓ All initializer hooks completed                 ║")
+        logger.info("║                                                    ║")
+        logger.info("╚════════════════════════════════════════════════════╝")
+        logger.info("")
     } catch (e: Exception) {
         logger.error("Failed to start Katalyst application", e)
         throw e
