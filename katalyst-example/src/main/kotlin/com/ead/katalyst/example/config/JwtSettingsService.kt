@@ -13,40 +13,10 @@ import org.slf4j.LoggerFactory
 import java.util.Date
 
 /**
- * JWT authentication settings service with modularized DI injection.
+ * JWT authentication settings service.
  *
- * **REFACTORED FOR MODULARIZED DI:**
- * - Now uses Service interface (enables proper constructor injection)
- * - Receives ConfigProvider via constructor injection (Phase 3 discovery)
- * - Validates configuration in init block (fail fast approach)
- * - All configuration loaded synchronously (not lazy)
- *
- * **How It Works:**
- * 1. ConfigProviderDIModule registers ConfigProvider in Phase 1
- * 2. Component discovery (Phase 3) finds ConfigProvider in Koin
- * 3. JwtSettingsService constructor is satisfied: Service(config: ConfigProvider)
- * 4. Configuration loaded synchronously during init
- * 5. Validation happens immediately (fail if invalid)
- *
- * **Configuration Keys:**
- * - `jwt.secret`: HMAC256 signing secret (REQUIRED)
- * - `jwt.issuer`: JWT issuer claim (default: katalyst-example)
- * - `jwt.audience`: JWT audience claim (default: katalyst-users)
- * - `jwt.realm`: Authentication realm (default: KatalystExample)
- * - `jwt.expirationSeconds`: Token TTL in seconds (default: 3600)
- *
- * **Usage:**
- * ```kotlin
- * class AuthenticationService(private val jwt: JwtSettingsService) : Service {
- *     fun generateToken(accountId: Long, email: String): String =
- *         jwt.generateToken(accountId, email)
- * }
- * ```
- *
- * **Why Service Interface:**
- * Service interface declares constructor dependencies that Katalyst resolves during Phase 3.
- * ConfigProvider is available in Koin from Phase 1, so dependencies are satisfiable.
- * This enables proper constructor injection instead of lazy/manual approaches.
+ * Uses constructor injection to receive ConfigProvider from DI (Phase 1 feature).
+ * Configuration keys: jwt.secret (required), jwt.issuer, jwt.audience, jwt.realm, jwt.expirationSeconds
  */
 class JwtSettingsService(
     private val config: ConfigProvider  // Constructor injection from Phase 3 discovery

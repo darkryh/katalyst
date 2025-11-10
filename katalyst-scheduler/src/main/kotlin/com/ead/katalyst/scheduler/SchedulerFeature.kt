@@ -7,7 +7,7 @@ import org.koin.core.module.Module
 import org.slf4j.LoggerFactory
 
 /**
- * Public feature object so advanced users can register the scheduler via [KatalystDIOptions].
+ * Public feature object so advanced users can register the scheduler via [com.ead.katalyst.di.config.KatalystDIOptions].
  */
 object SchedulerFeature : KatalystFeature {
     private val logger = LoggerFactory.getLogger("SchedulerFeature")
