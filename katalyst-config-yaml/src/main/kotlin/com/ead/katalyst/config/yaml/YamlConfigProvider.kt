@@ -3,7 +3,6 @@ package com.ead.katalyst.config.yaml
 import com.ead.katalyst.core.config.ConfigException
 import com.ead.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
-import org.yaml.snakeyaml.Yaml
 
 /**
  * YAML-based configuration provider for Katalyst applications using SnakeYAML.
@@ -36,125 +35,27 @@ import org.yaml.snakeyaml.Yaml
  *     }
  * }
  * ```
+ *
+ * **Internal Composition:**
+ * Uses YamlProfileLoader for profile-based loading and YamlParser for parsing.
+ * This separation allows reusing these components independently.
  */
 class YamlConfigProvider : ConfigProvider {
     companion object {
         private val log = LoggerFactory.getLogger(YamlConfigProvider::class.java)
-        private const val PROFILE_ENV_VAR = "KATALYST_PROFILE"
-        private const val BASE_CONFIG_FILE = "application.yaml"
     }
 
     private val data: Map<String, Any>
+    private val profileLoader = YamlProfileLoader()
 
     init {
         try {
             log.info("Loading YAML configuration...")
-            data = loadConfiguration()
+            data = profileLoader.loadConfiguration()
             log.info("✓ Configuration loaded successfully (${data.size} keys)")
-            logActiveProfile()
         } catch (e: Exception) {
             throw ConfigException("Failed to load YAML configuration: ${e.message}", e)
         }
-    }
-
-    private fun loadConfiguration(): Map<String, Any> {
-        val baseConfig = loadYamlFile(BASE_CONFIG_FILE)
-        val profile = System.getenv(PROFILE_ENV_VAR)
-
-        return if (profile != null && profile.isNotBlank()) {
-            val profileFile = "application-$profile.yaml"
-            log.info("Loading profile-specific configuration: $profileFile")
-            val profileConfig = loadYamlFile(profileFile)
-            baseConfig.merge(profileConfig)
-        } else {
-            baseConfig
-        }
-    }
-
-    private fun loadYamlFile(filename: String): Map<String, Any> {
-        val resource = this::class.java.classLoader.getResource(filename)
-            ?: return emptyMap()
-
-        val content = resource.readText()
-        return parseYaml(content)
-    }
-
-    /**
-     * Parse YAML content using SnakeYAML.
-     * Handles environment variable substitution ${VAR:default}
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun parseYaml(content: String): Map<String, Any> {
-        val yaml = Yaml()
-        val parsed = yaml.load<Any>(content) ?: return emptyMap()
-
-        // If YAML is empty or not a map, return empty map
-
-        if (parsed !is Map<*, *>) {
-            throw ConfigException("YAML root must be a map, got ${parsed::class.simpleName}")
-        }
-
-        val map = parsed as Map<String, Any>
-        return substituteEnvironmentVariablesInMap(map)
-    }
-
-    /**
-     * Recursively substitute environment variables in all map values.
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun substituteEnvironmentVariablesInMap(map: Map<String, Any>): Map<String, Any> {
-        return map.mapValues { (_, value) ->
-            when (value) {
-                is String -> substituteEnvironmentVariables(value)
-                is Map<*, *> -> substituteEnvironmentVariablesInMap(value as Map<String, Any>)
-                is List<*> -> value.map { item ->
-                    when (item) {
-                        is String -> substituteEnvironmentVariables(item)
-                        is Map<*, *> -> substituteEnvironmentVariablesInMap(item as Map<String, Any>)
-                        else -> item
-                    }
-                }
-                else -> value
-            }
-        }
-    }
-
-    /**
-     * Replace ${VAR_NAME:defaultValue} with environment variable or default.
-     */
-    private fun substituteEnvironmentVariables(value: String): String {
-        val regex = """\$\{([^:}]+)(?::([^}]*))?\}""".toRegex()
-        return regex.replace(value) { matchResult ->
-            val varName = matchResult.groupValues[1]
-            val defaultValue = matchResult.groupValues[2]
-            System.getenv(varName) ?: defaultValue
-        }
-    }
-
-    private fun logActiveProfile() {
-        val profile = System.getenv(PROFILE_ENV_VAR)
-        if (profile != null && profile.isNotBlank()) {
-            log.info("Active profile: $profile")
-        } else {
-            log.info("No active profile set (using default configuration)")
-        }
-    }
-
-    /**
-     * Recursively merge profile config into base config.
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun Map<String, Any>.merge(other: Map<String, Any>): Map<String, Any> {
-        val result = this.toMutableMap()
-        for ((key, value) in other) {
-            result[key] = when {
-                value is Map<*, *> && result[key] is Map<*, *> -> {
-                    (result[key] as Map<String, Any>).merge(value as Map<String, Any>)
-                }
-                else -> value
-            }
-        }
-        return result
     }
 
     override fun <T> get(key: String, defaultValue: T?): T? {
