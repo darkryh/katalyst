@@ -9,6 +9,9 @@ dependencies {
     // Katalyst core - provides ConfigProvider, ConfigValidator interfaces
     implementation(projects.katalystCore)
 
+    // Katalyst DI - provides KatalystFeature interface for auto-discovery
+    implementation(projects.katalystDi)
+
     // Dependency Injection - for DI container access during bootstrap
     implementation(libs.koin.core)
 

@@ -12,6 +12,12 @@ dependencies {
     // Katalyst config provider - provides ServiceConfigLoader, ConfigLoaders, etc.
     implementation(projects.katalystConfigProvider)
 
+    // Katalyst DI - provides KatalystFeature interface for auto-discovery
+    implementation(projects.katalystDi)
+
+    // Koin for DI
+    implementation(libs.koin.core)
+
     // YAML parsing
     implementation(libs.snakeyaml)
 

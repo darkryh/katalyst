@@ -189,4 +189,41 @@ object ConfigBootstrapHelper {
             throw ConfigException("Failed to load service configuration: ${e.message}", e)
         }
     }
+
+    /**
+     * Get ConfigProvider from Koin after DI initialization.
+     *
+     * **Purpose:**
+     * For non-Service classes that need ConfigProvider outside of constructor injection.
+     * Should only be called AFTER Koin DI context is initialized (Phase 1 or later).
+     *
+     * **When to Use:**
+     * - Static utility functions that need configuration
+     * - Non-Service classes that can't use constructor injection
+     * - Accessing ConfigProvider from Ktor route handlers or middleware
+     *
+     * **When NOT to Use:**
+     * - In Service constructors (use constructor injection instead)
+     * - In Components discovered during Phase 3 (use constructor injection)
+     * - During bootstrap before Koin is initialized
+     *
+     * **Example:**
+     * ```kotlin
+     * fun someFunction() {
+     *     val config = ConfigBootstrapHelper.getConfigProviderFromKoin()
+     *         ?: throw IllegalStateException("Koin not initialized")
+     *     val value = config.getString("some.key")
+     * }
+     * ```
+     *
+     * @return ConfigProvider if Koin context is initialized, null otherwise
+     */
+    fun getConfigProviderFromKoin(): ConfigProvider? {
+        return try {
+            GlobalContext.getOrNull()?.get<ConfigProvider>()
+        } catch (e: Exception) {
+            log.debug("ConfigProvider not found in Koin (may not be initialized yet): ${e.message}")
+            null
+        }
+    }
 }
