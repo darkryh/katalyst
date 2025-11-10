@@ -49,7 +49,7 @@ import com.ead.katalyst.client.RetryPolicy
  * @param metadata Custom metadata for client instance
  */
 data class EventClientConfiguration(
-    val retryPolicy: RetryPolicy = RetryPolicy.Companion.noRetry(),
+    val retryPolicy: RetryPolicy = RetryPolicy.noRetry(),
     val publishToLocalBus: Boolean = true,
     val publishToExternal: Boolean = true,
     val correlationId: String? = null,

@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.config.loaders
+package com.ead.katalyst.example.infra.config
 
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.config.provider.ConfigLoaders
@@ -56,10 +56,8 @@ import org.slf4j.LoggerFactory
  * // DatabaseConfigLoader is automatically discovered and validated
  * ```
  */
-class DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
-    companion object {
-        private val log = LoggerFactory.getLogger(DatabaseConfigLoader::class.java)
-    }
+object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
+    private val log = LoggerFactory.getLogger(DatabaseConfigLoader::class.java)
 
     /**
      * Load database configuration from ConfigProvider.
@@ -72,7 +70,7 @@ class DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
      *
      * @param provider ConfigProvider to load from
      * @return Loaded DatabaseConfig instance
-     * @throws ConfigException if required keys are missing
+     * @throws com.ead.katalyst.core.config.ConfigException if required keys are missing
      */
     override fun loadConfig(provider: ConfigProvider): DatabaseConfig {
         log.debug("Loading database configuration...")
@@ -121,7 +119,7 @@ class DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
      *    - URL format is valid for the driver
      *
      * @param config DatabaseConfig to validate
-     * @throws ConfigException if validation fails
+     * @throws com.ead.katalyst.core.config.ConfigException if validation fails
      */
     override fun validate(config: DatabaseConfig) {
         log.debug("Validating database configuration...")
