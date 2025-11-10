@@ -3,8 +3,11 @@ package com.ead.katalyst.transactions.sideeffects
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.context.TransactionEventContext
 import com.ead.katalyst.transactions.hooks.TransactionPhase
+import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * Generic transaction adapter for executing side-effects.
@@ -118,9 +121,12 @@ class TransactionalSideEffectAdapter<T>(
     /**
      * Execute SYNC_BEFORE_COMMIT side-effects.
      *
-     * These execute within the transaction context.
+     * These execute within the transaction context with retry support.
      * If a side-effect fails, the exception bubbles up and causes transaction rollback.
      * This provides strong consistency: all-or-nothing.
+     *
+     * Transient errors are retried automatically with exponential backoff.
+     * Permanent errors fail fast without retry.
      *
      * ASYNC_AFTER_COMMIT side-effects are queued for later execution in AFTER_COMMIT phase.
      *
@@ -159,7 +165,7 @@ class TransactionalSideEffectAdapter<T>(
             )
         }
 
-        // Execute SYNC side-effects (failures bubble up and rollback transaction)
+        // Execute SYNC side-effects with retry logic (failures bubble up and rollback transaction)
         var executedCount = 0
         for (sideEffect in syncSideEffects) {
             logger.debug(
@@ -170,20 +176,31 @@ class TransactionalSideEffectAdapter<T>(
 
             @Suppress("UNCHECKED_CAST")
             val typedSideEffect = sideEffect as TransactionalSideEffect<Any>
+            val config = configRegistry.getConfig(sideEffect.sideEffectId)
 
             try {
-                // Execute side-effect
-                val result = typedSideEffect.execute(Unit)
-                executedCount++
+                // Execute side-effect with retry logic
+                val result = executeWithRetry(typedSideEffect, config)
 
-                logger.debug(
-                    "[{}] SYNC side-effect executed successfully: {}",
-                    name,
-                    sideEffect.sideEffectId
-                )
-
-                // Store for potential compensation on later failure
-                // (stored in a separate list by subclasses if needed)
+                if (result is SideEffectResult.Success) {
+                    executedCount++
+                    logger.debug(
+                        "[{}] SYNC side-effect executed successfully: {}",
+                        name,
+                        sideEffect.sideEffectId
+                    )
+                } else if (result is SideEffectResult.Failed) {
+                    logger.error(
+                        "[{}] SYNC side-effect failed after {} attempt(s): {} - {}",
+                        name,
+                        result.retryCount + 1,
+                        sideEffect.sideEffectId,
+                        result.error.message,
+                        result.error
+                    )
+                    // Rethrow to rollback transaction
+                    throw result.error
+                }
             } catch (e: Exception) {
                 logger.error(
                     "[{}] SYNC side-effect failed before commit: {} - {}",
@@ -206,6 +223,102 @@ class TransactionalSideEffectAdapter<T>(
             executedCount,
             asyncSideEffects.size
         )
+    }
+
+    /**
+     * Execute a side-effect with retry logic for transient failures.
+     *
+     * Retries on transient errors (timeout, connection, etc.) using exponential backoff.
+     * Permanent errors (null pointer, illegal state, etc.) fail fast.
+     *
+     * @param sideEffect The side-effect to execute
+     * @param config The configuration with retry parameters
+     * @return Result of execution (Success, Failed, or Skipped)
+     */
+    private suspend fun executeWithRetry(
+        sideEffect: TransactionalSideEffect<Any>,
+        config: SideEffectConfig
+    ): SideEffectResult {
+        var lastError: Exception? = null
+
+        for (attempt in 1..config.maxRetries) {
+            try {
+                // Execute side-effect
+                val result = sideEffect.execute(Unit)
+                return result
+            } catch (e: Exception) {
+                lastError = e
+                val isTransient = config.isTransientError(e)
+
+                logger.warn(
+                    "[{}] Side-effect {} attempt {}/{} failed: {} - {}",
+                    name,
+                    sideEffect.sideEffectId,
+                    attempt,
+                    config.maxRetries,
+                    if (isTransient) "retrying (transient error)" else "permanent error",
+                    e.message
+                )
+
+                // Permanent error: fail immediately without retry
+                if (!isTransient) {
+                    logger.error(
+                        "[{}] Permanent error for side-effect {}, failing immediately",
+                        name,
+                        sideEffect.sideEffectId
+                    )
+                    return SideEffectResult.Failed(error = e, retryCount = attempt - 1)
+                }
+
+                // Transient error: wait and retry if attempts remain
+                if (attempt < config.maxRetries) {
+                    val delayMs = calculateBackoffDelay(attempt, config)
+                    logger.debug(
+                        "[{}] Waiting {}ms before retry attempt {} for side-effect {}",
+                        name,
+                        delayMs,
+                        attempt + 1,
+                        sideEffect.sideEffectId
+                    )
+                    delay(delayMs)
+                }
+            }
+        }
+
+        // Max retries exceeded
+        return SideEffectResult.Failed(
+            error = lastError ?: Exception("Max retries exceeded"),
+            retryCount = config.maxRetries
+        )
+    }
+
+    /**
+     * Calculate exponential backoff delay with jitter.
+     *
+     * Delay = retryDelayMs * (backoffMultiplier ^ (attempt - 1)) * (0.9 + random 0-0.2)
+     * Capped at 30 seconds to prevent runaway waits.
+     *
+     * Examples (with backoffMultiplier=2.0):
+     * - Attempt 1: 100ms * 1 = 100ms ± 10%
+     * - Attempt 2: 100ms * 2 = 200ms ± 10%
+     * - Attempt 3: 100ms * 4 = 400ms ± 10%
+     * - Attempt 4: 100ms * 8 = 800ms ± 10%
+     *
+     * @param attempt The retry attempt number (1-based)
+     * @param config The side-effect configuration with retry parameters
+     * @return Delay in milliseconds
+     */
+    private fun calculateBackoffDelay(attempt: Int, config: SideEffectConfig): Long {
+        // Calculate exponential backoff: baseDelay * (multiplier ^ (attempt - 1))
+        val exponentialDelay = config.retryDelayMs *
+            config.backoffMultiplier.pow((attempt - 1).toDouble())
+
+        // Add jitter: ±10% variation to prevent thundering herd
+        val jitter = 0.9 + (Math.random() * 0.2)
+        val delayWithJitter = (exponentialDelay * jitter).toLong()
+
+        // Cap at 30 seconds to prevent runaway waits
+        return min(delayWithJitter, 30000L)
     }
 
     /**
@@ -335,11 +448,109 @@ class TransactionalSideEffectAdapter<T>(
 }
 
 /**
+ * Predefined side-effect configurations for common scenarios.
+ *
+ * Use these as starting points and customize as needed:
+ * ```kotlin
+ * val registry = SideEffectConfigRegistry()
+ * registry.register(SideEffectConfigs.CRITICAL_TRANSACTIONAL_EVENT)
+ * registry.register(SideEffectConfigs.ASYNC_NOTIFICATION)
+ * ```
+ */
+object SideEffectConfigs {
+    /**
+     * Standard transactional event: SYNC with 3 retries.
+     * 100ms initial delay, 2x exponential backoff.
+     * Suitable for: Domain events, cache invalidation, search indexing.
+     */
+    val TRANSACTIONAL_EVENT = SideEffectConfig(
+        sideEffectId = "TRANSACTIONAL_EVENT",
+        handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
+        timeoutMs = 5000,
+        failOnHandlerError = true,
+        maxRetries = 3,
+        retryDelayMs = 100,
+        backoffMultiplier = 2.0
+    )
+
+    /**
+     * Critical side-effect: SYNC with 5 retries, moderate backoff.
+     * Suitable for: Critical operations requiring reliability.
+     */
+    val CRITICAL_SIDE_EFFECT = SideEffectConfig(
+        sideEffectId = "CRITICAL_SIDE_EFFECT",
+        handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
+        timeoutMs = 10000,
+        failOnHandlerError = true,
+        maxRetries = 5,
+        retryDelayMs = 200,
+        backoffMultiplier = 1.5
+    )
+
+    /**
+     * No retry configuration: fails immediately on error.
+     * Suitable for: Operations that should not be retried.
+     */
+    val NO_RETRY = SideEffectConfig(
+        sideEffectId = "NO_RETRY",
+        handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
+        timeoutMs = 5000,
+        failOnHandlerError = true,
+        maxRetries = 1,
+        retryDelayMs = 0,
+        backoffMultiplier = 1.0
+    )
+
+    /**
+     * Async notification: Fire-and-forget after commit, no retries.
+     * Suitable for: Email, SMS, webhooks, non-critical notifications.
+     */
+    val ASYNC_NOTIFICATION = SideEffectConfig(
+        sideEffectId = "ASYNC_NOTIFICATION",
+        handlingMode = SideEffectHandlingMode.ASYNC_AFTER_COMMIT,
+        timeoutMs = 30000,
+        failOnHandlerError = false,
+        maxRetries = 1,
+        retryDelayMs = 0
+    )
+
+    /**
+     * Async with retries: Retry async operations after commit.
+     * Suitable for: Important async operations (message publishing, audit logs).
+     */
+    val ASYNC_WITH_RETRIES = SideEffectConfig(
+        sideEffectId = "ASYNC_WITH_RETRIES",
+        handlingMode = SideEffectHandlingMode.ASYNC_AFTER_COMMIT,
+        timeoutMs = 15000,
+        failOnHandlerError = false,
+        maxRetries = 3,
+        retryDelayMs = 100,
+        backoffMultiplier = 2.0
+    )
+}
+
+/**
  * Registry for side-effect configurations.
  *
  * Manages per-side-effect-type configuration:
- * - Default: SYNC_BEFORE_COMMIT with 5000ms timeout
+ * - Default: SYNC_BEFORE_COMMIT with 3 retries
  * - Customizable per side-effect type
+ * - Predefined configurations for common scenarios
+ *
+ * Usage:
+ * ```kotlin
+ * val registry = SideEffectConfigRegistry()
+ *
+ * // Use predefined configuration
+ * registry.register(SideEffectConfigs.CRITICAL_SIDE_EFFECT)
+ *
+ * // Custom configuration
+ * registry.register(SideEffectConfig(
+ *     sideEffectId = "MyEvent",
+ *     handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
+ *     maxRetries = 5
+ * ))
+ * ```
  */
 class SideEffectConfigRegistry {
     private val configs = ConcurrentHashMap<String, SideEffectConfig>()
@@ -354,12 +565,15 @@ class SideEffectConfigRegistry {
     /**
      * Get configuration for a side-effect.
      *
-     * Returns configured config or default (SYNC_BEFORE_COMMIT).
+     * Returns configured config or default (SYNC_BEFORE_COMMIT with 3 retries).
      */
     fun getConfig(sideEffectId: String): SideEffectConfig {
         return configs[sideEffectId] ?: SideEffectConfig(
             sideEffectId = sideEffectId,
-            handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT
+            handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
+            maxRetries = 3,
+            retryDelayMs = 100,
+            backoffMultiplier = 2.0
         )
     }
 

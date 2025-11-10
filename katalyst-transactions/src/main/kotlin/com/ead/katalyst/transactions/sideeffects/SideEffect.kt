@@ -190,12 +190,140 @@ sealed class SideEffectResult {
 }
 
 /**
+ * Classifies exceptions as transient (retryable) or permanent (fail fast).
+ *
+ * Used by retry logic to determine if a side-effect failure should be retried
+ * or failed immediately.
+ *
+ * **Transient Errors (should retry):**
+ * - Timeout exceptions
+ * - Connection exceptions
+ * - Temporary failures
+ *
+ * **Permanent Errors (fail fast):**
+ * - Null pointer exceptions
+ * - Illegal state exceptions
+ * - Handler/business logic errors
+ *
+ * Example:
+ * ```kotlin
+ * val classifier = DefaultTransientErrorClassifier(
+ *     transientPatterns = listOf("timeout", "connection", "temporarily unavailable")
+ * )
+ *
+ * val isTransient = classifier.isTransient(TimeoutException("Request timeout"))
+ * // Result: true - will be retried
+ *
+ * val isPermanent = classifier.isTransient(NullPointerException())
+ * // Result: false - will fail fast
+ * ```
+ */
+interface TransientErrorClassifier {
+    /**
+     * Check if an exception is transient (retryable).
+     *
+     * @param exception The exception to classify
+     * @return true if transient (should retry), false if permanent (fail fast)
+     */
+    fun isTransient(exception: Exception): Boolean
+}
+
+/**
+ * Default implementation of TransientErrorClassifier.
+ *
+ * Classifies errors based on:
+ * - Exception type
+ * - Exception message patterns
+ * - Exception cause chain
+ */
+class DefaultTransientErrorClassifier(
+    private val transientPatterns: List<String> = DEFAULT_TRANSIENT_PATTERNS
+) : TransientErrorClassifier {
+    companion object {
+        private val DEFAULT_TRANSIENT_PATTERNS = listOf(
+            "timeout",
+            "timed out",
+            "connection",
+            "connect",
+            "unavailable",
+            "temporarily unavailable",
+            "io exception",
+            "ioexception",
+            "socket",
+            "broken pipe",
+            "reset by peer",
+            "connection reset",
+            "econnreset",
+            "network unreachable",
+            "host unreachable",
+            "no route to host",
+            "resource temporarily unavailable"
+        )
+
+        // Exceptions that are always transient
+        private val TRANSIENT_EXCEPTION_TYPES = setOf(
+            "java.net.ConnectException",
+            "java.net.SocketTimeoutException",
+            "java.io.InterruptedIOException",
+            "java.nio.channels.InterruptedByTimeoutException",
+            "java.util.concurrent.TimeoutException",
+            "java.lang.InterruptedException"
+        )
+
+        // Exceptions that are always permanent
+        private val PERMANENT_EXCEPTION_TYPES = setOf(
+            "java.lang.NullPointerException",
+            "java.lang.IllegalStateException",
+            "java.lang.IllegalArgumentException",
+            "java.lang.ClassCastException",
+            "java.lang.IndexOutOfBoundsException"
+        )
+    }
+
+    override fun isTransient(exception: Exception): Boolean {
+        // Check exception type first
+        val exceptionClassName = exception::class.qualifiedName ?: exception::class.simpleName ?: ""
+
+        // Check if this exception type is always permanent
+        if (PERMANENT_EXCEPTION_TYPES.contains(exceptionClassName)) {
+            return false
+        }
+
+        // Check if this exception type is always transient
+        if (TRANSIENT_EXCEPTION_TYPES.contains(exceptionClassName)) {
+            return true
+        }
+
+        // Check exception message against patterns
+        val message = exception.message?.lowercase() ?: ""
+        for (pattern in transientPatterns) {
+            if (message.contains(pattern.lowercase())) {
+                return true
+            }
+        }
+
+        // Check cause chain
+        var cause = exception.cause
+        while (cause != null) {
+            if (isTransient(cause as Exception)) {
+                return true
+            }
+            cause = cause.cause
+        }
+
+        // Default: assume permanent (fail fast)
+        return false
+    }
+}
+
+/**
  * Configuration for a specific side-effect type.
  *
  * Allows per-side-effect-type configuration of:
  * - Handling mode (SYNC vs ASYNC)
  * - Timeout
  * - Failure behavior
+ * - Retry strategy
  *
  * Example:
  * ```kotlin
@@ -203,14 +331,18 @@ sealed class SideEffectResult {
  *     sideEffectId = "UserCreatedEvent",
  *     handlingMode = SideEffectHandlingMode.SYNC_BEFORE_COMMIT,
  *     timeoutMs = 5000,
- *     failOnHandlerError = true
+ *     failOnHandlerError = true,
+ *     maxRetries = 3,
+ *     retryDelayMs = 100,
+ *     backoffMultiplier = 2.0
  * )
  *
  * val notificationConfig = SideEffectConfig(
  *     sideEffectId = "SendEmailNotification",
  *     handlingMode = SideEffectHandlingMode.ASYNC_AFTER_COMMIT,
  *     timeoutMs = 30000,
- *     failOnHandlerError = false
+ *     failOnHandlerError = false,
+ *     maxRetries = 1  // No retries for async
  * )
  * ```
  */
@@ -250,13 +382,78 @@ data class SideEffectConfig(
     /**
      * Custom metadata for this side-effect type.
      */
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
+
+    /**
+     * Maximum number of retry attempts for transient failures.
+     *
+     * Only applies to SYNC_BEFORE_COMMIT mode.
+     * ASYNC_AFTER_COMMIT side-effects do not retry (fire-and-forget).
+     *
+     * - 1: No retries (fail on first error)
+     * - 3: Retry twice after initial failure (default)
+     * - 5+: More aggressive retry for critical operations
+     *
+     * Default: 3
+     */
+    val maxRetries: Int = 3,
+
+    /**
+     * Initial delay between retry attempts (ms).
+     *
+     * Actual delay = retryDelayMs * (backoffMultiplier ^ (attempt - 1)) + jitter
+     *
+     * Default: 100ms
+     */
+    val retryDelayMs: Long = 100,
+
+    /**
+     * Exponential backoff multiplier for retry delays.
+     *
+     * Each retry waits: previousDelay * backoffMultiplier
+     *
+     * Examples:
+     * - 2.0: 100ms, 200ms, 400ms (exponential)
+     * - 1.5: 100ms, 150ms, 225ms (moderate backoff)
+     * - 1.0: 100ms, 100ms, 100ms (no backoff, constant delay)
+     *
+     * Default: 2.0 (exponential)
+     */
+    val backoffMultiplier: Double = 2.0,
+
+    /**
+     * Classifier for determining if an exception is transient (retryable).
+     *
+     * - Transient errors: Will retry up to maxRetries times
+     * - Permanent errors: Will fail immediately (no retry)
+     *
+     * Default: DefaultTransientErrorClassifier (classifies by exception type and message)
+     */
+    val isTransientError: (Exception) -> Boolean = { e ->
+        DefaultTransientErrorClassifier().isTransient(e)
+    }
+)
+
+/**
+ * Tracks retry context for a side-effect.
+ *
+ * Records:
+ * - Number of attempts (including retries)
+ * - Last error encountered
+ * - When retry is scheduled
+ */
+data class SideEffectRetryContext(
+    val sideEffectId: String,
+    val attemptCount: Int = 0,
+    val lastError: Exception? = null,
+    val retryScheduledAt: Instant? = null
 )
 
 /**
  * Context for side-effect execution.
  *
- * Tracks queued side-effects during transaction lifecycle.
+ * Tracks queued side-effects, executed side-effects, and retry attempts
+ * during transaction lifecycle.
  */
 data class SideEffectContext(
     /**
@@ -267,7 +464,14 @@ data class SideEffectContext(
     /**
      * Side-effects executed and their results.
      */
-    val executedSideEffects: MutableList<Pair<TransactionalSideEffect<*>, SideEffectResult>> = mutableListOf()
+    val executedSideEffects: MutableList<Pair<TransactionalSideEffect<*>, SideEffectResult>> = mutableListOf(),
+
+    /**
+     * Retry contexts per side-effect ID.
+     *
+     * Tracks retry attempts, last error, and retry scheduling.
+     */
+    val retryContexts: MutableMap<String, SideEffectRetryContext> = mutableMapOf()
 ) {
     /**
      * Queue a side-effect for execution.
@@ -304,4 +508,37 @@ data class SideEffectContext(
      * Get all executed side-effects.
      */
     fun getExecuted(): List<Pair<TransactionalSideEffect<*>, SideEffectResult>> = executedSideEffects.toList()
+
+    /**
+     * Record retry attempt for a side-effect.
+     *
+     * @param sideEffectId The side-effect ID
+     * @param error The error encountered
+     */
+    fun recordRetryAttempt(sideEffectId: String, error: Exception) {
+        val existing = retryContexts[sideEffectId]
+        val newContext = SideEffectRetryContext(
+            sideEffectId = sideEffectId,
+            attemptCount = (existing?.attemptCount ?: 0) + 1,
+            lastError = error,
+            retryScheduledAt = Instant.now()
+        )
+        retryContexts[sideEffectId] = newContext
+    }
+
+    /**
+     * Get retry context for a side-effect.
+     *
+     * @param sideEffectId The side-effect ID
+     * @return Retry context if found, null otherwise
+     */
+    fun getRetryContext(sideEffectId: String): SideEffectRetryContext? = retryContexts[sideEffectId]
+
+    /**
+     * Get retry attempt count for a side-effect.
+     *
+     * @param sideEffectId The side-effect ID
+     * @return Attempt count (0 if no retries)
+     */
+    fun getRetryAttemptCount(sideEffectId: String): Int = retryContexts[sideEffectId]?.attemptCount ?: 0
 }
