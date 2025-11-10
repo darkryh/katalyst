@@ -68,6 +68,9 @@ class ApplicationEventBus(
     // Using suspend (DomainEvent) -> Unit to allow generic handler invocation
     private val listeners = ConcurrentHashMap<KClass<out DomainEvent>, CopyOnWriteArrayList<RegisteredHandler>>()
 
+    // Map: Event type name -> EventHandlerConfig (for handling mode configuration)
+    private val handlerConfigs = ConcurrentHashMap<String, EventHandlerConfig>()
+
     /**
      * Register a handler.
      *
@@ -102,6 +105,42 @@ class ApplicationEventBus(
                 type.qualifiedName
             )
         }
+    }
+
+    /**
+     * Configure the handling mode for a specific event type.
+     *
+     * Allows per-event-type configuration of when handlers execute:
+     * - SYNC_BEFORE_COMMIT: Handlers execute before transaction commits (failures cause rollback)
+     * - ASYNC_AFTER_COMMIT: Handlers execute after commit (eventual consistency)
+     *
+     * Default: SYNC_BEFORE_COMMIT for transactional consistency
+     *
+     * @param config The handler configuration for an event type
+     */
+    fun configureHandlers(config: EventHandlerConfig) {
+        handlerConfigs[config.eventType] = config
+        logger.debug(
+            "Configured handlers for {}: mode={}, timeout={}ms, failOnError={}",
+            config.eventType,
+            config.handlingMode,
+            config.timeoutMs,
+            config.failOnHandlerError
+        )
+    }
+
+    /**
+     * Get the handler configuration for an event type.
+     *
+     * @param event The event to get config for
+     * @return EventHandlerConfig for the event, or default if not configured
+     */
+    fun getHandlerConfig(event: DomainEvent): EventHandlerConfig {
+        val config = handlerConfigs[event::class.qualifiedName ?: event::class.simpleName]
+        return config ?: EventHandlerConfig(
+            eventType = event::class.qualifiedName ?: event::class.simpleName ?: "Unknown",
+            handlingMode = EventHandlingMode.SYNC_BEFORE_COMMIT  // Default: transactional consistency
+        )
     }
 
     /**
