@@ -1,0 +1,40 @@
+# Production Profile - application-prod.yaml
+# Load with: KATALYST_PROFILE=prod
+#
+# IMPORTANT: Keep secrets out of version control!
+# Secrets (passwords, API keys) MUST come from environment variables.
+# This file contains only structure and non-sensitive defaults.
+#
+# Required environment variables:
+# - DB_URL: Database connection string
+# - DB_USERNAME: Database user
+# - DB_PASSWORD: Database password (REQUIRED, no default!)
+# - JWT_SECRET: JWT signing secret (REQUIRED, no default!)
+
+# Database Configuration for production
+# All secrets from environment variables
+database:
+  url: ${DB_URL}
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
+  driver: org.postgresql.Driver
+  pool:
+    maxSize: 50
+    minIdle: 10
+    connectionTimeout: 30000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+
+# JWT Configuration for production
+# Secret MUST be provided via environment variable
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: katalyst-example
+  audience: katalyst-users
+  realm: KatalystExample
+  expirationSeconds: 1800
+
+# Production-specific settings
+app:
+  environment: production
+  debug: false

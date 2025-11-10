@@ -12,7 +12,7 @@ import com.ead.katalyst.example.domain.exception.UserExampleValidationException
 import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
 import com.ead.katalyst.example.infra.database.repositories.AuthAccountRepository
 import com.ead.katalyst.example.infra.mappers.toDomain
-import com.ead.katalyst.example.config.security.JwtSettings
+import com.ead.katalyst.example.config.JwtSettingsService
 import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.scheduler.cron.CronExpression
 import com.ead.katalyst.scheduler.config.ScheduleConfig
@@ -24,7 +24,8 @@ class AuthenticationService(
     private val repository: AuthAccountRepository,
     private val validator: AuthValidator,
     private val passwordHasher: PasswordHasher,
-    private val eventBus: EventBus
+    private val eventBus: EventBus,
+    private val jwtSettings: JwtSettingsService
 ) : Service {
 
     private val scheduler = requireScheduler()
@@ -73,7 +74,7 @@ class AuthenticationService(
         AuthResponse(
             accountId = account.id,
             email = account.email,
-            token = JwtSettings.generateToken(account.id, account.email)
+            token = jwtSettings.generateToken(account.id, account.email)
         )
 
     @Suppress("unused")

@@ -1,0 +1,28 @@
+# Development Profile - application-dev.yaml
+# Load with: KATALYST_PROFILE=dev
+#
+# Overrides for development environment:
+# - Lenient validation
+# - Local database defaults
+# - Debug enabled
+# - Shorter JWT expiration for testing
+
+# Database Configuration for local development
+database:
+  url: jdbc:h2:mem:testdb
+  username: sa
+  password: ""
+  driver: org.h2.Driver
+  pool:
+    maxSize: 5
+    minIdle: 1
+
+# Relaxed JWT settings for development
+jwt:
+  secret: dev-secret-key-12345678901234567890
+  expirationSeconds: 7200
+
+# Development-specific settings
+app:
+  environment: development
+  debug: true
