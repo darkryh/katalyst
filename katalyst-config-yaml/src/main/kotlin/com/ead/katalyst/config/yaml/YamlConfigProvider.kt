@@ -1,4 +1,4 @@
-package com.ead.katalyst.example.config
+package com.ead.katalyst.config.yaml
 
 import com.ead.katalyst.core.config.ConfigException
 import com.ead.katalyst.core.config.ConfigProvider
@@ -86,12 +86,9 @@ class YamlConfigProvider : ConfigProvider {
     @Suppress("UNCHECKED_CAST")
     private fun parseYaml(content: String): Map<String, Any> {
         val yaml = Yaml()
-        val parsed = yaml.load<Any>(content)
+        val parsed = yaml.load<Any>(content) ?: return emptyMap()
 
         // If YAML is empty or not a map, return empty map
-        if (parsed == null) {
-            return emptyMap()
-        }
 
         if (parsed !is Map<*, *>) {
             throw ConfigException("YAML root must be a map, got ${parsed::class.simpleName}")
@@ -130,7 +127,7 @@ class YamlConfigProvider : ConfigProvider {
         return regex.replace(value) { matchResult ->
             val varName = matchResult.groupValues[1]
             val defaultValue = matchResult.groupValues[2]
-            System.getenv(varName) ?: defaultValue ?: ""
+            System.getenv(varName) ?: defaultValue
         }
     }
 
@@ -184,8 +181,7 @@ class YamlConfigProvider : ConfigProvider {
     }
 
     override fun getString(key: String, default: String): String {
-        val value = navigatePath(key)
-        return when (value) {
+        return when (val value = navigatePath(key)) {
             null -> default
             is String -> value
             else -> value.toString()

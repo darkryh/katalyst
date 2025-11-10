@@ -1,6 +1,7 @@
 package com.ead.katalyst.example.config
 
 import com.ead.katalyst.config.DatabaseConfig
+import com.ead.katalyst.config.yaml.YamlConfigProvider
 import com.ead.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
 
@@ -32,7 +33,7 @@ object ConfigBootstrap {
      */
     fun loadDatabaseConfig(): DatabaseConfig {
         log.info("Loading configuration for bootstrap...")
-        val configProvider = YamlConfigProvider()
+        val configProvider = getConfigProvider()
 
         val url = configProvider.getString("database.url")
         val username = configProvider.getString("database.username")

@@ -25,6 +25,11 @@ include(":katalyst-core")
 include(":katalyst-persistence")
 include(":katalyst-scheduler")
 include(":katalyst-websockets")
+
+// Configuration management modules
+include(":katalyst-config-provider")
+include(":katalyst-config-yaml")
+
 include(":katalyst-example")
 include(":katalyst-migrations")
 
