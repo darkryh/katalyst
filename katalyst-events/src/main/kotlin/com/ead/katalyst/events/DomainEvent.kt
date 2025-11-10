@@ -1,5 +1,8 @@
 package com.ead.katalyst.events
 
+import java.util.UUID
+import kotlin.uuid.Uuid
+
 /**
  * Base contract for all domain events in the system.
  *
@@ -68,7 +71,7 @@ interface DomainEvent {
      *
      * NEW - P0 Critical Fix: Event Deduplication
      */
-    val eventId: String
+    val eventId: String get() = UUID.randomUUID().toString()
 
     /**
      * Get the metadata associated with this event.
@@ -83,7 +86,9 @@ interface DomainEvent {
      *
      * @return EventMetadata containing tracing and versioning information
      */
-    fun getMetadata(): EventMetadata
+    // optional can be used for clients or local we just put by default so in event locals we don't have to define this
+    fun getMetadata(): EventMetadata =  EventMetadata(eventType = this::class.simpleName ?: "UnknownEvent")
+
 
     /**
      * Get the event type identifier.
@@ -94,26 +99,4 @@ interface DomainEvent {
      * @return String identifier for this event type
      */
     fun eventType(): String = getMetadata().eventType
-}
-
-/**
- * Convenient base class for events that don't need special behavior.
- *
- * Handles metadata management automatically.
- *
- * **Usage:**
- * ```kotlin
- * data class UserCreatedEvent(
- *     val userId: UUID,
- *     val email: String,
- *     metadata: EventMetadata = EventMetadata(eventType = "user.created")
- * ) : BaseDomainEvent(metadata)
- * ```
- *
- * @param metadata The event metadata
- */
-abstract class BaseDomainEvent(
-    private val metadata: EventMetadata
-) : DomainEvent {
-    override fun getMetadata(): EventMetadata = metadata
 }

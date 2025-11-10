@@ -2,18 +2,28 @@ package com.ead.katalyst.transactions.manager
 
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.adapter.TransactionAdapterRegistry
+import com.ead.katalyst.transactions.config.TransactionConfig
 import com.ead.katalyst.transactions.context.TransactionEventContext
+import com.ead.katalyst.transactions.exception.DeadlockException
+import com.ead.katalyst.transactions.exception.TransactionFailedException
+import com.ead.katalyst.transactions.exception.TransactionTimeoutException
+import com.ead.katalyst.transactions.exception.isTransient
 import com.ead.katalyst.transactions.hooks.TransactionPhase
 import com.ead.katalyst.transactions.workflow.CurrentWorkflowContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager as ExposedTransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
+import java.sql.SQLException
 import java.util.UUID
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * Database transaction manager for handling suspended transactions with adapter support.
@@ -120,16 +130,34 @@ class DatabaseTransactionManager(
     }
 
     /**
-     * Executes a block of code within a database transaction with workflow tracking support.
+     * Executes a block of code within a database transaction with timeout and retry support.
+     *
+     * **Timeout & Retry Behavior:**
+     * - Each attempt has a configurable timeout (default 30 seconds)
+     * - Failed attempts are retried with exponential backoff (default 1s, 2s, 4s, 8s...)
+     * - Only retryable exceptions trigger retry (transient DB errors, timeouts, deadlocks)
+     * - Non-retryable exceptions (validation, auth, constraints) fail immediately
+     *
+     * **Execution Flow with Retries:**
+     * 1. Start attempt #1
+     * 2. If timeout: throw TransactionTimeoutException, may retry
+     * 3. If transient error: wait backoff delay, retry
+     * 4. If non-transient error: fail immediately
+     * 5. If success: return result
+     * 6. If all retries exhausted: throw TransactionFailedException
      *
      * @param workflowId Optional workflow ID for operation tracking
+     * @param config Transaction configuration with timeout, retry policy, isolation level
      * @param T The return type of the block
      * @param block The suspend function to execute within the transaction
      * @return The result of the block
-     * @throws Exception If the block throws or transaction fails
+     * @throws TransactionTimeoutException If transaction exceeds timeout (after all retries)
+     * @throws TransactionFailedException If all retry attempts failed
+     * @throws Exception If block throws non-retryable exception
      */
     override suspend fun <T> transaction(
         workflowId: String?,
+        config: TransactionConfig,
         block: suspend Transaction.() -> T
     ): T {
         // If we're already inside an Exposed transaction, just reuse it instead of starting a new one.
@@ -144,14 +172,92 @@ class DatabaseTransactionManager(
 
         // Use provided workflowId or generate a new one
         val txId = workflowId ?: UUID.randomUUID().toString()
-        logger.debug("Starting transaction with workflowId: {}", txId)
+        logger.debug("Starting transaction with workflowId: {} (timeout: {})", txId, config.timeout)
 
         // Set workflow context for auto-tracking
         CurrentWorkflowContext.set(txId)
 
-        // Create transaction event context for queuing events during transaction
-        val transactionEventContext = TransactionEventContext()
+        // Retry loop with backoff
+        var lastException: Exception? = null
+        val maxAttempts = config.retryPolicy.maxRetries + 1
 
+        repeat(maxAttempts) { attempt ->
+            try {
+                // Create transaction event context for queuing events during transaction
+                val transactionEventContext = TransactionEventContext()
+
+                // Execute with timeout
+                val result = withTimeoutOrNull(config.timeout) {
+                    executeTransactionBlock(
+                        txId,
+                        transactionEventContext,
+                        block
+                    )
+                }
+
+                return result ?: throw TransactionTimeoutException(
+                    message = "Transaction timeout after ${config.timeout}",
+                    transactionId = txId,
+                    attemptNumber = attempt,
+                    timeout = config.timeout
+                )
+            } catch (e: Exception) {
+                lastException = e
+                val isRetryable = shouldRetry(e, config, attempt, maxAttempts)
+
+                if (isRetryable) {
+                    logger.warn(
+                        "Attempt {} failed for transaction {} - {}: {}. Retrying...",
+                        attempt + 1,
+                        txId,
+                        e::class.simpleName,
+                        e.message
+                    )
+
+                    if (attempt < maxAttempts - 1) {
+                        val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
+                        logger.debug("Waiting {}ms before retry", delayMs)
+                        delay(delayMs)
+                    }
+                } else {
+                    logger.error(
+                        "Non-retryable exception in transaction {} - {}: {}",
+                        txId,
+                        e::class.simpleName,
+                        e.message
+                    )
+                    throw e
+                }
+            } finally {
+                // Clear workflow context on last attempt
+                if (attempt == maxAttempts - 1) {
+                    CurrentWorkflowContext.clear()
+                }
+            }
+        }
+
+        // All retries exhausted
+        CurrentWorkflowContext.clear()
+        throw when (lastException) {
+            is TransactionTimeoutException -> lastException!!
+            else -> TransactionFailedException(
+                message = "Transaction failed after ${maxAttempts} attempts",
+                transactionId = txId,
+                finalAttemptNumber = maxAttempts,
+                totalRetries = config.retryPolicy.maxRetries,
+                cause = lastException
+            )
+        }
+    }
+
+    /**
+     * Executes the actual transaction block with event context.
+     */
+    private suspend fun <T> executeTransactionBlock(
+        txId: String,
+        transactionEventContext: TransactionEventContext,
+        block: suspend Transaction.() -> T
+    ): T {
         return try {
             // Phase 1: BEFORE_BEGIN adapters
             logger.debug("Executing BEFORE_BEGIN adapters for workflow: {}", txId)
@@ -219,11 +325,99 @@ class DatabaseTransactionManager(
             }
 
             throw e
-        } finally {
-            // Clear workflow context to prevent context leaks
-            CurrentWorkflowContext.clear()
-            logger.debug("Workflow context cleared for: {}", txId)
         }
+    }
+
+    /**
+     * Determines if an exception should trigger a retry.
+     *
+     * Retries are only attempted for transient errors (deadlocks, timeouts, connection issues).
+     * Non-retryable exceptions fail immediately.
+     */
+    private fun shouldRetry(
+        exception: Exception,
+        config: TransactionConfig,
+        attempt: Int,
+        maxAttempts: Int
+    ): Boolean {
+        // Don't retry if we've exhausted all attempts
+        if (attempt >= maxAttempts - 1) {
+            logger.debug("Maximum retry attempts (${maxAttempts}) reached")
+            return false
+        }
+
+        // Check if exception is in non-retryable list
+        if (config.retryPolicy.nonRetryableExceptions.any { exception::class == it }) {
+            logger.debug("Exception ${exception::class.simpleName} is explicitly non-retryable")
+            return false
+        }
+
+        // Check if exception is in explicitly retryable list
+        if (config.retryPolicy.retryableExceptions.any { exception::class == it }) {
+            logger.debug("Exception ${exception::class.simpleName} is explicitly retryable")
+            return true
+        }
+
+        // Check if exception is a general transient error
+        val isTransient = exception.isTransient() || isDeadlockException(exception)
+        if (isTransient) {
+            logger.debug("Exception ${exception::class.simpleName} detected as transient error, retrying")
+        }
+
+        return isTransient
+    }
+
+    /**
+     * Determines if an exception is a database deadlock.
+     */
+    private fun isDeadlockException(exception: Exception): Boolean {
+        return when (exception) {
+            is DeadlockException -> true
+            is SQLException -> {
+                val errorCode = exception.errorCode
+                // MySQL deadlock: 1213, lock timeout: 1205
+                // PostgreSQL deadlock: 40P01
+                errorCode in setOf(1213, 1205, 40001)
+            }
+            else -> false
+        }
+    }
+
+    /**
+     * Calculates backoff delay for retry attempt.
+     *
+     * Supports three strategies:
+     * - EXPONENTIAL: 1s, 2s, 4s, 8s, 16s... (with jitter to prevent thundering herd)
+     * - LINEAR: 1s, 2s, 3s, 4s, 5s...
+     * - IMMEDIATE: 0ms (no delay)
+     *
+     * Formula for exponential: initialDelayMs * 2^attempt (capped at maxDelayMs, plus jitter)
+     * Formula for linear: initialDelayMs * (attempt + 1) (capped at maxDelayMs, plus jitter)
+     */
+    private fun calculateBackoffDelay(
+        attempt: Int,
+        policy: com.ead.katalyst.transactions.config.RetryPolicy
+    ): Long {
+        val baseDelay = when (policy.backoffStrategy) {
+            com.ead.katalyst.transactions.config.BackoffStrategy.EXPONENTIAL -> {
+                (policy.initialDelayMs * 2.0.pow(attempt.toDouble())).toLong()
+            }
+            com.ead.katalyst.transactions.config.BackoffStrategy.LINEAR -> {
+                policy.initialDelayMs * (attempt + 1)
+            }
+            com.ead.katalyst.transactions.config.BackoffStrategy.IMMEDIATE -> {
+                0L
+            }
+        }
+
+        // Cap at maximum delay
+        val cappedDelay = min(baseDelay, policy.maxDelayMs)
+
+        // Add jitter: ±(jitterFactor * cappedDelay)
+        val jitterAmount = (cappedDelay * policy.jitterFactor).toLong()
+        val jitter = (-jitterAmount + Math.random() * 2 * jitterAmount).toLong()
+
+        return cappedDelay + jitter
     }
 
     /**

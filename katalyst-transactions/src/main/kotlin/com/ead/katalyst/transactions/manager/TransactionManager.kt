@@ -1,6 +1,7 @@
 package com.ead.katalyst.transactions.manager
 
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
+import com.ead.katalyst.transactions.config.TransactionConfig
 import org.jetbrains.exposed.sql.Transaction
 
 /**
@@ -45,32 +46,44 @@ interface TransactionManager {
      * - Automatic undo on failure
      * - Recovery and replay
      *
+     * **Timeout & Retry** (Configurable):
+     * Transactions support configurable timeouts and automatic retry with exponential backoff:
+     * - Default: 30 second timeout, 3 retries with exponential backoff
+     * - Retries only for transient errors (deadlocks, timeouts, connection issues)
+     * - Non-retryable errors (validation, auth) fail immediately
+     *
      * **Execution Flow:**
      * 1. Create TransactionEventContext with optional workflow tracking
      * 2. Execute adapters: BEFORE_BEGIN
      * 3. Begin database transaction
      * 4. Execute adapters: AFTER_BEGIN
      * 5. Execute user block
-     * 6. Execute adapters: BEFORE_COMMIT
-     * 7. Commit transaction
-     * 8. Execute adapters: AFTER_COMMIT
-     * 9. Return result
+     * 6. Execute adapters: BEFORE_COMMIT_VALIDATION
+     * 7. Execute adapters: BEFORE_COMMIT
+     * 8. Commit transaction
+     * 9. Execute adapters: AFTER_COMMIT
+     * 10. Return result
      *
      * **On Exception:**
      * 1. Execute undo operations (if workflow tracking enabled)
      * 2. Execute adapters: ON_ROLLBACK
      * 3. Rollback transaction
      * 4. Execute adapters: AFTER_ROLLBACK
-     * 5. Re-throw exception
+     * 5. Check if retryable, wait backoff delay, retry if applicable
+     * 6. Re-throw exception if not retried
      *
      * @param workflowId Optional workflow ID for operation tracking
+     * @param config Transaction configuration with timeout, retry policy, isolation level
      * @param T The return type of the block
      * @param block The suspend function to execute within transaction
      * @return The result of the block
+     * @throws TransactionTimeoutException If transaction exceeds timeout
+     * @throws TransactionFailedException If all retry attempts failed
      * @throws Exception If transaction fails or block throws
      */
     suspend fun <T> transaction(
         workflowId: String? = null,
+        config: TransactionConfig = TransactionConfig(),
         block: suspend Transaction.() -> T
     ): T
 
