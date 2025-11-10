@@ -3,10 +3,10 @@ package com.ead.katalyst.example.config
 import com.ead.katalyst.core.config.ConfigException
 import com.ead.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
-import java.io.File
+import org.yaml.snakeyaml.Yaml
 
 /**
- * YAML-based configuration provider for Katalyst applications.
+ * YAML-based configuration provider for Katalyst applications using SnakeYAML.
  *
  * **Load Order (highest to lowest priority):**
  * 1. `application-{KATALYST_PROFILE}.yaml` (if KATALYST_PROFILE env var set)
@@ -80,44 +80,46 @@ class YamlConfigProvider : ConfigProvider {
     }
 
     /**
-     * Parse YAML content into nested map structure.
-     * Simple parser that handles:
-     * - Key: value pairs
-     * - Nested structure (indentation-based)
-     * - Environment variable substitution ${VAR:default}
+     * Parse YAML content using SnakeYAML.
+     * Handles environment variable substitution ${VAR:default}
      */
+    @Suppress("UNCHECKED_CAST")
     private fun parseYaml(content: String): Map<String, Any> {
-        val result = mutableMapOf<String, Any>()
-        val lines = content.lines().filter { it.isNotBlank() && !it.trim().startsWith("#") }
+        val yaml = Yaml()
+        val parsed = yaml.load<Any>(content)
 
-        var currentMap = result
-        val mapStack = mutableListOf<Pair<String, MutableMap<String, Any>>>()
-
-        for (line in lines) {
-            val indent = line.takeWhile { it == ' ' }.length
-            val trimmed = line.trimStart()
-
-            // Reset stack based on indentation
-            while (mapStack.isNotEmpty() && mapStack.last().first.length >= indent) {
-                mapStack.removeAt(mapStack.size - 1)
-            }
-
-            currentMap = if (mapStack.isEmpty()) result else mapStack.last().second
-
-            if (trimmed.endsWith(":") && !trimmed.contains(": ")) {
-                // Parent key (nested structure)
-                val key = trimmed.dropLast(1)
-                val nestedMap = mutableMapOf<String, Any>()
-                currentMap[key] = nestedMap
-                mapStack.add(key to nestedMap)
-            } else if (trimmed.contains(": ")) {
-                // Key-value pair
-                val (key, value) = trimmed.split(": ", limit = 2)
-                currentMap[key] = substituteEnvironmentVariables(value.trim())
-            }
+        // If YAML is empty or not a map, return empty map
+        if (parsed == null) {
+            return emptyMap()
         }
 
-        return result
+        if (parsed !is Map<*, *>) {
+            throw ConfigException("YAML root must be a map, got ${parsed::class.simpleName}")
+        }
+
+        val map = parsed as Map<String, Any>
+        return substituteEnvironmentVariablesInMap(map)
+    }
+
+    /**
+     * Recursively substitute environment variables in all map values.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun substituteEnvironmentVariablesInMap(map: Map<String, Any>): Map<String, Any> {
+        return map.mapValues { (_, value) ->
+            when (value) {
+                is String -> substituteEnvironmentVariables(value)
+                is Map<*, *> -> substituteEnvironmentVariablesInMap(value as Map<String, Any>)
+                is List<*> -> value.map { item ->
+                    when (item) {
+                        is String -> substituteEnvironmentVariables(item)
+                        is Map<*, *> -> substituteEnvironmentVariablesInMap(item as Map<String, Any>)
+                        else -> item
+                    }
+                }
+                else -> value
+            }
+        }
     }
 
     /**
@@ -144,12 +146,12 @@ class YamlConfigProvider : ConfigProvider {
     /**
      * Recursively merge profile config into base config.
      */
+    @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any>.merge(other: Map<String, Any>): Map<String, Any> {
         val result = this.toMutableMap()
         for ((key, value) in other) {
             result[key] = when {
                 value is Map<*, *> && result[key] is Map<*, *> -> {
-                    @Suppress("UNCHECKED_CAST")
                     (result[key] as Map<String, Any>).merge(value as Map<String, Any>)
                 }
                 else -> value
@@ -255,13 +257,14 @@ class YamlConfigProvider : ConfigProvider {
     /**
      * Navigate nested map using dot notation: "database.url" → data["database"]["url"]
      */
+    @Suppress("UNCHECKED_CAST")
     private fun navigatePath(path: String): Any? {
         val parts = path.split(".")
         var current: Any? = data
 
         for (part in parts) {
             current = when (current) {
-                is Map<*, *> -> current[part]
+                is Map<*, *> -> (current as Map<String, Any>)[part]
                 else -> return null
             }
         }

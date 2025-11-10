@@ -67,6 +67,9 @@ dependencies {
     // Logging
     implementation(libs.logback)
 
+    // YAML configuration
+    implementation(libs.snakeyaml)
+
     // Testing
 testImplementation(libs.ktor.server.test.host)
 testImplementation(kotlin("test"))

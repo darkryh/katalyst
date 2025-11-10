@@ -18,6 +18,7 @@ kaccelero = "0.6.8"
 kourier = "0.2.7"
 kotlinx-serialization = "1.6.3"
 testcontainers = "1.19.0"
+snakeyaml = "2.2"
 
 [libraries]
 # --- HTTP stack (Ktor server, serialization, and testing) ---
@@ -70,3 +71,4 @@ kaccelero-messaging-amqp = { module = "dev.kaccelero:messaging-amqp-jvm", versio
 kourier-amqp-robust = { module = "dev.kourier:amqp-client-robust-jvm", version.ref = "kourier" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
