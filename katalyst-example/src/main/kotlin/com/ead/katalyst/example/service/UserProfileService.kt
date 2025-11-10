@@ -21,7 +21,6 @@ class UserProfileService(
         accountId: Long,
         displayName: String
     ): UserProfile = transactionManager.transaction {
-        throw Exception("error")
         val existing = repository.findByAccountId(accountId)
         existing?.toDomain()
             ?: repository.save(
