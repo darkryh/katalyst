@@ -334,19 +334,135 @@ object ConfigurationExample {
 }
 
 /**
+ * Production implementation functions for configuration loading.
+ */
+object ConfigurationImplementation {
+    private val log = LoggerFactory.getLogger(ConfigurationImplementation::class.java)
+
+    /**
+     * Load database configuration for Application.kt bootstrap.
+     *
+     * **Called during:** katalystApplication { database(loadDatabaseConfig()) }
+     *
+     * **Process:**
+     * 1. Load YamlConfigProvider (loads YAML + profile overrides + env vars)
+     * 2. Use DatabaseConfigLoader to extract database configuration
+     * 3. Return typed DatabaseConfig for framework
+     *
+     * @return DatabaseConfig ready to pass to database() framework function
+     * @throws ConfigException if configuration is invalid
+     */
+    fun loadDatabaseConfig(): com.ead.katalyst.config.DatabaseConfig {
+        log.info("Loading database configuration from YAML...")
+        try {
+            // Step 1: Load ConfigProvider (YamlConfigProvider with profiles + env vars)
+            val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+
+            // Step 2: Use DatabaseConfigLoader for type-safe extraction and validation
+            val dbConfig = ConfigBootstrapHelper.loadServiceConfig(config, DatabaseConfigLoader())
+
+            log.info("✓ Database configuration loaded successfully")
+            return dbConfig
+        } catch (e: Exception) {
+            log.error("✗ Failed to load database configuration: ${e.message}")
+            throw e
+        }
+    }
+
+    /**
+     * Load JWT configuration for services that need authentication.
+     *
+     * **Example Usage:**
+     * ```kotlin
+     * fun main(args: Array<String>) = katalystApplication(args) {
+     *     val jwtConfig = ConfigurationImplementation.loadJwtConfig()
+     *     // Configure JWT settings service
+     *     jwtSettingsService.configure(jwtConfig)
+     * }
+     * ```
+     */
+    fun loadJwtConfig(): com.ead.katalyst.example.config.loaders.JwtConfig {
+        log.info("Loading JWT configuration from YAML...")
+        try {
+            val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+            val jwtConfig = ConfigBootstrapHelper.loadServiceConfig(config, JwtConfigLoader())
+
+            log.info("✓ JWT configuration loaded successfully")
+            return jwtConfig
+        } catch (e: Exception) {
+            log.error("✗ Failed to load JWT configuration: ${e.message}")
+            throw e
+        }
+    }
+
+    /**
+     * Discover and validate all ServiceConfigLoader implementations.
+     *
+     * **When to Use:**
+     * Call this during application startup after loading main configs to ensure
+     * all service configurations are valid before starting services.
+     *
+     * **Example Usage:**
+     * ```kotlin
+     * fun main(args: Array<String>) = katalystApplication(args) {
+     *     database(loadDatabaseConfig())
+     *     validateAllConfigLoaders()  // Ensure all configs are valid
+     *     scanPackages("com.ead.katalyst.example")
+     * }
+     * ```
+     */
+    fun validateAllConfigLoaders() {
+        log.info("Discovering and validating all ServiceConfigLoader implementations...")
+        try {
+            val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+
+            // Discover loaders in framework and application packages
+            val loaders = ConfigMetadata.discoverLoaders(arrayOf(
+                "com.ead.katalyst.config.yaml",      // YamlConfigProviderLoader
+                "com.ead.katalyst.example.config"    // DatabaseConfigLoader, JwtConfigLoader
+            ))
+
+            log.info("Found ${loaders.size} ServiceConfigLoader implementations")
+
+            // Validate all loaders
+            ConfigMetadata.validateLoaders(config, loaders)
+
+            log.info("✓ All ServiceConfigLoader implementations validated successfully")
+        } catch (e: Exception) {
+            log.error("✗ Configuration validation failed: ${e.message}")
+            throw e
+        }
+    }
+}
+
+/**
  * Demonstrates how to integrate configuration loading into your application.
  *
- * **Typical Application.kt Main Function:**
+ * **Typical Application.kt Main Function (with implementation):**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     // Step 1: Load configuration before DI initialization
+ *     // Step 1: Load database config before DI initialization
+ *     database(ConfigurationImplementation.loadDatabaseConfig())
+ *
+ *     // Step 2: Optional - Validate all configurations
+ *     ConfigurationImplementation.validateAllConfigLoaders()
+ *
+ *     // Step 3: Scan application packages (auto-discovers components)
+ *     scanPackages("com.ead.katalyst.example")
+ * }
+ * ```
+ *
+ * **Advanced Example with all features:**
+ * ```kotlin
+ * fun main(args: Array<String>) = katalystApplication(args) {
+ *     // Step 1: Load configuration before DI
  *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
  *
  *     // Step 2: Load service-specific configurations
  *     val jwtConfig = ConfigBootstrapHelper.loadServiceConfig(config, JwtConfigLoader())
  *     val dbConfig = ConfigBootstrapHelper.loadServiceConfig(config, DatabaseConfigLoader())
  *
- *     // Step 3: Optional - Discover and validate all loaders
+ *     // Step 3: Discover and validate all loaders
  *     val loaders = ConfigMetadata.discoverLoaders(arrayOf("com.ead.katalyst.example"))
  *     ConfigMetadata.validateLoaders(config, loaders)
  *

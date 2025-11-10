@@ -75,11 +75,12 @@ dependencies {
     implementation(libs.snakeyaml)
 
     // Testing
-testImplementation(libs.ktor.server.test.host)
-testImplementation(kotlin("test"))
-testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(kotlin("test"))
+    testImplementation(libs.testcontainers.postgresql)
+
+}
 
 tasks.test {
     useJUnitPlatform()
-}
 }

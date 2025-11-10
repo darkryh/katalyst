@@ -32,7 +32,7 @@ import java.util.Date
  * }
  * ```
  */
-class JwtSettingsService(private val config: ConfigProvider) : Service {
+class JwtSettingsService(config: ConfigProvider) : Service {
     companion object {
         private val log = LoggerFactory.getLogger(JwtSettingsService::class.java)
     }

@@ -1,11 +1,17 @@
 package com.ead.katalyst.config.yaml
 
+import com.ead.katalyst.core.component.Component
 import com.ead.katalyst.core.config.ConfigException
 import com.ead.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
 
 /**
  * YAML-based configuration provider for Katalyst applications using SnakeYAML.
+ *
+ * **Implements Component Interface:**
+ * This class implements `Component` so it's automatically discovered and registered
+ * in Koin DI container during application startup. Services can depend on ConfigProvider
+ * and will receive this implementation automatically.
  *
  * **Load Order (highest to lowest priority):**
  * 1. `application-{KATALYST_PROFILE}.yaml` (if KATALYST_PROFILE env var set)
@@ -26,7 +32,7 @@ import org.slf4j.LoggerFactory
  * - Staging: `application-staging.yaml`
  * - Production: `application-prod.yaml` (stricter validation, secrets from env)
  *
- * **Usage:**
+ * **Usage in Services:**
  * ```kotlin
  * class DatabaseService(private val config: ConfigProvider) : Service {
  *     fun connect() {
@@ -36,11 +42,23 @@ import org.slf4j.LoggerFactory
  * }
  * ```
  *
+ * **Bootstrap Usage:**
+ * ```kotlin
+ * fun main(args: Array<String>) = katalystApplication(args) {
+ *     // Load before DI scans components
+ *     database(ConfigurationImplementation.loadDatabaseConfig())
+ *
+ *     // YamlConfigProvider is auto-discovered during scanPackages()
+ *     // and injected into services that depend on ConfigProvider
+ *     scanPackages("com.ead.katalyst.example")
+ * }
+ * ```
+ *
  * **Internal Composition:**
  * Uses YamlProfileLoader for profile-based loading and YamlParser for parsing.
  * This separation allows reusing these components independently.
  */
-class YamlConfigProvider : ConfigProvider {
+class YamlConfigProvider : ConfigProvider, Component {
     companion object {
         private val log = LoggerFactory.getLogger(YamlConfigProvider::class.java)
     }
