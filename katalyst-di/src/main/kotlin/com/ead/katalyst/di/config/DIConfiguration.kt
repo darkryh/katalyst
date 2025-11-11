@@ -7,6 +7,7 @@ import com.ead.katalyst.di.internal.AutoBindingRegistrar
 import com.ead.katalyst.di.internal.EngineRegistrar
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
+import org.jetbrains.exposed.sql.SchemaUtils
 import com.ead.katalyst.di.module.coreDIModule
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.module.scannerDIModule
@@ -160,7 +161,7 @@ fun bootstrapKatalystDI(
         feature.onKoinReady(koin)
     }
 
-    // PHASE 4: Database Schema Initialization
+    // PHASE 4: Database Schema Initialization & Table Creation
     BootstrapProgress.startPhase(4)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from Koin...")
@@ -191,6 +192,16 @@ fun bootstrapKatalystDI(
                 }
                 koin.loadModules(listOf(databaseModule), createEagerInstances = true)
                 logger.info("Registered DatabaseFactory with {} Exposed table(s)", exposedTables.size)
+
+                // Auto-create missing tables in schema using Exposed's SchemaUtils
+                logger.info("Ensuring database schema...")
+                val txManager = koin.get<DatabaseTransactionManager>()
+                runBlocking {
+                    txManager.transaction {
+                        SchemaUtils.createMissingTablesAndColumns(*exposedTables.toTypedArray())
+                    }
+                }
+                logger.info("  ✓ Database schema ensured - all tables created if needed")
             }
         }
         BootstrapProgress.completePhase(4, "Database schema initialized with ${discoveredTables.size} tables")

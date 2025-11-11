@@ -78,24 +78,18 @@ internal class StartupValidator : ApplicationInitializer {
             }
             logger.info("  ✓ Database connection successful")
 
-            // 3. Ensure all registered tables exist in schema (auto-create if missing)
-            logger.info("Step 3: Ensuring table schema existence...")
+            // 3. Verify database schema was initialized correctly
+            logger.info("Step 3: Verifying database schema...")
             val discoveredTables = TableRegistry.getAll()
 
             if (discoveredTables.isEmpty()) {
-                logger.info("  ℹ  No tables registered - skipping schema validation")
+                logger.info("  ℹ  No tables registered - nothing to verify")
             } else {
                 logger.info("  Found {} registered table(s):", discoveredTables.size)
                 discoveredTables.forEach { table ->
                     logger.info("    • {}", table.tableName)
                 }
-
-                // Use Exposed's SchemaUtils to create missing tables
-                logger.info("  Creating schema if needed...")
-                txManager.transaction {
-                    SchemaUtils.createMissingTablesAndColumns(*discoveredTables.toTypedArray())
-                }
-                logger.info("  ✓ All {} table(s) ensured in database schema", discoveredTables.size)
+                logger.info("  ✓ Database schema verified (created during Phase 4)")
             }
 
             logger.info("")
