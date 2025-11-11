@@ -78,8 +78,8 @@ internal class StartupValidator : ApplicationInitializer {
             }
             logger.info("  ✓ Database connection successful")
 
-            // 3. Validate all registered tables exist (FAIL-FAST on error or missing tables)
-            logger.info("Step 3: Validating table schema existence...")
+            // 3. Ensure all registered tables exist in schema (auto-create if missing)
+            logger.info("Step 3: Ensuring table schema existence...")
             val discoveredTables = TableRegistry.getAll()
 
             if (discoveredTables.isEmpty()) {
@@ -90,57 +90,12 @@ internal class StartupValidator : ApplicationInitializer {
                     logger.info("    • {}", table.tableName)
                 }
 
-                // Validate tables exist in database (FAIL-FAST if validation fails)
-                logger.info("  Checking if all tables exist in database schema...")
-
-                val missingTables = runCatching {
-                    txManager.transaction {
-                        // Get the underlying JDBC connection from Exposed's connection wrapper
-                        val exposedConnection = org.jetbrains.exposed.sql.transactions.TransactionManager.current().connection
-                        val connection = if (exposedConnection is org.jetbrains.exposed.sql.statements.jdbc.JdbcConnectionImpl) {
-                            exposedConnection.connection
-                        } else {
-                            exposedConnection as java.sql.Connection
-                        }
-                        val dbMetaData = connection.metaData
-                        val resultSet = dbMetaData.getTables(null, null, null, arrayOf("TABLE"))
-
-                        val dbTableNames = mutableSetOf<String>()
-                        try {
-                            while (resultSet.next()) {
-                                dbTableNames.add(resultSet.getString("TABLE_NAME").lowercase())
-                            }
-                        } finally {
-                            resultSet.close()
-                        }
-
-                        // Find missing tables
-                        discoveredTables
-                            .filter { !dbTableNames.contains(it.tableName.lowercase()) }
-                            .map { it.tableName }
-                    }
-                }.getOrElse { emptyList() }
-
-                // AUTO-CREATE missing tables if any are missing
-                if (missingTables.isNotEmpty()) {
-                    logger.info("")
-                    logger.info("⚠  SCHEMA AUTO-CREATION: {} table(s) missing", missingTables.size)
-                    missingTables.forEach { table ->
-                        logger.info("    ⚠  {}", table)
-                    }
-                    logger.info("")
-                    logger.info("  Creating missing tables using SchemaUtils.create()...")
-
-                    // Create missing tables using Exposed's SchemaUtils
-                    txManager.transaction {
-                        SchemaUtils.create(*discoveredTables.toTypedArray())
-                    }
-
-                    logger.info("  ✓ Schema auto-creation completed")
-                    logger.info("")
+                // Use Exposed's SchemaUtils to create missing tables
+                logger.info("  Creating schema if needed...")
+                txManager.transaction {
+                    SchemaUtils.createMissingTablesAndColumns(*discoveredTables.toTypedArray())
                 }
-
-                logger.info("  ✓ All {} registered table(s) exist in database schema", discoveredTables.size)
+                logger.info("  ✓ All {} table(s) ensured in database schema", discoveredTables.size)
             }
 
             logger.info("")
