@@ -80,7 +80,7 @@ interface EventHandler<T : DomainEvent> {
      * Called asynchronously when an event of the specified type is published.
      *
      * **Contract:**
-     * - Must be suspend function for async operations
+     * - Must be suspended function for async operations
      * - Exceptions are caught and logged, won't crash the bus
      * - Should complete reasonably quickly
      * - Should be idempotent (safe to retry)
@@ -90,53 +90,3 @@ interface EventHandler<T : DomainEvent> {
      */
     suspend fun handle(event: T)
 }
-
-/**
- * Convenience base class for simple event handlers.
- *
- * Eliminates boilerplate for handlers that don't need special features.
- *
- * **Usage:**
- *
- * ```kotlin
- * @Component
- * class NotifyUserHandler : SimpleEventHandler<UserCreatedEvent>(
- *     eventType = UserCreatedEvent::class
- * ) {
- *     override suspend fun handle(event: UserCreatedEvent) {
- *         // Handle the event
- *     }
- * }
- * ```
- *
- * @param T The type of event
- * @param eventType The KClass of the event type
- */
-abstract class SimpleEventHandler<T : DomainEvent>(
-    override val eventType: KClass<T>
-) : EventHandler<T>
-
-/**
- * Base class for handlers with dependencies.
- *
- * Useful when you need to store handler state or use a custom constructor.
- *
- * **Usage:**
- *
- * ```kotlin
- * @Component
- * class AuditLogHandler(
- *     private val auditService: AuditService
- * ) : BaseEventHandler<OrderCreatedEvent>(OrderCreatedEvent::class) {
- *     override suspend fun handle(event: OrderCreatedEvent) {
- *         auditService.log(event)
- *     }
- * }
- * ```
- *
- * @param T The type of event
- * @param eventType The KClass of the event type
- */
-abstract class BaseEventHandler<T : DomainEvent>(
-    override val eventType: KClass<T>
-) : EventHandler<T>

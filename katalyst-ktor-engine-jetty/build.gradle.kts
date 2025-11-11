@@ -10,9 +10,9 @@ dependencies {
     implementation(projects.katalystCore)
     implementation(projects.katalystDi)
 
-    // Ktor with Netty engine
+    // Ktor with Jetty engine
     implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.jetty.jakarta)
 
     // Dependency injection
     implementation(libs.koin.core)

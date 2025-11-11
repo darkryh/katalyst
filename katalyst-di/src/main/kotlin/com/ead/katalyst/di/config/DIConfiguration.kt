@@ -4,6 +4,7 @@ import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
+import com.ead.katalyst.di.internal.EngineRegistrar
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
 import com.ead.katalyst.di.module.coreDIModule
@@ -110,28 +111,20 @@ data class KatalystDIOptions(
 fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
-    features: List<KatalystFeature> = emptyList()
+    features: List<KatalystFeature> = emptyList(),
+    serverConfig: ServerConfiguration = ServerConfiguration()
 ): Koin {
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
 
-    val modules = mutableListOf<Module>(
+    val modules = mutableListOf(
         coreDIModule(databaseConfig),
         scannerDIModule()
     )
 
-    // Automatically load Netty engine module if available on classpath
-    try {
-        val nettyModuleClass = Class.forName("com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt")
-        val getNettyModuleMethod = nettyModuleClass.getMethod("getNettyEngineModuleInstance")
-        val nettyModule = getNettyModuleMethod.invoke(null) as? Module
-        if (nettyModule != null) {
-            logger.debug("Netty engine module found on classpath, including it")
-            modules.add(nettyModule)
-        }
-    } catch (e: Exception) {
-        logger.debug("Netty engine module not available: {}", e.javaClass.simpleName)
-        // Continue without it - alternative engine implementations will be tried
-    }
+    // Discover and register the selected engine
+    logger.info("▶ Phase 2: Discovering and registering engine")
+    val engineRegistrar = EngineRegistrar(serverConfig, logger)
+    engineRegistrar.registerEngineModules(modules)
 
     features.forEach { feature ->
         logger.debug("Including feature '{}' modules", feature.id)
@@ -247,7 +240,7 @@ fun bootstrapKatalystDI(
         throw e
     }
 
-    // ✅ NEW: Execute application initialization lifecycle
+    // Execute application initialization lifecycle
     // This runs after all DI is complete and database is ready
     try {
         logger.info("Starting application initialization lifecycle...")
@@ -280,20 +273,25 @@ fun bootstrapKatalystDI(
  *         scanPackages = arrayOf("com.example.app"),
  *         features = listOf(MyCustomFeature)
  *     )
- *     initializeKoinStandalone(options)
+ *     val serverConfig = ServerConfiguration(engineType = "netty", port = 9090)
+ *     initializeKoinStandalone(options, serverConfig)
  *     // ... rest of application code
  *     stopKoinStandalone()
  * }
  * ```
  */
-fun initializeKoinStandalone(options: KatalystDIOptions): Koin {
+fun initializeKoinStandalone(
+    options: KatalystDIOptions,
+    serverConfiguration: ServerConfiguration = ServerConfiguration()
+): Koin {
     logger.info("Initializing Koin DI for standalone application")
     logger.debug("Features enabled: {}", options.features.joinToString { it.id })
 
     return bootstrapKatalystDI(
         databaseConfig = options.databaseConfig,
         scanPackages = options.scanPackages,
-        features = options.features
+        features = options.features,
+        serverConfig = serverConfiguration
     ).also {
         logger.info("Koin initialization completed successfully")
     }
@@ -323,39 +321,6 @@ fun stopKoinStandalone() {
     logger.info("Koin stopped successfully")
 }
 
-/**
- * Installs Koin DI for a Ktor application.
- *
- * This should be called within the application {} block in your Ktor main module.
- *
- * **Usage:**
- * ```kotlin
- * fun Application.main() {
- *     val options = KatalystDIOptions(
- *         databaseConfig = DatabaseConfig(...),
- *         scanPackages = arrayOf("com.example.app"),
- *         features = listOf(MyCustomFeature)
- *     )
- *     installKoinDI(options)
- * }
- * ```
- */
-fun Application.installKoinDI(
-    options: KatalystDIOptions
-) {
-    logger.info("Installing Koin DI for Ktor application")
-    logger.debug("Features enabled: {}", options.features.joinToString { it.id })
-
-    bootstrapKatalystDI(
-        databaseConfig = options.databaseConfig,
-        scanPackages = options.scanPackages,
-        features = options.features
-    )
-
-    install(Koin) {}
-
-    logger.info("Koin DI installed successfully for Ktor application")
-}
 
 /**
  * Builder for custom DI configurations.
@@ -461,40 +426,6 @@ class DIConfigurationBuilder {
     fun build(): List<Module> = modules.toList()
 }
 
-/**
- * Installs Koin DI with custom configuration for a Ktor application.
- *
- * Provides a builder-style configuration for flexible module setup.
- *
- * **Usage:**
- * ```kotlin
- * fun Application.main() {
- *     installKoinDI {
- *         coreModules()
- *         scannerModules()
- *         // Optional modules can contribute their own DIConfigurationBuilder extensions.
- *     }
- *     configureApp()
- * }
- * ```
- *
- * @param builder Configuration builder lambda
- */
-fun Application.installKoinDI(builder: DIConfigurationBuilder.() -> Unit) {
-    logger.info("Installing Koin DI with custom configuration for Ktor application")
-
-    val diBuilder = DIConfigurationBuilder()
-    diBuilder.builder()
-    val modules = diBuilder.build()
-
-    logger.info("Installing Koin with {} module(s) into Ktor application", modules.size)
-
-    install(Koin) {
-        modules(*modules.toTypedArray())
-    }
-
-    logger.info("Koin DI installed successfully with custom configuration")
-}
 
 /**
  * Safely retrieves the current Koin instance if one exists.

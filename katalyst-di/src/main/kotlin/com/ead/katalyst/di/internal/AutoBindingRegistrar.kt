@@ -1,19 +1,19 @@
 package com.ead.katalyst.di.internal
 
 import com.ead.katalyst.core.component.Component
-import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.core.exception.DependencyInjectionException
+import com.ead.katalyst.core.persistence.Table
+import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import com.ead.katalyst.di.lifecycle.DiscoverySummary
 import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
-import com.ead.katalyst.repositories.CrudRepository
 import com.ead.katalyst.ktor.KtorModule
+import com.ead.katalyst.migrations.KatalystMigration
+import com.ead.katalyst.repositories.CrudRepository
 import com.ead.katalyst.scanner.core.DiscoveryConfig
 import com.ead.katalyst.scanner.core.DiscoveryPredicate
 import com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner
-import com.ead.katalyst.core.component.Service
-import com.ead.katalyst.core.persistence.Table
-import com.ead.katalyst.migrations.KatalystMigration
-import com.ead.katalyst.di.lifecycle.DiscoverySummary
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.core.Koin
@@ -25,7 +25,7 @@ import org.koin.core.error.DefinitionOverrideException
 import org.koin.core.instance.SingleInstanceFactory
 import org.objectweb.asm.*
 import org.reflections.Reflections
-import org.reflections.scanners.SubTypesScanner
+import org.reflections.scanners.Scanners
 import org.reflections.util.ClasspathHelper
 import org.reflections.util.ConfigurationBuilder
 import org.reflections.util.FilterBuilder
@@ -98,10 +98,11 @@ class AutoBindingRegistrar(
         registerComponents(CrudRepository::class.java, "repositories")
         registerComponents(Component::class.java, "components")
         registerComponents(Service::class.java, "services")
+
         registerTables()
+
         registerComponents(KtorModule::class.java, "ktor modules")
-        @Suppress("UNCHECKED_CAST")
-        registerComponents(EventHandler::class.java as Class<EventHandler<*>>, "event handlers")
+        registerComponents(EventHandler::class.java, "event handlers")
         registerComponents(KatalystMigration::class.java, "migrations")
         registerRouteFunctions()
 
@@ -109,20 +110,6 @@ class AutoBindingRegistrar(
         displayComponentDiscoverySummary()
     }
 
-    /**
-     * Discovers and registers all concrete implementations of a component type.
-     *
-     * Uses a two-phase registration strategy:
-     * 1. Attempt to register all discovered components
-     * 2. Defer components with missing dependencies for retry
-     *
-     * Components are retried in subsequent passes until all dependencies are resolved
-     * or no progress can be made.
-     *
-     * @param T The base component type to discover
-     * @param baseType The Java class of the base type
-     * @param label Human-readable label for logging
-     */
     /**
      * Displays component discovery summary with organized tables.
      *
@@ -597,7 +584,7 @@ class AutoBindingRegistrar(
             val config = ConfigurationBuilder()
                 .setUrls(urls)
                 .filterInputsBy(filter)
-                .setScanners(SubTypesScanner(false))
+                .setScanners(Scanners.SubTypes)
 
             val reflections = Reflections(config)
             val markerJava = Table::class.java
@@ -690,14 +677,15 @@ class AutoBindingRegistrar(
                     builder.includePackage(pkg)
                 }
             )
-            .setScanners(SubTypesScanner(false))
+            .setScanners(Scanners.SubTypes.filterResultsBy { _: String? -> true })
 
         val reflections = Reflections(config)
 
         val classLoader = Thread.currentThread().contextClassLoader
         val methods = mutableSetOf<Method>()
 
-        reflections.allTypes
+        reflections
+            .getAll(Scanners.SubTypes)
             .asSequence()
             .filter { typeName -> typeName.endsWith("Kt") && packages.any { typeName.startsWith(it) } }
             .forEach { typeName ->
@@ -753,6 +741,7 @@ class AutoBindingRegistrar(
         )
 
         val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
+
         val definition = BeanDefinition(
             scopeQualifier = scopeQualifier,
             primaryType = primaryType,
@@ -761,8 +750,10 @@ class AutoBindingRegistrar(
             kind = Kind.Singleton,
             secondaryTypes = secondaryTypes
         )
+
         val factory = SingleInstanceFactory(definition)
         val primaryKey = indexKey(primaryType, definition.qualifier, scopeQualifier)
+
         runCatching {
             koin.instanceRegistry.saveMapping(true, primaryKey, factory, logWarning = false)
             secondaryTypes.forEach { type ->

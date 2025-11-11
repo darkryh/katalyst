@@ -32,7 +32,6 @@ dependencies {
     // Ktor integration
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.host.common)
-    implementation(libs.ktor.server.netty)
 
     // Language/runtime utilities
     implementation(kotlin("stdlib"))

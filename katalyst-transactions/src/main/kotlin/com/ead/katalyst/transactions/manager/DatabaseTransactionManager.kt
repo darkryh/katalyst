@@ -2,6 +2,8 @@ package com.ead.katalyst.transactions.manager
 
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.adapter.TransactionAdapterRegistry
+import com.ead.katalyst.transactions.config.BackoffStrategy
+import com.ead.katalyst.transactions.config.RetryPolicy
 import com.ead.katalyst.transactions.config.TransactionConfig
 import com.ead.katalyst.transactions.context.TransactionEventContext
 import com.ead.katalyst.transactions.exception.DeadlockException
@@ -237,9 +239,9 @@ class DatabaseTransactionManager(
         // All retries exhausted
         CurrentWorkflowContext.clear()
         throw when (lastException) {
-            is TransactionTimeoutException -> lastException!!
+            is TransactionTimeoutException -> lastException
             else -> TransactionFailedException(
-                message = "Transaction failed after ${maxAttempts} attempts",
+                message = "Transaction failed after $maxAttempts attempts",
                 transactionId = txId,
                 finalAttemptNumber = maxAttempts,
                 totalRetries = config.retryPolicy.maxRetries,
@@ -394,16 +396,16 @@ class DatabaseTransactionManager(
      */
     private fun calculateBackoffDelay(
         attempt: Int,
-        policy: com.ead.katalyst.transactions.config.RetryPolicy
+        policy: RetryPolicy
     ): Long {
         val baseDelay = when (policy.backoffStrategy) {
-            com.ead.katalyst.transactions.config.BackoffStrategy.EXPONENTIAL -> {
+            BackoffStrategy.EXPONENTIAL -> {
                 (policy.initialDelayMs * 2.0.pow(attempt.toDouble())).toLong()
             }
-            com.ead.katalyst.transactions.config.BackoffStrategy.LINEAR -> {
+            BackoffStrategy.LINEAR -> {
                 policy.initialDelayMs * (attempt + 1)
             }
-            com.ead.katalyst.transactions.config.BackoffStrategy.IMMEDIATE -> {
+            BackoffStrategy.IMMEDIATE -> {
                 0L
             }
         }

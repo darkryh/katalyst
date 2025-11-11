@@ -3,7 +3,6 @@ package com.ead.katalyst.transactions.metrics
 import com.ead.katalyst.transactions.hooks.TransactionPhase
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -141,7 +140,7 @@ interface MetricsCollector {
  * Suitable for single-node deployments and testing.
  *
  * For distributed deployments, consider implementing a persistent
- * store using database or monitoring system (Prometheus, Datadog, etc).
+ * store using database or monitoring system (Prometheus, Datadog, etc.).
  *
  * **Memory Considerations:**
  * In production, implement periodic cleanup of old metrics to prevent
@@ -208,18 +207,16 @@ class DefaultMetricsCollector : MetricsCollector {
         error: Exception,
         isRetryable: Boolean
     ) {
-        metricsMap[transactionId]?.let { metrics ->
-            metrics.errors.add(
-                TransactionError(
-                    timestamp = Instant.now(),
-                    phase = phase,
-                    message = error.message ?: "Unknown error",
-                    stackTrace = error.stackTraceToString(),
-                    isRetryable = isRetryable,
-                    exceptionClassName = error::class.simpleName ?: "Unknown"
-                )
+        metricsMap[transactionId]?.errors?.add(
+            TransactionError(
+                timestamp = Instant.now(),
+                phase = phase,
+                message = error.message ?: "Unknown error",
+                stackTrace = error.stackTraceToString(),
+                isRetryable = isRetryable,
+                exceptionClassName = error::class.simpleName ?: "Unknown"
             )
-        }
+        )
     }
 
     override fun completeTransaction(

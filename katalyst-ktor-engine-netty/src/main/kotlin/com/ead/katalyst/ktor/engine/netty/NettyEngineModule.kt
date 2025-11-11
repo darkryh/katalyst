@@ -1,42 +1,44 @@
 package com.ead.katalyst.ktor.engine.netty
 
-import com.ead.katalyst.ktor.engine.KtorEngineConfiguration
+import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * Koin module for Netty engine configuration.
+ * Koin module for Netty engine components.
+ * Registers both configuration and factory for Netty-backed Ktor servers.
  *
- * This module registers the Netty engine implementation as the active
- * KtorEngineConfiguration. Including this module makes Netty the engine
- * for the entire application.
+ * This module registers:
+ * - NettyEngineConfiguration: Netty-specific settings (worker threads, timeouts, etc.)
+ * - KtorEngineFactory: Factory implementation for creating Netty servers
+ *
+ * Configuration is injected from ServerConfiguration, enabling:
+ * - Runtime engine selection
+ * - Host/port configuration from ServerConfiguration
+ * - Timeout configuration from ServerConfiguration
  *
  * To switch to a different engine (e.g., Jetty):
  * 1. Remove this module (don't include katalyst-ktor-engine-netty)
  * 2. Include the alternative engine module (katalyst-ktor-engine-jetty)
  * 3. No code changes needed - DI handles everything
  *
- * Usage in application:
- * ```kotlin
- * val koinApplication = KoinApplication().modules(
- *     NettyEngineModule,
- *     // ... other modules
- * )
- * ```
+ * Accessed via getNettyEngineModule() for reflection-based discovery.
  */
-val NettyEngineModule = module {
-    single<KtorEngineConfiguration> {
+fun getNettyEngineModule(): Module = module {
+    // Configuration: Get values from ServerConfiguration
+    single<NettyEngineConfiguration> {
+        val serverConfig = get<ServerConfiguration>()
         NettyEngineConfiguration(
-            host = "0.0.0.0",
-            port = 8080
+            host = serverConfig.host,
+            port = serverConfig.port,
+            workerThreads = serverConfig.workerThreads,
+            connectionIdleTimeoutMs = serverConfig.connectionIdleTimeoutMs
         )
     }
-}
 
-/**
- * Function to get the NettyEngineModule for reflection-based loading.
- * This is used by DIConfiguration to automatically discover and load
- * the engine module when katalyst-ktor-engine-netty is on the classpath.
- */
-@JvmName("getNettyEngineModuleInstance")
-fun nettyEngineModuleInstance(): Module = NettyEngineModule
+    // Factory: Uses the configuration
+    single<KtorEngineFactory> {
+        NettyEngineFactory(get())
+    }
+}

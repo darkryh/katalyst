@@ -66,17 +66,35 @@ typealias ApplicationWrapper = (Application) -> Application
  * Server configuration container.
  *
  * Holds all server-related configuration for Ktor applications,
- * including engine wrapping and application setup functions.
+ * including engine selection, binding address, port, and wrapping functions.
  *
- * @param engineType The engine type to use (Netty, Jetty, CIO, etc.)
+ * This configuration is read by engine implementations via DI injection,
+ * enabling runtime engine selection and configuration without code changes.
+ *
+ * @param engineType The engine type to use (netty, jetty, cio, etc.)
+ * @param host Server bind address (default: "0.0.0.0" for all interfaces)
+ * @param port Server listen port (default: 8080)
+ * @param workerThreads Number of worker threads (default: 2 × CPU cores)
+ * @param connectionIdleTimeoutMs Connection idle timeout in milliseconds (default: 180000ms)
  * @param serverWrapper Optional lambda to wrap/configure the server engine
  * @param applicationWrapper Optional lambda to wrap/configure the application
  */
 data class ServerConfiguration(
     val engineType: String = "netty",
+    val host: String = "0.0.0.0",
+    val port: Int = 8080,
+    val workerThreads: Int = Runtime.getRuntime().availableProcessors() * 2,
+    val connectionIdleTimeoutMs: Long = 180000L,
     val serverWrapper: ServerWrapper? = null,
     val applicationWrapper: ApplicationWrapper? = null
 ) {
+    init {
+        require(engineType.isNotBlank()) { "engineType must not be blank" }
+        require(host.isNotBlank()) { "host must not be blank" }
+        require(port in 1..65535) { "port must be in range 1-65535" }
+        require(workerThreads > 0) { "workerThreads must be positive" }
+        require(connectionIdleTimeoutMs > 0) { "connectionIdleTimeoutMs must be positive" }
+    }
     companion object {
         /**
          * Creates a default Netty server configuration.
@@ -122,7 +140,11 @@ data class ServerConfiguration(
  * **Usage Example:**
  * ```kotlin
  * val serverConfig = ServerConfigurationBuilder()
- *     .netty()
+ *     .engineType("jetty")
+ *     .host("127.0.0.1")
+ *     .port(9090)
+ *     .workerThreads(50)
+ *     .connectionIdleTimeout(300000)
  *     .withServerWrapper { engine ->
  *         // Configure server engine
  *         engine
@@ -138,8 +160,23 @@ class ServerConfigurationBuilder {
     private val logger = LoggerFactory.getLogger("ServerConfigurationBuilder")
 
     private var engineType: String = "netty"
+    private var host: String = "0.0.0.0"
+    private var port: Int = 8080
+    private var workerThreads: Int = Runtime.getRuntime().availableProcessors() * 2
+    private var connectionIdleTimeoutMs: Long = 180000L
     private var serverWrapper: ServerWrapper? = null
     private var applicationWrapper: ApplicationWrapper? = null
+
+    /**
+     * Sets the engine type explicitly.
+     *
+     * @param type Engine type (netty, jetty, cio, etc.)
+     */
+    fun engineType(type: String): ServerConfigurationBuilder {
+        logger.debug("Configuring engine type: {}", type)
+        this.engineType = type
+        return this
+    }
 
     /**
      * Sets the engine type to Netty.
@@ -169,6 +206,50 @@ class ServerConfigurationBuilder {
     }
 
     /**
+     * Sets the server bind address.
+     *
+     * @param host Server bind address (e.g., "0.0.0.0", "127.0.0.1", "localhost")
+     */
+    fun host(host: String): ServerConfigurationBuilder {
+        logger.debug("Setting host: {}", host)
+        this.host = host
+        return this
+    }
+
+    /**
+     * Sets the server listen port.
+     *
+     * @param port Server port (1-65535)
+     */
+    fun port(port: Int): ServerConfigurationBuilder {
+        logger.debug("Setting port: {}", port)
+        this.port = port
+        return this
+    }
+
+    /**
+     * Sets the number of worker threads.
+     *
+     * @param threads Number of worker threads (must be positive)
+     */
+    fun workerThreads(threads: Int): ServerConfigurationBuilder {
+        logger.debug("Setting worker threads: {}", threads)
+        this.workerThreads = threads
+        return this
+    }
+
+    /**
+     * Sets the connection idle timeout in milliseconds.
+     *
+     * @param ms Timeout in milliseconds (must be positive)
+     */
+    fun connectionIdleTimeout(ms: Long): ServerConfigurationBuilder {
+        logger.debug("Setting connection idle timeout: {}ms", ms)
+        this.connectionIdleTimeoutMs = ms
+        return this
+    }
+
+    /**
      * Sets a custom server wrapper for engine configuration.
      *
      * @param wrapper Lambda function to configure the server engine
@@ -194,9 +275,16 @@ class ServerConfigurationBuilder {
      * Builds the final ServerConfiguration.
      */
     fun build(): ServerConfiguration {
-        logger.info("Building server configuration: engine={}", engineType)
+        logger.info(
+            "Building server configuration: engine={}, host={}, port={}, workers={}",
+            engineType, host, port, workerThreads
+        )
         return ServerConfiguration(
             engineType = engineType,
+            host = host,
+            port = port,
+            workerThreads = workerThreads,
+            connectionIdleTimeoutMs = connectionIdleTimeoutMs,
             serverWrapper = serverWrapper,
             applicationWrapper = applicationWrapper
         )
