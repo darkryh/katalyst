@@ -106,15 +106,13 @@ internal class InitializerRegistry(private val koin: Koin) {
                     logger.error("")
 
                     // Wrap in InitializerFailedException for better error context
-                    val initException = if (e is LifecycleException) {
-                        e  // Already a lifecycle exception, re-throw as-is
-                    } else {
-                        InitializerFailedException(
-                            initializerName = initializer.initializerId,
-                            message = e.message ?: "Unknown error",
-                            cause = e
-                        )
-                    }
+                    val initException = // Already a lifecycle exception, re-throw as-is
+                        e as? LifecycleException
+                            ?: InitializerFailedException(
+                                initializerName = initializer.initializerId,
+                                message = e.message ?: "Unknown error",
+                                cause = e
+                            )
                     throw initException
                 }
 

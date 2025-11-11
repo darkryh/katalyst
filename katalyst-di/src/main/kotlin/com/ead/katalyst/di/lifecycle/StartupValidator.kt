@@ -121,31 +121,23 @@ internal class StartupValidator : ApplicationInitializer {
                     }
                 }.getOrElse { emptyList() }
 
-                // FAIL-FAST if ANY tables are missing
+                // AUTO-CREATE missing tables if any are missing
                 if (missingTables.isNotEmpty()) {
-                    logger.error("")
-                    logger.error("✗ DATABASE SCHEMA VALIDATION FAILED")
-                    logger.error("  {} registered table(s) do NOT exist in database:", missingTables.size)
+                    logger.info("")
+                    logger.info("⚠  SCHEMA AUTO-CREATION: {} table(s) missing", missingTables.size)
                     missingTables.forEach { table ->
-                        logger.error("    ✗ {}", table)
+                        logger.info("    ⚠  {}", table)
                     }
-                    logger.error("")
-                    logger.error("  CRITICAL: This will cause crashes when:")
-                    logger.error("    → Scheduler methods try to query tables during initialization")
-                    logger.error("    → Repositories try to access missing tables")
-                    logger.error("")
-                    logger.error("  SOLUTION:")
-                    logger.error("    1. Check your database migrations have been run")
-                    logger.error("    2. Verify database connection is correct")
-                    logger.error("    3. Run: ./gradlew runMigrations (or your migration command)")
-                    logger.error("    4. Restart the application")
-                    logger.error("")
+                    logger.info("")
+                    logger.info("  Creating missing tables using SchemaUtils.create()...")
 
-                    throw IllegalStateException(
-                        "Database schema validation FAILED. " +
-                        "${missingTables.size} registered table(s) missing from database: $missingTables. " +
-                        "Run database migrations before starting the application."
-                    )
+                    // Create missing tables using Exposed's SchemaUtils
+                    txManager.transaction {
+                        SchemaUtils.create(*discoveredTables.toTypedArray())
+                    }
+
+                    logger.info("  ✓ Schema auto-creation completed")
+                    logger.info("")
                 }
 
                 logger.info("  ✓ All {} registered table(s) exist in database schema", discoveredTables.size)
