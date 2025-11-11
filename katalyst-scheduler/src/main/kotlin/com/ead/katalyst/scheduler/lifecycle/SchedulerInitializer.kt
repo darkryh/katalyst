@@ -23,6 +23,21 @@ import kotlin.reflect.jvm.jvmErasure
  * **Ownership**: This initializer is owned by the scheduler module and handles all
  * scheduler-specific discovery and invocation logic.
  *
+ * **Execution Order & Safety Guarantee:**
+ * Runs SECOND (order=-50), AFTER StartupValidator (order=-100).
+ * StartupValidator ensures database schema is ready, so scheduler methods can
+ * safely query tables without crashing.
+ *
+ * **Important Contract:**
+ * At this point in the initialization sequence:
+ * ✓ Database connection verified and working
+ * ✓ ALL registered tables verified to exist in schema
+ * ✓ Safe to invoke scheduler methods that query tables
+ * ✓ No additional schema validation needed
+ *
+ * If StartupValidator threw an exception → this initializer NEVER runs.
+ * If we reach this point → schema is guaranteed valid.
+ *
  * **Discovery Process (3-Step Validation):**
  *
  * STEP 1: Reflection-based signature matching
@@ -56,10 +71,6 @@ import kotlin.reflect.jvm.jvmErasure
  * Bytecode validation ensures the method actually invokes scheduler methods,
  * preventing invalid implementations from being discovered.
  *
- * **Execution Order:**
- * Runs SECOND (order=-50), after StartupValidator
- * At this point, database is guaranteed ready for scheduler tasks.
- *
  * **Module**: katalyst-scheduler
  */
 internal class SchedulerInitializer : ApplicationInitializer {
@@ -71,7 +82,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
     override suspend fun onApplicationReady(koin: Koin) {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ PHASE 2: Scheduler Method Discovery & Invocation   ║")
+        logger.info("║ PHASE 2: Scheduler Discovery & Registration       ║")
+        logger.info("║ (Database schema guaranteed ready by Phase 1)      ║")
         logger.info("╚════════════════════════════════════════════════════╝")
         logger.info("")
 
@@ -94,6 +106,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 return
             }
             logger.info("✓ SchedulerService available")
+            logger.info("✓ Database schema ready (validated by StartupValidator)")
 
             // Get all services from ServiceRegistry (populated during component discovery)
             logger.info("Retrieving services from ServiceRegistry...")

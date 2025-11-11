@@ -1,6 +1,5 @@
 package com.ead.katalyst.repositories
 
-import com.ead.katalyst.core.persistence.Table as KatalystTable
 import com.ead.katalyst.repositories.model.PageInfo
 import com.ead.katalyst.repositories.model.QueryFilter
 import com.ead.katalyst.repositories.model.SortOrder
@@ -8,36 +7,8 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import com.ead.katalyst.core.persistence.Table as KatalystTable
 import org.jetbrains.exposed.sql.SortOrder as ExposedSortOder
-import kotlin.reflect.KClass
-
-/**
- * Repository pattern interface and supporting types tailored for Exposed tables.
- *
- * The Repository pattern provides a data access abstraction with generic
- * type parameters for identifier and domain entity types.
- *
- * **Design Pattern (Like Spring Data JPA):**
- * - Repositories are data access objects, NOT general components
- * - They have a specific responsibility: CRUD operations
- * - Like Spring's `JpaRepository<Entity, ID>`, this interface marks data access classes
- * - Inherit from this interface just like you'd extend `JpaRepository`
- *
- * **Automatic Discovery:**
- * Inherit from Repository and the framework automatically:
- * 1. Discovers your repository class during startup
- * 2. Registers it in the DI container
- * 3. Makes it available for service injection
- *
- * **Default CRUD implementation:**
- * Developers only implement the [table] reference and the [mapper] function.
- * The framework provides insert/update/read/delete behaviour using the table metadata
- * and Kotlin reflection to bind entity properties to Exposed columns.
- *
- * **Exception Handling:**
- * Developers define and throw their own exceptions (e.g., NotFoundException, ConflictException)
- * as needed. The framework doesn't prescribe specific exception types.
- */
 
 
 // ============= Core Repository Interface =============
