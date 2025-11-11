@@ -95,7 +95,13 @@ internal class StartupValidator : ApplicationInitializer {
 
                 val missingTables = runCatching {
                     txManager.transaction {
-                        val connection = org.jetbrains.exposed.sql.transactions.TransactionManager.current().connection as java.sql.Connection
+                        // Get the underlying JDBC connection from Exposed's connection wrapper
+                        val exposedConnection = org.jetbrains.exposed.sql.transactions.TransactionManager.current().connection
+                        val connection = if (exposedConnection is org.jetbrains.exposed.sql.statements.jdbc.JdbcConnectionImpl) {
+                            exposedConnection.connection
+                        } else {
+                            exposedConnection as java.sql.Connection
+                        }
                         val dbMetaData = connection.metaData
                         val resultSet = dbMetaData.getTables(null, null, null, arrayOf("TABLE"))
 
