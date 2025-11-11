@@ -277,7 +277,7 @@ class DefaultEventClient(
         }
 
         executeAfterPublishInterceptors(event, lastFailure!!, context, startTime)
-        return lastFailure!!
+        return lastFailure
     }
 
     /**

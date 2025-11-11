@@ -40,10 +40,9 @@ class UserProfileService(
         repository.findAll().map { it.toDomain() }
     }
 
-    suspend fun getProfileForAccount(accountId: Long): UserProfile? =
-        transactionManager.transaction {
-            repository.findByAccountId(accountId)?.toDomain()
-        }
+    suspend fun getProfileForAccount(accountId: Long): UserProfile? = transactionManager.transaction {
+        repository.findByAccountId(accountId)?.toDomain()
+    }
 
     @Suppress("unused")
     fun scheduleProfileDigest() = scheduler.scheduleCron(
