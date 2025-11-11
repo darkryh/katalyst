@@ -164,45 +164,44 @@ fun bootstrapKatalystDI(
     // PHASE 4: Database Schema Initialization & Table Creation
     BootstrapProgress.startPhase(4)
     try {
-        logger.debug("Attempting to retrieve discovered Table instances from Koin...")
-        // Note: Table interface now has two type parameters <Id, Entity>
-        // Since we can't easily express Table<*, *> in Koin reified generics,
-        // we cast the result to List<Any> and access as objects
-        val discoveredTables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
+        logger.debug("Attempting to retrieve discovered Table instances from TableRegistry...")
+        // Use TableRegistry instead of koin.getAll() because:
+        // - Koin's getAll<Any>() doesn't reliably return dynamically registered singletons
+        // - TableRegistry provides guaranteed access to all discovered tables from Phase 3
+        val discoveredTables = com.ead.katalyst.di.internal.TableRegistry.getAll()
         logger.info("Discovered {} table(s) for initialization", discoveredTables.size)
 
         if (discoveredTables.isNotEmpty()) {
-            // Cast discovered tables (which implement both our Table marker and org.jetbrains.exposed.sql.Table)
-            @Suppress("UNCHECKED_CAST")
-            val exposedTables = discoveredTables.mapNotNull { it as? org.jetbrains.exposed.sql.Table }
+            logger.info("Found {} table(s) for schema creation", discoveredTables.size)
 
-            logger.info("Found {} Exposed table(s) for schema creation", exposedTables.size)
+            // Tables from TableRegistry are already org.jetbrains.exposed.sql.Table instances
+            val exposedTables = discoveredTables.toTypedArray()
 
-            if (exposedTables.isNotEmpty()) {
-                // Create new DatabaseFactory with discovered tables
-                val databaseFactory = DatabaseFactory.create(databaseConfig, exposedTables)
+            // Create new DatabaseFactory with discovered tables
+            val databaseFactory = DatabaseFactory.create(databaseConfig, exposedTables.toList())
 
-                // Register it in Koin, replacing the one created by coreDIModule
-                val databaseModule = module {
-                    single<DatabaseFactory> { databaseFactory }
-                    single<DatabaseTransactionManager> {
-                        logger.debug("Creating DatabaseTransactionManager with discovered tables")
-                        DatabaseTransactionManager(databaseFactory.database)
-                    }
+            // Register it in Koin, replacing the one created by coreDIModule
+            val databaseModule = module {
+                single<DatabaseFactory> { databaseFactory }
+                single<DatabaseTransactionManager> {
+                    logger.debug("Creating DatabaseTransactionManager with discovered tables")
+                    DatabaseTransactionManager(databaseFactory.database)
                 }
-                koin.loadModules(listOf(databaseModule), createEagerInstances = true)
-                logger.info("Registered DatabaseFactory with {} Exposed table(s)", exposedTables.size)
-
-                // Auto-create missing tables in schema using Exposed's SchemaUtils
-                logger.info("Ensuring database schema...")
-                val txManager = koin.get<DatabaseTransactionManager>()
-                runBlocking {
-                    txManager.transaction {
-                        SchemaUtils.createMissingTablesAndColumns(*exposedTables.toTypedArray())
-                    }
-                }
-                logger.info("  ✓ Database schema ensured - all tables created if needed")
             }
+            koin.loadModules(listOf(databaseModule), createEagerInstances = true)
+            logger.info("Registered DatabaseFactory with {} Exposed table(s)", exposedTables.size)
+
+            // Auto-create missing tables in schema using Exposed's SchemaUtils
+            logger.info("Ensuring database schema...")
+            val txManager = koin.get<DatabaseTransactionManager>()
+            runBlocking {
+                txManager.transaction {
+                    SchemaUtils.createMissingTablesAndColumns(*exposedTables)
+                }
+            }
+            logger.info("  ✓ Database schema ensured - all tables created if needed")
+        } else {
+            logger.info("  ℹ  No tables registered - skipping schema creation")
         }
         BootstrapProgress.completePhase(4, "Database schema initialized with ${discoveredTables.size} tables")
     } catch (e: Exception) {
@@ -392,23 +391,6 @@ class DIConfigurationBuilder {
         return this
     }
 
-    /**
-     * Includes scanner modules for component discovery.
-     *
-     * Adds the scanner module which enables:
-     * - Classpath scanning for component types
-     * - Reflection-based type discovery
-     * - Generic type resolution utilities
-     *
-     * **Note:** This is typically needed for automatic component registration.
-     *
-     * @return This builder for method chaining
-     */
-    fun scannerModules(): DIConfigurationBuilder {
-        logger.debug("Adding scanner modules")
-        modules.add(scannerDIModule())
-        return this
-    }
 
     /**
      * Adds custom Koin modules to the configuration.

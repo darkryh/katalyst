@@ -41,9 +41,7 @@ object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfile
         entity: UserProfileEntity,
         skipIdColumn: Boolean
     ) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id, this)
-        }
+        if (!skipIdColumn && entity.id != null) { statement[id] = EntityID(entity.id, this) }
         statement[accountId] = EntityID(entity.accountId, AuthAccountsTable)
         statement[displayName] = entity.displayName
         statement[bio] = entity.bio
