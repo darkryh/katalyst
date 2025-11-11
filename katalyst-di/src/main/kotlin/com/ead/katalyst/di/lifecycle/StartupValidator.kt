@@ -2,6 +2,7 @@ package com.ead.katalyst.di.lifecycle
 
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import com.ead.katalyst.di.internal.TableRegistry
 import kotlin.reflect.KClass
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.koin.core.Koin
@@ -79,7 +80,7 @@ internal class StartupValidator : ApplicationInitializer {
 
             // 3. Validate all registered tables exist (FAIL-FAST on error or missing tables)
             logger.info("Step 3: Validating table schema existence...")
-            val discoveredTables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
+            val discoveredTables = TableRegistry.getAll()
 
             if (discoveredTables.isEmpty()) {
                 logger.info("  ℹ  No tables registered - skipping schema validation")

@@ -545,6 +545,12 @@ class AutoBindingRegistrar(
                     primaryType = tableClass,
                     secondaryTypes = listOf(Table::class, org.jetbrains.exposed.sql.Table::class)
                 )
+                // Also register with TableRegistry for reliable access by StartupValidator
+                @Suppress("UNCHECKED_CAST")
+                val exposedTable = instance as? org.jetbrains.exposed.sql.Table
+                if (exposedTable != null) {
+                    TableRegistry.register(exposedTable)
+                }
                 logger.info(
                     "Registered Exposed table {} with Table marker interface",
                     tableClass.qualifiedName
