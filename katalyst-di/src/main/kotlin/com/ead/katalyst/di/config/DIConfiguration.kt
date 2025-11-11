@@ -18,6 +18,7 @@ import com.ead.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import kotlinx.coroutines.runBlocking
+import kotlin.reflect.KClass
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
@@ -163,7 +164,10 @@ fun bootstrapKatalystDI(
     BootstrapProgress.startPhase(4)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from Koin...")
-        val discoveredTables = koin.getAll<Table>()
+        // Note: Table interface now has two type parameters <Id, Entity>
+        // Since we can't easily express Table<*, *> in Koin reified generics,
+        // we cast the result to List<Any> and access as objects
+        val discoveredTables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
         logger.info("Discovered {} table(s) for initialization", discoveredTables.size)
 
         if (discoveredTables.isNotEmpty()) {

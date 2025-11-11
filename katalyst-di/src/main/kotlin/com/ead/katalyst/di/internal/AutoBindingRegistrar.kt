@@ -142,7 +142,10 @@ class AutoBindingRegistrar(
                 )
             }
 
-            koin.safeGetAll<Table>().forEach { table ->
+            // Filter all registered objects for those implementing Table<*, *>
+            val tables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
+
+            tables.forEach { table ->
                 val tableName = (table as? org.jetbrains.exposed.sql.Table)?.tableName ?: table::class.simpleName
                 tableName?.let { DiscoverySummary.addDatabaseTable(it) }
             }
@@ -529,6 +532,7 @@ class AutoBindingRegistrar(
         }
 
         val tables = discoverExposedTables()
+
         if (tables.isEmpty()) {
             logger.debug("No Exposed Table implementations discovered")
             return
@@ -598,6 +602,10 @@ class AutoBindingRegistrar(
 
                     val kClass = loadedClass.kotlin
                     val instance = loadedClass.instantiateIfPossible() ?: return@forEach
+
+                    // Validate that the table's generic Entity type implements Identifiable
+                    validateTableEntityIsIdentifiable(kClass, instance)
+
                     results[kClass] = instance
                 }.onFailure { error ->
                     logger.debug(
@@ -612,6 +620,52 @@ class AutoBindingRegistrar(
         } catch (e: Exception) {
             logger.debug("Error during Exposed table discovery: {}", e.message)
             results
+        }
+    }
+
+    /**
+     * Validates that a table's generic Entity type implements [Identifiable].
+     *
+     * This is a runtime validation that complements compile-time type checking.
+     * The [Table] interface now requires Entity to implement [Identifiable],
+     * but this validation provides helpful diagnostic logging if the constraint
+     * is somehow violated.
+     *
+     * @param kClass The Kotlin class of the table
+     * @param instance The instantiated table object
+     */
+    private fun validateTableEntityIsIdentifiable(kClass: KClass<*>, instance: Any) {
+        try {
+            // Find the Table<Id, Entity> supertype
+            val tableType = kClass.supertypes.find { supertype ->
+                supertype.jvmErasure.simpleName == "Table"
+            } ?: return
+
+            // Extract the Entity type parameter (second type argument)
+            val entityTypeArg = tableType.arguments.getOrNull(1)?.type ?: return
+            val entityType = entityTypeArg.jvmErasure
+
+            // Check if Entity implements Identifiable
+            val identifiableClass = Class.forName("com.ead.katalyst.repositories.Identifiable")
+            if (!identifiableClass.isAssignableFrom(entityType.java)) {
+                logger.warn(
+                    "⚠️  Table {} declares entity type {} which does NOT implement Identifiable<Id>. " +
+                    "Repositories will fail at runtime. " +
+                    "Update table declaration to: Table<Id, {}>",
+                    kClass.simpleName,
+                    entityType.simpleName,
+                    entityType.simpleName
+                )
+            } else {
+                logger.debug(
+                    "✓ Table {} entity type {} correctly implements Identifiable<Id>",
+                    kClass.simpleName,
+                    entityType.simpleName
+                )
+            }
+        } catch (e: Exception) {
+            // Silently ignore if we can't validate (e.g., class loading issues)
+            logger.debug("Could not validate Identifiable constraint for {}: {}", kClass.simpleName, e.message)
         }
     }
 

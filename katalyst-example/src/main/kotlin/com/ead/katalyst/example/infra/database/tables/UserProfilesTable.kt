@@ -1,28 +1,24 @@
 package com.ead.katalyst.example.infra.database.tables
 
 import com.ead.katalyst.core.persistence.Table
+import com.ead.katalyst.example.infra.database.entities.UserProfileEntity
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 /**
- * IMPORTANT: Column names MUST exactly match the entity property names (when converted to snake_case).
+ * Exposed definition + entity mappers for the `user_profiles` table.
  *
- * The repository uses reflection to automatically bind entity properties to table columns.
- * The binding works by converting column names from snake_case to camelCase and matching
- * against entity property names. Therefore, column names MUST use the FULL property name.
+ * Maps between the persistence layer (ResultRow) and domain layer (UserProfileEntity).
+ * The explicit mapping functions ensure type safety and performance by avoiding reflection.
  *
- * Example mappings in this table:
- * - "account_id" (snake_case) ↔ "accountId" (camelCase)
- * - "display_name" (snake_case) ↔ "displayName" (camelCase)
- * - "avatar_url" (snake_case) ↔ "avatarUrl" (camelCase)
- * - "bio" (direct match) ↔ "bio" (property)
- *
- * Supported naming conventions:
- * - snake_case (account_id)
- * - kebab-case (account-id)
- * - camelCase (accountId)
+ * **Mapping Contract:**
+ * - [mapRow] transforms a database row into a fully-populated UserProfileEntity
+ * - [assignEntity] populates an INSERT/UPDATE statement from a UserProfileEntity
  */
-object UserProfilesTable : LongIdTable("user_profiles"), Table {
+object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfileEntity> {
     val accountId = reference(
         name = "account_id",
         foreign = AuthAccountsTable,
@@ -31,4 +27,26 @@ object UserProfilesTable : LongIdTable("user_profiles"), Table {
     val displayName = varchar("display_name", 120)
     val bio = text("bio").nullable()
     val avatarUrl = varchar("avatar_url", 255).nullable()
+
+    override fun mapRow(row: ResultRow): UserProfileEntity = UserProfileEntity(
+        id = row[id].value,
+        accountId = row[accountId].value,
+        displayName = row[displayName],
+        bio = row[bio],
+        avatarUrl = row[avatarUrl]
+    )
+
+    override fun assignEntity(
+        statement: UpdateBuilder<*>,
+        entity: UserProfileEntity,
+        skipIdColumn: Boolean
+    ) {
+        if (!skipIdColumn && entity.id != null) {
+            statement[id] = EntityID(entity.id, this)
+        }
+        statement[accountId] = EntityID(entity.accountId, AuthAccountsTable)
+        statement[displayName] = entity.displayName
+        statement[bio] = entity.bio
+        statement[avatarUrl] = entity.avatarUrl
+    }
 }

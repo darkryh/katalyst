@@ -15,10 +15,9 @@ import io.ktor.server.application.Application
  *
  * Configuration flow:
  * 1. database() - Load database config
- * 2. validateAllConfigLoaders() - Validate configuration
- * 3. scanPackages() - Discover services
- * 4. enableConfigProvider() - Enable ConfigProvider DI feature
- * 5. Enable other features (events, scheduler, websockets, migrations)
+ * 2. scanPackages() - Discover services
+ * 3. enableConfigProvider() - Enable ConfigProvider DI feature
+ * 4. Enable other features (events, scheduler, websockets, migrations)
  *
  * YAML files: application.yaml, application-dev.yaml, application-prod.yaml
  * Environment: Set KATALYST_PROFILE=dev|prod for profiles

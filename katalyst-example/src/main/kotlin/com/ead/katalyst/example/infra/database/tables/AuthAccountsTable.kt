@@ -1,26 +1,47 @@
 package com.ead.katalyst.example.infra.database.tables
 
 import com.ead.katalyst.core.persistence.Table
+import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 /**
- * IMPORTANT: Column names MUST exactly match the entity property names (when converted to snake_case).
+ * Exposed definition + entity mappers for the `auth_accounts` table.
  *
- * The repository uses reflection to automatically bind entity properties to table columns.
- * The binding works by converting column names from snake_case to camelCase and matching
- * against entity property names. Therefore, column names MUST use the FULL property name.
+ * Maps between the persistence layer (ResultRow) and domain layer (AuthAccountEntity).
+ * The explicit mapping functions ensure type safety and performance by avoiding reflection.
  *
- * ✗ WRONG: "created_at_ms" (abbreviation) ← won't match property "createdAtMillis"
- * ✓ CORRECT: "created_at_millis" (full word) ← matches property "createdAtMillis"
- *
- * Supported naming conventions:
- * - snake_case (created_at_millis)
- * - kebab-case (created-at-millis)
- * - camelCase (createdAtMillis)
+ * **Mapping Contract:**
+ * - [mapRow] transforms a database row into a fully-populated AuthAccountEntity
+ * - [assignEntity] populates an INSERT/UPDATE statement from an AuthAccountEntity
  */
-object AuthAccountsTable : LongIdTable("auth_accounts"), Table {
+object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccountEntity> {
     val email = varchar("email", 150).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
     val createdAtMillis = long("created_at_millis")
     val lastLoginAtMillis = long("last_login_at_millis").nullable()
+
+    override fun mapRow(row: ResultRow): AuthAccountEntity = AuthAccountEntity(
+        id = row[id].value,
+        email = row[email],
+        passwordHash = row[passwordHash],
+        createdAtMillis = row[createdAtMillis],
+        lastLoginAtMillis = row[lastLoginAtMillis]
+    )
+
+    override fun assignEntity(
+        statement: UpdateBuilder<*>,
+        entity: AuthAccountEntity,
+        skipIdColumn: Boolean
+    ) {
+        if (!skipIdColumn && entity.id != null) {
+            statement[id] = EntityID(entity.id, this)
+        }
+        statement[email] = entity.email
+        statement[passwordHash] = entity.passwordHash
+        statement[createdAtMillis] = entity.createdAtMillis
+        statement[lastLoginAtMillis] = entity.lastLoginAtMillis
+    }
 }

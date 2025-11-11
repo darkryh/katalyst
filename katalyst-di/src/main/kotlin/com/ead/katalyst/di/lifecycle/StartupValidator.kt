@@ -2,6 +2,7 @@ package com.ead.katalyst.di.lifecycle
 
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import kotlin.reflect.KClass
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 
@@ -47,9 +48,7 @@ internal class StartupValidator : ApplicationInitializer {
 
             // 3. Check discovered tables
             logger.info("Checking discovered tables...")
-            val discoveredTables = runCatching {
-                koin.getAll<Table>()
-            }.getOrElse { emptyList() }
+            val discoveredTables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
 
             when {
                 discoveredTables.isEmpty() -> {
