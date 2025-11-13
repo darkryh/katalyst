@@ -1,6 +1,6 @@
 package com.ead.katalyst.database.table
 
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 /**
  * Tracks the lifecycle and state of workflows.

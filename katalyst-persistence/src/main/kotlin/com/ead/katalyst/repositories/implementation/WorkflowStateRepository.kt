@@ -4,10 +4,12 @@ import com.ead.katalyst.database.table.WorkflowStateTable
 import com.ead.katalyst.transactions.workflow.WorkflowState
 import com.ead.katalyst.transactions.workflow.WorkflowStateManager
 import com.ead.katalyst.transactions.workflow.WorkflowStatus
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 
 /**

@@ -3,8 +3,9 @@ package com.ead.katalyst.example.infra.database.repositories
 import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
 import com.ead.katalyst.example.infra.database.tables.AuthAccountsTable
 import com.ead.katalyst.repositories.CrudRepository
-import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
 
 /**
  * Repository for AuthAccount entities.

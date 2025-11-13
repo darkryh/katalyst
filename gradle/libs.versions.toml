@@ -4,7 +4,7 @@ kotlin = "2.2.20"
 kotlinx-coroutines = "1.8.0"
 ktor = "3.3.1"
 koin = "3.5.6"
-exposed = "0.52.0"
+exposed = "1.0.0-rc-3"
 logback = "1.4.14"
 jansi = "2.4.0"
 reflections = "0.10.2"
@@ -19,6 +19,8 @@ kourier = "0.2.7"
 kotlinx-serialization = "1.6.3"
 testcontainers = "1.19.0"
 snakeyaml = "2.2"
+
+migration = "1.0.0-rc-3"
 
 [libraries]
 # --- HTTP stack (Ktor server, serialization, and testing) ---
@@ -50,6 +52,10 @@ koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref =
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
+exposed-migration-core = { module = "org.jetbrains.exposed:exposed-migration-core", version.ref = "migration" }
+exposed-migration-jdbc = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "migration" }
+exposed-migration-r2dbc = { module = "org.jetbrains.exposed:exposed-migration-r2dbc", version.ref = "migration" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }

@@ -16,8 +16,8 @@ interface KatalystMigration {
     /** Hash used to detect drift between applied migrations and source. */
     val checksum: String get() = id
 
-    /** Ordering key; defaults to parsing a numeric prefix from [id]. */
-    val order: Long
+    /** Version key used for ordering; defaults to parsing a numeric prefix from [id]. */
+    val version: Long
         get() = id.takeWhile { it.isDigit() }.toLongOrNull() ?: Long.MAX_VALUE
 
     /** Environment tags (e.g., `dev`, `prod`, `seed`). */

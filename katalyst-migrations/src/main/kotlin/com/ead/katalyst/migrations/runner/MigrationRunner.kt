@@ -4,13 +4,13 @@ import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.migrations.internal.MigrationHistoryTable
 import com.ead.katalyst.migrations.options.MigrationOptions
-import kotlin.system.measureTimeMillis
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
+import kotlin.system.measureTimeMillis
 
 private const val STATUS_SUCCESS = "SUCCESS"
 private const val STATUS_BASELINED = "BASELINED"
@@ -39,7 +39,7 @@ class MigrationRunner(
         applyBaseline(historyTable, applied, migrations)
 
         val sorted = migrations
-            .sortedWith(compareBy<KatalystMigration> { it.order }.thenBy { it.id })
+            .sortedWith(compareBy<KatalystMigration> { it.version }.thenBy { it.id })
             .filter { matchesTags(it) }
             .filter { matchesTarget(it) }
             .filter { shouldRun(it, applied) }

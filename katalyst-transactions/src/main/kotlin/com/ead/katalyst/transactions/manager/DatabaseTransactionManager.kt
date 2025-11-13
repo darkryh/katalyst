@@ -15,15 +15,15 @@ import com.ead.katalyst.transactions.workflow.CurrentWorkflowContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
 import java.util.*
 import kotlin.math.min
 import kotlin.math.pow
-import org.jetbrains.exposed.sql.transactions.TransactionManager as ExposedTransactionManager
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager as ExposedTransactionManager
 
 /**
  * Database transaction manager for handling suspended transactions with adapter support.

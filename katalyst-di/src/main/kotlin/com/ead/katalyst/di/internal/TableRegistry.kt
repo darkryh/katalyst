@@ -1,6 +1,6 @@
 package com.ead.katalyst.di.internal
 
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 /**
  * Thread-safe registry for tracking discovered database tables.

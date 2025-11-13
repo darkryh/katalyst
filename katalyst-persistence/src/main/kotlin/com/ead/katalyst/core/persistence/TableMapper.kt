@@ -1,8 +1,8 @@
 package com.ead.katalyst.core.persistence
 
 import com.ead.katalyst.repositories.Identifiable
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Bi-directional mapper between domain entities and database persistence.

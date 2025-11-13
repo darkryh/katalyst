@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.migration.core)
+    implementation(libs.exposed.migration.jdbc)
     implementation(libs.logback)
 
     testImplementation(kotlin("test"))

@@ -1,32 +1,27 @@
 package com.ead.katalyst.di.config
 
 import com.ead.katalyst.config.DatabaseConfig
-import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
+import com.ead.katalyst.database.DatabaseFactory
+import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
+import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
 import com.ead.katalyst.di.internal.EngineRegistrar
-import com.ead.katalyst.core.persistence.Table
-import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
-import org.jetbrains.exposed.sql.SchemaUtils
-import com.ead.katalyst.di.module.coreDIModule
-import com.ead.katalyst.di.feature.KatalystFeature
-import com.ead.katalyst.di.module.scannerDIModule
-import com.ead.katalyst.events.bus.ApplicationEventBus
-import com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter
 import com.ead.katalyst.di.lifecycle.BootstrapProgress
 import com.ead.katalyst.di.lifecycle.StartupWarnings
 import com.ead.katalyst.di.lifecycle.StartupWarningsAggregator
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
+import com.ead.katalyst.di.module.coreDIModule
+import com.ead.katalyst.di.module.scannerDIModule
+import com.ead.katalyst.events.bus.ApplicationEventBus
+import com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter
 import kotlinx.coroutines.runBlocking
-import kotlin.reflect.KClass
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import org.koin.ktor.plugin.Koin
 import org.slf4j.LoggerFactory
 
 /**

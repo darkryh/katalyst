@@ -1,6 +1,7 @@
 package com.ead.katalyst.migrations.feature
 
 import com.ead.katalyst.di.feature.KatalystFeature
+import com.ead.katalyst.migrations.service.SchemaDiffService
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.migrations.options.MigrationOptions
 import com.ead.katalyst.migrations.runner.MigrationRunner
@@ -19,6 +20,7 @@ class MigrationFeature(
     override fun provideModules() = listOf(
         module {
             single { options }
+            single { SchemaDiffService(get(), options.scriptDirectory) }
             single { MigrationRunner(get(), options) }
         }
     )

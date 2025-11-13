@@ -2,7 +2,7 @@ package com.ead.katalyst.transactions.manager
 
 import com.ead.katalyst.transactions.adapter.TransactionAdapter
 import com.ead.katalyst.transactions.config.TransactionConfig
-import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.v1.core.Transaction
 
 /**
  * Abstract interface for managing database transactions.

@@ -3,13 +3,17 @@ package com.ead.katalyst.repositories
 import com.ead.katalyst.repositories.model.PageInfo
 import com.ead.katalyst.repositories.model.QueryFilter
 import com.ead.katalyst.repositories.model.SortOrder
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 import com.ead.katalyst.core.persistence.Table as KatalystTable
-import org.jetbrains.exposed.sql.SortOrder as ExposedSortOder
-
+import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
 
 // ============= Core Repository Interface =============
 
@@ -129,7 +133,8 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
         val results = table
             .selectAll()
             .orderBy(sortColumn, sortOrder)
-            .limit(filter.limit, offset = filter.offset.toLong())
+            .limit(filter.limit)
+            .offset(filter.offset.toLong())
             .map { map(it) }
 
         val total = table.selectAll().count().toInt()

@@ -1,10 +1,7 @@
 package com.ead.katalyst.di.lifecycle
 
-import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
 import com.ead.katalyst.di.internal.TableRegistry
-import kotlin.reflect.KClass
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 

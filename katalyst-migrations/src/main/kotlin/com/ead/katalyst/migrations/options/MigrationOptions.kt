@@ -1,5 +1,8 @@
 package com.ead.katalyst.migrations.options
 
+import java.nio.file.Path
+import java.nio.file.Paths
+
 /**
  * Configuration options that control how Katalyst executes database migrations.
  *
@@ -55,5 +58,11 @@ data class MigrationOptions(
      * Optional target version. When specified the runner stops once it reaches
      * the migration whose id matches the target (exclusive).
      */
-    val targetVersion: String? = null
+    val targetVersion: String? = null,
+
+    /**
+     * Directory where generated migration scripts are stored when leveraging
+     * [SchemaDiffService.generateMigrationScript]. Defaults to `db/migrations`.
+     */
+    val scriptDirectory: Path = Paths.get("db/migrations")
 )

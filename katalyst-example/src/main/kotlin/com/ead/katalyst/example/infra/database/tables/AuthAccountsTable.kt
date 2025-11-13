@@ -2,10 +2,12 @@ package com.ead.katalyst.example.infra.database.tables
 
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.example.infra.database.entities.AuthAccountEntity
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
+import com.ead.katalyst.example.infra.database.tables.AuthAccountsTable.assignEntity
+import com.ead.katalyst.example.infra.database.tables.AuthAccountsTable.mapRow
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed definition + entity mappers for the `auth_accounts` table.

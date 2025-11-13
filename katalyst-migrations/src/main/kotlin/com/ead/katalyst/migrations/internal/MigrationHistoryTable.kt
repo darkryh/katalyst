@@ -1,6 +1,6 @@
 package com.ead.katalyst.migrations.internal
 
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 internal class MigrationHistoryTable(tableName: String) : Table(tableName) {
     val migrationId = varchar("migration_id", 255)

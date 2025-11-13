@@ -143,10 +143,10 @@ class AutoBindingRegistrar(
             }
 
             // Filter all registered objects for those implementing Table<*, *>
-            val tables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.sql.Table>()
+            val tables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.v1.core.Table>()
 
             tables.forEach { table ->
-                val tableName = (table as? org.jetbrains.exposed.sql.Table)?.tableName ?: table::class.simpleName
+                val tableName = (table as? org.jetbrains.exposed.v1.core.Table)?.tableName ?: table::class.simpleName
                 tableName?.let { DiscoverySummary.addDatabaseTable(it) }
             }
 
@@ -543,11 +543,11 @@ class AutoBindingRegistrar(
                 registerInstanceWithKoin(
                     instance = instance,
                     primaryType = tableClass,
-                    secondaryTypes = listOf(Table::class, org.jetbrains.exposed.sql.Table::class)
+                    secondaryTypes = listOf(Table::class, org.jetbrains.exposed.v1.core.Table::class)
                 )
                 // Also register with TableRegistry for reliable access by StartupValidator
                 @Suppress("UNCHECKED_CAST")
-                val exposedTable = instance as? org.jetbrains.exposed.sql.Table
+                val exposedTable = instance as? org.jetbrains.exposed.v1.core.Table
                 if (exposedTable != null) {
                     TableRegistry.register(exposedTable)
                 }
@@ -600,7 +600,7 @@ class AutoBindingRegistrar(
             val markerJava = Table::class.java
             val classLoader = Thread.currentThread().contextClassLoader
 
-            val candidates = reflections.getSubTypesOf(org.jetbrains.exposed.sql.Table::class.java)
+            val candidates = reflections.getSubTypesOf(org.jetbrains.exposed.v1.core.Table::class.java)
             candidates.forEach { candidate ->
                 runCatching {
                     val loadedClass = Class.forName(candidate.name, false, classLoader)

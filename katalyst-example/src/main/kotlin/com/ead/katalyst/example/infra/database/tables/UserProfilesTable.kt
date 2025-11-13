@@ -2,11 +2,13 @@ package com.ead.katalyst.example.infra.database.tables
 
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.example.infra.database.entities.UserProfileEntity
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
+import com.ead.katalyst.example.infra.database.tables.UserProfilesTable.assignEntity
+import com.ead.katalyst.example.infra.database.tables.UserProfilesTable.mapRow
+import org.jetbrains.exposed.v1.core.ReferenceOption
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed definition + entity mappers for the `user_profiles` table.
