@@ -26,7 +26,6 @@ import org.jetbrains.exposed.sql.selectAll
 class UserProfileRepository : CrudRepository<Long, UserProfileEntity> {
 
     override val table: LongIdTable = UserProfilesTable
-
     /**
      * Find a user profile by account ID.
      * This is a read-only operation, so it's not tracked.

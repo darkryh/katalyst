@@ -2,10 +2,12 @@ package com.ead.katalyst.client
 
 import com.ead.katalyst.client.config.EventClientConfiguration
 import com.ead.katalyst.events.DomainEvent
+import com.ead.katalyst.events.bus.EventBus
 import com.ead.katalyst.events.transport.routing.EventRouter
 import com.ead.katalyst.events.transport.serialization.EventSerializer
 import com.ead.katalyst.events.validation.EventValidator
 import org.koin.core.module.Module
+import org.koin.core.scope.Scope
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
@@ -59,13 +61,9 @@ fun eventsClientModule(
             "localBus=${config.publishToLocalBus}, external=${config.publishToExternal}, " +
             "batchSize=${config.batchSize}")
 
-    // Create composite interceptor from config + provided interceptors
-    single<EventClientInterceptor> {
-        val allInterceptors = config.interceptors + interceptors
-        if (allInterceptors.isNotEmpty()) {
-            CompositeEventClientInterceptor(allInterceptors)
-        } else {
-            NoOpEventClientInterceptor()
+    single<EventClientInterceptorRegistry> {
+        DefaultEventClientInterceptorRegistry().apply {
+            registerAll(GlobalEventClientInterceptorRegistry.consumeAll())
         }
     }
 
@@ -78,16 +76,15 @@ fun eventsClientModule(
         val validator = getOrNull<EventValidator<DomainEvent>>()
         val serializer = getOrNull<EventSerializer>()
         val router = getOrNull<EventRouter>()
-        val clientInterceptor = get<EventClientInterceptor>()
-
-        // Extract interceptors from composite if applicable
-        val interceptorList = when (clientInterceptor) {
-            is CompositeEventClientInterceptor -> {
-                // Access private list through reflection if needed, or just wrap in list
-                listOf(clientInterceptor)
-            }
-            else -> listOf(clientInterceptor)
+        val registry = get<EventClientInterceptorRegistry>()
+        val discoveredInterceptors = getKoin().getAll<EventClientInterceptor>()
+        if (discoveredInterceptors.isNotEmpty()) {
+            registry.registerAll(discoveredInterceptors)
         }
+
+        val configuredInterceptors = config.interceptors + interceptors
+        val interceptorList = (registry.getAll() + configuredInterceptors)
+            .ifEmpty { listOf(NoOpEventClientInterceptor()) }
 
         DefaultEventClient(
             eventBus = eventBus,
@@ -109,67 +106,10 @@ fun eventsClientModule(
 
     // Expose builder factory for runtime creation
     factory<EventClientBuilder> {
-        object : EventClientBuilder {
-            private var retryPolicy: RetryPolicy = config.retryPolicy
-            private val interceptorList = mutableListOf<EventClientInterceptor>()
-            private var publishToLocalBus = config.publishToLocalBus
-            private var publishToExternal = config.publishToExternal
-            private var correlationId = config.correlationId
-            private var maxBatchSize = config.batchSize
-            private var flushIntervalMs = config.batchFlushIntervalMs
-
-            override fun retryPolicy(policy: RetryPolicy): EventClientBuilder {
-                this.retryPolicy = policy
-                return this
-            }
-
-            override fun addInterceptor(interceptor: EventClientInterceptor): EventClientBuilder {
-                interceptorList.add(interceptor)
-                return this
-            }
-
-            override fun publishToLocalBus(enabled: Boolean): EventClientBuilder {
-                this.publishToLocalBus = enabled
-                return this
-            }
-
-            override fun publishToExternal(enabled: Boolean): EventClientBuilder {
-                this.publishToExternal = enabled
-                return this
-            }
-
-            override fun correlationId(correlationId: String): EventClientBuilder {
-                this.correlationId = correlationId
-                return this
-            }
-
-            override fun batchConfiguration(maxBatchSize: Int, flushIntervalMs: Long): EventClientBuilder {
-                this.maxBatchSize = maxBatchSize
-                this.flushIntervalMs = flushIntervalMs
-                return this
-            }
-
-            override fun build(): EventClient {
-                val eventBus = getOrNull<com.ead.katalyst.events.bus.EventBus>()
-                val validator = getOrNull<EventValidator<DomainEvent>>()
-                val serializer = getOrNull<EventSerializer>()
-                val router = getOrNull<EventRouter>()
-
-                return DefaultEventClient(
-                    eventBus = eventBus,
-                    validator = validator,
-                    serializer = serializer,
-                    router = router,
-                    retryPolicy = retryPolicy,
-                    interceptors = interceptorList.toList(),
-                    publishToLocalBus = publishToLocalBus,
-                    publishToExternal = publishToExternal,
-                    correlationId = correlationId,
-                    maxBatchSize = maxBatchSize,
-                    flushIntervalMs = flushIntervalMs
-                )
-            }
-        }
+        KoinEventClientBuilder(
+            scope = this,
+            baseConfig = config
+        )
     }
 }
 
@@ -188,6 +128,76 @@ fun eventsClientModule(
  * ```
  */
 fun eventsClientModuleDefault(): Module = eventsClientModule()
+
+private class KoinEventClientBuilder(
+    private val scope: Scope,
+    baseConfig: EventClientConfiguration
+) : EventClientBuilder {
+    private var retryPolicy: RetryPolicy = baseConfig.retryPolicy
+    private val manualInterceptors = mutableListOf<EventClientInterceptor>()
+    private var publishToLocalBus = baseConfig.publishToLocalBus
+    private var publishToExternal = baseConfig.publishToExternal
+    private var correlationId = baseConfig.correlationId
+    private var maxBatchSize = baseConfig.batchSize
+    private var flushIntervalMs = baseConfig.batchFlushIntervalMs
+
+    override fun retryPolicy(policy: RetryPolicy): EventClientBuilder {
+        this.retryPolicy = policy
+        return this
+    }
+
+    override fun addInterceptor(interceptor: EventClientInterceptor): EventClientBuilder {
+        manualInterceptors.add(interceptor)
+        return this
+    }
+
+    override fun publishToLocalBus(enabled: Boolean): EventClientBuilder {
+        this.publishToLocalBus = enabled
+        return this
+    }
+
+    override fun publishToExternal(enabled: Boolean): EventClientBuilder {
+        this.publishToExternal = enabled
+        return this
+    }
+
+    override fun correlationId(correlationId: String): EventClientBuilder {
+        this.correlationId = correlationId
+        return this
+    }
+
+    override fun batchConfiguration(maxBatchSize: Int, flushIntervalMs: Long): EventClientBuilder {
+        this.maxBatchSize = maxBatchSize
+        this.flushIntervalMs = flushIntervalMs
+        return this
+    }
+
+    override fun build(): EventClient {
+        val eventBus = scope.getOrNull<EventBus>()
+        val validator = scope.getOrNull<EventValidator<DomainEvent>>()
+        val serializer = scope.getOrNull<EventSerializer>()
+        val router = scope.getOrNull<EventRouter>()
+        val registry = scope.getOrNull<EventClientInterceptorRegistry>()
+        val registeredInterceptors = registry?.getAll().orEmpty()
+        val discoveredInterceptors = scope.getKoin().getAll<EventClientInterceptor>()
+        val combined = (registeredInterceptors + discoveredInterceptors + manualInterceptors)
+            .ifEmpty { listOf(NoOpEventClientInterceptor()) }
+
+        return DefaultEventClient(
+            eventBus = eventBus,
+            validator = validator,
+            serializer = serializer,
+            router = router,
+            retryPolicy = retryPolicy,
+            interceptors = combined,
+            publishToLocalBus = publishToLocalBus,
+            publishToExternal = publishToExternal,
+            correlationId = correlationId,
+            maxBatchSize = maxBatchSize,
+            flushIntervalMs = flushIntervalMs
+        )
+    }
+}
 
 /**
  * Preset configurations for common use cases.

@@ -630,10 +630,10 @@ class AutoBindingRegistrar(
     }
 
     /**
-     * Validates that a table's generic Entity type implements [Identifiable].
+     * Validates that a table's generic Entity type implements [com.ead.katalyst.repositories.Identifiable].
      *
      * This is a runtime validation that complements compile-time type checking.
-     * The [Table] interface now requires Entity to implement [Identifiable],
+     * The [Table] interface now requires Entity to implement [com.ead.katalyst.repositories.Identifiable],
      * but this validation provides helpful diagnostic logging if the constraint
      * is somehow violated.
      *

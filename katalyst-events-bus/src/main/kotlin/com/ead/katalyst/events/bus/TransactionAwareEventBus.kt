@@ -6,7 +6,10 @@ import com.ead.katalyst.transactions.context.TransactionEventContext
 import com.ead.katalyst.transactions.context.getTransactionEventContext
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 /**
  * Transaction-aware event bus that defers event publishing until after transaction commit.
@@ -60,6 +63,11 @@ class TransactionAwareEventBus(
     override fun register(handler: EventHandler<out DomainEvent>) {
         delegate.register(handler)
     }
+
+    override fun events(): SharedFlow<DomainEvent> = delegate.events()
+
+    override fun <T : DomainEvent> eventsOf(eventType: KClass<T>): Flow<T> =
+        delegate.eventsOf(eventType)
 
     /**
      * Publishes a domain event.

@@ -1,5 +1,7 @@
 package com.ead.katalyst.messaging.amqp.module
 
+import com.ead.katalyst.client.EventClientInterceptor
+import com.ead.katalyst.client.GlobalEventClientInterceptorRegistry
 import com.ead.katalyst.events.transport.serialization.JsonEventSerializer
 import com.ead.katalyst.messaging.amqp.AmqpEventBridge
 import com.ead.katalyst.messaging.amqp.consumer.KourierDeadLetterQueueHandler
@@ -12,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.Module
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
@@ -156,7 +159,7 @@ fun amqpModule(
 
     // Optionally register AMQP event bridge as interceptor
     if (enableEventBridge) {
-        single<AmqpEventBridge> {
+        single {
             val serializer = getOrNull<JsonEventSerializer>()
                 ?: throw IllegalStateException(
                     "JsonEventSerializer not found in Koin context. " +
@@ -169,8 +172,9 @@ fun amqpModule(
                 routingKeyPrefix = routingKeyPrefix
             ).also {
                 logger.info("AmqpEventBridge registered (Kourier-based) and will intercept EventClient publishes")
+                GlobalEventClientInterceptorRegistry.register(it)
             }
-        }
+        } bind EventClientInterceptor::class
 
         // Note: The bridge can be added to EventClient's interceptor list via:
         // val bridge = koin.get<AmqpEventBridge>()

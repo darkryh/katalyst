@@ -5,6 +5,12 @@ import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.bus.exception.EventPublishingException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import org.slf4j.LoggerFactory
@@ -12,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.Collections
 import kotlin.reflect.KClass
+import kotlin.reflect.full.safeCast
 import kotlin.system.measureTimeMillis
 
 /**
@@ -70,6 +77,11 @@ class ApplicationEventBus(
 
     // Map: Event type name -> EventHandlerConfig (for handling mode configuration)
     private val handlerConfigs = ConcurrentHashMap<String, EventHandlerConfig>()
+    private val eventStream = MutableSharedFlow<DomainEvent>(
+        replay = 0,
+        extraBufferCapacity = 128,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
     /**
      * Register a handler.
@@ -156,6 +168,11 @@ class ApplicationEventBus(
         return !handlers.isNullOrEmpty()
     }
 
+    override fun events(): SharedFlow<DomainEvent> = eventStream.asSharedFlow()
+
+    override fun <T : DomainEvent> eventsOf(eventType: KClass<T>): Flow<T> =
+        eventStream.mapNotNull { eventType.safeCast(it) }
+
     /**
      * Publish an event to all interested handlers.
      *
@@ -206,6 +223,8 @@ class ApplicationEventBus(
                     // Continue even if interceptor fails
                 }
             }
+
+            emitToFlow(event)
 
             if (result.handlersFailed > 0) {
                 throw EventPublishingException(event, result.failures)
@@ -271,6 +290,12 @@ class ApplicationEventBus(
             handlersInvoked = handlers.size,
             failures = failures.toList()
         )
+    }
+
+    private fun emitToFlow(event: DomainEvent) {
+        if (!eventStream.tryEmit(event)) {
+            logger.debug("Event flow buffer full, dropping {}", event.eventType())
+        }
     }
 }
 

@@ -2,6 +2,9 @@ package com.ead.katalyst.events.bus
 
 import com.ead.katalyst.events.DomainEvent
 import com.ead.katalyst.events.EventHandler
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlin.reflect.KClass
 
 /**
  * Primary interface for local in-memory event publishing and subscription.
@@ -93,4 +96,19 @@ interface EventBus {
      * @param handler The handler to register
      */
     fun register(handler: EventHandler<out DomainEvent>)
+
+    /**
+     * Observe every event published through the bus as a cold [SharedFlow].
+     */
+    fun events(): SharedFlow<DomainEvent>
+
+    /**
+     * Observe events of a specific type as a typed [Flow].
+     */
+    fun <T : DomainEvent> eventsOf(eventType: KClass<T>): Flow<T>
 }
+
+/**
+ * Inline helper to observe a typed event stream without passing the class explicitly.
+ */
+inline fun <reified T : DomainEvent> EventBus.eventsOf(): Flow<T> = eventsOf(T::class)

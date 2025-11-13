@@ -1,5 +1,7 @@
 package com.ead.katalyst.client.feature
 
+import com.ead.katalyst.client.EventClientInterceptorRegistry
+import com.ead.katalyst.client.GlobalEventClientInterceptorRegistry
 import com.ead.katalyst.client.eventsClientModule
 import com.ead.katalyst.di.KatalystApplicationBuilder
 import com.ead.katalyst.di.feature.KatalystFeature
@@ -59,6 +61,22 @@ class EventSystemFeature(
         }.onFailure { error ->
             logger.warn("Unable to register event handlers: {}", error.message)
             logger.debug("Full event handler registration error", error)
+        }
+
+        runCatching {
+            val registry = koin.get<EventClientInterceptorRegistry>()
+            val stagedInterceptors = GlobalEventClientInterceptorRegistry.consumeAll()
+            if (stagedInterceptors.isNotEmpty()) {
+                registry.registerAll(stagedInterceptors)
+                logger.info(
+                    "Registered {} event client interceptor(s)",
+                    stagedInterceptors.size
+                )
+            } else {
+                logger.debug("No staged event client interceptors to register")
+            }
+        }.onFailure { error ->
+            logger.debug("Event client interceptor registry not available: {}", error.message)
         }
     }
 }
