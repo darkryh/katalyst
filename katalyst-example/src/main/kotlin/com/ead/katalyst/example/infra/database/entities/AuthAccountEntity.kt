@@ -7,5 +7,6 @@ data class AuthAccountEntity(
     val email: String,
     val passwordHash: String,
     val createdAtMillis: Long,
-    val lastLoginAtMillis: Long? = null
+    val lastLoginAtMillis: Long? = null,
+    val status: String = "active"
 ) : Identifiable<Long>

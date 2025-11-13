@@ -24,13 +24,15 @@ object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccount
     val passwordHash = varchar("password_hash", 255)
     val createdAtMillis = long("created_at_millis")
     val lastLoginAtMillis = long("last_login_at_millis").nullable()
+    val status = varchar("status", 32).default("active")
 
     override fun mapRow(row: ResultRow): AuthAccountEntity = AuthAccountEntity(
         id = row[id].value,
         email = row[email],
         passwordHash = row[passwordHash],
         createdAtMillis = row[createdAtMillis],
-        lastLoginAtMillis = row[lastLoginAtMillis]
+        lastLoginAtMillis = row[lastLoginAtMillis],
+        status = row[status]
     )
 
     override fun assignEntity(
@@ -45,5 +47,6 @@ object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccount
         statement[passwordHash] = entity.passwordHash
         statement[createdAtMillis] = entity.createdAtMillis
         statement[lastLoginAtMillis] = entity.lastLoginAtMillis
+        statement[status] = entity.status
     }
 }

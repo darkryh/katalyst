@@ -41,7 +41,8 @@ class AuthenticationService(
             AuthAccountEntity(
                 email = request.email.lowercase(),
                 passwordHash = passwordHasher.hash(request.password),
-                createdAtMillis = System.currentTimeMillis()
+                createdAtMillis = System.currentTimeMillis(),
+                status = "active"
             )
         ).toDomain()
 

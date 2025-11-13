@@ -62,7 +62,7 @@ data class MigrationOptions(
 
     /**
      * Directory where generated migration scripts are stored when leveraging
-     * [SchemaDiffService.generateMigrationScript]. Defaults to `db/migrations`.
+     * [com.ead.katalyst.migrations.service.SchemaDiffService.generateMigrationScript]. Defaults to `db/migrations`.
      */
     val scriptDirectory: Path = Paths.get("db/migrations")
 )

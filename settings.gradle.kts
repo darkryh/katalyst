@@ -33,7 +33,6 @@ include(":katalyst-config-provider")
 include(":katalyst-config-yaml")
 
 include(":katalyst-example")
-include(":katalyst-example-migrations")
 include(":katalyst-migrations")
 
 // Messaging abstraction and implementations

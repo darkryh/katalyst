@@ -5,5 +5,6 @@ data class AuthAccount(
     val email: String,
     val passwordHash: String,
     val createdAtMillis: Long,
-    val lastLoginAtMillis: Long?
+    val lastLoginAtMillis: Long?,
+    val status: String
 )

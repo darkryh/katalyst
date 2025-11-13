@@ -20,7 +20,6 @@ dependencies {
     implementation(project(":katalyst-scanner"))
     implementation(project(":katalyst-di"))
     implementation(project(":katalyst-migrations"))
-    implementation(project(":katalyst-example-migrations"))
     implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-websockets"))
 
@@ -79,6 +78,7 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
     testImplementation(kotlin("test"))
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.postgresql)
 
 }
 

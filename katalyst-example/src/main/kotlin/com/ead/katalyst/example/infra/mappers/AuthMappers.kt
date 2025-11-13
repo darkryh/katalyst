@@ -10,7 +10,8 @@ fun AuthAccountEntity.toDomain() = AuthAccount(
     email = email,
     passwordHash = passwordHash,
     createdAtMillis = createdAtMillis,
-    lastLoginAtMillis = lastLoginAtMillis
+    lastLoginAtMillis = lastLoginAtMillis,
+    status = status
 )
 
 fun UserProfileEntity.toDomain() = UserProfile(
