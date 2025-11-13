@@ -3,12 +3,12 @@ package com.ead.katalyst.migrations
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.migrations.service.SchemaDiffService
+import org.jetbrains.exposed.v1.core.Table
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import org.jetbrains.exposed.sql.Table
 
 class SchemaDiffServiceTest {
 
