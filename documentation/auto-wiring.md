@@ -99,13 +99,6 @@ import com.ead.katalyst.ktor.builder.katalystRouting
 import com.ead.katalyst.ktor.middleware.katalystMiddleware
 import com.ead.katalyst.ktor.extension.ktInject
 import com.ead.katalyst.websockets.builder.katalystWebSockets
-import io.ktor.server.application.Application
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
-import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.Frame
-import org.koin.core.context.GlobalContext
 
 @Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {
