@@ -1,12 +1,11 @@
 package com.ead.katalyst.example.service
 
-import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.example.api.dto.LoginRequest
 import com.ead.katalyst.example.api.dto.RegisterRequest
 import com.ead.katalyst.example.infra.database.repositories.AuthAccountRepository
-import com.ead.katalyst.example.testsupport.inMemoryDatabaseConfig
-import com.ead.katalyst.example.testsupport.startKatalystForTests
-import com.ead.katalyst.example.testsupport.stopKatalystForTests
+import com.ead.katalyst.testing.core.KatalystTestEnvironment
+import com.ead.katalyst.testing.core.inMemoryDatabaseConfig
+import com.ead.katalyst.testing.core.katalystTestEnvironment
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -15,26 +14,29 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.Koin
+import com.ead.katalyst.database.DatabaseFactory
 
 class AuthenticationServiceIntegrationTest {
 
-    private lateinit var koin: Koin
+    private lateinit var environment: KatalystTestEnvironment
 
     @BeforeTest
     fun bootstrap() {
-        koin = startKatalystForTests(databaseConfig = inMemoryDatabaseConfig())
+        environment = katalystTestEnvironment {
+            database(inMemoryDatabaseConfig())
+            scan("com.ead.katalyst.example")
+        }
     }
 
     @AfterTest
     fun teardown() {
-        stopKatalystForTests()
+        environment.close()
     }
 
     @Test
     fun `registers and logs in a user via service layer`() = runBlocking {
-        val service = koin.get<AuthenticationService>()
-        val repository = koin.get<AuthAccountRepository>()
+        val service = environment.get<AuthenticationService>()
+        val repository = environment.get<AuthAccountRepository>()
         val registerRequest = RegisterRequest(
             email = "integration@example.com",
             password = "Sup3rSecure!",
@@ -57,7 +59,7 @@ class AuthenticationServiceIntegrationTest {
     }
 
     private fun verifyPersistedState(repository: AuthAccountRepository) {
-        val databaseFactory = koin.get<DatabaseFactory>()
+        val databaseFactory = environment.get<DatabaseFactory>()
         val count = transaction(databaseFactory.database) {
             repository.table.selectAll().count()
         }

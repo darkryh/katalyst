@@ -76,9 +76,12 @@ dependencies {
 
     // Testing
     testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.ktor.client.websockets)
     testImplementation(kotlin("test"))
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.postgresql)
+    testImplementation(project(":katalyst-testing-core"))
+    testImplementation(project(":katalyst-testing-ktor"))
 
 }
 

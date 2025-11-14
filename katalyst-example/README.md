@@ -8,28 +8,30 @@ without booting the full Ktor server.
 
 | Test | Purpose | Tooling showcased |
 | --- | --- | --- |
-| `AuthenticationServiceIntegrationTest` | Boots the full DI container against an in-memory H2 database and drives the `AuthenticationService` through register/login flows. | `initializeKoinStandalone`, auto-discovered repositories/tables, scheduler/events features. |
+| `AuthenticationServiceIntegrationTest` | Boots the full DI container against an in-memory H2 database and drives the `AuthenticationService` through register/login flows. | `katalystTestEnvironment`, auto-discovered repositories/tables, scheduler/events features. |
 | `AuthenticationServicePostgresTest` | Repeats the workflow against a PostgreSQL Testcontainer to mimic production. Automatically skipped if Docker isn’t available. | Katalyst features + Testcontainers. |
 | `AuthAccountStatusMigrationTest` | Runs `MigrationRunner` directly to backfill auth-account statuses and asserts `katalyst_schema_migrations` logged the execution. | MigrationRunner + in-memory H2. |
 
 ## Bootstrapping DI inside tests
 
-`src/test/kotlin/com/ead/katalyst/example/testsupport/KatalystTestSupport.kt` exposes helpers:
+Reusable helpers now live in `:katalyst-testing-core` and `:katalyst-testing-ktor`:
 
 ```kotlin
-val koin = startKatalystForTests(
-    databaseConfig = inMemoryDatabaseConfig(),
-    features = defaultTestFeatures()
-)
-// ... use koin.get<AuthenticationService>() ...
-stopKatalystForTests()
+val environment = katalystTestEnvironment {
+    database(inMemoryDatabaseConfig())
+    scan("com.ead.katalyst.example")
+}
+val service = environment.get<AuthenticationService>()
+environment.close()
 ```
 
-`defaultTestFeatures()` wires the same optional features used by `Application.kt`
+The builder wires the same optional features used by `Application.kt`
 (`ConfigProviderFeature`, `eventSystemFeature`, `SchedulerFeature`,
 `WebSocketFeature`, and `MigrationFeature`), so services that call
 `requireScheduler()` or load `ConfigProvider` behave exactly as they do in
-production.
+production. For HTTP tests, `katalystTestApplication { ... }` installs all
+auto-discovered Ktor modules before executing requests so the pipeline mirrors
+runtime behavior.
 
 ## Running the suite
 

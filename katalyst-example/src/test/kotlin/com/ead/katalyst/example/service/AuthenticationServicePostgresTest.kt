@@ -3,23 +3,21 @@ package com.ead.katalyst.example.service
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.example.api.dto.LoginRequest
 import com.ead.katalyst.example.api.dto.RegisterRequest
-import com.ead.katalyst.example.testsupport.defaultTestFeatures
-import com.ead.katalyst.example.testsupport.startKatalystForTests
-import com.ead.katalyst.example.testsupport.stopKatalystForTests
+import com.ead.katalyst.testing.core.KatalystTestEnvironment
+import com.ead.katalyst.testing.core.katalystTestEnvironment
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
-import org.koin.core.Koin
 import org.testcontainers.containers.PostgreSQLContainer
 import org.junit.jupiter.api.Assumptions.assumeTrue
 
 class AuthenticationServicePostgresTest {
 
     private val container = PostgreSQLContainer("postgres:16-alpine")
-    private lateinit var koin: Koin
+    private lateinit var environment: KatalystTestEnvironment
 
     @BeforeTest
     fun setUp() {
@@ -32,15 +30,15 @@ class AuthenticationServicePostgresTest {
             password = container.password
         )
 
-        koin = startKatalystForTests(
-            databaseConfig = config,
-            features = defaultTestFeatures()
-        )
+        environment = katalystTestEnvironment {
+            database(config)
+            scan("com.ead.katalyst.example")
+        }
     }
 
     @AfterTest
     fun tearDown() {
-        runCatching { stopKatalystForTests() }
+        runCatching { environment.close() }
         if (container.isRunning) {
             runCatching { container.stop() }
         }
@@ -48,7 +46,7 @@ class AuthenticationServicePostgresTest {
 
     @Test
     fun `register flow works against postgres`() = runBlocking {
-        val service = koin.get<AuthenticationService>()
+        val service = environment.get<AuthenticationService>()
         val email = "pg-${System.currentTimeMillis()}@example.com"
         val registerResponse = service.register(
             RegisterRequest(

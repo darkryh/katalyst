@@ -109,7 +109,9 @@ fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
     features: List<KatalystFeature> = emptyList(),
-    serverConfig: ServerConfiguration = ServerConfiguration()
+    serverConfig: ServerConfiguration = ServerConfiguration(),
+    additionalModules: List<Module> = emptyList(),
+    allowOverrides: Boolean = false
 ): Koin {
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
 
@@ -128,12 +130,17 @@ fun bootstrapKatalystDI(
         modules += feature.provideModules()
     }
 
+    modules += additionalModules
+
     val koin = currentKoinOrNull()?.also {
         logger.info("Loading Katalyst modules into existing Koin context")
         it.loadModules(modules, createEagerInstances = true)
     } ?: run {
         logger.info("Starting new Koin context for Katalyst modules")
         startKoin {
+            if (allowOverrides) {
+                allowOverride(true)
+            }
             modules(modules)
         }.koin
     }
@@ -291,7 +298,9 @@ fun bootstrapKatalystDI(
  */
 fun initializeKoinStandalone(
     options: KatalystDIOptions,
-    serverConfiguration: ServerConfiguration = ServerConfiguration()
+    serverConfiguration: ServerConfiguration = ServerConfiguration(),
+    additionalModules: List<Module> = emptyList(),
+    allowOverrides: Boolean = false
 ): Koin {
     logger.info("Initializing Koin DI for standalone application")
     logger.debug("Features enabled: {}", options.features.joinToString { it.id })
@@ -300,7 +309,9 @@ fun initializeKoinStandalone(
         databaseConfig = options.databaseConfig,
         scanPackages = options.scanPackages,
         features = options.features,
-        serverConfig = serverConfiguration
+        serverConfig = serverConfiguration,
+        additionalModules = additionalModules,
+        allowOverrides = allowOverrides
     ).also {
         logger.info("Koin initialization completed successfully")
     }

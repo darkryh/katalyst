@@ -4,10 +4,10 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.core.config.ConfigProvider
+import com.ead.katalyst.example.config.security.AuthPrincipal
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
-import io.ktor.server.auth.Principal
 import io.ktor.server.auth.jwt.jwt
 import org.slf4j.LoggerFactory
 import java.util.Date
@@ -99,14 +99,3 @@ class JwtSettingsService(
             .withExpiresAt(Date(System.currentTimeMillis() + expirationSeconds * 1000))
             .sign(algorithm)
 }
-
-/**
- * JWT Principal - authenticated user information extracted from token.
- *
- * @property accountId Long User account ID from JWT
- * @property email String User email from JWT
- */
-data class AuthPrincipal(
-    val accountId: Long,
-    val email: String
-) : Principal
