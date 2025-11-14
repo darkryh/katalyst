@@ -1,6 +1,7 @@
 package com.ead.katalyst.ktor.engine.jetty
 
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.di.config.ServerDeploymentConfiguration
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,13 +14,22 @@ class JettyEngineModuleTest {
 
     @Test
     fun `jetty configuration enforces invariants`() {
-        val config = JettyEngineConfiguration(
+        val deployment = ServerDeploymentConfiguration(
             host = "localhost",
             port = 9000,
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 8,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 3000L,
             maxThreads = 50,
-            minThreads = 5,
-            connectionIdleTimeoutMs = 3000L
+            minThreads = 5
         )
+        val config = JettyEngineConfiguration(deployment = deployment)
 
         assertEquals("localhost", config.host)
         assertEquals(9000, config.port)
@@ -27,21 +37,122 @@ class JettyEngineModuleTest {
         assertEquals(5, config.minThreads)
         assertEquals(3000L, config.connectionIdleTimeoutMs)
 
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(host = "") }
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(port = 70000) }
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(maxThreads = 0) }
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(minThreads = 0) }
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(minThreads = 5, maxThreads = 2) }
-        assertFailsWith<IllegalArgumentException> { JettyEngineConfiguration(connectionIdleTimeoutMs = 0) }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "",
+                port = 8080,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 60000L
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "localhost",
+                port = 70000,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 60000L
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "localhost",
+                port = 8080,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 60000L,
+                maxThreads = 0
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "localhost",
+                port = 8080,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 60000L,
+                minThreads = 0
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "localhost",
+                port = 8080,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 60000L,
+                minThreads = 5,
+                maxThreads = 2
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ServerDeploymentConfiguration(
+                host = "localhost",
+                port = 8080,
+                shutdownGracePeriod = 1000L,
+                shutdownTimeout = 5000L,
+                connectionGroupSize = 8,
+                workerGroupSize = 8,
+                callGroupSize = 8,
+                maxInitialLineLength = 4096,
+                maxHeaderSize = 8192,
+                maxChunkSize = 8192,
+                connectionIdleTimeoutMs = 0
+            )
+        }
     }
 
     @Test
     fun `jetty module provides configuration and factory`() {
-        val serverConfiguration = ServerConfiguration(
-            engine = JettyEngine,
+        val deployment = ServerDeploymentConfiguration(
             host = "0.0.0.0",
             port = 7070,
-            connectionIdleTimeoutMs = 4500L
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 8,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 4500L,
+            maxThreads = 100,
+            minThreads = 10
+        )
+        val serverConfiguration = ServerConfiguration(
+            engine = JettyEngine,
+            deployment = deployment
         )
 
         val koin = koinApplication {

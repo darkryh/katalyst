@@ -32,14 +32,11 @@ fun getNettyEngineModule(): Module = module {
         NettyEngine
     }
 
-    // Configuration: Get values from ServerConfiguration
+    // Configuration: Create from ServerConfiguration's deployment config
     single<NettyEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()
         NettyEngineConfiguration(
-            host = serverConfig.host,
-            port = serverConfig.port,
-            workerThreads = serverConfig.workerThreads,
-            connectionIdleTimeoutMs = serverConfig.connectionIdleTimeoutMs
+            deployment = serverConfig.deployment
         )
     }
 

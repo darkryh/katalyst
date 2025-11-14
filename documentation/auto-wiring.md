@@ -18,10 +18,20 @@ Katalyst’s scanner wires components any time you implement the right interface
 Implement `Component` for lightweight collaborators (observers, helpers) that still need DI. Implementing the interface is the only signal needed for auto-registration.
 
 ```kotlin
+import com.ead.katalyst.core.component.Component
+import com.ead.katalyst.events.bus.EventBus
+import com.ead.katalyst.events.bus.eventsOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
+
 @Suppress("unused")
 class UserRegistrationFlowMonitor(
     private val eventBus: EventBus
 ) : Component /*implementing Component marks this class for auto-discovery */ {
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
@@ -39,6 +49,12 @@ class UserRegistrationFlowMonitor(
 Extend `Service` for transactional business logic. Constructor parameters are injected automatically; `transactionManager` and `requireScheduler()` are available via the interface.
 
 ```kotlin
+import com.ead.katalyst.core.component.Service
+import com.ead.katalyst.events.bus.EventBus
+import com.ead.katalyst.scheduler.config.ScheduleConfig
+import com.ead.katalyst.scheduler.cron.CronExpression
+import com.ead.katalyst.scheduler.extension.requireScheduler
+
 class AuthenticationService(
     private val repository: AuthAccountRepository,
     private val validator: AuthValidator,
@@ -79,6 +95,18 @@ Returning `SchedulerJobHandle` from a parameterless function marks it as a sched
 Use the provided DSLs; the scanner installs them automatically once DI is ready.
 
 ```kotlin
+import com.ead.katalyst.ktor.builder.katalystRouting
+import com.ead.katalyst.ktor.middleware.katalystMiddleware
+import com.ead.katalyst.ktor.extension.ktInject
+import com.ead.katalyst.websockets.builder.katalystWebSockets
+import io.ktor.server.application.Application
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import org.koin.core.context.GlobalContext
+
 @Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {
     route("/api/auth") {
@@ -91,7 +119,6 @@ fun Route.authRoutes() = katalystRouting {
 
 @Suppress("unused") // automatically injected
 fun Application.securityMiddleware() = katalystMiddleware {
-    val jwtSettings = GlobalContext.get().get<JwtSettingsService>()
     jwtSettings.configure(this@securityMiddleware)
 }
 

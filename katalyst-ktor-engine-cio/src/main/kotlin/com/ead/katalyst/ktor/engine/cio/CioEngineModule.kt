@@ -35,13 +35,11 @@ fun getCioEngineModule(): Module = module {
         CioEngine
     }
 
-    // Configuration: Get values from ServerConfiguration
+    // Configuration: Create from ServerConfiguration's deployment config
     single<CioEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()
         CioEngineConfiguration(
-            host = serverConfig.host,
-            port = serverConfig.port,
-            connectionIdleTimeoutMs = serverConfig.connectionIdleTimeoutMs
+            deployment = serverConfig.deployment
         )
     }
 

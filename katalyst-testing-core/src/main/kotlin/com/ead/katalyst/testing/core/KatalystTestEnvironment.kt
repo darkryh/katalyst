@@ -4,6 +4,7 @@ import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.di.config.KatalystDIOptions
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.di.config.ServerDeploymentConfiguration
 import com.ead.katalyst.di.config.bootstrapKatalystDI
 import com.ead.katalyst.di.config.stopKoinStandalone
 import com.ead.katalyst.di.feature.KatalystFeature
@@ -72,7 +73,10 @@ class KatalystTestEnvironmentBuilder {
     /**
      * Server configuration forwarded to bootstrap. Defaults to test engine.
      */
-    var serverConfiguration: ServerConfiguration = ServerConfiguration(engine = TestKatalystEngine)
+    var serverConfiguration: ServerConfiguration = ServerConfiguration(
+        engine = TestKatalystEngine,
+        deployment = ServerDeploymentConfiguration.createDefault()
+    )
 
     /**
      * Override the database configuration used for this environment.

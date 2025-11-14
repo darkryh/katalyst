@@ -1,27 +1,68 @@
 package com.ead.katalyst.ktor.engine.cio
 
+import com.ead.katalyst.di.config.ServerDeploymentConfiguration
+import com.ead.katalyst.di.config.SslConfiguration
+
 /**
  * CIO (Coroutine-based I/O) engine configuration.
- * Holds CIO-specific settings.
  *
- * CIO is a lightweight, pure-Kotlin, coroutine-based I/O engine with no
- * external dependencies. It's ideal for microservices and cloud-native applications.
+ * Extends ServerDeploymentConfiguration with complete Ktor deployment properties
+ * for use by the CIO engine module.
  *
- * Performance Characteristics:
+ * **CIO Performance Characteristics:**
  * - Throughput: Good (moderate to high req/s)
  * - Latency: Low
  * - Memory: Very Low
  * - Concurrency: Excellent (native coroutines)
  * - Best For: Cloud-native, lightweight services, microservices
+ *
+ * **Architecture:**
+ * CIO is a lightweight, pure-Kotlin, coroutine-based I/O engine with no
+ * external dependencies. It's ideal for microservices and cloud-native applications.
+ *
+ * **Configuration Sources:**
+ * - All Ktor deployment properties from application.yaml (ktor.deployment.*)
+ * - SSL configuration from application.yaml (ktor.security.ssl.*) if configured
+ * - Validation performed in ServerDeploymentConfiguration.init block
+ *
+ * @param deployment Complete Ktor server deployment configuration
  */
 data class CioEngineConfiguration(
-    val host: String = "0.0.0.0",
-    val port: Int = 8080,
-    val connectionIdleTimeoutMs: Long = 180000L // 3 minutes
+    val deployment: ServerDeploymentConfiguration
 ) {
+    // Convenient accessors for CIO-specific usage
+    val host: String get() = deployment.host
+    val port: Int get() = deployment.port
+    val connectionIdleTimeoutMs: Long get() = deployment.connectionIdleTimeoutMs
+    val connectionGroupSize: Int get() = deployment.connectionGroupSize
+    val workerGroupSize: Int get() = deployment.workerGroupSize
+    val callGroupSize: Int get() = deployment.callGroupSize
+    val maxInitialLineLength: Int get() = deployment.maxInitialLineLength
+    val maxHeaderSize: Int get() = deployment.maxHeaderSize
+    val maxChunkSize: Int get() = deployment.maxChunkSize
+    val shutdownGracePeriod: Long get() = deployment.shutdownGracePeriod
+    val shutdownTimeout: Long get() = deployment.shutdownTimeout
+    val sslPort: Int? get() = deployment.sslPort
+    val sslConfig: SslConfiguration? get() = deployment.sslConfig
+
     init {
-        require(host.isNotBlank()) { "host must not be blank" }
-        require(port in 1..65535) { "port must be in range 1-65535" }
-        require(connectionIdleTimeoutMs > 0) { "connectionIdleTimeoutMs must be positive" }
+        // All validation is delegated to ServerDeploymentConfiguration
+        // No additional validation needed here
+    }
+
+    companion object {
+        /**
+         * Create CioEngineConfiguration with default deployment settings.
+         *
+         * Uses sensible Ktor defaults - can be overridden by application.yaml via
+         * ServerDeploymentConfigurationLoader.
+         *
+         * @return CioEngineConfiguration with default deployment config
+         */
+        fun default(): CioEngineConfiguration {
+            return CioEngineConfiguration(
+                deployment = ServerDeploymentConfiguration.createDefault()
+            )
+        }
     }
 }

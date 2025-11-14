@@ -6,6 +6,7 @@ import com.ead.katalyst.core.component.Component
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.di.config.KatalystDIOptions
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.di.config.ServerDeploymentConfiguration
 import com.ead.katalyst.di.config.initializeKoinStandalone
 import com.ead.katalyst.di.config.stopKoinStandalone
 import com.ead.katalyst.di.config.wrap
@@ -141,6 +142,20 @@ class KatalystApplicationBuilder {
      *
      * **Requires explicit engine selection** - engine() must be called before this method.
      *
+     * **Configuration loading strategy:**
+     * 1. Attempts to load from application.yaml via ServerDeploymentConfigurationLoader
+     * 2. Falls back to sensible defaults if YAML loading is unavailable or fails
+     *
+     * For custom YAML loading behavior, call enableServerConfiguration() feature:
+     * ```kotlin
+     * fun main() = katalystApplication {
+     *     engine(NettyEngine)
+     *     database(...)
+     *     scanPackages(...)
+     *     enableServerConfiguration()  // Customize YAML loading
+     * }
+     * ```
+     *
      * @return ServerConfiguration with the selected engine
      * @throws IllegalStateException if no engine was explicitly selected via engine()
      */
@@ -153,8 +168,74 @@ class KatalystApplicationBuilder {
                 "Example: engine(NettyEngine)"
             )
 
-        return ServerConfiguration(engine = engine).also {
+        val deployment = loadDeploymentConfigurationFromYaml()
+
+        return ServerConfiguration(
+            engine = engine,
+            deployment = deployment
+        ).also {
             logger.info("Using explicitly selected engine: {}", engine.engineType)
+            logger.debug("Server bound to {}:{}", it.host, it.port)
+        }
+    }
+
+    private fun loadDeploymentConfigurationFromYaml(): ServerDeploymentConfiguration {
+        return try {
+            logger.info("Attempting to load ServerDeploymentConfiguration from application.yaml...")
+
+            // Load ConfigProvider via reflection (YamlConfigProvider if available)
+            logger.debug("Loading YamlConfigProvider...")
+            val providerClass = Class.forName("com.ead.katalyst.config.yaml.YamlConfigProvider")
+            @Suppress("UNCHECKED_CAST")
+            val configProvider = providerClass.getDeclaredConstructor().newInstance() as com.ead.katalyst.core.config.ConfigProvider
+            logger.debug("✓ YamlConfigProvider instantiated")
+
+            // Load using ServerDeploymentConfigurationLoader via reflection
+            logger.debug("Loading ServerDeploymentConfigurationLoader...")
+            val loaderClass = Class.forName("com.ead.katalyst.config.provider.ServerDeploymentConfigurationLoader")
+
+            // Access the object singleton - Kotlin creates a static INSTANCE field for object declarations
+            val instance = try {
+                logger.debug("Getting INSTANCE field...")
+                loaderClass.getField("INSTANCE").get(null)
+            } catch (e: NoSuchFieldException) {
+                logger.debug("INSTANCE field not found, trying kotlin.objectInstance...")
+                // Fallback: Kotlin reflection for object instance
+                @Suppress("UNCHECKED_CAST")
+                loaderClass.kotlin.objectInstance as Any
+            }
+            logger.debug("✓ ServerDeploymentConfigurationLoader instance obtained")
+
+            // Call loadConfig and validate
+            logger.debug("Invoking loadConfig method...")
+            @Suppress("UNCHECKED_CAST")
+            val loadConfigMethod = loaderClass.getMethod("loadConfig", com.ead.katalyst.core.config.ConfigProvider::class.java)
+            val validateMethod = loaderClass.getMethod("validate", ServerDeploymentConfiguration::class.java)
+
+            @Suppress("UNCHECKED_CAST")
+            val deployment = loadConfigMethod.invoke(instance, configProvider) as ServerDeploymentConfiguration
+            logger.info("✓ ServerDeploymentConfiguration loaded: host={}, port={}", deployment.host, deployment.port)
+
+            logger.debug("Invoking validate method...")
+            validateMethod.invoke(instance, deployment)
+            logger.info("✓ ServerDeploymentConfiguration validated successfully")
+
+            logger.info("✅ Successfully loaded ktor.deployment configuration from application.yaml")
+            deployment
+        } catch (e: ClassNotFoundException) {
+            logger.error("❌ ClassNotFoundException - YamlConfigProvider or ServerDeploymentConfigurationLoader not found on classpath")
+            logger.error("   Ensure katalyst-config-provider is included as a dependency")
+            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
+            ServerDeploymentConfiguration.createDefault()
+        } catch (e: NoSuchMethodException) {
+            logger.error("❌ NoSuchMethodException - Could not find expected method on loader: {}", e.message)
+            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
+            ServerDeploymentConfiguration.createDefault()
+        } catch (e: Exception) {
+            logger.error("❌ Error loading ServerDeploymentConfiguration from application.yaml: {}", e.message)
+            logger.error("Stack trace:", e)
+            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
+            ServerDeploymentConfiguration.createDefault()
         }
     }
 

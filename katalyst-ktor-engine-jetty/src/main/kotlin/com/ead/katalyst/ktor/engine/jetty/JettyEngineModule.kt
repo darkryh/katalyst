@@ -35,15 +35,11 @@ fun getJettyEngineModule(): Module = module {
         JettyEngine
     }
 
-    // Configuration: Get values from ServerConfiguration
+    // Configuration: Create from ServerConfiguration's deployment config
     single<JettyEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()
         JettyEngineConfiguration(
-            host = serverConfig.host,
-            port = serverConfig.port,
-            maxThreads = 100,  // Jetty-specific default
-            minThreads = 10,   // Jetty-specific default
-            connectionIdleTimeoutMs = serverConfig.connectionIdleTimeoutMs
+            deployment = serverConfig.deployment
         )
     }
 

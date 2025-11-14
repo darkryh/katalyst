@@ -1,28 +1,48 @@
-# Development Profile - application-dev.yaml
-# Load with: KATALYST_PROFILE=dev
-#
-# Overrides for development environment:
-# - Lenient validation
-# - Local database defaults
-# - Debug enabled
-# - Shorter JWT expiration for testing
+# Katalyst Example Application - Development Profile
+# Optimized for local development with relaxed performance requirements
 
-# Database Configuration for local development
+ktor:
+  deployment:
+    # Development defaults: localhost, common dev port
+    host: ${SERVER_HOST:localhost}
+    port: ${SERVER_PORT:8082}
+
+    # Relaxed timeouts for debugging
+    shutdownGracePeriod: 2000     # Give more time during development
+    shutdownTimeout: 10000        # More generous shutdown timeout
+
+    # Single-threaded for easier debugging
+    connectionGroupSize: 2
+    workerGroupSize: 2
+    callGroupSize: 2
+
+    # Lower limits for development (won't hit limits in typical dev scenarios)
+    maxInitialLineLength: 8192
+    maxHeaderSize: 16384
+    maxChunkSize: 16384
+
+    # Development timeouts
+    connectionIdleTimeoutMs: 300000  # 5 minutes
+
+# Database Configuration - Development
+# Point to local PostgreSQL by default
 database:
-  url: jdbc:h2:mem:testdb
-  username: sa
-  password: ""
-  driver: org.h2.Driver
+  url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+  username: ${DB_USERNAME:postgres}
+  password: ${DB_PASSWORD:}
+  driver: ${DB_DRIVER:org.postgresql.Driver}
   pool:
-    maxSize: 5
-    minIdle: 1
+    maxSize: ${DB_MAX_POOL:10}
+    minIdle: ${DB_MIN_IDLE:1}
+    connectionTimeout: ${DB_TIMEOUT:30000}
+    idleTimeout: ${DB_IDLE_TIMEOUT:600000}
+    maxLifetime: ${DB_MAX_LIFETIME:1800000}
 
-# Relaxed JWT settings for development
+# JWT Configuration - Development
 jwt:
-  secret: dev-secret-key-12345678901234567890
-  expirationSeconds: 7200
+  expirationSeconds: 86400  # 24 hours for dev convenience
 
-# Development-specific settings
+# Application Environment - Development
 app:
   environment: development
   debug: true

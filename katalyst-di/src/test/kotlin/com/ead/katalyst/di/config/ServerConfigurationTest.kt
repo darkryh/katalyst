@@ -11,23 +11,46 @@ import kotlin.test.*
  * Tests cover:
  * - ServerConfiguration data class with engine objects
  * - Factory methods (netty, jetty, cio)
- * - Input validation
+ * - Input validation through ServerDeploymentConfiguration
  * - Extension functions (wrap)
+ * - Bridge convenience accessors (host, port, workerThreads, connectionIdleTimeoutMs)
  */
 class ServerConfigurationTest {
+
+    private fun createDeploymentConfig(
+        host: String = "0.0.0.0",
+        port: Int = 8080,
+        workerGroupSize: Int = 8,
+        connectionIdleTimeoutMs: Long = 180000L
+    ): ServerDeploymentConfiguration {
+        return ServerDeploymentConfiguration(
+            host = host,
+            port = port,
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = workerGroupSize,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = connectionIdleTimeoutMs
+        )
+    }
 
     // ========== BASIC CONSTRUCTION TESTS ==========
 
     @Test
     fun `ServerConfiguration should use provided engine`() {
         val mockNetty = MockEngine("netty")
-        val config = ServerConfiguration(engine = mockNetty)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = mockNetty, deployment = deployment)
 
         assertEquals(mockNetty, config.engine)
         assertEquals("netty", config.engine.engineType)
         assertEquals("0.0.0.0", config.host)
         assertEquals(8080, config.port)
-        assertEquals(Runtime.getRuntime().availableProcessors() * 2, config.workerThreads)
+        assertEquals(8, config.workerThreads)  // workerGroupSize in deployment
         assertEquals(180000L, config.connectionIdleTimeoutMs)
         assertNull(config.serverWrapper)
         assertNull(config.applicationWrapper)
@@ -36,7 +59,8 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support different engine types`() {
         val mockJetty = MockEngine("jetty")
-        val config = ServerConfiguration(engine = mockJetty)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = mockJetty, deployment = deployment)
         assertEquals(mockJetty, config.engine)
         assertEquals("jetty", config.engine.engineType)
     }
@@ -44,7 +68,8 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support CIO engine type`() {
         val mockCio = MockEngine("cio")
-        val config = ServerConfiguration(engine = mockCio)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = mockCio, deployment = deployment)
         assertEquals(mockCio, config.engine)
         assertEquals("cio", config.engine.engineType)
     }
@@ -52,100 +77,106 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support custom host`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, host = "127.0.0.1")
+        val deployment = createDeploymentConfig(host = "127.0.0.1")
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals("127.0.0.1", config.host)
     }
 
     @Test
     fun `ServerConfiguration should support custom port`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, port = 9090)
+        val deployment = createDeploymentConfig(port = 9090)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals(9090, config.port)
     }
 
     @Test
     fun `ServerConfiguration should support custom worker threads`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, workerThreads = 16)
+        val deployment = createDeploymentConfig(workerGroupSize = 16)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals(16, config.workerThreads)
     }
 
     @Test
     fun `ServerConfiguration should support custom idle timeout`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, connectionIdleTimeoutMs = 300000)
+        val deployment = createDeploymentConfig(connectionIdleTimeoutMs = 300000L)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals(300000L, config.connectionIdleTimeoutMs)
     }
 
     // ========== VALIDATION TESTS ==========
 
     @Test
-    fun `ServerConfiguration should reject blank host`() {
+    fun `ServerConfiguration should reject blank host via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, host = "")
+            createDeploymentConfig(host = "")
         }
     }
 
     @Test
-    fun `ServerConfiguration should reject port below 1`() {
+    fun `ServerConfiguration should reject port below 1 via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, port = 0)
+            createDeploymentConfig(port = 0)
         }
     }
 
     @Test
-    fun `ServerConfiguration should reject port above 65535`() {
+    fun `ServerConfiguration should reject port above 65535 via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, port = 65536)
+            createDeploymentConfig(port = 65536)
         }
     }
 
     @Test
     fun `ServerConfiguration should accept port 1`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, port = 1)
+        val deployment = createDeploymentConfig(port = 1)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals(1, config.port)
     }
 
     @Test
     fun `ServerConfiguration should accept port 65535`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, port = 65535)
+        val deployment = createDeploymentConfig(port = 65535)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         assertEquals(65535, config.port)
     }
 
     @Test
-    fun `ServerConfiguration should reject zero worker threads`() {
+    fun `ServerConfiguration should reject zero worker threads via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, workerThreads = 0)
+            createDeploymentConfig(workerGroupSize = 0)
         }
     }
 
     @Test
-    fun `ServerConfiguration should reject negative worker threads`() {
+    fun `ServerConfiguration should reject negative worker threads via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, workerThreads = -1)
+            createDeploymentConfig(workerGroupSize = -1)
         }
     }
 
     @Test
-    fun `ServerConfiguration should reject zero idle timeout`() {
+    fun `ServerConfiguration should reject zero idle timeout via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, connectionIdleTimeoutMs = 0)
+            createDeploymentConfig(connectionIdleTimeoutMs = 0)
         }
     }
 
     @Test
-    fun `ServerConfiguration should reject negative idle timeout`() {
+    fun `ServerConfiguration should reject negative idle timeout via deployment validation`() {
         val engine = MockEngine("netty")
         assertFails {
-            ServerConfiguration(engine = engine, connectionIdleTimeoutMs = -1)
+            createDeploymentConfig(connectionIdleTimeoutMs = -1)
         }
     }
 
@@ -159,7 +190,8 @@ class ServerConfigurationTest {
     fun `ServerConfiguration should support server wrapper`() {
         val wrapper: ServerWrapper = { engine -> engine }
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, serverWrapper = wrapper)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = engine, deployment = deployment, serverWrapper = wrapper)
 
         assertEquals(wrapper, config.serverWrapper)
     }
@@ -168,7 +200,8 @@ class ServerConfigurationTest {
     fun `ServerConfiguration should support application wrapper`() {
         val wrapper: ApplicationWrapper = { app -> app }
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, applicationWrapper = wrapper)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = engine, deployment = deployment, applicationWrapper = wrapper)
 
         assertEquals(wrapper, config.applicationWrapper)
     }
@@ -178,8 +211,11 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support copy`() {
         val engine = MockEngine("netty")
-        val original = ServerConfiguration(engine = engine, port = 8080)
-        val copied = original.copy(port = 9090)
+        val originalDeployment = createDeploymentConfig(port = 8080)
+        val original = ServerConfiguration(engine = engine, deployment = originalDeployment)
+
+        val newDeployment = createDeploymentConfig(port = 9090)
+        val copied = original.copy(deployment = newDeployment)
 
         assertEquals(engine, copied.engine)
         assertEquals(9090, copied.port)
@@ -189,8 +225,11 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support equality`() {
         val engine = MockEngine("netty")
-        val config1 = ServerConfiguration(engine = engine, port = 8080)
-        val config2 = ServerConfiguration(engine = engine, port = 8080)
+        val deployment1 = createDeploymentConfig(port = 8080)
+        val deployment2 = createDeploymentConfig(port = 8080)
+
+        val config1 = ServerConfiguration(engine = engine, deployment = deployment1)
+        val config2 = ServerConfiguration(engine = engine, deployment = deployment2)
 
         assertEquals(config1, config2)
     }
@@ -198,8 +237,11 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support inequality`() {
         val engine = MockEngine("netty")
-        val config1 = ServerConfiguration(engine = engine, port = 8080)
-        val config2 = ServerConfiguration(engine = engine, port = 9090)
+        val deployment1 = createDeploymentConfig(port = 8080)
+        val deployment2 = createDeploymentConfig(port = 9090)
+
+        val config1 = ServerConfiguration(engine = engine, deployment = deployment1)
+        val config2 = ServerConfiguration(engine = engine, deployment = deployment2)
 
         assertNotEquals(config1, config2)
     }
@@ -207,8 +249,11 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support hashCode`() {
         val engine = MockEngine("jetty")
-        val config1 = ServerConfiguration(engine = engine, port = 8080)
-        val config2 = ServerConfiguration(engine = engine, port = 8080)
+        val deployment1 = createDeploymentConfig(port = 8080)
+        val deployment2 = createDeploymentConfig(port = 8080)
+
+        val config1 = ServerConfiguration(engine = engine, deployment = deployment1)
+        val config2 = ServerConfiguration(engine = engine, deployment = deployment2)
 
         assertEquals(config1.hashCode(), config2.hashCode())
     }
@@ -216,7 +261,8 @@ class ServerConfigurationTest {
     @Test
     fun `ServerConfiguration should support toString`() {
         val engine = MockEngine("cio")
-        val config = ServerConfiguration(engine = engine, port = 3000)
+        val deployment = createDeploymentConfig(port = 3000)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
         val string = config.toString()
 
         assertTrue(string.contains("ServerConfiguration"))
@@ -229,13 +275,20 @@ class ServerConfigurationTest {
     @Test
     fun `production Netty server configuration`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(
-            engine = engine,
+        val deployment = ServerDeploymentConfiguration(
             host = "0.0.0.0",
             port = 8080,
-            workerThreads = 32,
-            connectionIdleTimeoutMs = 300000
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 32,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 300000L
         )
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
         assertEquals(engine, config.engine)
         assertEquals(8080, config.port)
@@ -245,12 +298,20 @@ class ServerConfigurationTest {
     @Test
     fun `development server configuration with CIO`() {
         val engine = MockEngine("cio")
-        val config = ServerConfiguration(
-            engine = engine,
+        val deployment = ServerDeploymentConfiguration(
             host = "127.0.0.1",
             port = 3000,
-            workerThreads = 4
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 4,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 180000L
         )
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
         assertEquals(engine, config.engine)
         assertEquals("127.0.0.1", config.host)
@@ -260,13 +321,20 @@ class ServerConfigurationTest {
     @Test
     fun `high-performance Jetty configuration`() {
         val engine = MockEngine("jetty")
-        val config = ServerConfiguration(
-            engine = engine,
+        val deployment = ServerDeploymentConfiguration(
             host = "0.0.0.0",
             port = 8443,
-            workerThreads = 64,
-            connectionIdleTimeoutMs = 600000
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 64,
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 600000L
         )
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
         assertEquals(engine, config.engine)
         assertEquals(64, config.workerThreads)
@@ -276,7 +344,8 @@ class ServerConfigurationTest {
     @Test
     fun `microservice configuration with CIO engine`() {
         val engine = MockEngine("cio")
-        val config = ServerConfiguration(engine = engine)
+        val deployment = ServerDeploymentConfiguration.createDefault()
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
         assertEquals("cio", config.engine.engineType)
         assertEquals(8080, config.port)
@@ -285,9 +354,13 @@ class ServerConfigurationTest {
     @Test
     fun `custom port configuration for different environments`() {
         val engine = MockEngine("netty")
-        val devConfig = ServerConfiguration(engine = engine, port = 3000)
-        val stagingConfig = ServerConfiguration(engine = engine, port = 8080)
-        val prodConfig = ServerConfiguration(engine = engine, port = 80)
+        val devDeployment = createDeploymentConfig(port = 3000)
+        val stagingDeployment = createDeploymentConfig(port = 8080)
+        val prodDeployment = createDeploymentConfig(port = 80)
+
+        val devConfig = ServerConfiguration(engine = engine, deployment = devDeployment)
+        val stagingConfig = ServerConfiguration(engine = engine, deployment = stagingDeployment)
+        val prodConfig = ServerConfiguration(engine = engine, deployment = prodDeployment)
 
         assertEquals(3000, devConfig.port)
         assertEquals(8080, stagingConfig.port)
@@ -297,7 +370,8 @@ class ServerConfigurationTest {
     @Test
     fun `localhost-only server configuration`() {
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(engine = engine, host = "127.0.0.1", port = 8080)
+        val deployment = createDeploymentConfig(host = "127.0.0.1", port = 8080)
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
         assertEquals("127.0.0.1", config.host)
         assertEquals(8080, config.port)
@@ -305,15 +379,23 @@ class ServerConfigurationTest {
 
     @Test
     fun `multi-threaded server configuration`() {
-        val cpuCount = Runtime.getRuntime().availableProcessors()
         val engine = MockEngine("netty")
-        val config = ServerConfiguration(
-            engine = engine,
-            workerThreads = cpuCount * 4,
-            connectionIdleTimeoutMs = 180000
+        val deployment = ServerDeploymentConfiguration(
+            host = "0.0.0.0",
+            port = 8080,
+            shutdownGracePeriod = 1000L,
+            shutdownTimeout = 5000L,
+            connectionGroupSize = 8,
+            workerGroupSize = 16,  // Will be multiplied or used directly
+            callGroupSize = 8,
+            maxInitialLineLength = 4096,
+            maxHeaderSize = 8192,
+            maxChunkSize = 8192,
+            connectionIdleTimeoutMs = 180000L
         )
+        val config = ServerConfiguration(engine = engine, deployment = deployment)
 
-        assertEquals(cpuCount * 4, config.workerThreads)
+        assertEquals(16, config.workerThreads)
         assertEquals(180000L, config.connectionIdleTimeoutMs)
     }
 
@@ -325,9 +407,10 @@ class ServerConfigurationTest {
         }
 
         val engine = MockEngine("netty")
+        val deployment = createDeploymentConfig(port = 8443)
         val config = ServerConfiguration(
             engine = engine,
-            port = 8443,
+            deployment = deployment,
             serverWrapper = sslWrapper
         )
 

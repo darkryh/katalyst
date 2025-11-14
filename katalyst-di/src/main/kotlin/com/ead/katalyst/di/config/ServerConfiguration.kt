@@ -64,72 +64,101 @@ typealias ServerWrapper = (ServerEngine) -> ServerEngine
 typealias ApplicationWrapper = (Application) -> Application
 
 /**
- * Server configuration container.
+ * Server configuration container (Bridge Class).
  *
+ * Acts as a bridge between the DI system and deployment configuration.
  * Holds all server-related configuration for Ktor applications,
- * including engine selection, binding address, port, and wrapping functions.
+ * including engine selection, full deployment configuration, and wrapping functions.
  *
  * This configuration is read by engine implementations via DI injection,
  * enabling runtime engine selection and configuration without code changes.
  *
+ * **Architecture:**
+ * - Embeds ServerDeploymentConfiguration for all Ktor deployment properties
+ * - Provides convenience accessors for backward compatibility (host, port, workerThreads, connectionIdleTimeoutMs)
+ * - Validates all deployment configuration on instantiation
+ *
  * @param engine The engine instance to use (NettyEngine, JettyEngine, or CioEngine)
- * @param host Server bind address (default: "0.0.0.0" for all interfaces)
- * @param port Server listen port (default: 8080)
- * @param workerThreads Number of worker threads (default: 2 × CPU cores)
- * @param connectionIdleTimeoutMs Connection idle timeout in milliseconds (default: 180000ms)
+ * @param deployment Complete Ktor deployment configuration (see ServerDeploymentConfiguration)
  * @param serverWrapper Optional lambda to wrap/configure the server engine
  * @param applicationWrapper Optional lambda to wrap/configure the application
  */
 data class ServerConfiguration(
     val engine: KatalystKtorEngine,
-    val host: String = "0.0.0.0",
-    val port: Int = 8080,
-    val workerThreads: Int = Runtime.getRuntime().availableProcessors() * 2,
-    val connectionIdleTimeoutMs: Long = 180000L,
+    val deployment: ServerDeploymentConfiguration,
     val serverWrapper: ServerWrapper? = null,
     val applicationWrapper: ApplicationWrapper? = null
 ) {
+    // Convenience accessors for backward compatibility with existing code
+    val host: String get() = deployment.host
+    val port: Int get() = deployment.port
+    val workerThreads: Int get() = deployment.workerGroupSize
+    val connectionIdleTimeoutMs: Long get() = deployment.connectionIdleTimeoutMs
+
     init {
-        require(host.isNotBlank()) { "host must not be blank" }
-        require(port in 1..65535) { "port must be in range 1-65535" }
-        require(workerThreads > 0) { "workerThreads must be positive" }
-        require(connectionIdleTimeoutMs > 0) { "connectionIdleTimeoutMs must be positive" }
+        // ServerDeploymentConfiguration validates itself in its init block
+        // No additional validation needed here
     }
+
     companion object {
         private val logger = LoggerFactory.getLogger("ServerConfiguration.Companion")
 
         /**
-         * Creates a default Netty server configuration.
+         * Creates a default Netty server configuration with minimal Ktor defaults.
+         *
+         * Uses sensible defaults matching Ktor's standard configuration:
+         * - host: "0.0.0.0" (all interfaces)
+         * - port: 8080
+         * - shutdownGracePeriod: 1000ms
+         * - shutdownTimeout: 5000ms
+         * - Thread pools: 8 threads each
+         * - HTTP limits: standard safe limits
+         * - connectionIdleTimeoutMs: 180000ms (3 minutes)
+         *
+         * @param serverWrapper Optional lambda to wrap/configure the server engine
+         * @param applicationWrapper Optional lambda to wrap/configure the application
+         * @return ServerConfiguration with Netty engine and default deployment config
          */
         fun netty(
             serverWrapper: ServerWrapper? = null,
             applicationWrapper: ApplicationWrapper? = null
         ): ServerConfiguration = ServerConfiguration(
             engine = loadEngineByName("netty"),
+            deployment = ServerDeploymentConfiguration.createDefault(),
             serverWrapper = serverWrapper,
             applicationWrapper = applicationWrapper
         )
 
         /**
-         * Creates a Jetty server configuration.
+         * Creates a Jetty server configuration with minimal Ktor defaults.
+         *
+         * @param serverWrapper Optional lambda to wrap/configure the server engine
+         * @param applicationWrapper Optional lambda to wrap/configure the application
+         * @return ServerConfiguration with Jetty engine and default deployment config
          */
         fun jetty(
             serverWrapper: ServerWrapper? = null,
             applicationWrapper: ApplicationWrapper? = null
         ): ServerConfiguration = ServerConfiguration(
             engine = loadEngineByName("jetty"),
+            deployment = ServerDeploymentConfiguration.createDefault(),
             serverWrapper = serverWrapper,
             applicationWrapper = applicationWrapper
         )
 
         /**
-         * Creates a CIO (Coroutine-based I/O) server configuration.
+         * Creates a CIO (Coroutine-based I/O) server configuration with minimal Ktor defaults.
+         *
+         * @param serverWrapper Optional lambda to wrap/configure the server engine
+         * @param applicationWrapper Optional lambda to wrap/configure the application
+         * @return ServerConfiguration with CIO engine and default deployment config
          */
         fun cio(
             serverWrapper: ServerWrapper? = null,
             applicationWrapper: ApplicationWrapper? = null
         ): ServerConfiguration = ServerConfiguration(
             engine = loadEngineByName("cio"),
+            deployment = ServerDeploymentConfiguration.createDefault(),
             serverWrapper = serverWrapper,
             applicationWrapper = applicationWrapper
         )

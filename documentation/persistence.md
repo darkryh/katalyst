@@ -4,9 +4,15 @@ Katalyst builds on Exposed + HikariCP + JDBC to offer strongly typed repositorie
 
 ## Tables
 
-Extend Exposed’s `IdTable` and implement Katalyst’s `Table<Id, Entity>` interface so the scanner knows how to map rows and assign entities.
+Extend Exposed's `IdTable` and implement Katalyst's `Table<Id, Entity>` interface so the scanner knows how to map rows and assign entities.
 
 ```kotlin
+import com.ead.katalyst.core.persistence.Table
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+
 object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccountEntity> {
     val email = varchar("email", 150).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
@@ -41,8 +47,13 @@ object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccount
 Implement `CrudRepository<Id, Entity>` to inherit the standard CRUD helpers. Custom queries use Exposed DSL inside the repository.
 
 ```kotlin
+import com.ead.katalyst.repositories.CrudRepository
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+
 class AuthAccountRepository : CrudRepository<Long, AuthAccountEntity> {
-    override val table = AuthAccountsTable
+    override val table: LongIdTable = AuthAccountsTable
 
     fun findByEmail(email: String): AuthAccountEntity? =
         AuthAccountsTable
@@ -60,6 +71,8 @@ Once defined, repositories are injected into services automatically (no manual r
 Wrap repository operations in `transactionManager.transaction { … }` inside Services to guarantee atomic persistence + event consistency.
 
 ```kotlin
+import com.ead.katalyst.core.component.Service
+
 class UserProfileService(
     private val repository: UserProfileRepository
 ) : Service {
@@ -78,6 +91,10 @@ class UserProfileService(
 Use Exposed DSL for complex filters, joins, or manual SQL.
 
 ```kotlin
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+
 fun findDormantAccounts(): List<AuthAccountEntity> =
     AuthAccountsTable
         .selectAll()
@@ -88,9 +105,12 @@ fun findDormantAccounts(): List<AuthAccountEntity> =
 
 ## Testing Repositories
 
-`katalystTestEnvironment` wires repositories the same way as production. Seed data using repositories or Exposed DSL inside a transaction from the environment’s `DatabaseTransactionManager`.
+`katalystTestEnvironment` wires repositories the same way as production. Seed data using repositories or Exposed DSL inside a transaction from the environment's `DatabaseTransactionManager`.
 
 ```kotlin
+import com.ead.katalyst.testing.core.KatalystTestEnvironment
+import com.ead.katalyst.transactions.DatabaseTransactionManager
+
 private suspend fun seedAccount(env: KatalystTestEnvironment): Long {
     val repo = env.get<AuthAccountRepository>()
     val hasher = env.get<PasswordHasher>()

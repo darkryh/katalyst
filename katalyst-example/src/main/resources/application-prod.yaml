@@ -1,40 +1,52 @@
-# Production Profile - application-prod.yaml
-# Load with: KATALYST_PROFILE=prod
-#
-# IMPORTANT: Keep secrets out of version control!
-# Secrets (passwords, API keys) MUST come from environment variables.
-# This file contains only structure and non-sensitive defaults.
-#
-# Required environment variables:
-# - DB_URL: Database connection string
-# - DB_USERNAME: Database user
-# - DB_PASSWORD: Database password (REQUIRED, no default!)
-# - JWT_SECRET: JWT signing secret (REQUIRED, no default!)
+# Katalyst Example Application - Production Profile
+# Optimized for production with high performance and resilience
 
-# Database Configuration for production
-# All secrets from environment variables
+ktor:
+  deployment:
+    # Production: bind to all interfaces for load balancer access
+    host: 0.0.0.0
+    port: 8081
+
+    # Recommended production shutdown configuration
+    shutdownGracePeriod: 5000      # 5 seconds
+    shutdownTimeout: 30000         # 30 seconds
+
+    # Production thread pools: scaled for typical workloads
+    connectionGroupSize: 16        # Accept connections efficiently
+    workerGroupSize: 16            # Parse HTTP messages
+    callGroupSize: 16              # Application processing
+
+    # Production HTTP limits: safe reasonable limits
+    maxInitialLineLength: 4096     # Standard HTTP request line
+    maxHeaderSize: 8192            # Standard HTTP headers
+    maxChunkSize: 8192             # Typical chunk size
+
+    # Production timeouts: prevent hanging connections
+    connectionIdleTimeoutMs: 180000  # 3 minutes keep-alive
+
+# Database Configuration - Production
+# Use environment variables for all sensitive data
 database:
   url: ${DB_URL}
   username: ${DB_USERNAME}
   password: ${DB_PASSWORD}
-  driver: org.postgresql.Driver
+  driver: ${DB_DRIVER}
   pool:
-    maxSize: 50
-    minIdle: 10
+    maxSize: ${DB_MAX_POOL:20}     # Production connection pool
+    minIdle: ${DB_MIN_IDLE:5}
     connectionTimeout: 30000
     idleTimeout: 600000
     maxLifetime: 1800000
 
-# JWT Configuration for production
-# Secret MUST be provided via environment variable
+# JWT Configuration - Production
 jwt:
-  secret: ${JWT_SECRET}
-  issuer: katalyst-example
-  audience: katalyst-users
-  realm: KatalystExample
-  expirationSeconds: 1800
+  secret: ${JWT_SECRET}            # Required: MUST be set via env var
+  issuer: ${JWT_ISSUER}
+  audience: ${JWT_AUDIENCE}
+  realm: ${JWT_REALM}
+  expirationSeconds: ${JWT_EXPIRATION:3600}
 
-# Production-specific settings
+# Application Environment - Production
 app:
   environment: production
-  debug: false
+  debug: false                      # Never debug in production

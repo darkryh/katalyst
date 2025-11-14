@@ -109,7 +109,10 @@ fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
     features: List<KatalystFeature> = emptyList(),
-    serverConfig: ServerConfiguration = ServerConfiguration(engine = ServerConfiguration.loadEngineByName("netty")),
+    serverConfig: ServerConfiguration = ServerConfiguration(
+        engine = ServerConfiguration.loadEngineByName("netty"),
+        deployment = ServerDeploymentConfiguration.createDefault()
+    ),
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {
@@ -304,7 +307,10 @@ fun bootstrapKatalystDI(
  */
 fun initializeKoinStandalone(
     options: KatalystDIOptions,
-    serverConfiguration: ServerConfiguration = ServerConfiguration(engine = ServerConfiguration.loadEngineByName("netty")),
+    serverConfiguration: ServerConfiguration = ServerConfiguration(
+        engine = ServerConfiguration.loadEngineByName("netty"),
+        deployment = ServerDeploymentConfiguration.createDefault()
+    ),
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {

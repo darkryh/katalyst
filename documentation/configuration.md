@@ -27,6 +27,9 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 
 2. **Load the configuration provider** before DI boot:
    ```kotlin
+   import com.ead.katalyst.config.provider.ConfigBootstrapHelper
+   import com.ead.katalyst.config.yaml.YamlConfigProvider
+
    object DbConfigImpl {
        fun loadDatabaseConfig(): DatabaseConfig {
            val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
@@ -39,9 +42,16 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 
 3. **Register the config with the application builder**:
    ```kotlin
+   import com.ead.katalyst.di.katalystApplication
+   import com.ead.katalyst.di.feature.enableServerConfiguration
+   import com.ead.katalyst.config.yaml.enableConfigProvider
+   import com.ead.katalyst.ktor.engine.netty.NettyEngine
+
    fun main(args: Array<String>) = katalystApplication(args) {
+       engine(NettyEngine)
        database(DbConfigImpl.loadDatabaseConfig())
        scanPackages("com.ead.katalyst.example")
+       enableServerConfiguration()
        enableConfigProvider()
        // …
    }
@@ -53,6 +63,10 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 Service-specific configuration objects should implement `ServiceConfigLoader<T>` so they can be discovered/validated automatically.
 
 ```kotlin
+import com.ead.katalyst.config.provider.ServiceConfigLoader
+import com.ead.katalyst.config.provider.ConfigLoaders
+import com.ead.katalyst.core.config.ConfigProvider
+
 object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
     override fun loadConfig(provider: ConfigProvider): DatabaseConfig {
         val url = ConfigLoaders.loadRequiredString(provider, "database.url")
@@ -76,6 +90,9 @@ object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
 Any constructor parameter typed as `ConfigProvider` (or a config object loaded via `ServiceConfigLoader`) is injected automatically—no manual `GlobalContext` lookups required. Example:
 
 ```kotlin
+import com.ead.katalyst.core.component.Service
+import com.ead.katalyst.core.config.ConfigProvider
+
 class JwtSettingsService(config: ConfigProvider) : Service {
     private val secret = config.getString("jwt.secret")
     private val issuer = config.getString("jwt.issuer")

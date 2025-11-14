@@ -12,8 +12,53 @@ ktor:
   application:
     modules:
       - com.ead.katalyst.example.ApplicationKt.module
+
   deployment:
-    port: ${SERVER_PORT:808}
+    # Network Configuration
+    host: ${SERVER_HOST:0.0.0.0}
+    port: ${SERVER_PORT:8081}
+    sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
+
+    # Shutdown Configuration
+    shutdownGracePeriod: ${SHUTDOWN_GRACE_PERIOD:1000}      # ms
+    shutdownTimeout: ${SHUTDOWN_TIMEOUT:5000}               # ms
+    shutdownUrl: ${SHUTDOWN_URL:}                           # Optional: endpoint for graceful shutdown
+
+    # Context & Routing
+    rootPath: ${ROOT_PATH:/}
+    # watchPaths: []  # Optional: watch paths for auto-reload during development
+
+    # Thread Pool Configuration (mainly Netty, but defined here for consistency)
+    connectionGroupSize: ${CONNECTION_GROUP_SIZE:8}         # Threads for accepting connections
+    workerGroupSize: ${WORKER_GROUP_SIZE:8}                 # Threads for message parsing
+    callGroupSize: ${CALL_GROUP_SIZE:8}                     # Threads for application code
+
+    # HTTP Protocol Limits
+    maxInitialLineLength: ${MAX_INITIAL_LINE_LENGTH:4096}   # bytes
+    maxHeaderSize: ${MAX_HEADER_SIZE:8192}                  # bytes
+    maxChunkSize: ${MAX_CHUNK_SIZE:8192}                    # bytes
+
+    # Timeout Configuration
+    connectionIdleTimeoutMs: ${CONNECTION_IDLE_TIMEOUT:180000}  # 3 minutes, ms
+    requestTimeoutMs: ${REQUEST_TIMEOUT:}                       # Optional: max time to process request
+
+    # Jetty-specific Thread Pools (optional, ignored by other engines)
+    maxThreads: ${MAX_THREADS:}                              # Optional: Jetty max threads
+    minThreads: ${MIN_THREADS:}                              # Optional: Jetty min threads
+
+  security:
+    ssl:
+      # SSL Configuration (only set if sslPort is configured above)
+      # keyStore: "path/to/keystore.jks"
+      # keyAlias: "server-alias"
+      # keyStorePassword: ${SSL_KEY_STORE_PASSWORD:}
+      # privateKeyPassword: ${SSL_PRIVATE_KEY_PASSWORD:}
+      # Optional SSL provider and factory settings
+      # provider: "SunX509"
+      # keyManagerFactory: "SunX509"
+      # trustManagerFactory: "SunX509"
+      # trustStore: "path/to/truststore.jks"
+      # trustStorePassword: ${SSL_TRUST_STORE_PASSWORD:}
 
 # Database Configuration
 # Environment variables: DB_URL, DB_USERNAME, DB_PASSWORD, DB_DRIVER
