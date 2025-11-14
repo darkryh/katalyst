@@ -31,7 +31,7 @@ class CioEngineModuleTest {
     @Test
     fun `cio module registers configuration from server config`() {
         val serverConfiguration = ServerConfiguration(
-            engineType = "cio",
+            engine = CioEngine,
             host = "0.0.0.0",
             port = 8085,
             connectionIdleTimeoutMs = 5000L

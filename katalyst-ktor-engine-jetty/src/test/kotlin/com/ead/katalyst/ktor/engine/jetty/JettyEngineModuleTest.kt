@@ -38,7 +38,7 @@ class JettyEngineModuleTest {
     @Test
     fun `jetty module provides configuration and factory`() {
         val serverConfiguration = ServerConfiguration(
-            engineType = "jetty",
+            engine = JettyEngine,
             host = "0.0.0.0",
             port = 7070,
             connectionIdleTimeoutMs = 4500L

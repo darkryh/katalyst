@@ -70,9 +70,9 @@ class KatalystTestEnvironmentBuilder {
     var allowOverrides: Boolean = true
 
     /**
-     * Server configuration forwarded to bootstrap. Defaults to auto-detected Netty.
+     * Server configuration forwarded to bootstrap. Defaults to test engine.
      */
-    var serverConfiguration: ServerConfiguration = ServerConfiguration()
+    var serverConfiguration: ServerConfiguration = ServerConfiguration(engine = TestKatalystEngine)
 
     /**
      * Override the database configuration used for this environment.

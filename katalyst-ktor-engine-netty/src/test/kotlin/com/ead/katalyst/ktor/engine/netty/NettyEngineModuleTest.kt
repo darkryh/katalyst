@@ -35,7 +35,7 @@ class NettyEngineModuleTest {
     @Test
     fun `koin module exposes netty configuration and factory`() {
         val serverConfiguration = ServerConfiguration(
-            engineType = "netty",
+            engine = NettyEngine,
             host = "0.0.0.0",
             port = 9090,
             workerThreads = 16,

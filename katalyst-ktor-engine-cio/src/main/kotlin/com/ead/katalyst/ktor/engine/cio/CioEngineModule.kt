@@ -1,6 +1,7 @@
 package com.ead.katalyst.ktor.engine.cio
 
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -29,6 +30,11 @@ import org.koin.dsl.module
  * the engine module when katalyst-ktor-engine-cio is on the classpath.
  */
 fun getCioEngineModule(): Module = module {
+    // Engine: Singleton instance of CioEngine
+    single<KatalystKtorEngine> {
+        CioEngine
+    }
+
     // Configuration: Get values from ServerConfiguration
     single<CioEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()

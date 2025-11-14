@@ -2,7 +2,6 @@ package com.ead.katalyst.repositories
 
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.database.DatabaseFactory
-import com.ead.katalyst.repositories.Identifiable
 import com.ead.katalyst.repositories.model.PageInfo
 import com.ead.katalyst.repositories.model.QueryFilter
 import com.ead.katalyst.repositories.model.SortOrder
@@ -13,8 +12,8 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.*
 
 /**

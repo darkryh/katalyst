@@ -4,6 +4,7 @@ import com.ead.katalyst.di.katalystApplication
 import com.ead.katalyst.client.feature.enableEvents
 import com.ead.katalyst.config.yaml.enableConfigProvider
 import com.ead.katalyst.example.infra.config.DbConfigImpl
+import com.ead.katalyst.ktor.engine.netty.NettyEngine
 import com.ead.katalyst.migrations.extensions.enableMigrations
 import com.ead.katalyst.scheduler.enableScheduler
 import com.ead.katalyst.websockets.enableWebSockets
@@ -23,6 +24,7 @@ import io.ktor.server.application.Application
  * Environment: Set KATALYST_PROFILE=dev|prod for profiles
  */
 fun main(args: Array<String>) = katalystApplication(args) {
+    engine(NettyEngine)
     database(DbConfigImpl.loadDatabaseConfig())
     scanPackages("com.ead.katalyst.example")
 

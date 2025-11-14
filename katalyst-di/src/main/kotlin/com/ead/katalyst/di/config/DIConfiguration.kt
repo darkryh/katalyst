@@ -109,7 +109,7 @@ fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
     features: List<KatalystFeature> = emptyList(),
-    serverConfig: ServerConfiguration = ServerConfiguration(),
+    serverConfig: ServerConfiguration = ServerConfiguration(engine = ServerConfiguration.loadEngineByName("netty")),
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {
@@ -122,8 +122,14 @@ fun bootstrapKatalystDI(
 
     // Discover and register the selected engine
     logger.info("▶ Phase 2: Discovering and registering engine")
-    val engineRegistrar = EngineRegistrar(serverConfig, logger)
+    val engineRegistrar = EngineRegistrar(serverConfig.engine, logger)
     engineRegistrar.registerEngineModules(modules)
+
+    // Register ServerConfiguration and engine as singletons for DI injection
+    modules.add(module {
+        single { serverConfig }
+        single<com.ead.katalyst.ktor.engine.KatalystKtorEngine> { serverConfig.engine }
+    })
 
     features.forEach { feature ->
         logger.debug("Including feature '{}' modules", feature.id)
@@ -298,7 +304,7 @@ fun bootstrapKatalystDI(
  */
 fun initializeKoinStandalone(
     options: KatalystDIOptions,
-    serverConfiguration: ServerConfiguration = ServerConfiguration(),
+    serverConfiguration: ServerConfiguration = ServerConfiguration(engine = ServerConfiguration.loadEngineByName("netty")),
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {

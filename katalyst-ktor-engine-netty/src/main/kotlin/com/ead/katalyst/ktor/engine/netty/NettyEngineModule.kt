@@ -1,6 +1,7 @@
 package com.ead.katalyst.ktor.engine.netty
 
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -26,6 +27,11 @@ import org.koin.dsl.module
  * Accessed via getNettyEngineModule() for reflection-based discovery.
  */
 fun getNettyEngineModule(): Module = module {
+    // Engine: Singleton instance of NettyEngine
+    single<KatalystKtorEngine> {
+        NettyEngine
+    }
+
     // Configuration: Get values from ServerConfiguration
     single<NettyEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()

@@ -17,30 +17,6 @@ import kotlinx.coroutines.runBlocking
 class KtorEngineContractsTest {
 
     @Test
-    fun `ktor engine configuration executes application block`() {
-        var executed = false
-
-        val configuration = object : KtorEngineConfiguration {
-            override val host: String = "127.0.0.1"
-            override val port: Int = 8081
-
-            override fun createServer(block: suspend () -> Unit): EmbeddedServer<out ApplicationEngine, out ApplicationEngine.Configuration> {
-                return embeddedServer(TestEngineFactory, host = host, port = port) {
-                    runBlocking {
-                        block()
-                        executed = true
-                    }
-                }
-            }
-        }
-
-        val server = configuration.createServer { }
-        server.start(wait = false)
-        assertTrue(executed, "Configuration should execute provided block exactly once")
-        server.stop(0L, 0L)
-    }
-
-    @Test
     fun `ktor engine factory captures host port and timeout`() {
         val factory = RecordingEngineFactory()
 

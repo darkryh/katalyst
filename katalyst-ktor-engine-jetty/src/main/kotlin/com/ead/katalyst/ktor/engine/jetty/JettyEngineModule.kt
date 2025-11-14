@@ -1,6 +1,7 @@
 package com.ead.katalyst.ktor.engine.jetty
 
 import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -29,6 +30,11 @@ import org.koin.dsl.module
  * the engine module when katalyst-ktor-engine-jetty is on the classpath.
  */
 fun getJettyEngineModule(): Module = module {
+    // Engine: Singleton instance of JettyEngine
+    single<KatalystKtorEngine> {
+        JettyEngine
+    }
+
     // Configuration: Get values from ServerConfiguration
     single<JettyEngineConfiguration> {
         val serverConfig = get<ServerConfiguration>()

@@ -2,7 +2,6 @@ package com.ead.katalyst.di.lifecycle
 
 import com.ead.katalyst.di.lifecycle.test.TestApplicationInitializer
 import com.ead.katalyst.di.lifecycle.test.TestEngineConfiguration
-import com.ead.katalyst.ktor.engine.KtorEngineConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -122,22 +121,21 @@ class LifecycleIntegrationTest {
      * Test 7: Engine configuration is correctly typed
      */
     @Test
-    fun `test engine configuration implements KtorEngineConfiguration`() {
+    fun `test engine configuration is instance of TestEngineConfiguration`() {
         val config = TestEngineConfiguration()
 
-        assertTrue(config is KtorEngineConfiguration)
+        assertTrue(config is TestEngineConfiguration)
     }
 
     /**
-     * Test 8: Engine configuration createServer throws appropriate error
+     * Test 8: Engine configuration can be created with custom values
      */
     @Test
-    fun `test engine configuration createServer throws UnsupportedOperationException`() {
-        val config = TestEngineConfiguration()
+    fun `test engine configuration with custom values`() {
+        val config = TestEngineConfiguration(host = "192.168.1.1", port = 9999)
 
-        assertFails {
-            config.createServer { }
-        }
+        assertEquals("192.168.1.1", config.host)
+        assertEquals(9999, config.port)
     }
 
     /**

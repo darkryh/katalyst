@@ -7,6 +7,7 @@ dependencies {
     api(project(":katalyst-core"))
     api(project(":katalyst-config-provider"))
     api(project(":katalyst-ktor"))
+    api(project(":katalyst-ktor-engine"))
     api(project(":katalyst-persistence"))
     api(libs.koin.core)
     api(kotlin("test"))

@@ -1,6 +1,6 @@
 package com.ead.katalyst.di.internal
 
-import com.ead.katalyst.di.config.ServerConfiguration
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.di.lifecycle.LifecycleException
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -17,55 +17,55 @@ class EngineNotAvailableException(
 /**
  * Discovers available Ktor engine implementations and registers the selected one.
  *
- * This is the bridge between ServerConfiguration (user intent) and actual engine
- * creation (Koin factories).
+ * This is the bridge between engine objects (user intent) and actual engine
+ * module loading (Koin factories).
  *
  * Discovery process:
- * 1. Scan classpath for available engine implementations
- * 2. Match against ServerConfiguration.engineType
+ * 1. Accept a KatalystKtorEngine object (NettyEngine, JettyEngine, or CioEngine)
+ * 2. Use reflection to load the corresponding engine module
  * 3. Register only the selected engine's module
  * 4. No unused engines loaded (clean, minimal dependencies)
  *
  * Supported engines:
- * - Netty: com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt::getNettyEngineModule
- * - Jetty: com.ead.katalyst.ktor.engine.jetty.JettyEngineModuleKt::getJettyEngineModule
- * - CIO: com.ead.katalyst.ktor.engine.cio.CioEngineModuleKt::getCioEngineModule
+ * - NettyEngine → com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt::getNettyEngineModule
+ * - JettyEngine → com.ead.katalyst.ktor.engine.jetty.JettyEngineModuleKt::getJettyEngineModule
+ * - CioEngine → com.ead.katalyst.ktor.engine.cio.CioEngineModuleKt::getCioEngineModule
  *
- * @param serverConfig Server configuration containing desired engine type
+ * @param engine The engine object selected for this application
  */
 class EngineRegistrar(
-    private val serverConfig: ServerConfiguration,
+    private val engine: KatalystKtorEngine,
     private val logger: org.slf4j.Logger = LoggerFactory.getLogger(EngineRegistrar::class.java)
 ) {
-
-    /**
-     * Available engines: maps engineType name to (class name, method name) tuple
-     * Used for reflection-based discovery to avoid hardcoded engine dependencies
-     */
-    private val availableEngines = mapOf(
-        "netty" to ("com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt" to "getNettyEngineModule"),
-        "jetty" to ("com.ead.katalyst.ktor.engine.jetty.JettyEngineModuleKt" to "getJettyEngineModule"),
-        "cio" to ("com.ead.katalyst.ktor.engine.cio.CioEngineModuleKt" to "getCioEngineModule")
-    )
 
     /**
      * Attempt to discover and load an engine module.
      *
      * Uses reflection to dynamically load engine modules only when they're
-     * on the classpath and selected in ServerConfiguration.
+     * on the classpath and selected via the engine object.
      *
-     * @return Koin Module if engine is available, or null if not on classpath
-     * @throws EngineNotAvailableException if engine type is unknown or loading fails
+     * For standard engines (netty, jetty, cio), attempts to load the corresponding module.
+     * For unknown engine types (e.g., test engines), skips module registration gracefully.
+     *
+     * @return Koin Module if engine is available, or null if not on classpath or unknown engine type
+     * @throws EngineNotAvailableException if loading fails for known engine types
      */
-    @Suppress("KotlinUnreachableCode")
     fun discoverSelectedEngine(): Module? {
-        val engineType = serverConfig.engineType.lowercase()
+        logger.info("Looking for Ktor engine: {}", engine.engineType)
 
-        logger.info("Looking for Ktor engine: {}", engineType)
+        // Determine which module to load based on engine type
+        val moduleInfo = when (engine.engineType) {
+            "netty" -> "com.ead.katalyst.ktor.engine.netty.NettyEngineModuleKt" to "getNettyEngineModule"
+            "jetty" -> "com.ead.katalyst.ktor.engine.jetty.JettyEngineModuleKt" to "getJettyEngineModule"
+            "cio" -> "com.ead.katalyst.ktor.engine.cio.CioEngineModuleKt" to "getCioEngineModule"
+            else -> {
+                // For unknown engine types (e.g., test engines), skip module registration
+                logger.debug("Engine type '{}' does not have a module provider. Skipping module registration.", engine.engineType)
+                return null
+            }
+        }
 
-        val (className, methodName) = availableEngines[engineType] ?:
-        throw EngineNotAvailableException("Unknown engine type: $engineType. Available: ${availableEngines.keys.joinToString(", ")}")
-
+        val (className, methodName) = moduleInfo
         return try {
             val moduleClass = Class.forName(className)
             val method = moduleClass.getDeclaredMethod(methodName)
@@ -76,24 +76,24 @@ class EngineRegistrar(
                     "Engine module provider returned null for: $className.$methodName"
                 )
 
-            logger.info("✓ Engine module loaded: {}", engineType)
+            logger.info("✓ Engine module loaded: {}", engine.engineType)
             return module
 
         } catch (e: ClassNotFoundException) {
             throw EngineNotAvailableException(
-                "Engine '$engineType' not available on classpath. " +
-                "Did you forget to add katalyst-ktor-engine-$engineType dependency?",
+                "Engine '${engine.engineType}' not available on classpath. " +
+                "Did you forget to add katalyst-ktor-engine-${engine.engineType} dependency?",
                 cause = e
             )
         } catch (e: NoSuchMethodException) {
             throw EngineNotAvailableException(
                 "Engine module provider method not found. " +
-                "Is katalyst-ktor-engine-$engineType compatible with this version?",
+                "Is katalyst-ktor-engine-${engine.engineType} compatible with this version?",
                 cause = e
             )
         } catch (e: Exception) {
             throw EngineNotAvailableException(
-                "Failed to load engine module for '$engineType': ${e.message}",
+                "Failed to load engine module for '${engine.engineType}': ${e.message}",
                 cause = e
             )
         }
@@ -103,12 +103,10 @@ class EngineRegistrar(
      * Register the selected engine module with the provided modules list.
      *
      * This method:
-     * 1. Creates a module that registers ServerConfiguration as a singleton
-     * 2. Discovers the selected engine module
-     * 3. Adds both modules to the list
+     * 1. Discovers the selected engine module
+     * 2. Adds the module to the list
      *
      * This ensures that:
-     * - ServerConfiguration is available to all engine modules for dependency injection
      * - Only the selected engine is loaded (no unused dependencies)
      * - Clear error messages if engine is not found
      *
@@ -116,21 +114,12 @@ class EngineRegistrar(
      * @throws EngineNotAvailableException if engine cannot be found or loaded
      */
     fun registerEngineModules(modules: MutableList<Module>) {
-        // Register ServerConfiguration as singleton - available to all components
-        modules.add(
-            module {
-                single {
-                    serverConfig
-                }
-            }
-        )
-
         // Discover and register selected engine
         try {
             val engineModule = discoverSelectedEngine()
             if (engineModule != null) {
                 modules.add(engineModule)
-                logger.info("✓ Engine registered: {}", serverConfig.engineType)
+                logger.info("✓ Engine registered: {}", engine.engineType)
             }
         } catch (e: EngineNotAvailableException) {
             logger.error("Failed to register engine: {}", e.message)

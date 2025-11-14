@@ -1,7 +1,6 @@
 package com.ead.katalyst.di.lifecycle
 
 import com.ead.katalyst.di.config.ServerConfiguration
-import com.ead.katalyst.ktor.engine.KtorEngineConfiguration
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import org.koin.core.Koin
 import org.koin.core.error.NoDefinitionFoundException
@@ -33,17 +32,17 @@ class EngineInitializer : ApplicationInitializer {
             // Get server configuration (specifies which engine to use)
             val serverConfig = koin.get<ServerConfiguration>()
             logger.debug("Server configuration: engine={}, host={}, port={}",
-                serverConfig.engineType, serverConfig.host, serverConfig.port)
+                serverConfig.engine.engineType, serverConfig.host, serverConfig.port)
 
             // Verify engine factory is available
             val engineFactory = koin.get<KtorEngineFactory>()
             logger.info("✓ Engine factory resolved: {}", engineFactory::class.simpleName)
 
             // Verify the factory matches the requested engine type
-            if (engineFactory.engineType != serverConfig.engineType.lowercase()) {
+            if (engineFactory.engineType != serverConfig.engine.engineType) {
                 logger.warn(
                     "Engine type mismatch: configured={}, factory={}",
-                    serverConfig.engineType, engineFactory.engineType
+                    serverConfig.engine.engineType, engineFactory.engineType
                 )
             }
 

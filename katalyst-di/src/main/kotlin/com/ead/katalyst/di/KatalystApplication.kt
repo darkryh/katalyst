@@ -11,6 +11,7 @@ import com.ead.katalyst.di.config.stopKoinStandalone
 import com.ead.katalyst.di.config.wrap
 import com.ead.katalyst.di.internal.KtorModuleRegistry
 import com.ead.katalyst.ktor.KtorModule
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.lifecycle.StartupWarnings
@@ -66,6 +67,7 @@ class KatalystApplicationBuilder {
     private var databaseConfig: DatabaseConfig? = null
     private val features: MutableList<KatalystFeature> = mutableListOf()
     private var componentScanPackages: Array<String> = emptyArray()
+    private var selectedEngine: KatalystKtorEngine? = null
 
     /**
      * Provide the database configuration used to bootstrap core persistence infrastructure.
@@ -93,6 +95,35 @@ class KatalystApplicationBuilder {
     }
 
     /**
+     * Explicitly select the Ktor engine for this application.
+     *
+     * **This is mandatory** - you must call this function before calling initializeDI().
+     *
+     * **Usage:**
+     * ```kotlin
+     * fun main(args: Array<String>) = katalystApplication(args) {
+     *     database(DbConfigImpl.loadDatabaseConfig())
+     *     scanPackages("com.example.app")
+     *     engine(NettyEngine)  // Explicit engine selection - REQUIRED
+     * }
+     * ```
+     *
+     * Available engines:
+     * - NettyEngine (high performance, asynchronous)
+     * - JettyEngine (mature, thread-pool based)
+     * - CioEngine (pure Kotlin coroutines, lightweight)
+     *
+     * @param engine The engine to use (NettyEngine, JettyEngine, or CioEngine)
+     * @return This builder for method chaining
+     * @throws IllegalStateException if initializeDI() is called without setting an engine
+     */
+    fun engine(engine: KatalystKtorEngine): KatalystApplicationBuilder {
+        logger.debug("Engine explicitly set to: {}", engine.engineType)
+        this.selectedEngine = engine
+        return this
+    }
+
+    /**
      * Registers an optional feature (scheduler, events, websockets, etc.).
      */
     fun feature(feature: KatalystFeature): KatalystApplicationBuilder {
@@ -106,70 +137,24 @@ class KatalystApplicationBuilder {
     internal fun registeredFeatures(): List<KatalystFeature> = features.toList()
 
     /**
-     * Resolve server configuration, auto-detecting engine if not explicitly set.
+     * Resolve server configuration using the explicitly selected engine.
      *
-     * Detection order:
-     * 1. Use explicit configuration if user called withServerConfig()
-     * 2. Auto-detect from classpath (check which engine JARs are present)
-     * 3. Default to Netty if multiple engines present
+     * **Requires explicit engine selection** - engine() must be called before this method.
+     *
+     * @return ServerConfiguration with the selected engine
+     * @throws IllegalStateException if no engine was explicitly selected via engine()
      */
     internal fun resolveServerConfiguration(): ServerConfiguration {
-        return autoDetectServerConfiguration()
-    }
+        val engine = selectedEngine
+            ?: throw IllegalStateException(
+                "Engine must be explicitly selected before initializing Katalyst DI. " +
+                "Call engine(YourEngine) in the katalystApplication block. " +
+                "Available engines: NettyEngine, JettyEngine, CioEngine. " +
+                "Example: engine(NettyEngine)"
+            )
 
-    /**
-     * Auto-detect server configuration based on available engines on classpath.
-     *
-     * Detection logic:
-     * - Checks which engine implementations are available
-     * - Selects the first available in order: Netty > Jetty > CIO
-     * - Falls back to Netty if multiple are present
-     */
-    private fun autoDetectServerConfiguration(): ServerConfiguration {
-        val detectedEngine = when {
-            isEngineAvailable("netty") -> {
-                logger.info("Auto-detected engine: Netty")
-                "netty"
-            }
-            isEngineAvailable("jetty") -> {
-                logger.info("Auto-detected engine: Jetty")
-                "jetty"
-            }
-            isEngineAvailable("cio") -> {
-                logger.info("Auto-detected engine: CIO")
-                "cio"
-            }
-            else -> {
-                logger.warn("No Ktor engine implementations found on classpath")
-                logger.warn("Defaulting to Netty (you may need to add katalyst-ktor-engine-netty dependency)")
-                "netty"
-            }
-        }
-
-        return ServerConfiguration(engineType = detectedEngine).also {
-            logger.info("Using server configuration: engine={}, host={}, port={}",
-                it.engineType, it.host, it.port)
-        }
-    }
-
-    /**
-     * Check if an engine implementation is available on the classpath.
-     *
-     * @param engineType Engine type (netty, jetty, cio)
-     * @return true if engine module class is available
-     */
-    private fun isEngineAvailable(engineType: String): Boolean {
-        return try {
-            val className = when (engineType.lowercase()) {
-                "netty" -> "com.ead.katalyst.ktor.engine.netty.NettyEngineFactory"
-                "jetty" -> "com.ead.katalyst.ktor.engine.jetty.JettyEngineFactory"
-                "cio" -> "com.ead.katalyst.ktor.engine.cio.CioEngineFactory"
-                else -> return false
-            }
-            Class.forName(className)
-            true
-        } catch (_: ClassNotFoundException) {
-            false
+        return ServerConfiguration(engine = engine).also {
+            logger.info("Using explicitly selected engine: {}", engine.engineType)
         }
     }
 
@@ -186,7 +171,7 @@ class KatalystApplicationBuilder {
         val resolvedServerConfig = resolveServerConfiguration()
 
         val featureSummary = if (features.isEmpty()) "none" else features.joinToString { it.id }
-        logger.info("Initializing Katalyst DI (features={}, engine={})", featureSummary, resolvedServerConfig.engineType)
+        logger.info("Initializing Katalyst DI (features={}, engine={})", featureSummary, resolvedServerConfig.engine.engineType)
         initializeKoinStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
@@ -249,14 +234,13 @@ class KatalystApplicationBuilder {
  * }
  * ```
  *
- * **With custom configuration:**
+ * **With explicit engine selection:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
+ *     database(DatabaseConfig(...))
+ *     scanPackages("com.example.app")
+ *     engine(JettyEngine)  // Explicitly select Jetty engine
  *     enableScheduler()
- *     withServerConfig {
- *         netty()
- *         withServerWrapper(ServerEngines.withLogging())
- *     }
  * }
  * ```
  *
@@ -376,7 +360,7 @@ private fun createEmbeddedServer(
     serverConfiguration: ServerConfiguration,
     logger: org.slf4j.Logger
 ): EmbeddedServer<out ApplicationEngine, *> {
-    logger.info("Creating embedded server: ${serverConfiguration.engineType} on ${serverConfiguration.host}:${serverConfiguration.port}")
+    logger.info("Creating embedded server: ${serverConfiguration.engine.engineType} on ${serverConfiguration.host}:${serverConfiguration.port}")
 
     return try {
         // Get factory from Koin (previously ignored!)
@@ -393,7 +377,7 @@ private fun createEmbeddedServer(
         logger.error("No KtorEngineFactory registered. Is the engine module loaded?")
         throw IllegalStateException(
             "Engine factory not available in DI container. " +
-            "Ensure the engine module (katalyst-ktor-engine-${serverConfiguration.engineType}) is on the classpath.",
+            "Ensure the engine module (katalyst-ktor-engine-${serverConfiguration.engine.engineType}) is on the classpath.",
             e
         )
     } catch (e: Exception) {
