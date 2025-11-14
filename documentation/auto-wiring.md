@@ -21,7 +21,7 @@ Implement `Component` for lightweight collaborators (observers, helpers) that st
 @Suppress("unused")
 class UserRegistrationFlowMonitor(
     private val eventBus: EventBus
-) : Component {
+) : Component // implementing Component marks this class for auto-discovery {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
@@ -45,7 +45,7 @@ class AuthenticationService(
     private val passwordHasher: PasswordHasher,
     private val eventBus: EventBus,
     private val jwtSettings: JwtSettingsService
-) : Service {
+) : Service // implementing Service marks this class for auto-discovery {
     private val scheduler = requireScheduler()
 
     suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
@@ -79,7 +79,7 @@ Returning `SchedulerJobHandle` from a parameterless function marks it as a sched
 Use the provided DSLs; the scanner installs them automatically once DI is ready.
 
 ```kotlin
-@Suppress("unused")
+@Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {
     route("/api/auth") {
         post("/login") {
@@ -89,13 +89,13 @@ fun Route.authRoutes() = katalystRouting {
     }
 }
 
-@Suppress("unused")
+@Suppress("unused") // automatically injected
 fun Application.securityMiddleware() = katalystMiddleware {
     val jwtSettings = GlobalContext.get().get<JwtSettingsService>()
     jwtSettings.configure(this@securityMiddleware)
 }
 
-@Suppress("unused")
+@Suppress("unused") // automatically injected
 fun Route.notificationWebSocketRoutes() = katalystWebSockets {
     webSocket("/ws/users") {
         send(Frame.Text("""{"type":"welcome"}"""))

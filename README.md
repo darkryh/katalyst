@@ -1,4 +1,4 @@
-# Katalyst – Production-Ready Ktor Starter Kit
+# Katalyst – Ktor Bootstrap Starter Kit
 
 Katalyst wraps Ktor with batteries-included tooling so you can ship services faster: automatic DI, YAML-driven config, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing utilities.
 
@@ -9,9 +9,12 @@ Katalyst wraps Ktor with batteries-included tooling so you can ship services fas
 ## Minimal Boot Sequence
 
 ```kotlin
+package com.ead.katalyst.example // EXAMPLE - BASE PACKAGE
+
+
 fun main(args: Array<String>) = katalystApplication(args) {
     database(DbConfigImpl.loadDatabaseConfig())
-    scanPackages("com.ead.katalyst.example")
+    scanPackages("com.ead.katalyst.example") // REQUIRED - we should set a base scan packaged in order to make the library discover all injections
 
     enableConfigProvider()
     enableEvents { withBus(true) }
@@ -24,7 +27,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
 Once DI is running, Katalyst discovers everything else automatically (see [`documentation/auto-wiring.md`](documentation/auto-wiring.md) for more examples):
 
 ```kotlin
-@Suppress("unused")
+@Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {
     route("/api/auth") {
         post("/login") {
@@ -52,10 +55,10 @@ class AuthenticationService(
     private val repository: AuthAccountRepository,
     private val validator: AuthValidator,
     private val passwordHasher: PasswordHasher,
-    private val eventBus: EventBus,
+    private val eventBus: EventBus, // event-bus module needed
     private val jwtSettings: JwtSettingsService
 ) : Service {
-    private val scheduler = requireScheduler()
+    private val scheduler = requireScheduler() // to use this, needs to have implemented scheduler module
 
     suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
         validator.validate(request)
@@ -64,7 +67,7 @@ class AuthenticationService(
         AuthResponse(account.id, account.email, jwtSettings.generateToken(account.id, account.email))
     }
 
-    @Suppress("unused")
+    @Suppress("unused") //scheduler functionality based on coroutines
     fun scheduleAuthDigest() = scheduler.scheduleCron(
         config = ScheduleConfig("authentication.broadcast"),
         task = { broadcastAuth() },

@@ -25,7 +25,7 @@ object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccount
 
     override fun assignEntity(statement: UpdateBuilder<*>, entity: AuthAccountEntity, skipIdColumn: Boolean) {
         if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id, this)
+            statement[id] = EntityID(entity.id, this) // REQUIRED - this must be implemented  so the CRUD operations in the repository works as expected
         }
         statement[email] = entity.email
         statement[passwordHash] = entity.passwordHash
