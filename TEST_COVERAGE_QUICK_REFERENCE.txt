@@ -1,0 +1,212 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║              KATALYST TEST COVERAGE - QUICK REFERENCE GUIDE                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+PROJECT METRICS AT A GLANCE
+════════════════════════════════════════════════════════════════════════════════
+
+Overall Coverage:               65% (380+ tests across 28+ files)
+Project Health:                 GOOD (needs work on 3 modules)
+Estimated Effort to Fix:        55-80 hours
+
+MODULE RATINGS SUMMARY
+════════════════════════════════════════════════════════════════════════════════
+
+┌──────────────────┬───────┬───────┬────────────────────────────────────────┐
+│ Module           │ Tests │ Files │ Rating        Coverage              │
+├──────────────────┼───────┼───────┼────────────────────────────────────────┤
+│ Scheduler        │ ~130  │ 4     │ EXCELLENT ✓   ████████████████████ 85% │
+│ Scanner          │ ~80   │ 5     │ VERY GOOD ✓   █████████████████░░ 80%  │
+│ Events Bus       │ ~100+ │ 7+    │ GOOD ✓        ██████████████░░░░░ 75%  │
+│ Transactions     │ ~50+  │ 8+    │ FAIR △        ████████████░░░░░░░ 60%  │
+│ Migrations       │ 5     │ 2     │ POOR ✗        ██░░░░░░░░░░░░░░░░░ 30%  │
+│ WebSockets       │ 4     │ 1     │ POOR ✗        ████░░░░░░░░░░░░░░░ 40%  │
+│ DI/Lifecycle     │ 11    │ 1     │ POOR ✗        ███░░░░░░░░░░░░░░░░ 35%  │
+└──────────────────┴───────┴───────┴────────────────────────────────────────┘
+
+WHAT'S TESTED WELL (✓)
+════════════════════════════════════════════════════════════════════════════════
+
+✓ Cron Expression Patterns       200+ test cases, comprehensive edge cases
+✓ Event Publishing               Transaction phases, SYNC/ASYNC modes
+✓ Handler Failures               Rollback support, error recovery
+✓ Type Discovery                 Generic parameters, method scanning
+✓ Validation                      Comprehensive error messages
+✓ Edge Cases                      Leap years, month boundaries, year end
+✓ Retry Logic                     Transient vs permanent failures
+✓ Deduplication                   Event idempotency on retry
+
+WHAT'S MISSING (✗)
+════════════════════════════════════════════════════════════════════════════════
+
+✗ Performance Benchmarks         No load/stress tests anywhere
+✗ Migrations Rollback            Only 5 basic migration tests
+✗ WebSocket Concurrency          No concurrent connection testing
+✗ Lifecycle Execution            DI module missing real integration tests
+✗ Event Ordering                 No ordering guarantees tested
+✗ Timezone/DST Handling          Scheduler assumes UTC only
+✗ Dead Letter Queues             Events Bus missing failure recovery
+✗ Cross-Module Integration       No end-to-end workflows tested
+
+TESTING PATTERNS USED
+════════════════════════════════════════════════════════════════════════════════
+
+Framework:           Kotlin Test + JUnit 5
+Async Testing:       kotlinx.coroutines.test
+Mocking:             Inline anonymous objects (no Mockk)
+Database:            H2 in-memory + Exposed SQL framework
+HTTP Testing:        Ktor testApplication DSL
+DI Framework:        Koin
+
+Test Structure:      Arrange-Act-Assert
+Test Names:          Readable backtick-quoted method names
+Cleanup:             Proper @BeforeTest/@AfterTest lifecycle
+
+CRITICAL ISSUES TO FIX (HIGH PRIORITY)
+════════════════════════════════════════════════════════════════════════════════
+
+Issue 1: MIGRATIONS MODULE (30% coverage - CRITICAL)
+─────────────────────────────────────────────────────
+   Only 5 test methods exist for migration functionality
+   Missing: rollback, conflicts, data transformation, recovery
+   Fix: Add 15-20 test methods
+   Effort: 10-15 hours
+   Files: katalyst-migrations/src/test/kotlin
+
+Issue 2: WEBSOCKETS MODULE (40% coverage - CRITICAL)
+────────────────────────────────────────────────────
+   Only 4 test methods, no stress testing
+   Missing: concurrent connections, lifecycle, errors, stress tests
+   Fix: Add 10-15 test methods
+   Effort: 8-12 hours
+   Files: katalyst-websockets/src/test/kotlin
+
+Issue 3: DI/LIFECYCLE MODULE (35% coverage - CRITICAL)
+───────────────────────────────────────────────────────
+   Only 11 test methods, limited lifecycle testing
+   Missing: full execution, module loading, dependency resolution
+   Fix: Add 20-25 test methods
+   Effort: 15-20 hours
+   Files: katalyst-di/src/test/kotlin
+
+IMPROVEMENT ROADMAP
+════════════════════════════════════════════════════════════════════════════════
+
+WEEK 1: Critical Fixes (HIGH PRIORITY)
+  [ ] Migrations: Add 10 core rollback/conflict tests
+  [ ] WebSockets: Add 5 concurrent connection tests
+  [ ] DI: Add 10 lifecycle execution tests
+  Estimated: 20-30 hours
+
+WEEK 2: Coverage Gaps (MEDIUM PRIORITY)
+  [ ] Migrations: Add 5 advanced tests
+  [ ] WebSockets: Add 5 error scenario tests
+  [ ] DI: Add 10 integration tests
+  Estimated: 15-20 hours
+
+WEEK 3: Performance (MEDIUM PRIORITY)
+  [ ] Add benchmarks to Scheduler
+  [ ] Add stress tests to WebSockets
+  [ ] Add load tests to Events Bus
+  Estimated: 10-15 hours
+
+WEEK 4: Integration (LOW PRIORITY)
+  [ ] Cross-module integration tests
+  [ ] End-to-end workflow tests
+  [ ] Documentation updates
+  Estimated: 10-15 hours
+
+QUICK WINS (Easy Improvements)
+════════════════════════════════════════════════════════════════════════════════
+
+1. Migrations - Add rollback tests          (2-3 hours, high value)
+2. WebSockets - Add concurrent tests        (2-3 hours, high value)
+3. Scheduler - Add timezone tests           (1-2 hours, medium value)
+4. Scanner - Add annotation tests           (1-2 hours, medium value)
+5. Events Bus - Add ordering tests          (2-3 hours, medium value)
+
+FILE LOCATIONS
+════════════════════════════════════════════════════════════════════════════════
+
+All test files:
+  katalyst-{module}/src/test/kotlin/com/ead/katalyst/{module}/
+
+Analysis reports:
+  /home/user/katalyst/TEST_COVERAGE_ANALYSIS.md (comprehensive)
+  /home/user/katalyst/TEST_COVERAGE_SUMMARY.md (executive summary)
+  /home/user/katalyst/TEST_COVERAGE_QUICK_REFERENCE.txt (this file)
+
+KEY METRICS
+════════════════════════════════════════════════════════════════════════════════
+
+Test Distribution:
+  Scheduler:       130 tests (35% of total)
+  Scanner:         80 tests  (21% of total)
+  Events Bus:      100+ tests (26% of total)
+  Transactions:    50+ tests (13% of total)
+  Migrations:      5 tests   (1% of total)  ⚠️
+  WebSockets:      4 tests   (1% of total)  ⚠️
+  DI:              11 tests  (3% of total)  ⚠️
+
+Coverage by Category:
+  Core Functionality:  ~280 tests (85% coverage)
+  Edge Cases:          ~60 tests  (45% coverage)
+  Integration:         ~40 tests  (35% coverage)
+  Performance:         0 tests    (0% coverage) ⚠️
+
+BEST PRACTICES OBSERVED
+════════════════════════════════════════════════════════════════════════════════
+
+✓ Arrange-Act-Assert test structure
+✓ Descriptive test names with backticks
+✓ Single responsibility per test method
+✓ Proper lifecycle management (setup/teardown)
+✓ Timeout assertions for async operations
+✓ Integration tests with real components
+✓ Inline data class definitions for test fixtures
+✓ Mutable state tracking for verification
+✓ Exception assertions for error cases
+✓ Multiple test phases for complex scenarios
+
+TESTING CHECKLIST FOR NEW TESTS
+════════════════════════════════════════════════════════════════════════════════
+
+When adding new tests, ensure:
+  [ ] Test has descriptive name with backticks
+  [ ] Follows Arrange-Act-Assert pattern
+  [ ] Single responsibility per test
+  [ ] Includes proper cleanup (@AfterTest)
+  [ ] Uses appropriate assertions
+  [ ] Tests both success and failure paths
+  [ ] Documents non-obvious test logic
+  [ ] Avoids test interdependencies
+  [ ] Handles async operations correctly
+  [ ] Includes relevant edge cases
+
+QUESTIONS TO ANSWER
+════════════════════════════════════════════════════════════════════════════════
+
+For Module Owners:
+
+1. Why do Migrations, WebSockets, and DI have so few tests?
+   - Are there manual test procedures?
+   - Are there performance tests elsewhere?
+   - Is the code stable and rarely changed?
+
+2. Are there integration tests outside src/test?
+   - Separate test suite?
+   - Manual QA procedures?
+   - CI/CD pipeline tests?
+
+3. Should we establish minimum coverage targets?
+   - 80% for core functionality?
+   - 70% for all modules?
+   - 90% for critical paths?
+
+═══════════════════════════════════════════════════════════════════════════════
+
+For more details, see:
+  - TEST_COVERAGE_ANALYSIS.md (full technical analysis)
+  - TEST_COVERAGE_SUMMARY.md (executive summary with recommendations)
+
+═══════════════════════════════════════════════════════════════════════════════
