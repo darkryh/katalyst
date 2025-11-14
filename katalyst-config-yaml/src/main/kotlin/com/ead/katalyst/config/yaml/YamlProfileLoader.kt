@@ -25,7 +25,10 @@ import org.slf4j.LoggerFactory
  */
 class YamlProfileLoader(
     private val profileEnvVar: String = "KATALYST_PROFILE",
-    private val baseConfigFile: String = "application.yaml"
+    private val baseConfigFile: String = "application.yaml",
+    private val environmentReader: (String) -> String? = { envVar ->
+        System.getenv(envVar)
+    }
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(YamlProfileLoader::class.java)
@@ -46,7 +49,7 @@ class YamlProfileLoader(
     fun loadConfiguration(): Map<String, Any> {
         log.debug("Loading YAML configuration...")
         val baseConfig = loadYamlFile(baseConfigFile)
-        val profile = System.getenv(profileEnvVar)
+        val profile = environmentReader(profileEnvVar)
 
         return if (profile != null && profile.isNotBlank()) {
             val profileFile = "application-$profile.yaml"

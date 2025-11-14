@@ -126,9 +126,8 @@ class BuiltInPredicatesTest {
 
     @Test
     fun `matchesCanonicalName should match fully qualified name`() {
-        val predicate = matchesCanonicalName<TestService>(
-            "com.ead.katalyst.scanner.predicates.UserService".toRegex()
-        )
+        val canonicalName = UserService::class.java.canonicalName ?: error("No canonical name")
+        val predicate = matchesCanonicalName<TestService>(canonicalName.toRegex())
 
         assertTrue(predicate.matches(UserService::class.java))
         assertFalse(predicate.matches(OrderService::class.java))

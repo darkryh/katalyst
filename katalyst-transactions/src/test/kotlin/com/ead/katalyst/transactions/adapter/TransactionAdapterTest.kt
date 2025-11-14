@@ -452,11 +452,11 @@ class TransactionAdapterTest {
 
     private class PriorityAdapter(
         private val adapterName: String,
-        private val adapterPriority: Int
+        private val priority: Int
     ) : TransactionAdapter {
         override fun name(): String = adapterName
 
-        override fun priority(): Int = adapterPriority
+        override fun priority(): Int = priority
 
         override suspend fun onPhase(phase: TransactionPhase, context: TransactionEventContext) {
             // No-op

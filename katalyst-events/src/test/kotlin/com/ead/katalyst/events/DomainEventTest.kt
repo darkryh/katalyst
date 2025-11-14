@@ -83,7 +83,7 @@ class DomainEventTest {
         val event = UserCreatedEvent(
             userId = "user-123",
             email = "user@example.com",
-            metadata = metadata
+            eventMetadata = metadata
         )
 
         // When
@@ -275,7 +275,7 @@ class DomainEventTest {
         val event = UserCreatedEvent(
             userId = "user-1",
             email = "user@test.com",
-            metadata = EventMetadata(eventType = "user.registered")
+            eventMetadata = EventMetadata(eventType = "user.registered")
         )
 
         // When
@@ -374,9 +374,9 @@ class DomainEventTest {
     private data class UserCreatedEvent(
         val userId: String,
         val email: String,
-        val metadata: EventMetadata = EventMetadata(eventType = "user.created")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "user.created")
     ) : DomainEvent {
-        override fun getMetadata(): EventMetadata = metadata
+        override fun getMetadata(): EventMetadata = eventMetadata
     }
 
     private data class EventWithCustomId(

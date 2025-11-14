@@ -439,7 +439,7 @@ class TransactionEventContextTest {
 
         // When
         events.forEach { context.queueEvent(it) }
-        val _ = context.getPendingEvents()  // Get events
+        context.getPendingEvents()  // Get events
         val retrieved = context.getPendingEvents()  // Get again
 
         // Then
@@ -492,15 +492,15 @@ class TransactionEventContextTest {
 
     private data class TestEvent(
         val data: String,
-        val metadata: EventMetadata = EventMetadata(eventType = "test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private data class AnotherTestEvent(
         val value: Int,
-        val metadata: EventMetadata = EventMetadata(eventType = "another.test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "another.test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 }

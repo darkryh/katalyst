@@ -4,9 +4,15 @@ import com.ead.katalyst.database.table.OperationLogTable
 import com.ead.katalyst.transactions.workflow.OperationStatus
 import com.ead.katalyst.transactions.workflow.SimpleTransactionOperation
 import kotlinx.coroutines.test.runTest
-import org.jetbrains.exposed.v1.core.Database
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.core.eq
 import kotlin.test.*
 
 /**

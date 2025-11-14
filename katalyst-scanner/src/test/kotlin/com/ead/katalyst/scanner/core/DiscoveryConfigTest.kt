@@ -15,7 +15,7 @@ import kotlin.test.*
 class DiscoveryConfigTest {
 
     interface TestService
-    interface TestRepository
+    interface TestRepository : TestService
 
     // ========== CONSTRUCTION TESTS ==========
 
@@ -124,7 +124,7 @@ class DiscoveryConfigTest {
             .build()
 
         assertNotNull(config.predicate)
-        assertTrue(config.predicate!!.matches(TestService::class.java))
+        assertTrue(config.predicate.matches(TestService::class.java))
     }
 
     @Test

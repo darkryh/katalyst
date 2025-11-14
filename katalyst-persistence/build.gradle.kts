@@ -24,6 +24,11 @@ dependencies {
 
     // Logging
     implementation(libs.logback)
+
+    testImplementation(kotlin("test"))
+    testImplementation(projects.katalystTestingCore)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.h2)
 }
 
 kotlin {

@@ -12,7 +12,7 @@ import org.koin.core.Koin
  * - Custom onReady logic
  */
 class TestApplicationInitializer(
-    private val id: String,
+    id: String,
     override val order: Int = 0,
     private val onReady: suspend () -> Unit = {}
 ) : ApplicationInitializer {

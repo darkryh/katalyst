@@ -1,17 +1,20 @@
 package com.ead.katalyst.repositories
 
 import com.ead.katalyst.core.persistence.Table
+import com.ead.katalyst.database.DatabaseFactory
+import com.ead.katalyst.repositories.Identifiable
 import com.ead.katalyst.repositories.model.PageInfo
 import com.ead.katalyst.repositories.model.QueryFilter
 import com.ead.katalyst.repositories.model.SortOrder
-import com.ead.katalyst.testing.core.*
+import com.ead.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlinx.coroutines.test.runTest
-import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import kotlin.test.*
 
 /**
@@ -68,16 +71,42 @@ class CrudRepositoryTest {
     // Test repository implementation
     class TestUserRepository(private val db: Database) : CrudRepository<Long, TestUser> {
         override val table = TestUsersTable
-
         override fun map(row: ResultRow): TestUser = table.mapRow(row)
+
+        private fun <T> blockingTx(block: () -> T): T =
+            transaction(db) { block() }
+
+        private suspend fun <T> suspendedTx(block: suspend () -> T): T =
+            newSuspendedTransaction(context = null, db = db) { block() }
+
+        override fun save(entity: TestUser): TestUser =
+            blockingTx { super<CrudRepository>.save(entity) }
+
+        override fun findById(id: Long): TestUser? =
+            blockingTx { super<CrudRepository>.findById(id) }
+
+        override fun findAll(): List<TestUser> =
+            blockingTx { super<CrudRepository>.findAll() }
+
+        override fun findAll(filter: QueryFilter): Pair<List<TestUser>, PageInfo> =
+            blockingTx { super<CrudRepository>.findAll(filter) }
+
+        override suspend fun count(): Long =
+            suspendedTx { super<CrudRepository>.count() }
+
+        override suspend fun delete(id: Long) {
+            suspendedTx { super<CrudRepository>.delete(id) }
+        }
     }
 
+    private lateinit var databaseFactory: DatabaseFactory
     private lateinit var database: Database
     private lateinit var repository: TestUserRepository
 
     @BeforeTest
     fun setup() {
-        database = inMemoryDatabaseConfig()
+        databaseFactory = DatabaseFactory.create(inMemoryDatabaseConfig())
+        database = databaseFactory.database
         transaction(database) {
             SchemaUtils.create(TestUsersTable)
         }
@@ -89,6 +118,7 @@ class CrudRepositoryTest {
         transaction(database) {
             SchemaUtils.drop(TestUsersTable)
         }
+        databaseFactory.close()
     }
 
     // ========== BASIC CRUD OPERATIONS ==========

@@ -1,5 +1,6 @@
 package com.ead.katalyst.testing.core
 
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -46,7 +47,9 @@ inline fun <reified T : Throwable> assertThrowsWithMessage(
  * Generates a unique test identifier using current timestamp.
  * Useful for creating unique test data.
  */
-fun uniqueTestId(): String = "test-${System.currentTimeMillis()}"
+private val uniqueCounter = AtomicLong(System.nanoTime())
+
+fun uniqueTestId(): String = "test-${uniqueCounter.incrementAndGet()}"
 
 /**
  * Generates a unique email for testing.

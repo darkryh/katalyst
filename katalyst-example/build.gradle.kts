@@ -38,9 +38,8 @@ dependencies {
     implementation(project(":katalyst-events-client"))
 
     // Messaging abstraction
-    implementation(project(":katalyst-messaging"))
-
-    implementation(project(":katalyst-messaging-amqp"))
+    /*implementation(project(":katalyst-messaging"))
+    implementation(project(":katalyst-messaging-amqp"))*/
 
     // Ktor server surface
     implementation(libs.ktor.server.core)
@@ -64,9 +63,9 @@ dependencies {
     implementation(libs.postgresql)
 
     // Dependency injection & messaging
-    implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
-    implementation(libs.rabbitmq.server)
+    /*implementation(libs.koin.ktor)
+    implementation(libs.rabbitmq.server)*/
 
     // Logging
     implementation(libs.logback)

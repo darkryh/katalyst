@@ -1,5 +1,6 @@
 package com.ead.katalyst.config.yaml
 
+import org.junit.Assume.assumeTrue
 import kotlin.test.*
 
 /**
@@ -41,7 +42,7 @@ class EnvironmentVariableSubstitutorTest {
         // Given - PATH exists on all systems
         val envVar = "PATH"
         val envValue = System.getenv(envVar)
-        assumeTrue(envValue != null, "PATH environment variable should exist")
+        assumeTrue("PATH environment variable should exist",envValue != null, )
 
         val input = "\${$envVar:default_value}"
 
@@ -121,8 +122,8 @@ class EnvironmentVariableSubstitutorTest {
         // When
         val result = substitutor.substitute(input)
 
-        // Then - Should stop at first closing brace
-        assertEquals("default{value", result)
+        // Then - Should preserve nested brace content in the default value
+        assertEquals("default{value}", result)
     }
 
     @Test

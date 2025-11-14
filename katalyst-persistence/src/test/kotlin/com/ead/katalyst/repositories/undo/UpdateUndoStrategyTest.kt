@@ -1,6 +1,6 @@
 package com.ead.katalyst.repositories.undo
 
-import com.ead.katalyst.transactions.workflow.TransactionOperation
+import com.ead.katalyst.transactions.workflow.SimpleTransactionOperation
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 
@@ -17,6 +17,23 @@ import kotlin.test.*
 class UpdateUndoStrategyTest {
 
     private val strategy = UpdateUndoStrategy()
+    private fun createOperation(
+        workflowId: String = "workflow-1",
+        operationIndex: Int = 0,
+        operationType: String = "UPDATE",
+        resourceType: String = "User",
+        resourceId: String? = "123",
+        undoData: Map<String, Any?>? = null,
+        operationData: Map<String, Any?>? = null,
+    ) = SimpleTransactionOperation(
+        workflowId = workflowId,
+        operationIndex = operationIndex,
+        operationType = operationType,
+        resourceType = resourceType,
+        resourceId = resourceId,
+        operationData = operationData,
+        undoData = undoData
+    )
 
     // ========== canHandle() TESTS ==========
 
@@ -92,8 +109,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should return true when undoData contains original values`() = runTest {
         // Given - undoData contains the original values before update
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = "123",
             undoData = mapOf(
@@ -113,13 +129,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should return false when undoData is null`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = null,
-            operationData = null
-        )
+        val operation = createOperation(undoData = null, operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -131,13 +141,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should return true when undoData is empty map`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = emptyMap(),
-            operationData = null
-        )
+        val operation = createOperation(undoData = emptyMap(), operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -150,8 +154,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle single field update`() = runTest {
         // Given - Only one field was updated
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = "123",
             undoData = mapOf("status" to "ACTIVE"),  // Original status
@@ -168,8 +171,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle multiple field updates`() = runTest {
         // Given - Multiple fields were updated
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "Order",
             resourceId = "456",
             undoData = mapOf(
@@ -191,8 +193,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle nested object updates`() = runTest {
         // Given - Nested fields were updated
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "Profile",
             resourceId = "789",
             undoData = mapOf(
@@ -217,8 +218,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle update with null original value`() = runTest {
         // Given - Field was null before update
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = "123",
             undoData = mapOf(
@@ -238,8 +238,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle operation with null resourceId`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = null,
             undoData = mapOf("name" to "John"),
@@ -257,9 +256,24 @@ class UpdateUndoStrategyTest {
     fun `undo should handle multiple updates sequentially`() = runTest {
         // Given
         val operations = listOf(
-            TransactionOperation("UPDATE", "User", "1", mapOf("status" to "ACTIVE"), null),
-            TransactionOperation("UPDATE", "User", "2", mapOf("status" to "PENDING"), null),
-            TransactionOperation("UPDATE", "User", "3", mapOf("status" to "INACTIVE"), null)
+            createOperation(
+                workflowId = "workflow-seq",
+                operationIndex = 0,
+                resourceId = "1",
+                undoData = mapOf("status" to "ACTIVE")
+            ),
+            createOperation(
+                workflowId = "workflow-seq",
+                operationIndex = 1,
+                resourceId = "2",
+                undoData = mapOf("status" to "PENDING")
+            ),
+            createOperation(
+                workflowId = "workflow-seq",
+                operationIndex = 2,
+                resourceId = "3",
+                undoData = mapOf("status" to "INACTIVE")
+            )
         )
 
         // When
@@ -272,8 +286,7 @@ class UpdateUndoStrategyTest {
     @Test
     fun `undo should handle updates with different data types`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "UPDATE",
+        val operation = createOperation(
             resourceType = "Product",
             resourceId = "999",
             undoData = mapOf(

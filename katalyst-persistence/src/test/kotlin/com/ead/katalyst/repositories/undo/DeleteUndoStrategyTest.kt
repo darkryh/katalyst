@@ -1,6 +1,6 @@
 package com.ead.katalyst.repositories.undo
 
-import com.ead.katalyst.transactions.workflow.TransactionOperation
+import com.ead.katalyst.transactions.workflow.SimpleTransactionOperation
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 
@@ -17,6 +17,23 @@ import kotlin.test.*
 class DeleteUndoStrategyTest {
 
     private val strategy = DeleteUndoStrategy()
+    private fun createOperation(
+        workflowId: String = "workflow-delete",
+        operationIndex: Int = 0,
+        operationType: String = "DELETE",
+        resourceType: String = "User",
+        resourceId: String? = "123",
+        undoData: Map<String, Any?>? = null,
+        operationData: Map<String, Any?>? = null,
+    ) = SimpleTransactionOperation(
+        workflowId = workflowId,
+        operationIndex = operationIndex,
+        operationType = operationType,
+        resourceType = resourceType,
+        resourceId = resourceId,
+        operationData = operationData,
+        undoData = undoData
+    )
 
     // ========== canHandle() TESTS ==========
 
@@ -92,8 +109,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should return true when undoData contains full record`() = runTest {
         // Given - undoData contains the deleted record to re-insert
-        val operation = TransactionOperation(
-            operationType = "DELETE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = "123",
             undoData = mapOf(
@@ -115,13 +131,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should return false when undoData is null`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "DELETE",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = null,
-            operationData = null
-        )
+        val operation = createOperation(undoData = null, operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -133,13 +143,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should return true when undoData is empty map`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "DELETE",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = emptyMap(),
-            operationData = null
-        )
+        val operation = createOperation(undoData = emptyMap(), operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -152,8 +156,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should handle large record with many fields`() = runTest {
         // Given - Simulating a complex entity with many fields
-        val operation = TransactionOperation(
-            operationType = "DELETE",
+        val operation = createOperation(
             resourceType = "Order",
             resourceId = "456",
             undoData = mapOf(
@@ -190,8 +193,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should handle operation with null resourceId`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "DELETE",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = null,
             undoData = mapOf("name" to "John"),
@@ -209,9 +211,24 @@ class DeleteUndoStrategyTest {
     fun `undo should handle multiple deletions sequentially`() = runTest {
         // Given
         val operations = listOf(
-            TransactionOperation("DELETE", "User", "1", mapOf("id" to "1", "name" to "User1"), null),
-            TransactionOperation("DELETE", "User", "2", mapOf("id" to "2", "name" to "User2"), null),
-            TransactionOperation("DELETE", "User", "3", mapOf("id" to "3", "name" to "User3"), null)
+            createOperation(
+                workflowId = "workflow-delete-multi",
+                operationIndex = 0,
+                resourceId = "1",
+                undoData = mapOf("id" to "1", "name" to "User1")
+            ),
+            createOperation(
+                workflowId = "workflow-delete-multi",
+                operationIndex = 1,
+                resourceId = "2",
+                undoData = mapOf("id" to "2", "name" to "User2")
+            ),
+            createOperation(
+                workflowId = "workflow-delete-multi",
+                operationIndex = 2,
+                resourceId = "3",
+                undoData = mapOf("id" to "3", "name" to "User3")
+            )
         )
 
         // When
@@ -224,8 +241,7 @@ class DeleteUndoStrategyTest {
     @Test
     fun `undo should handle record with nested structures`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "DELETE",
+        val operation = createOperation(
             resourceType = "Profile",
             resourceId = "789",
             undoData = mapOf(

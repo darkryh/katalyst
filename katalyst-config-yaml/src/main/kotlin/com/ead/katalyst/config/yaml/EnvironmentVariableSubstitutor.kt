@@ -32,7 +32,9 @@ import org.slf4j.LoggerFactory
  *
  * In production, set environment variables. In development, YAML defaults are used.
  */
-class EnvironmentVariableSubstitutor {
+open class EnvironmentVariableSubstitutor(
+    private val envProvider: (String) -> String? = { name -> System.getenv(name) }
+) {
     companion object {
         private val log = LoggerFactory.getLogger(EnvironmentVariableSubstitutor::class.java)
         // Regex pattern for ${VAR_NAME:defaultValue} syntax
@@ -100,7 +102,7 @@ class EnvironmentVariableSubstitutor {
         return PATTERN.replace(value) { matchResult ->
             val varName = matchResult.groupValues[1]
             val defaultValue = matchResult.groupValues[2]
-            val envValue = System.getenv(varName)
+            val envValue = envProvider(varName)
 
             when {
                 envValue != null -> {

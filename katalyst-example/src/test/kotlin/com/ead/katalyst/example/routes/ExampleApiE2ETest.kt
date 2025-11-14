@@ -7,21 +7,13 @@ import com.ead.katalyst.example.api.dto.UserProfileResponse
 import com.ead.katalyst.example.service.UserProfileService
 import com.ead.katalyst.testing.core.inMemoryDatabaseConfig
 import com.ead.katalyst.testing.ktor.katalystTestApplication
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class ExampleApiE2ETest {
 

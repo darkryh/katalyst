@@ -222,10 +222,10 @@ class DiscoveryPredicateTest {
     @Test
     fun `create should build predicate from lambda`() {
         val predicate = DiscoveryPredicate.create<TestService> {
-            it.simpleName.length > 10
+            it.simpleName.length >= 14
         }
 
-        assertTrue(predicate.matches(TestUserService::class.java))  // 15 chars
+        assertTrue(predicate.matches(TestUserService::class.java))  // 14 chars
         assertFalse(predicate.matches(UserService::class.java))  // 11 chars
     }
 

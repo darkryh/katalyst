@@ -1,6 +1,6 @@
 package com.ead.katalyst.repositories.undo
 
-import com.ead.katalyst.transactions.workflow.TransactionOperation
+import com.ead.katalyst.transactions.workflow.SimpleTransactionOperation
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 
@@ -17,6 +17,23 @@ import kotlin.test.*
 class InsertUndoStrategyTest {
 
     private val strategy = InsertUndoStrategy()
+    private fun createOperation(
+        workflowId: String = "workflow-insert",
+        operationIndex: Int = 0,
+        operationType: String = "INSERT",
+        resourceType: String = "User",
+        resourceId: String? = "123",
+        undoData: Map<String, Any?>? = null,
+        operationData: Map<String, Any?>? = null,
+    ) = SimpleTransactionOperation(
+        workflowId = workflowId,
+        operationIndex = operationIndex,
+        operationType = operationType,
+        resourceType = resourceType,
+        resourceId = resourceId,
+        operationData = operationData,
+        undoData = undoData
+    )
 
     // ========== canHandle() TESTS ==========
 
@@ -92,8 +109,7 @@ class InsertUndoStrategyTest {
     @Test
     fun `undo should return true when undoData is present`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "INSERT",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = "123",
             undoData = mapOf("id" to "123", "name" to "John"),
@@ -110,13 +126,7 @@ class InsertUndoStrategyTest {
     @Test
     fun `undo should return false when undoData is null`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "INSERT",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = null,
-            operationData = null
-        )
+        val operation = createOperation(undoData = null, operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -128,13 +138,7 @@ class InsertUndoStrategyTest {
     @Test
     fun `undo should return false when undoData is empty map`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "INSERT",
-            resourceType = "User",
-            resourceId = "123",
-            undoData = emptyMap(),
-            operationData = null
-        )
+        val operation = createOperation(undoData = emptyMap(), operationData = null)
 
         // When
         val result = strategy.undo(operation)
@@ -147,8 +151,7 @@ class InsertUndoStrategyTest {
     @Test
     fun `undo should handle operation with complex undoData`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "INSERT",
+        val operation = createOperation(
             resourceType = "Order",
             resourceId = "456",
             undoData = mapOf(
@@ -171,8 +174,7 @@ class InsertUndoStrategyTest {
     @Test
     fun `undo should handle operation with null resourceId`() = runTest {
         // Given
-        val operation = TransactionOperation(
-            operationType = "INSERT",
+        val operation = createOperation(
             resourceType = "User",
             resourceId = null,
             undoData = mapOf("name" to "John"),
@@ -190,9 +192,24 @@ class InsertUndoStrategyTest {
     fun `undo should handle multiple operations sequentially`() = runTest {
         // Given
         val operations = listOf(
-            TransactionOperation("INSERT", "User", "1", mapOf("id" to "1"), null),
-            TransactionOperation("INSERT", "User", "2", mapOf("id" to "2"), null),
-            TransactionOperation("INSERT", "User", "3", mapOf("id" to "3"), null)
+            createOperation(
+                workflowId = "workflow-insert-multi",
+                operationIndex = 0,
+                resourceId = "1",
+                undoData = mapOf("id" to "1")
+            ),
+            createOperation(
+                workflowId = "workflow-insert-multi",
+                operationIndex = 1,
+                resourceId = "2",
+                undoData = mapOf("id" to "2")
+            ),
+            createOperation(
+                workflowId = "workflow-insert-multi",
+                operationIndex = 2,
+                resourceId = "3",
+                undoData = mapOf("id" to "3")
+            )
         )
 
         // When

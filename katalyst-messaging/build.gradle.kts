@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.logback)
 
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 kotlin {

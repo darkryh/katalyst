@@ -290,7 +290,7 @@ class ServiceConfigLoaderTest {
         val exception = assertFailsWith<ConfigException> {
             loader.validate(config)
         }
-        assertTrue(exception.message?.contains("maxPoolSize must be positive") == true)
+        assertTrue(exception.message?.contains("database.pool.maxSize must be positive") == true)
     }
 
     // ========== JwtConfigLoader TESTS ==========

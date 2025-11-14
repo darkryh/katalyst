@@ -20,18 +20,21 @@ class SqlMigrationTest {
     // ========== TEST IMPLEMENTATIONS ==========
 
     private class CreateUserTableMigration : SqlMigration() {
+        override val id: String = "test-create-user"
         override fun statements(): List<String> = listOf(
             "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))"
         )
     }
 
     private class CreateOrdersTableMigration : SqlMigration() {
+        override val id: String = "test-create-orders"
         override fun statements(): List<String> = listOf(
             "CREATE TABLE orders (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id))"
         )
     }
 
     private class MultiStatementMigration : SqlMigration() {
+        override val id: String = "test-multi-statement"
         override fun statements(): List<String> = listOf(
             "CREATE TABLE products (id SERIAL PRIMARY KEY)",
             "CREATE INDEX idx_products_id ON products(id)",
@@ -40,10 +43,12 @@ class SqlMigrationTest {
     }
 
     private class EmptyMigration : SqlMigration() {
+        override val id: String = "test-empty"
         override fun statements(): List<String> = emptyList()
     }
 
     private class ComplexMigration : SqlMigration() {
+        override val id: String = "test-complex"
         override fun statements(): List<String> = listOf(
             """
             CREATE TABLE users (
@@ -69,7 +74,7 @@ class SqlMigrationTest {
     @Test
     fun `SqlMigration should return statements from abstract method`() {
         val migration = CreateUserTableMigration()
-        val statements = migration.statements()
+        val statements = migration.statementsForTesting()
 
         assertEquals(1, statements.size)
         assertTrue(statements[0].contains("CREATE TABLE users"))
@@ -78,7 +83,7 @@ class SqlMigrationTest {
     @Test
     fun `SqlMigration should support multiple statements`() {
         val migration = MultiStatementMigration()
-        val statements = migration.statements()
+        val statements = migration.statementsForTesting()
 
         assertEquals(3, statements.size)
     }
@@ -86,7 +91,7 @@ class SqlMigrationTest {
     @Test
     fun `SqlMigration should support empty statement list`() {
         val migration = EmptyMigration()
-        val statements = migration.statements()
+        val statements = migration.statementsForTesting()
 
         assertTrue(statements.isEmpty())
     }
@@ -162,6 +167,7 @@ class SqlMigrationTest {
     @Test
     fun `checksum should reflect statement changes`() {
         class MutableMigration(private var content: String) : SqlMigration() {
+            override val id: String = "test-mutable"
             override fun statements() = listOf(content)
             fun updateContent(newContent: String) {
                 content = newContent
@@ -180,6 +186,7 @@ class SqlMigrationTest {
     @Test
     fun `checksum should be consistent for same statements`() {
         class ImmutableMigration : SqlMigration() {
+            override val id: String = "test-immutable"
             override fun statements() = listOf("CREATE TABLE users (id INT)")
         }
 
@@ -194,6 +201,7 @@ class SqlMigrationTest {
     @Test
     fun `statement order should affect checksum`() {
         class OrderedMigration1 : SqlMigration() {
+            override val id: String = "test-ordered-1"
             override fun statements() = listOf(
                 "CREATE TABLE users (id INT)",
                 "CREATE TABLE orders (id INT)"
@@ -201,6 +209,7 @@ class SqlMigrationTest {
         }
 
         class OrderedMigration2 : SqlMigration() {
+            override val id: String = "test-ordered-2"
             override fun statements() = listOf(
                 "CREATE TABLE orders (id INT)",
                 "CREATE TABLE users (id INT)"
@@ -216,7 +225,7 @@ class SqlMigrationTest {
     @Test
     fun `statement order should be preserved`() {
         val migration = MultiStatementMigration()
-        val statements = migration.statements()
+        val statements = migration.statementsForTesting()
 
         assertEquals("CREATE TABLE products (id SERIAL PRIMARY KEY)", statements[0])
         assertEquals("CREATE INDEX idx_products_id ON products(id)", statements[1])
@@ -228,6 +237,7 @@ class SqlMigrationTest {
     @Test
     fun `migration with complex multi-line SQL`() {
         class ComplexSqlMigration : SqlMigration() {
+            override val id: String = "test-complex-sql"
             override fun statements() = listOf(
                 """
                 CREATE TABLE users (
@@ -245,12 +255,13 @@ class SqlMigrationTest {
         val checksum = migration.checksum
 
         assertEquals(64, checksum.length)
-        assertNotNull(migration.statements()[0])
+        assertNotNull(migration.statementsForTesting()[0])
     }
 
     @Test
     fun `migration with SQL comments`() {
         class CommentedMigration : SqlMigration() {
+            override val id: String = "test-commented"
             override fun statements() = listOf(
                 "-- Create users table",
                 "CREATE TABLE users (id INT)",
@@ -263,12 +274,13 @@ class SqlMigrationTest {
         val checksum = migration.checksum
 
         assertEquals(64, checksum.length)
-        assertEquals(4, migration.statements().size)
+        assertEquals(4, migration.statementsForTesting().size)
     }
 
     @Test
     fun `migration with special characters in SQL`() {
         class SpecialCharMigration : SqlMigration() {
+            override val id: String = "test-special-char"
             override fun statements() = listOf(
                 "INSERT INTO users (name) VALUES ('O''Brien')",
                 "INSERT INTO users (name) VALUES ('José García')"
@@ -286,6 +298,7 @@ class SqlMigrationTest {
     @Test
     fun `initial database schema migration`() {
         class InitialSchemaMigration : SqlMigration() {
+            override val id: String = "test-initial-schema"
             override fun statements() = listOf(
                 "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))",
                 "CREATE TABLE roles (id SERIAL PRIMARY KEY, name VARCHAR(50))",
@@ -295,13 +308,14 @@ class SqlMigrationTest {
         }
 
         val migration = InitialSchemaMigration()
-        assertEquals(4, migration.statements().size)
+        assertEquals(4, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `add column migration`() {
         class AddColumnMigration : SqlMigration() {
+            override val id: String = "test-add-column"
             override fun statements() = listOf(
                 "ALTER TABLE users ADD COLUMN phone VARCHAR(20)",
                 "ALTER TABLE users ADD COLUMN address TEXT"
@@ -309,13 +323,14 @@ class SqlMigrationTest {
         }
 
         val migration = AddColumnMigration()
-        assertEquals(2, migration.statements().size)
+        assertEquals(2, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `create index migration`() {
         class CreateIndexMigration : SqlMigration() {
+            override val id: String = "test-create-index"
             override fun statements() = listOf(
                 "CREATE INDEX idx_users_email ON users(email)",
                 "CREATE INDEX idx_users_name ON users(name)"
@@ -323,13 +338,14 @@ class SqlMigrationTest {
         }
 
         val migration = CreateIndexMigration()
-        assertEquals(2, migration.statements().size)
+        assertEquals(2, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `data seeding migration`() {
         class SeedDataMigration : SqlMigration() {
+            override val id: String = "test-seed-data"
             override fun statements() = listOf(
                 "INSERT INTO roles (name) VALUES ('ADMIN')",
                 "INSERT INTO roles (name) VALUES ('USER')",
@@ -338,13 +354,14 @@ class SqlMigrationTest {
         }
 
         val migration = SeedDataMigration()
-        assertEquals(3, migration.statements().size)
+        assertEquals(3, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `drop table migration`() {
         class DropTableMigration : SqlMigration() {
+            override val id: String = "test-drop-table"
             override fun statements() = listOf(
                 "DROP INDEX IF EXISTS idx_old_table",
                 "DROP TABLE IF EXISTS old_table"
@@ -352,13 +369,14 @@ class SqlMigrationTest {
         }
 
         val migration = DropTableMigration()
-        assertEquals(2, migration.statements().size)
+        assertEquals(2, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `foreign key constraint migration`() {
         class AddForeignKeyMigration : SqlMigration() {
+            override val id: String = "test-add-foreign-key"
             override fun statements() = listOf(
                 "ALTER TABLE orders ADD CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id)",
                 "ALTER TABLE order_items ADD CONSTRAINT fk_items_order FOREIGN KEY (order_id) REFERENCES orders(id)"
@@ -366,20 +384,21 @@ class SqlMigrationTest {
         }
 
         val migration = AddForeignKeyMigration()
-        assertEquals(2, migration.statements().size)
+        assertEquals(2, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
     @Test
     fun `rename column migration`() {
         class RenameColumnMigration : SqlMigration() {
+            override val id: String = "test-rename-column"
             override fun statements() = listOf(
                 "ALTER TABLE users RENAME COLUMN old_name TO new_name"
             )
         }
 
         val migration = RenameColumnMigration()
-        assertEquals(1, migration.statements().size)
+        assertEquals(1, migration.statementsForTesting().size)
         assertEquals(64, migration.checksum.length)
     }
 
@@ -387,6 +406,7 @@ class SqlMigrationTest {
     fun `checksum consistency for version control`() {
         // This test simulates checking migration integrity across different environments
         class V001_CreateUsers : SqlMigration() {
+            override val id: String = "test-v001-create-users"
             override fun statements() = listOf(
                 "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(100))"
             )
@@ -402,10 +422,12 @@ class SqlMigrationTest {
     @Test
     fun `checksum detects tampered migrations`() {
         class OriginalMigration : SqlMigration() {
+            override val id: String = "test-original"
             override fun statements() = listOf("CREATE TABLE users (id INT)")
         }
 
         class TamperedMigration : SqlMigration() {
+            override val id: String = "test-tampered"
             override fun statements() = listOf("CREATE TABLE users (id INT PRIMARY KEY)")
         }
 
@@ -419,10 +441,12 @@ class SqlMigrationTest {
     @Test
     fun `migrations with whitespace differences have different checksums`() {
         class Migration1 : SqlMigration() {
+            override val id: String = "test-migration-1"
             override fun statements() = listOf("CREATE TABLE users (id INT)")
         }
 
         class Migration2 : SqlMigration() {
+            override val id: String = "test-migration-2"
             override fun statements() = listOf("CREATE  TABLE  users  (id  INT)")
         }
 

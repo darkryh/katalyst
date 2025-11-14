@@ -25,6 +25,11 @@ class TestDataBuildersValidationTest {
         fun withEmail(email: String) = apply { this.email = email }
 
         override fun build(): TestUser = TestUser(id, name, email)
+
+        override fun resetDefaults() {
+            id = TestIdGenerator.nextId()
+            email = uniqueEmail()
+        }
     }
 
     @BeforeTest

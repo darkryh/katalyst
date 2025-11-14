@@ -244,9 +244,9 @@ class YamlParserTest {
         // Given
         val yaml = """
             database:
-              url: \${DB_URL:jdbc:postgresql://localhost:5432/db}
-              username: \${DB_USER:postgres}
-              password: \${DB_PASS:}
+              url: ${'$'}{DB_URL:jdbc:postgresql://localhost:5432/db}
+              username: ${'$'}{DB_USER:postgres}
+              password: ${'$'}{DB_PASS:}
         """.trimIndent()
 
         // When
@@ -265,12 +265,12 @@ class YamlParserTest {
         // Given
         val yaml = """
             app:
-              name: \${APP_NAME:Katalyst}
+              name: ${'$'}{APP_NAME:Katalyst}
               server:
-                host: \${SERVER_HOST:0.0.0.0}
-                port: \${SERVER_PORT:8080}
+                host: ${'$'}{SERVER_HOST:0.0.0.0}
+                port: ${'$'}{SERVER_PORT:8080}
               database:
-                url: \${DB_URL:jdbc:postgresql://localhost/db}
+                url: ${'$'}{DB_URL:jdbc:postgresql://localhost/db}
         """.trimIndent()
 
         // When
@@ -296,9 +296,9 @@ class YamlParserTest {
         // Given
         val yaml = """
             servers:
-              - \${SERVER1:server1.com}
-              - \${SERVER2:server2.com}
-              - \${SERVER3:server3.com}
+              - ${'$'}{SERVER1:server1.com}
+              - ${'$'}{SERVER2:server2.com}
+              - ${'$'}{SERVER3:server3.com}
         """.trimIndent()
 
         // When
@@ -319,7 +319,7 @@ class YamlParserTest {
         val yaml = """
             config:
               plain: plain_value
-              substituted: \${VAR:default_value}
+              substituted: ${'$'}{VAR:default_value}
               number: 42
               flag: true
         """.trimIndent()
@@ -507,29 +507,29 @@ class YamlParserTest {
         // Given - Real-world application.yaml
         val yaml = """
             app:
-              name: \${APP_NAME:Katalyst}
+              name: ${'$'}{APP_NAME:Katalyst}
               version: 1.0.0
-              environment: \${ENV:development}
+              environment: ${'$'}{ENV:development}
 
             server:
-              host: \${SERVER_HOST:0.0.0.0}
-              port: \${SERVER_PORT:8080}
+              host: ${'$'}{SERVER_HOST:0.0.0.0}
+              port: ${'$'}{SERVER_PORT:8080}
 
             database:
-              url: \${DATABASE_URL:jdbc:postgresql://localhost:5432/katalyst}
-              username: \${DATABASE_USER:postgres}
-              password: \${DATABASE_PASSWORD:}
+              url: ${'$'}{DATABASE_URL:jdbc:postgresql://localhost:5432/katalyst}
+              username: ${'$'}{DATABASE_USER:postgres}
+              password: ${'$'}{DATABASE_PASSWORD:}
               pool:
-                maxSize: \${DB_POOL_MAX_SIZE:20}
-                minIdle: \${DB_POOL_MIN_IDLE:5}
+                maxSize: ${'$'}{DB_POOL_MAX_SIZE:20}
+                minIdle: ${'$'}{DB_POOL_MIN_IDLE:5}
 
             logging:
-              level: \${LOG_LEVEL:INFO}
-              file: \${LOG_FILE:/var/log/katalyst.log}
+              level: ${'$'}{LOG_LEVEL:INFO}
+              file: ${'$'}{LOG_FILE:/var/log/katalyst.log}
 
             features:
-              analytics: \${FEATURE_ANALYTICS:false}
-              caching: \${FEATURE_CACHING:true}
+              analytics: ${'$'}{FEATURE_ANALYTICS:false}
+              caching: ${'$'}{FEATURE_CACHING:true}
         """.trimIndent()
 
         // When
@@ -573,15 +573,15 @@ class YamlParserTest {
         val yaml = """
             services:
               - name: auth-service
-                url: \${AUTH_SERVICE_URL:http://localhost:8081}
+                url: ${'$'}{AUTH_SERVICE_URL:http://localhost:8081}
                 timeout: 5000
                 retries: 3
               - name: payment-service
-                url: \${PAYMENT_SERVICE_URL:http://localhost:8082}
+                url: ${'$'}{PAYMENT_SERVICE_URL:http://localhost:8082}
                 timeout: 10000
                 retries: 5
               - name: notification-service
-                url: \${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+                url: ${'$'}{NOTIFICATION_SERVICE_URL:http://localhost:8083}
                 timeout: 3000
                 retries: 2
         """.trimIndent()
@@ -615,10 +615,10 @@ class YamlParserTest {
         // Given
         val yaml = """
             jwt:
-              secret: \${JWT_SECRET:change-me-in-production}
-              issuer: \${JWT_ISSUER:katalyst}
-              audience: \${JWT_AUDIENCE:katalyst-api}
-              expiresIn: \${JWT_EXPIRES_IN:3600}
+              secret: ${'$'}{JWT_SECRET:change-me-in-production}
+              issuer: ${'$'}{JWT_ISSUER:katalyst}
+              audience: ${'$'}{JWT_AUDIENCE:katalyst-api}
+              expiresIn: ${'$'}{JWT_EXPIRES_IN:3600}
               algorithm: HS256
 
             security:
@@ -633,9 +633,9 @@ class YamlParserTest {
                   - PUT
                   - DELETE
               rateLimit:
-                enabled: \${RATE_LIMIT_ENABLED:true}
-                requests: \${RATE_LIMIT_REQUESTS:100}
-                window: \${RATE_LIMIT_WINDOW:60}
+                enabled: ${'$'}{RATE_LIMIT_ENABLED:true}
+                requests: ${'$'}{RATE_LIMIT_REQUESTS:100}
+                window: ${'$'}{RATE_LIMIT_WINDOW:60}
         """.trimIndent()
 
         // When

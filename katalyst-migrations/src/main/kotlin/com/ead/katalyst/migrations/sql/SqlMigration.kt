@@ -17,6 +17,8 @@ abstract class SqlMigration : KatalystMigration {
      */
     protected abstract fun statements(): List<String>
 
+    internal fun statementsForTesting(): List<String> = statements()
+
     override val checksum: String
         get() = hashStatements(statements())
 

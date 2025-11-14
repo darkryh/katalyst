@@ -1,5 +1,7 @@
 package com.ead.katalyst.repositories.undo
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import java.net.SocketException
@@ -20,6 +22,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * - Predefined policy configurations
  * - Edge cases (zero retries, false returns, exceptions)
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class RetryPolicyTest {
 
     // ========== BASIC RETRY LOGIC ==========
@@ -150,9 +153,8 @@ class RetryPolicyTest {
         var callCount = 0
 
         // When
-        val startTime = System.currentTimeMillis()
         policy.execute {
-            attemptTimes.add(System.currentTimeMillis() - startTime)
+            attemptTimes.add(currentTime)
             callCount++
             if (callCount < 4) {
                 throw RuntimeException("Keep retrying")
@@ -178,13 +180,11 @@ class RetryPolicyTest {
             backoffMultiplier = 2.0,
             maxDelayMs = 500 // Cap at 500ms
         )
-        val attemptTimes = mutableListOf<Long>()
         var callCount = 0
 
         // When
-        val startTime = System.currentTimeMillis()
+        val startTime = currentTime
         policy.execute {
-            attemptTimes.add(System.currentTimeMillis() - startTime)
             callCount++
             if (callCount < 6) {
                 throw RuntimeException("Keep retrying")
@@ -193,9 +193,7 @@ class RetryPolicyTest {
         }
 
         // Then
-        // Backoff sequence: 100, 200, 400, 500 (capped), 500 (capped)
-        // Total time should not exceed: 100 + 200 + 400 + 500 + 500 + overhead
-        val totalTime = System.currentTimeMillis() - startTime
+        val totalTime = currentTime - startTime
         assertTrue(totalTime < 2500) // Should be ~1700ms with jitter
     }
 
@@ -261,13 +259,15 @@ class RetryPolicyTest {
         val delays = mutableListOf<Long>()
         repeat(5) {
             var callCount = 0
-            val start = System.currentTimeMillis()
+            var previousAttemptTime = 0L
 
             policy.execute {
+                val now = currentTime
                 if (callCount++ == 0) {
+                    previousAttemptTime = now
                     throw RuntimeException("First attempt fails")
                 }
-                val delay = System.currentTimeMillis() - start
+                val delay = now - previousAttemptTime
                 delays.add(delay)
                 true
             }
@@ -610,7 +610,7 @@ class RetryPolicyTest {
         var callCount = 0
 
         // When
-        val startTime = System.currentTimeMillis()
+        val startTime = currentTime
         policy.execute {
             callCount++
             if (callCount < 5) {
@@ -620,7 +620,7 @@ class RetryPolicyTest {
         }
 
         // Then - Total time should reflect cap
-        val totalTime = System.currentTimeMillis() - startTime
+        val totalTime = currentTime - startTime
         // Expected: ~100 + ~300 + ~300 + ~300 + overhead = ~1000ms with jitter
         assertTrue(totalTime < 1500)
     }

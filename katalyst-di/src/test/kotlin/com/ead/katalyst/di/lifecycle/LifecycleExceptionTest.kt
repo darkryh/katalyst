@@ -38,7 +38,7 @@ class LifecycleExceptionTest {
 
     @Test
     fun `LifecyclePhase should support values()`() {
-        val phases = LifecyclePhase.values()
+        val phases = LifecyclePhase.entries.toTypedArray()
         assertTrue(phases.contains(LifecyclePhase.UNKNOWN))
         assertTrue(phases.contains(LifecyclePhase.INITIALIZATION))
     }

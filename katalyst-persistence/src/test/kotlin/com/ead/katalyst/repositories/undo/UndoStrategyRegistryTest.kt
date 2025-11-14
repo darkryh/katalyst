@@ -1,5 +1,6 @@
 package com.ead.katalyst.repositories.undo
 
+import com.ead.katalyst.transactions.workflow.SimpleTransactionOperation
 import com.ead.katalyst.transactions.workflow.TransactionOperation
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
@@ -15,6 +16,23 @@ import kotlin.test.*
  * - First-match strategy selection
  */
 class UndoStrategyRegistryTest {
+    private fun createOperation(
+        workflowId: String = "workflow-registry",
+        operationIndex: Int = 0,
+        operationType: String = "UNKNOWN",
+        resourceType: String = "User",
+        resourceId: String? = "123",
+        undoData: Map<String, Any?>? = null,
+        operationData: Map<String, Any?>? = null,
+    ) = SimpleTransactionOperation(
+        workflowId = workflowId,
+        operationIndex = operationIndex,
+        operationType = operationType,
+        resourceType = resourceType,
+        resourceId = resourceId,
+        operationData = operationData,
+        undoData = undoData
+    )
 
     // ========== REGISTRATION TESTS ==========
 
@@ -197,7 +215,7 @@ class UndoStrategyRegistryTest {
     fun `NoOp strategy should return true when undoing`() = runTest {
         // Given
         val registry = UndoStrategyRegistry()  // Empty registry
-        val operation = TransactionOperation(
+        val operation = createOperation(
             operationType = "UNKNOWN",
             resourceType = "User",
             resourceId = "123",
@@ -217,7 +235,7 @@ class UndoStrategyRegistryTest {
     fun `NoOp strategy should handle operation without exception`() = runTest {
         // Given
         val registry = UndoStrategyRegistry()
-        val operation = TransactionOperation(
+        val operation = createOperation(
             operationType = "TOTALLY_UNKNOWN",
             resourceType = "SomeResource",
             resourceId = "999",

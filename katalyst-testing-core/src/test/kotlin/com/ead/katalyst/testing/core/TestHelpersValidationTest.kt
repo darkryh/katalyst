@@ -1,6 +1,7 @@
 package com.ead.katalyst.testing.core
 
 import kotlin.test.*
+import kotlinx.coroutines.test.runTest
 
 /**
  * Validation tests for test utilities.
@@ -91,6 +92,36 @@ class TestHelpersValidationTest {
         // When/Then
         assertFailsWith<AssertionError> {
             assertContainsAll(actual, 1, 2, 3, 4)
+        }
+    }
+
+    @Test
+    fun `retryWithDelay should retry until success`() {
+        var attempts = 0
+
+        var result: String? = null
+        runTest {
+            retryWithDelay(maxAttempts = 3, delayMillis = 1) {
+                attempts++
+                if (attempts < 2) error("try again")
+                "ok"
+            }.also {
+                result = it
+            }
+        }
+
+        assertEquals("ok", result)
+        assertEquals(2, attempts)
+    }
+
+    @Test
+    fun `retryWithDelay should throw after max attempts`() {
+        runTest {
+            assertFailsWith<IllegalStateException> {
+                retryWithDelay<Unit>(maxAttempts = 2, delayMillis = 1) {
+                    error("always fails")
+                }
+            }
         }
     }
 }

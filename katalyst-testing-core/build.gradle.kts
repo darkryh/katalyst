@@ -9,6 +9,7 @@ dependencies {
     api(project(":katalyst-ktor"))
     api(project(":katalyst-persistence"))
     api(libs.koin.core)
+    api(kotlin("test"))
 
     implementation(project(":katalyst-config-yaml"))
     implementation(project(":katalyst-events-client"))
@@ -16,6 +17,8 @@ dependencies {
     implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-websockets"))
     implementation(project(":katalyst-events"))
+    implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }

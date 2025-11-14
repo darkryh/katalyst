@@ -32,26 +32,17 @@ class YamlConfigProviderTest {
         private val data: Map<String, Any> = testData
 
         override fun <T> get(key: String, defaultValue: T?): T? {
-            val value = navigatePath(key)
-            return when {
-                value == null -> defaultValue
-                defaultValue != null && value !is String -> {
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        value as T
-                    } catch (e: ClassCastException) {
-                        throw ConfigException(
-                            "Configuration key '$key' has type ${value::class.simpleName}, " +
-                                    "expected ${defaultValue::class.simpleName}",
-                            e
-                        )
-                    }
-                }
-                else -> {
-                    @Suppress("UNCHECKED_CAST")
-                    value as T
+            val value = navigatePath(key) ?: return defaultValue
+            if (defaultValue != null) {
+                val expectedType = defaultValue::class
+                if (!expectedType.isInstance(value)) {
+                    throw ConfigException(
+                        "Configuration key '$key' has type ${value::class.simpleName}, expected ${expectedType.simpleName}"
+                    )
                 }
             }
+            @Suppress("UNCHECKED_CAST")
+            return value as T
         }
 
         override fun getString(key: String, default: String): String {

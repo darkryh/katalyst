@@ -247,7 +247,7 @@ class MessageTest {
         val message = Message(payload = "test".toByteArray())
 
         // Then
-        assertNotEquals(message, null)
+        assertFalse(message == null)
     }
 
     @Test
@@ -257,7 +257,7 @@ class MessageTest {
         val other = "not a message"
 
         // Then
-        assertNotEquals(message, other)
+        assertFalse(message.equals(other))
     }
 
     // ========== HASHCODE TESTS ==========

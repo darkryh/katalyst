@@ -421,16 +421,16 @@ class PublishResultTest {
     @Test
     fun `InterceptResult should support sealed class exhaustiveness`() {
         // Given
-        val continue: InterceptResult = InterceptResult.Continue
-        val abort: InterceptResult = InterceptResult.Abort("test")
+        val continueCase: InterceptResult = InterceptResult.Continue
+        val abortCase: InterceptResult = InterceptResult.Abort("test")
 
         // When/Then - Should compile (exhaustive when expression)
-        val continueResult = when (continue) {
+        val continueResult = when (continueCase) {
             is InterceptResult.Continue -> "continue"
             is InterceptResult.Abort -> "abort"
         }
 
-        val abortResult = when (abort) {
+        val abortResult = when (abortCase) {
             is InterceptResult.Continue -> "continue"
             is InterceptResult.Abort -> "abort"
         }
@@ -464,8 +464,8 @@ class PublishResultTest {
 
     private data class TestEvent(
         val data: String,
-        val metadata: EventMetadata = EventMetadata(eventType = "test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 }

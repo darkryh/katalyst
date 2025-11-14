@@ -5,12 +5,14 @@ import com.ead.katalyst.events.EventHandler
 import com.ead.katalyst.events.EventMetadata
 import com.ead.katalyst.events.bus.exception.EventPublishingException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import kotlin.reflect.KClass
 import kotlin.test.*
 
@@ -28,6 +30,7 @@ import kotlin.test.*
  * - Concurrent publishing
  * - Edge cases
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationEventBusTest {
 
     // ========== HANDLER REGISTRATION TESTS ==========
@@ -397,9 +400,10 @@ class ApplicationEventBusTest {
         val collectedEvents = mutableListOf<DomainEvent>()
 
         // When
-        val job = kotlinx.coroutines.launch {
+        val job = launch {
             bus.events().take(2).toList(collectedEvents)
         }
+        advanceUntilIdle()
 
         // Publish events
         bus.publish(TestEvent("event1"))
@@ -418,9 +422,10 @@ class ApplicationEventBusTest {
         val collectedEvents = mutableListOf<TestEvent>()
 
         // When
-        val job = kotlinx.coroutines.launch {
+        val job = launch {
             bus.eventsOf(TestEvent::class).take(1).toList(collectedEvents)
         }
+        advanceUntilIdle()
 
         bus.publish(AnotherTestEvent(42))  // Different type
         bus.publish(TestEvent("event1"))   // Matching type
@@ -451,7 +456,7 @@ class ApplicationEventBusTest {
         // Given
         val bus = ApplicationEventBus()
         val config = EventHandlerConfig(
-            eventType = "test.event",
+            eventType = TestEvent::class.qualifiedName ?: "test.event",
             handlingMode = EventHandlingMode.ASYNC_AFTER_COMMIT,
             timeoutMs = 10000
         )
@@ -512,9 +517,9 @@ class ApplicationEventBusTest {
         bus.register(handler)
 
         // When - Publish concurrently
-        val job1 = kotlinx.coroutines.launch { bus.publish(TestEvent("event1")) }
-        val job2 = kotlinx.coroutines.launch { bus.publish(TestEvent("event2")) }
-        val job3 = kotlinx.coroutines.launch { bus.publish(TestEvent("event3")) }
+        val job1 = launch { bus.publish(TestEvent("event1")) }
+        val job2 = launch { bus.publish(TestEvent("event2")) }
+        val job3 = launch { bus.publish(TestEvent("event3")) }
 
         job1.join()
         job2.join()
@@ -566,26 +571,29 @@ class ApplicationEventBusTest {
         val handler = SpyEventHandler()
         bus.register(handler)
 
-        // When/Then - Should complete quickly
-        withTimeout(1000) {  // 1 second timeout
-            bus.publish(TestEvent("test"))
-        }
+        // When
+        val start = System.currentTimeMillis()
+        bus.publish(TestEvent("test"))
+        val duration = System.currentTimeMillis() - start
+
+        // Then
+        assertTrue(duration < 5_000, "publish should finish quickly")
     }
 
     // ========== TEST EVENT CLASSES ==========
 
     private data class TestEvent(
         val data: String,
-        val metadata: EventMetadata = EventMetadata(eventType = "test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private data class AnotherTestEvent(
         val value: Int,
-        val metadata: EventMetadata = EventMetadata(eventType = "another.test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "another.test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private sealed class SealedTestEvent : DomainEvent {

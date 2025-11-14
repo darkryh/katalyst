@@ -2,6 +2,9 @@ package com.ead.katalyst.scanner.fixtures
 
 import com.ead.katalyst.core.validation.ValidationResult
 import com.ead.katalyst.core.validation.Validator
+import com.ead.katalyst.events.DomainEvent
+import com.ead.katalyst.events.EventHandler
+import com.ead.katalyst.events.EventMetadata
 
 // ============= Test-Only Domain Models =============
 
@@ -98,6 +101,46 @@ class UserRepository : SampleRepository<User, UserDTO>
  * Concrete product repository implementation for testing generic type extraction.
  */
 class ProductRepository : SampleRepository<Product, ProductDTO>
+
+/**
+ * Base repository type that other repositories can extend.
+ */
+open class BaseRepository<E, D> : SampleRepository<E, D>
+
+/**
+ * Repository implementation with an inheritance layer to test generic extraction across hierarchies.
+ */
+class ConcreteRepository : BaseRepository<User, UserDTO>()
+
+/**
+ * Repository that implements additional interfaces to simulate complex hierarchies.
+ */
+interface AuditableRepository
+
+class NestedRepository : BaseRepository<User, UserDTO>(), AuditableRepository
+
+/**
+ * Plain entity used for negative generic tests.
+ */
+class PlainEntity
+
+/**
+ * Sample event and handler for generic extraction tests.
+ */
+data class UserCreatedEvent(
+    val id: Long,
+    private val metadata: EventMetadata = EventMetadata(eventType = "user.created")
+) : DomainEvent {
+    override fun getMetadata(): EventMetadata = metadata
+}
+
+class UserCreatedEventHandler : EventHandler<UserCreatedEvent> {
+    override val eventType = UserCreatedEvent::class
+
+    override suspend fun handle(event: UserCreatedEvent) {
+        // no-op for tests
+    }
+}
 
 // ============= Real-World Annotated Methods Test =============
 

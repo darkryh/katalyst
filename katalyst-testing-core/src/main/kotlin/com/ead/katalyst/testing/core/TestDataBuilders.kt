@@ -60,13 +60,21 @@ interface TestDataBuilder<out T> {
      * Builds the test object with current configuration.
      */
     fun build(): T
+
+    /**
+     * Resets auto-generated defaults after a build.
+     * Override in builders that need to prepare for the next build call.
+     */
+    fun resetDefaults() {}
 }
 
 /**
  * Extension function to quickly build multiple instances.
  */
 fun <T> TestDataBuilder<T>.buildList(count: Int): List<T> =
-    (1..count).map { build() }
+    (1..count).map {
+        build().also { resetDefaults() }
+    }
 
 /**
  * Creates a test timestamp in milliseconds.

@@ -58,18 +58,20 @@ import org.slf4j.LoggerFactory
  * Uses YamlProfileLoader for profile-based loading and YamlParser for parsing.
  * This separation allows reusing these components independently.
  */
-class YamlConfigProvider : ConfigProvider, Component {
+class YamlConfigProvider(
+    private val profileLoader: YamlProfileLoader = YamlProfileLoader(),
+    private val substitutor: EnvironmentVariableSubstitutor = EnvironmentVariableSubstitutor()
+) : ConfigProvider, Component {
     companion object {
         private val log = LoggerFactory.getLogger(YamlConfigProvider::class.java)
     }
 
     private val data: Map<String, Any>
-    private val profileLoader = YamlProfileLoader()
 
     init {
         try {
             log.info("Loading YAML configuration...")
-            data = profileLoader.loadConfiguration()
+            data = substitutor.substitute(profileLoader.loadConfiguration())
             log.info("✓ Configuration loaded successfully (${data.size} keys)")
         } catch (e: Exception) {
             throw ConfigException("Failed to load YAML configuration: ${e.message}", e)
@@ -77,26 +79,17 @@ class YamlConfigProvider : ConfigProvider, Component {
     }
 
     override fun <T> get(key: String, defaultValue: T?): T? {
-        val value = navigatePath(key)
-        return when {
-            value == null -> defaultValue
-            defaultValue != null && value !is String -> {
-                try {
-                    @Suppress("UNCHECKED_CAST")
-                    value as T
-                } catch (e: ClassCastException) {
-                    throw ConfigException(
-                        "Configuration key '$key' has type ${value::class.simpleName}, " +
-                                "expected ${defaultValue::class.simpleName}",
-                        e
-                    )
-                }
-            }
-            else -> {
-                @Suppress("UNCHECKED_CAST")
-                value as T
+        val value = navigatePath(key) ?: return defaultValue
+        if (defaultValue != null) {
+            val expectedType = defaultValue::class
+            if (!expectedType.isInstance(value)) {
+                throw ConfigException(
+                    "Configuration key '$key' has type ${value::class.simpleName}, expected ${expectedType.simpleName}"
+                )
             }
         }
+        @Suppress("UNCHECKED_CAST")
+        return value as T
     }
 
     override fun getString(key: String, default: String): String {

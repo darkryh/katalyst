@@ -11,7 +11,7 @@ package com.ead.katalyst.events.exception
 open class EventException(
     message: String,
     cause: Throwable? = null
-) : Exception(message, cause)
+) : RuntimeException(message, cause)
 
 /**
  * Thrown when event validation fails.

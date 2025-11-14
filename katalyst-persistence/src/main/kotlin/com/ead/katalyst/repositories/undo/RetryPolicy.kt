@@ -40,19 +40,25 @@ class RetryPolicy(
      * @return true if operation succeeded, false if all retries exhausted
      */
     suspend fun execute(operation: suspend () -> Boolean): Boolean {
-        var lastException: Exception? = null
         var currentDelayMs = initialDelayMs
 
         for (attempt in 0..maxRetries) {
             try {
                 val result = operation()
-                if (result || attempt == 0) {
-                    return result  // Success or no retries configured
+                if (result) {
+                    return true
                 }
-                logger.debug("Operation returned false, retrying (attempt {} of {})", attempt + 1, maxRetries + 1)
-            } catch (e: Exception) {
-                lastException = e
 
+                logger.debug(
+                    "Operation returned false, retrying (attempt {} of {})",
+                    attempt + 1, maxRetries + 1
+                )
+
+                if (attempt < maxRetries) {
+                    currentDelayMs = applyBackoffDelay(attempt, currentDelayMs, "returned false")
+                    continue
+                }
+            } catch (e: Exception) {
                 // Check if we should retry on this exception
                 if (!retryPredicate(e)) {
                     logger.debug("Exception not retryable, giving up: {}", e.message)
@@ -60,22 +66,7 @@ class RetryPolicy(
                 }
 
                 if (attempt < maxRetries) {
-                    // Add jitter to prevent thundering herd (random ±20%)
-                    val jitter = (Math.random() - 0.5) * 0.4 * currentDelayMs
-                    val delayWithJitter = (currentDelayMs + jitter).toLong()
-
-                    logger.warn(
-                        "Attempt {} failed, retrying in {}ms (attempt {}/{}, backoff={}ms)",
-                        attempt + 1, delayWithJitter, attempt + 1, maxRetries + 1, currentDelayMs
-                    )
-
-                    delay(delayWithJitter)
-
-                    // Calculate next backoff with cap
-                    currentDelayMs = min(
-                        (currentDelayMs * backoffMultiplier).toLong(),
-                        maxDelayMs
-                    )
+                    currentDelayMs = applyBackoffDelay(attempt, currentDelayMs, e.message ?: e::class.simpleName ?: "exception")
                     continue
                 }
 
@@ -87,6 +78,25 @@ class RetryPolicy(
         // If we exit the loop, it means operation returned false
         logger.error("Operation returned false after all attempts")
         return false
+    }
+
+    private suspend fun applyBackoffDelay(attempt: Int, delayMs: Long, reason: String): Long {
+        // Add jitter to prevent thundering herd (random ±20%)
+        val jitter = (Math.random() - 0.5) * 0.4 * delayMs
+        val delayWithJitter = (delayMs + jitter).toLong().coerceAtLeast(0L)
+
+        logger.warn(
+            "Attempt {} failed ({}), retrying in {}ms (attempt {}/{}, backoff={}ms)",
+            attempt + 1, reason, delayWithJitter, attempt + 1, maxRetries + 1, delayMs
+        )
+
+        delay(delayWithJitter)
+
+        // Calculate next backoff with cap
+        return min(
+            (delayMs * backoffMultiplier).toLong(),
+            maxDelayMs
+        )
     }
 
     /**

@@ -32,9 +32,12 @@ fun katalystTestApplication(
     configureEnvironment: KatalystTestEnvironmentBuilder.() -> Unit = {},
     autoInstallDiscoveredModules: Boolean = true,
     applicationConfig: Application.(KatalystTestEnvironment) -> Unit = {},
+    environmentFactory: (KatalystTestEnvironmentBuilder.() -> Unit) -> KatalystTestEnvironment = { builder ->
+        katalystTestEnvironment(builder)
+    },
     testBody: suspend ApplicationTestBuilder.(KatalystTestEnvironment) -> Unit
 ) {
-    val environment = katalystTestEnvironment(configureEnvironment)
+    val environment = environmentFactory(configureEnvironment)
     try {
         testApplication {
             application {

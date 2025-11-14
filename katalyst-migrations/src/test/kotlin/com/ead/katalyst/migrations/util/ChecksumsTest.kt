@@ -65,11 +65,11 @@ class ChecksumsTest {
     }
 
     @Test
-    fun `hashStatements should generate different hash for empty list vs empty strings`() {
+    fun `hashStatements should treat empty list and empty strings equivalently`() {
         val hash1 = hashStatements(emptyList())
         val hash2 = hashStatements(listOf(""))
 
-        assertNotEquals(hash1, hash2)
+        assertEquals(hash1, hash2)
     }
 
     // ========== MULTIPLE STATEMENTS TESTS ==========

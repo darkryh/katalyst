@@ -205,7 +205,7 @@ class InMemoryEventHandlerRegistryTest {
 
         // Then
         assertEquals(1, testHandlers.size)
-        assertFalse(testHandlers.contains(anotherHandler))
+        assertFalse(testHandlers.any { it === anotherHandler })
     }
 
     // ========== SIZE TESTS ==========
@@ -451,23 +451,23 @@ class InMemoryEventHandlerRegistryTest {
 
     private data class TestEvent(
         val data: String,
-        val metadata: EventMetadata = EventMetadata(eventType = "test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private data class AnotherTestEvent(
         val value: Int,
-        val metadata: EventMetadata = EventMetadata(eventType = "another.test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "another.test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private data class YetAnotherTestEvent(
         val flag: Boolean,
-        val metadata: EventMetadata = EventMetadata(eventType = "yet.another.test.event")
+        val eventMetadata: EventMetadata = EventMetadata(eventType = "yet.another.test.event")
     ) : DomainEvent {
-        override fun getMetadata() = metadata
+        override fun getMetadata() = eventMetadata
     }
 
     private sealed class SealedTestEvent : DomainEvent {
