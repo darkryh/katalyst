@@ -21,7 +21,7 @@ Implement `Component` for lightweight collaborators (observers, helpers) that st
 @Suppress("unused")
 class UserRegistrationFlowMonitor(
     private val eventBus: EventBus
-) : Component // implementing Component marks this class for auto-discovery {
+) : Component /*implementing Component marks this class for auto-discovery */ {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
@@ -45,7 +45,7 @@ class AuthenticationService(
     private val passwordHasher: PasswordHasher,
     private val eventBus: EventBus,
     private val jwtSettings: JwtSettingsService
-) : Service // implementing Service marks this class for auto-discovery {
+) : Service /*implementing Service marks this class for auto-discovery */ {
     private val scheduler = requireScheduler()
 
     suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
