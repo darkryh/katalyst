@@ -10,14 +10,20 @@ Katalyst wraps Ktor with batteries-included tooling so you can ship services fas
 
 ```kotlin
 package com.ead.katalyst.example // EXAMPLE - BASE PACKAGE
-
+import com.ead.katalyst.di.katalystApplication
+import com.ead.katalyst.di.feature.enableServerConfiguration
+import com.ead.katalyst.config.yaml.enableConfigProvider
+import com.ead.katalyst.ktor.engine.netty.NettyEngine
 
 fun main(args: Array<String>) = katalystApplication(args) {
+    engine(NettyEngine)
     database(DbConfigImpl.loadDatabaseConfig())
-    scanPackages("com.ead.katalyst.example") // REQUIRED - we should set a base scan packaged in order to make the library discover all injections
-
+    scanPackages("com.ead.katalyst.example") // REQUIRED
+    enableServerConfiguration()
     enableConfigProvider()
-    enableEvents { withBus(true) }
+    enableEvents {
+        withBus(true)
+    }
     enableMigrations()
     enableScheduler()
     enableWebSockets()

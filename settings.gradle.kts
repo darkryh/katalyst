@@ -32,7 +32,6 @@ include(":katalyst-websockets")
 include(":katalyst-config-provider")
 include(":katalyst-config-yaml")
 
-include(":katalyst-example")
 include(":katalyst-migrations")
 
 // Messaging abstraction and implementations
@@ -51,3 +50,6 @@ include(":katalyst-events-client")
 include("katalyst-transactions")
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
+
+//samples
+include(":samples:katalyst-example")
