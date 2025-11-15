@@ -7,9 +7,7 @@ plugins {
 group = "com.ead"
 version = "0.0.1"
 
-application {
-    mainClass = "io.ktor.server.netty.EngineMain"
-}
+application { mainClass = "io.ktor.server.netty.EngineMain" }
 
 dependencies {
     // Katalyst modules
