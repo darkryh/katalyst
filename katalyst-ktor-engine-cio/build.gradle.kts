@@ -2,6 +2,9 @@ plugins {
     kotlin("jvm")
 }
 
+group = "com.ead.katalyst"
+version = "0.0.1"
+
 dependencies {
     // Engine abstraction
     implementation(projects.katalystKtorEngine)

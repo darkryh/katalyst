@@ -47,9 +47,6 @@ include(":katalyst-events-bus")
 include(":katalyst-events-transport")
 include(":katalyst-events-client")
 
-include("katalyst-transactions")
+include(":katalyst-transactions")
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
-
-//samples
-include(":samples:katalyst-example")
