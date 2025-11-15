@@ -15,7 +15,7 @@ import com.ead.katalyst.di.module.scannerDIModule
 import com.ead.katalyst.events.bus.ApplicationEventBus
 import com.ead.katalyst.events.bus.adapter.EventsTransactionAdapter
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
@@ -205,11 +205,13 @@ fun bootstrapKatalystDI(
             // Auto-create missing tables in schema using Exposed's SchemaUtils
             logger.info("Ensuring database schema...")
             val txManager = koin.get<DatabaseTransactionManager>()
+
             runBlocking {
                 txManager.transaction {
-                    SchemaUtils.createMissingTablesAndColumns(*exposedTables)
+                    MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables)
                 }
             }
+
             logger.info("  ✓ Database schema ensured - all tables created if needed")
         } else {
             logger.info("  ℹ  No tables registered - skipping schema creation")

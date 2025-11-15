@@ -193,7 +193,7 @@ object ServerDeploymentConfigurationLoader : ServiceConfigLoader<ServerDeploymen
      */
     private fun loadSslConfiguration(provider: ConfigProvider): SslConfiguration? {
         return try {
-            val keyStore = provider.getString("ktor.security.ssl.keyStore")
+            val keyStore = provider.getString("ktor.security.ssl.keyStore").ifBlank { null }
             // If keyStore is present, SSL configuration is required
             if (keyStore != null && keyStore.isNotBlank()) {
                 log.debug("Loading SSL/TLS configuration...")

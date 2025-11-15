@@ -50,7 +50,7 @@ import kotlin.math.pow
  * )
  * ```
  */
-class TransactionalSideEffectAdapter<T>(
+open class TransactionalSideEffectAdapter<T>(
     private val name: String,
     private val priority: Int = 5,
     private val isCritical: Boolean = true,

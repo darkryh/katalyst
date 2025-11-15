@@ -59,8 +59,8 @@ import org.slf4j.LoggerFactory
  * This separation allows reusing these components independently.
  */
 class YamlConfigProvider(
-    private val profileLoader: YamlProfileLoader = YamlProfileLoader(),
-    private val substitutor: EnvironmentVariableSubstitutor = EnvironmentVariableSubstitutor()
+    profileLoader: YamlProfileLoader = YamlProfileLoader(),
+    substitutor: EnvironmentVariableSubstitutor = EnvironmentVariableSubstitutor()
 ) : ConfigProvider, Component {
     companion object {
         private val log = LoggerFactory.getLogger(YamlConfigProvider::class.java)

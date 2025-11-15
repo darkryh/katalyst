@@ -18,6 +18,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
 import java.util.*
@@ -271,7 +272,7 @@ class DatabaseTransactionManager(
 
                 // DON'T pass dispatcher to preserve coroutine context inheritance
                 // The context element (transactionEventContext) must be inherited by the transaction block
-                newSuspendedTransaction(null, database) {
+                suspendTransaction(database) {
                     logger.debug("Transaction context established, executing block")
                     val outcome = block()
 

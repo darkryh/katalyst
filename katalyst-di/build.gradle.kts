@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.migration.jdbc)
 
     // Dependency injection
     implementation(libs.koin.core)

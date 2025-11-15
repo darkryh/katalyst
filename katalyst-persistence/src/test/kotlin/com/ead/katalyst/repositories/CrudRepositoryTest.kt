@@ -12,7 +12,7 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.*
 
@@ -76,7 +76,7 @@ class CrudRepositoryTest {
             transaction(db) { block() }
 
         private suspend fun <T> suspendedTx(block: suspend () -> T): T =
-            newSuspendedTransaction(context = null, db = db) { block() }
+            suspendTransaction(db = db) { block() }
 
         override fun save(entity: TestUser): TestUser =
             blockingTx { super<CrudRepository>.save(entity) }
@@ -500,9 +500,9 @@ class CrudRepositoryTest {
 
         // Then
         assertEquals(1, repository.count())
-        assertNull(repository.findById(user1.id!!))
+        assertNull(repository.findById(user1.id))
         assertNotNull(repository.findById(user2.id!!))
-        assertNull(repository.findById(user3.id!!))
+        assertNull(repository.findById(user3.id))
     }
 
     // ========== EDGE CASES TESTS ==========
