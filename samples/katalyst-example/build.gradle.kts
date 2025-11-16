@@ -39,6 +39,10 @@ dependencies {
     /*implementation("com.ead.katalyst:katalyst-messaging")
     implementation("com.ead.katalyst:katalyst-messaging-amqp"))*/
 
+    // testing katalyst
+    testImplementation("com.ead.katalyst:katalyst-testing-core")
+    testImplementation("com.ead.katalyst:katalyst-testing-ktor")
+
     // Ktor server surface
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
@@ -77,8 +81,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.postgresql)
-    testImplementation("com.ead.katalyst:katalyst-testing-core")
-    testImplementation("com.ead.katalyst:katalyst-testing-ktor")
 }
 
 tasks.test {

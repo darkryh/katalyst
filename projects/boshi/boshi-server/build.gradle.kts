@@ -1,17 +1,13 @@
 plugins {
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm") version "2.2.20" apply false
+    kotlin("plugin.serialization") version "2.2.20" apply false
 }
 
-group = "com.ead.boshi"
-version = "1.0-SNAPSHOT"
-dependencies {
-    testImplementation(kotlin("test"))
+allprojects {
+    group = "com.ead.boshi"
+    version = "1.0.0"
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(21)
+subprojects {
+    apply(plugin = "kotlin")
 }

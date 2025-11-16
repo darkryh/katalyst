@@ -1,0 +1,35 @@
+# Staging Profile - application-staging.yaml
+# Load with: KATALYST_PROFILE=staging
+#
+# Overrides for staging environment:
+# - Production-like database
+# - Stricter validation
+# - Secrets from environment variables
+# - Standard JWT settings
+
+# Database Configuration for staging
+# Secrets come from environment variables
+database:
+  url: ${DB_URL:jdbc:postgresql://staging-db:5432/katalyst}
+  username: ${DB_USERNAME:katalyst_user}
+  password: ${DB_PASSWORD}
+  driver: org.postgresql.Driver
+  pool:
+    maxSize: 20
+    minIdle: 5
+    connectionTimeout: 30000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+
+# JWT Configuration for staging
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: katalyst-example
+  audience: katalyst-users
+  realm: KatalystExample
+  expirationSeconds: 3600
+
+# Staging-specific settings
+app:
+  environment: staging
+  debug: false
