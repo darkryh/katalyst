@@ -1,6 +1,5 @@
 package com.ead.boshi.smtp.services
 
-import com.ead.boshi.shared.config.SmtpConfig
 import com.ead.boshi.shared.constants.DeliveryStatus
 import com.ead.boshi.shared.constants.RetryPolicy
 import com.ead.boshi.shared.exceptions.DeliveryException
@@ -8,13 +7,16 @@ import com.ead.boshi.shared.models.DeliveryStatusEntity
 import com.ead.boshi.shared.models.SentEmailEntity
 import com.ead.boshi.smtp.clients.SmtpClient
 import com.ead.boshi.smtp.dns.MxRecordResolver
+import com.ead.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 
 /**
  * Service orchestrating email delivery via SMTP
  * Handles delivery attempts, retries, and status tracking
  */
-class SmtpDeliveryService {
+class SmtpDeliveryService(
+    val smtpClient : SmtpClient
+) : Component {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     companion object {
@@ -26,13 +28,11 @@ class SmtpDeliveryService {
      * Attempt to deliver an email
      * @param sentEmail the email entity to deliver
      * @param deliveryStatus current delivery status
-     * @param smtpConfig SMTP configuration
      * @return updated delivery status
      */
     fun deliverEmail(
         sentEmail: SentEmailEntity,
-        deliveryStatus: DeliveryStatusEntity,
-        smtpConfig: SmtpConfig
+        deliveryStatus: DeliveryStatusEntity
     ): DeliveryStatusEntity {
         logger.info("Attempting delivery of message: ${sentEmail.messageId}, attempt ${deliveryStatus.attemptCount + 1}")
 
@@ -63,9 +63,7 @@ class SmtpDeliveryService {
                 try {
                     logger.debug("Trying MX host: ${mxRecord.mxHostname} (priority: ${mxRecord.priority})")
 
-                    val smtpClient = SmtpClient()
                     smtpClient.sendEmail(
-                        smtpConfig = smtpConfig,
                         smtpHost = mxRecord.mxHostname,
                         senderEmail = sentEmail.senderEmail,
                         recipientEmail = sentEmail.recipientEmail,

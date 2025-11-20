@@ -18,6 +18,9 @@ dependencies {
     // Reflection support - for ConfigMetadata discovery
     implementation(projects.katalystScanner)
 
+    // Reflections library - for bytecode scanning of AutomaticServiceConfigLoader
+    implementation(libs.reflections)
+
     // Logging
     implementation(libs.logback)
 

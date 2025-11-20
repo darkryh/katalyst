@@ -87,9 +87,21 @@ rateLimit:
   emailSendLimit: ${RATE_LIMIT_EMAIL_SEND:100}    # POST /emails/send: 100 req/min
   statusCheckLimit: ${RATE_LIMIT_STATUS:100}      # GET /status: 100 req/min
 
-# SMTP Server Configuration
-# Environment variables: SMTP_SERVER_NAME, SMTP_MAX_CONNECTIONS, SMTP_TIMEOUT, SMTP_MAX_RETRIES, SMTP_RETRY_DELAY
+# SMTP Client Configuration - for outbound email delivery
+# Used by SmtpConfigLoader (AutomaticServiceConfigLoader)
+# Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_USE_TLS, SMTP_CONNECTION_TIMEOUT, SMTP_READ_TIMEOUT
 smtp:
+  # Client configuration (for sending emails via external SMTP server)
+  host: ${SMTP_HOST:localhost}
+  port: ${SMTP_PORT:25}
+  localHostname: ${SMTP_LOCAL_HOSTNAME:boshi.local}
+  username: ${SMTP_USERNAME:}
+  password: ${SMTP_PASSWORD:}
+  useTls: ${SMTP_USE_TLS:false}
+  connectionTimeoutSeconds: ${SMTP_CONNECTION_TIMEOUT:30}
+  readTimeoutSeconds: ${SMTP_READ_TIMEOUT:30}
+
+  # Server configuration
   server:
     name: ${SMTP_SERVER_NAME:mail.boshi.local}
     maxConnections: ${SMTP_MAX_CONNECTIONS:100}

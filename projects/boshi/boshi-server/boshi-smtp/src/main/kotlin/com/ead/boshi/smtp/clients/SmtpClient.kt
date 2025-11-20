@@ -1,6 +1,6 @@
 package com.ead.boshi.smtp.clients
 
-import com.ead.boshi.shared.config.SmtpConfig
+import com.ead.boshi.shared.config.models.SmtpConfig
 import com.ead.boshi.shared.exceptions.DeliveryException
 import com.ead.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
@@ -15,8 +15,13 @@ import java.util.Base64
 /**
  * SMTP client for sending emails to mail servers
  * Handles SMTP protocol communication and error handling
+ *
+ * SmtpConfig is auto-injected by the DI container (from AutomaticServiceConfigLoader)
+ * No manual loadConfig() calls needed!
  */
-class SmtpClient : Component {
+class SmtpClient(
+    val smtpConfig: SmtpConfig
+) : Component {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     companion object {
@@ -33,7 +38,6 @@ class SmtpClient : Component {
 
     /**
      * Send email via SMTP to specified host
-     * @param smtpConfig SMTP configuration
      * @param smtpHost SMTP server hostname or IP
      * @param senderEmail sender email address
      * @param recipientEmail recipient email address
@@ -44,7 +48,6 @@ class SmtpClient : Component {
      * @throws DeliveryException if sending fails
      */
     fun sendEmail(
-        smtpConfig: SmtpConfig,
         smtpHost: String,
         senderEmail: String,
         recipientEmail: String,
@@ -69,7 +72,6 @@ class SmtpClient : Component {
                     return performSmtpExchange(
                         reader,
                         writer,
-                        smtpConfig,
                         smtpHost,
                         senderEmail,
                         recipientEmail,
@@ -103,7 +105,6 @@ class SmtpClient : Component {
     private fun performSmtpExchange(
         reader: BufferedReader,
         writer: BufferedWriter,
-        smtpConfig: SmtpConfig,
         smtpHost: String,
         senderEmail: String,
         recipientEmail: String,
@@ -128,7 +129,7 @@ class SmtpClient : Component {
 
         // Authenticate if credentials provided
         if (smtpConfig.username.isNotEmpty() && smtpConfig.password.isNotEmpty()) {
-            performSmtpAuth(reader, writer, smtpConfig)
+            performSmtpAuth(reader, writer)
         }
 
         // Send message
@@ -173,7 +174,7 @@ class SmtpClient : Component {
     /**
      * Perform SMTP authentication (LOGIN mechanism)
      */
-    private fun performSmtpAuth(reader: BufferedReader, writer: BufferedWriter, smtpConfig: SmtpConfig) {
+    private fun performSmtpAuth(reader: BufferedReader, writer: BufferedWriter) {
         sendCommand(writer, "AUTH LOGIN")
         val authResponse = readSmtpResponse(reader)
         if (authResponse.code() != SMTP_AUTH_OK) {

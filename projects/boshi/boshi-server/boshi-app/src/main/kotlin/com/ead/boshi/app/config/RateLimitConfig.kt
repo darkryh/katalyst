@@ -1,9 +1,13 @@
+@file:Suppress("unused")
+
 package com.ead.boshi.app.config
 
+import com.ead.katalyst.config.provider.AutomaticServiceConfigLoader
 import com.ead.katalyst.config.provider.ConfigBootstrapHelper
 import com.ead.katalyst.config.provider.ConfigLoaders
 import com.ead.katalyst.config.provider.ServiceConfigLoader
 import com.ead.katalyst.core.config.ConfigProvider
+import kotlin.reflect.KClass
 
 /**
  * Rate limiting configuration for API endpoints
@@ -22,7 +26,9 @@ data class RateLimitConfig(
 /**
  * Load rate limit configuration from YAML
  */
-object RateLimitConfigLoader : ServiceConfigLoader<RateLimitConfig> {
+object RateLimitConfigLoader : AutomaticServiceConfigLoader<RateLimitConfig> {
+    override val configType: KClass<RateLimitConfig> = RateLimitConfig::class
+
     override fun loadConfig(provider: ConfigProvider): RateLimitConfig {
         return RateLimitConfig(
             enabled = ConfigLoaders.loadOptionalBoolean(provider, "rateLimit.enabled", true),
@@ -40,17 +46,5 @@ object RateLimitConfigLoader : ServiceConfigLoader<RateLimitConfig> {
         require(config.initialTokens > 0) { "initialTokens must be > 0" }
         require(config.emailSendLimit > 0) { "emailSendLimit must be > 0" }
         require(config.statusCheckLimit > 0) { "statusCheckLimit must be > 0" }
-    }
-}
-
-/**
- * Load rate limit config before DI initialization
- */
-object RateLimitConfigImpl {
-    fun loadConfig(): RateLimitConfig {
-        val config = ConfigBootstrapHelper.loadConfig(
-            com.ead.katalyst.config.yaml.YamlConfigProvider::class.java
-        )
-        return ConfigBootstrapHelper.loadServiceConfig(config, RateLimitConfigLoader)
     }
 }

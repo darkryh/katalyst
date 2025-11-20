@@ -1,6 +1,7 @@
 package com.ead.boshi.app.config
 
 import com.ead.katalyst.ktor.middleware.katalystMiddleware
+import com.ead.katalyst.ktor.middleware.ktInject
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.ratelimit.RateLimit
@@ -13,11 +14,13 @@ import kotlin.time.Duration.Companion.seconds
  */
 @Suppress("unused")
 fun Application.installRateLimit() = katalystMiddleware {
-    val config = RateLimitConfigImpl.loadConfig()
+    val config = ktInject<RateLimitConfig>()
 
     if (!config.enabled) {
         return@katalystMiddleware
     }
+
+    println("enable rate limiting")
 
     install(RateLimit) {
         // Global rate limit: 10 requests per second by default

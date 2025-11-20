@@ -2,11 +2,10 @@
 
 package com.ead.boshi.retention.services
 
-import com.ead.boshi.shared.config.SmtpConfig
 import com.ead.boshi.shared.constants.DeliveryStatus
+import com.ead.boshi.smtp.services.SmtpDeliveryService
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
-import com.ead.boshi.smtp.services.SmtpDeliveryService
 import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.scheduler.config.ScheduleConfig
 import com.ead.katalyst.scheduler.cron.CronExpression
@@ -20,8 +19,7 @@ import org.slf4j.LoggerFactory
 class RetryService(
     private val sentEmailRepository: SentEmailRepository,
     private val deliveryStatusRepository: DeliveryStatusRepository,
-    private val smtpDeliveryService: SmtpDeliveryService,
-    private val smtpConfig: SmtpConfig
+    private val smtpDeliveryService: SmtpDeliveryService
 ) : Service {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -82,7 +80,7 @@ class RetryService(
 
                         // Attempt delivery
                         logger.debug("Retrying delivery for message: ${sentEmail.messageId}")
-                        val updatedStatus = smtpDeliveryService.deliverEmail(sentEmail, deliveryStatus, smtpConfig)
+                        val updatedStatus = smtpDeliveryService.deliverEmail(sentEmail, deliveryStatus)
 
                         // Update the delivery status record
                         deliveryStatusRepository.save(updatedStatus)

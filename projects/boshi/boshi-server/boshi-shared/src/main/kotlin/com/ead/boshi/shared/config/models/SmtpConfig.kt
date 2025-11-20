@@ -1,4 +1,4 @@
-package com.ead.boshi.shared.config
+package com.ead.boshi.shared.config.models
 
 /**
  * SMTP client configuration for sending emails

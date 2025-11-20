@@ -13,6 +13,8 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-di")
     implementation("com.ead.katalyst:katalyst-transactions")
     implementation("com.ead.katalyst:katalyst-ktor")
+    implementation("com.ead.katalyst:katalyst-config-provider")
+    implementation("com.ead.katalyst:katalyst-config-yaml")
 
     // Database - Exposed ORM
     implementation(libs.exposed.core)

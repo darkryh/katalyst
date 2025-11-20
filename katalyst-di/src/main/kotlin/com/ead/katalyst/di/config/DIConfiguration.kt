@@ -4,8 +4,10 @@ import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
 import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
+import com.ead.katalyst.di.exception.FatalDependencyValidationException
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.internal.AutoBindingRegistrar
+import com.ead.katalyst.di.internal.ComponentRegistrationOrchestrator
 import com.ead.katalyst.di.internal.EngineRegistrar
 import com.ead.katalyst.di.lifecycle.BootstrapProgress
 import com.ead.katalyst.di.lifecycle.StartupWarnings
@@ -155,14 +157,20 @@ fun bootstrapKatalystDI(
     }
 
     // Register components including tables
-    // PHASE 3: Component Discovery & Registration
+    // PHASE 3: Component Discovery & Registration with Validation
     BootstrapProgress.startPhase(3)
     try {
-        logger.info("Starting AutoBindingRegistrar to discover components...")
-        AutoBindingRegistrar(koin, scanPackages).registerAll()
-        logger.info("AutoBindingRegistrar completed")
-        BootstrapProgress.completePhase(3, "Discovered repositories, services, components, and validators")
+        logger.info("Starting ComponentRegistrationOrchestrator with dependency validation...")
+        val orchestrator = ComponentRegistrationOrchestrator(koin, scanPackages)
+        orchestrator.registerAllWithValidation()
+        logger.info("ComponentRegistrationOrchestrator completed with full validation")
+        BootstrapProgress.completePhase(3, "Discovered repositories, services, components, and validators with dependency validation")
+    } catch (e: FatalDependencyValidationException) {
+        logger.error("✗ FATAL: Dependency validation failed - application cannot start")
+        BootstrapProgress.failPhase(3, e)
+        throw e
     } catch (e: Exception) {
+        logger.error("✗ Error during component registration: {}", e.message)
         BootstrapProgress.failPhase(3, e)
         throw e
     }

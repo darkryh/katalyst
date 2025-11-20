@@ -39,7 +39,7 @@ class KoinRouteExtensionsTest {
             testApplication {
                 application {
                     routing {
-                        val dependency = ktInject<SampleDependency>()
+                        val dependency by ktInject<SampleDependency>()
                         get("/route-inject") {
                             call.respondText(dependency.id)
                         }
@@ -70,7 +70,7 @@ class KoinRouteExtensionsTest {
                 application {
                     routing {
                         get("/dep") {
-                            val dependency = call.ktInject<SampleDependency>()
+                            val dependency by call.ktInject<SampleDependency>()
                             call.respondText(dependency.id)
                         }
                     }

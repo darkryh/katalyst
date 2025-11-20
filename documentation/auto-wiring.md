@@ -127,6 +127,82 @@ fun Route.notificationWebSocketRoutes() = katalystWebSockets {
 - `call.ktInject<T>()` resolves request-scoped dependencies.
 - Middleware/websocket builders can also use `inject<T>()` from the DSL to resolve dependencies.
 
+## Configuration Auto-Wiring
+
+Service-specific configuration objects are discovered and auto-injected just like components. Use `AutomaticServiceConfigLoader<T>` for configuration that's only needed by components (not infrastructure). This enables automatic discovery, loading, and injection during DI bootstrap Phase 5a.
+
+**Note:** For infrastructure configuration needed before DI bootstrap (like database), use `ServiceConfigLoader` instead. See [configuration.md](configuration.md) for the decision framework.
+
+```kotlin
+import com.ead.katalyst.config.provider.AutomaticServiceConfigLoader
+import com.ead.katalyst.config.provider.ConfigLoaders
+import com.ead.katalyst.core.config.ConfigProvider
+import kotlin.reflect.KClass
+
+// Define your configuration data class
+data class SmtpConfig(
+    val host: String,
+    val port: Int = 25,
+    val username: String = "",
+    val password: String = ""
+)
+
+// Implement AutomaticServiceConfigLoader
+object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
+    // REQUIRED: Tell the framework what type this loader produces
+    override val configType: KClass<SmtpConfig> = SmtpConfig::class
+
+    // REQUIRED: Load configuration from YAML
+    override fun loadConfig(provider: ConfigProvider): SmtpConfig {
+        return SmtpConfig(
+            host = ConfigLoaders.loadRequiredString(provider, "smtp.host"),
+            port = ConfigLoaders.loadOptionalInt(provider, "smtp.port", 25),
+            username = ConfigLoaders.loadOptionalString(provider, "smtp.username", ""),
+            password = ConfigLoaders.loadOptionalString(provider, "smtp.password", "")
+        )
+    }
+
+    // OPTIONAL: Validate loaded configuration (fail-fast at startup)
+    override fun validate(config: SmtpConfig) {
+        require(config.host.isNotBlank()) { "SMTP host is required" }
+        require(config.port > 0 && config.port <= 65535) { "SMTP port must be 1-65535" }
+    }
+}
+
+// Inject SmtpConfig just like any other component dependency
+class SmtpDeliveryService(
+    val smtpConfig: SmtpConfig  // ✅ Auto-injected by DI!
+) : Service {
+    fun sendEmail(to: String, subject: String, body: String) {
+        val host = smtpConfig.host
+        val port = smtpConfig.port
+        // Send email...
+    }
+}
+```
+
+**How it works:**
+
+1. **Phase 1-4:** Component discovery, dependency analysis, validation, and ordering proceed normally
+2. **Phase 5a:** DI bootstrap discovers all `AutomaticServiceConfigLoader` implementations via classpath scanning
+3. **Phase 5a:** For each loader:
+   - Load configuration from YAML using `ConfigProvider`
+   - Validate the configuration (fail-fast if invalid)
+   - Register it in Koin as a singleton
+4. **Phase 5b:** Components are instantiated with config dependencies auto-injected
+5. **Phase 6-7:** Database tables and routes are discovered
+
+**Key advantages for service configuration:**
+- No helper functions or bootstrap code needed
+- Automatic discovery via classpath scanning
+- Constructor injection (idiomatic Kotlin)
+- Fail-fast validation at startup
+- All configuration errors prevented before the application runs
+
+**Not suitable for infrastructure config** (like database) because it loads in Phase 5a, which is too late. Use `ServiceConfigLoader` for infrastructure config instead.
+
+For the complete decision framework and detailed patterns, see [documentation/configuration.md](configuration.md) → **Choosing the Right Pattern for Your Configuration**.
+
 ## Persistence
 
 Tables (`Table<Id, Entity>`) and repositories (`CrudRepository<Id, Entity>`) are covered in detail in [documentation/persistence.md](persistence.md). Once defined under the scanned packages, they are injected just like any other dependency.
