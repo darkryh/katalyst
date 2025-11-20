@@ -1,14 +1,12 @@
 package com.ead.boshi.app
 
 import com.ead.boshi.app.config.DbConfigImpl
-import com.ead.katalyst.client.feature.enableEvents
 import com.ead.katalyst.config.yaml.enableConfigProvider
 import com.ead.katalyst.di.feature.enableServerConfiguration
 import com.ead.katalyst.di.katalystApplication
 import com.ead.katalyst.ktor.engine.netty.NettyEngine
 import com.ead.katalyst.migrations.extensions.enableMigrations
 import com.ead.katalyst.scheduler.enableScheduler
-import com.ead.katalyst.websockets.enableWebSockets
 
 fun main(args: Array<String>) = katalystApplication(args) {
     // Step 1: Select engine (REQUIRED)
@@ -27,11 +25,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
     // Step 5: Enable ConfigProvider for runtime configuration access
     enableConfigProvider()
 
-    // Step 6: Enable optional features
-    enableEvents {
-        withBus(true)
-    }
+    // Step 7: Enable optional features
     enableMigrations()
     enableScheduler()
-    enableWebSockets()
 }

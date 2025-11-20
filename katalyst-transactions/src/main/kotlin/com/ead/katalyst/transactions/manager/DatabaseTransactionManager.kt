@@ -17,7 +17,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.slf4j.LoggerFactory
 import java.sql.SQLException

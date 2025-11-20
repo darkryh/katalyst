@@ -46,6 +46,7 @@ ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-jetty-jakarta = { module = "io.ktor:ktor-server-jetty-jakarta", version.ref = "ktor" }
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-server-rate-limit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
 
 # --- Dependency Injection (Koin) ---
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

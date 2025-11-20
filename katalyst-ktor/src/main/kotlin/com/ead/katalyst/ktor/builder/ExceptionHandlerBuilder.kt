@@ -2,6 +2,7 @@ package com.ead.katalyst.ktor.builder
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.utils.io.KtorDsl
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("ExceptionHandlerBuilder")
@@ -53,6 +54,7 @@ class ExceptionHandlerBuilder(
     /**
      * Registers a custom exception mapping that will be added to the underlying [StatusPages] plugin.
      */
+    @KtorDsl
     inline fun <reified T : Throwable> exception(
         noinline handler: suspend (call: ApplicationCall, cause: T) -> Unit
     ) {

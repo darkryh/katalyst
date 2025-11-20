@@ -222,15 +222,19 @@ class AutoBindingRegistrar(
 
                     val secondaryTypes = computeSecondaryTypes(clazz.kotlin, baseType.kotlin)
                     registerInstanceWithKoin(instance, clazz.kotlin, secondaryTypes)
+
                     if (baseType == EventHandler::class.java) {
                         GlobalEventHandlerRegistry.register(instance as EventHandler<*>)
                     }
+
                     if (baseType == KtorModule::class.java) {
                         KtorModuleRegistry.register(instance as KtorModule)
                     }
+
                     if (baseType == Service::class.java) {
                         ServiceRegistry.register(instance as Service)
                     }
+
                     logger.info("Registered {} component {}", label, clazz.name)
                     if (koin.getFromKoinOrNull(clazz.kotlin) == null) {
                         logger.warn("Verification failed for {}: instance not retrievable immediately after registration", clazz.name)
@@ -254,12 +258,13 @@ class AutoBindingRegistrar(
                     }
 
                     else -> {
-                        val error = result.exceptionOrNull()!!
+                        val error = result.exceptionOrNull()
+
                         logger.error(
                             "Failed to register {} {}: {}",
                             label.dropLastWhile { it == 's' },
                             clazz.name,
-                            error.message
+                            error?.message
                         )
                         logger.debug("Full error while registering ${clazz.name}", error)
                         iterator.remove()

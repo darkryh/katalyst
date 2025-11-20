@@ -79,5 +79,5 @@ fun Application.katalystMiddleware(block: MiddlewareBuilder.() -> Unit) {
 }
 
 
-inline fun <reified T : Any> MiddlewareBuilder.inject(noinline parameters: ParametersDefinition? = null): T =
+inline fun <reified T : Any> MiddlewareBuilder.ktInject(noinline parameters: ParametersDefinition? = null): T =
     getKoinInstance().get(parameters = parameters)

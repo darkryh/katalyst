@@ -112,6 +112,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
             logger.info("Retrieving services from ServiceRegistry...")
             val allServices = ServiceRegistry.getAll()
 
+            logger.info("Retrieving services from ${allServices.map { it.javaClass.name }}")
+
             if (allServices.isEmpty()) {
                 logger.info("No services found")
                 logger.info("")

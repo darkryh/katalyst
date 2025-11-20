@@ -14,8 +14,8 @@ dependencies {
     implementation(projects.katalystEvents)
 
     // Persistence stack (Exposed)
-    implementation(libs.exposed.core)
-    implementation(libs.exposed.jdbc)
+    api(libs.exposed.core)
+    api(libs.exposed.jdbc)
 
     // Dependency injection & concurrency
     implementation(libs.koin.core)

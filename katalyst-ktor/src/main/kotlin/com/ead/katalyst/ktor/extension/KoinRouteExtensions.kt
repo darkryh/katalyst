@@ -24,20 +24,21 @@ fun getKoinInstance(): Koin {
     return GlobalContext.get()
 }
 
-inline fun <reified T : Any> Application.ktInject(noinline parameters: ParametersDefinition? = null): T =
-    getKoinInstance().get(parameters = parameters)
+inline fun <reified T : Any> Application.ktInject(noinline parameters: ParametersDefinition? = null): Lazy<T> =
+    lazy { getKoinInstance().get(parameters = parameters) }
+
 
 /**
  * Lazily resolve a dependency from Koin inside a routing tree.
  */
-inline fun <reified T : Any> Route.ktInject(noinline parameters: ParametersDefinition? = null): T =
-    getKoinInstance().get(parameters = parameters)
+inline fun <reified T : Any> Route.ktInject(noinline parameters: ParametersDefinition? = null): Lazy<T> =
+    lazy { getKoinInstance().get(parameters = parameters) }
 
 /**
  * Resolve a dependency immediately from within a request handler.
  */
-inline fun <reified T : Any> ApplicationCall.ktInject(noinline parameters: ParametersDefinition? = null): T =
-    getKoinInstance().get(parameters = parameters)
+inline fun <reified T : Any> ApplicationCall.ktInject(noinline parameters: ParametersDefinition? = null): Lazy<T> =
+    lazy { getKoinInstance().get(parameters = parameters) }
 
 /**
  * Accessor for the Koin container from an [Application].

@@ -64,10 +64,8 @@ dependencies {
     implementation(libs.h2)
     implementation(libs.postgresql)
 
-    // Dependency injection & messaging
-    implementation(libs.koin.logger.slf4j)
-    /*implementation(libs.koin.ktor)
-    implementation(libs.rabbitmq.server)*/
+    // client experimental and unusable
+    //implementation(libs.rabbitmq.server)
 
     // Logging
     implementation(libs.logback)

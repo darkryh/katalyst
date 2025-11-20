@@ -11,17 +11,15 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-events-bus")
     implementation("com.ead.katalyst:katalyst-transactions")
     implementation("com.ead.katalyst:katalyst-ktor")
+    implementation("com.ead.katalyst:katalyst-config-provider")
+    implementation("com.ead.katalyst:katalyst-config-yaml")
 
-    // Shared module
+    // Shared modules
     implementation(project(":boshi-server:boshi-shared"))
 
     // Ktor
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.auth.jwt)
-
-    // JWT
-    implementation("com.auth0:java-jwt")
 
     // Logging
     implementation(libs.logback)

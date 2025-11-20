@@ -1,17 +1,17 @@
-# Katalyst Example Application - Base Configuration
+# Boshi SMTP Server - Base Configuration
 # This file is committed to git and contains:
 # - Default values for all environments
 # - Configuration structure documentation
 # - Public, non-sensitive defaults
 #
 # Secrets are provided via environment variables:
-# - ${DB_PASSWORD} → resolved from KATALYST_EXAMPLE_DB_PASSWORD env var
-# - ${JWT_SECRET} → resolved from JWT_SECRET env var
+# - ${DB_PASSWORD} → resolved from DB_PASSWORD env var
+# - ${BOSHI_API_KEY} → resolved from BOSHI_API_KEY env var
 
 ktor:
   application:
     modules:
-      - com.ead.katalyst.example.ApplicationKt.module
+      - com.ead.boshi.app.ApplicationKt.main
 
   deployment:
     # Network Configuration
@@ -74,14 +74,45 @@ database:
     idleTimeout: ${DB_IDLE_TIMEOUT:600000}
     maxLifetime: ${DB_MAX_LIFETIME:1800000}
 
-# JWT Configuration
-# Environment variables: JWT_SECRET, JWT_ISSUER, JWT_AUDIENCE, JWT_REALM, JWT_EXPIRATION
-jwt:
-  secret: ${JWT_SECRET:local-secret-for-development-only}
-  issuer: ${JWT_ISSUER:katalyst-example}
-  audience: ${JWT_AUDIENCE:katalyst-users}
-  realm: ${JWT_REALM:KatalystExample}
-  expirationSeconds: ${JWT_EXPIRATION:3600}
+authentication:
+  api-key: ${BOSHI_API_KEY:12345}
+
+# Rate Limiting Configuration
+# Uses Ktor's built-in RateLimit plugin for API protection
+rateLimit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  requestsPerSecond: ${RATE_LIMIT_RPS:10}          # Global: max 10 requests/sec
+  refillPeriodSeconds: ${RATE_LIMIT_REFILL:1}      # Token refill period
+  initialTokens: ${RATE_LIMIT_TOKENS:10}           # Initial burst tokens
+  emailSendLimit: ${RATE_LIMIT_EMAIL_SEND:100}    # POST /emails/send: 100 req/min
+  statusCheckLimit: ${RATE_LIMIT_STATUS:100}      # GET /status: 100 req/min
+
+# SMTP Server Configuration
+# Environment variables: SMTP_SERVER_NAME, SMTP_MAX_CONNECTIONS, SMTP_TIMEOUT, SMTP_MAX_RETRIES, SMTP_RETRY_DELAY
+smtp:
+  server:
+    name: ${SMTP_SERVER_NAME:mail.boshi.local}
+    maxConnections: ${SMTP_MAX_CONNECTIONS:100}
+    connectionTimeoutSeconds: ${SMTP_TIMEOUT:30}
+  delivery:
+    maxRetries: ${SMTP_MAX_RETRIES:3}
+    retryDelaySeconds: ${SMTP_RETRY_DELAY:300}
+  validation:
+    validateEmailFormat: ${SMTP_VALIDATE_FORMAT:true}
+    validateDomain: ${SMTP_VALIDATE_DOMAIN:true}
+    enableSpamDetection: ${SMTP_SPAM_DETECTION:true}
+    spamScoreThreshold: ${SMTP_SPAM_THRESHOLD:7.0}
+  storage:
+    retentionDays: ${SMTP_RETENTION_DAYS:14}
+    cleanupBatchSize: ${SMTP_CLEANUP_BATCH:1000}
+    cleanupSchedule: ${SMTP_CLEANUP_SCHEDULE:"0 2 * * * ?"}
+
+# DNS Configuration
+# Environment variables: DNS_SERVERS, DNS_MX_CACHE_HOURS, DNS_MX_TIMEOUT
+dns:
+  servers: ${DNS_SERVERS:8.8.8.8,8.8.4.4}
+  mxCacheHours: ${DNS_MX_CACHE_HOURS:24}
+  mxLookupTimeoutSeconds: ${DNS_MX_TIMEOUT:10}
 
 # Application Environment
 # Used by validators to apply environment-specific rules

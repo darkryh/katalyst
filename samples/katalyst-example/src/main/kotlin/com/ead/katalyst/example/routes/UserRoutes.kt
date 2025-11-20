@@ -15,13 +15,13 @@ fun Route.userRoutes() = katalystRouting {
     authenticate("auth-jwt") {
         route("/api/users") {
             get {
-                val service = call.ktInject<UserProfileService>()
+                val service by call.ktInject<UserProfileService>()
                 val users = service.listProfiles().map(UserProfileResponse::from)
                 call.respond(users)
             }
 
             get("/{id}") {
-                val service = call.ktInject<UserProfileService>()
+                val service by call.ktInject<UserProfileService>()
                 val id = call.parameters["id"]?.toLongOrNull()
                     ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
                 val user = service.getProfile(id)
@@ -32,7 +32,7 @@ fun Route.userRoutes() = katalystRouting {
                 val principal = call.principal<AuthPrincipal>()
                     ?: return@get call.respond(HttpStatusCode.Unauthorized)
 
-                val service = call.ktInject<UserProfileService>()
+                val service by call.ktInject<UserProfileService>()
                 val profile = service.getProfileForAccount(principal.accountId)
 
                     ?: return@get call.respond(HttpStatusCode.NotFound)

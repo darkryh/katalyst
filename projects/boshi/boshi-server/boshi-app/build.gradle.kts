@@ -14,30 +14,23 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-di")
     implementation("com.ead.katalyst:katalyst-migrations")
     implementation("com.ead.katalyst:katalyst-scheduler")
-    implementation("com.ead.katalyst:katalyst-websockets")
     implementation("com.ead.katalyst:katalyst-config-provider")
     implementation("com.ead.katalyst:katalyst-config-yaml")
     implementation("com.ead.katalyst:katalyst-ktor-engine")
     implementation("com.ead.katalyst:katalyst-ktor-engine-netty")
-    implementation("com.ead.katalyst:katalyst-events")
-    implementation("com.ead.katalyst:katalyst-events-bus")
-    implementation("com.ead.katalyst:katalyst-events-transport")
-    implementation("com.ead.katalyst:katalyst-events-client")
 
     // Feature modules
     implementation(project(":boshi-server:boshi-shared"))
     implementation(project(":boshi-server:boshi-smtp"))
     implementation(project(":boshi-server:boshi-auth"))
     implementation(project(":boshi-server:boshi-storage"))
-    implementation(project(":boshi-server:boshi-email"))
     implementation(project(":boshi-server:boshi-retention"))
 
     // Ktor Server
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.auth.jwt)
-    implementation(libs.ktor.server.web.sockets)
+    implementation(libs.ktor.server.rate.limit)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
@@ -61,5 +54,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.boshi.app.ApplicationKt")
+    mainClass.set("com.ead.boshi.app.ApplicationKt")
 }

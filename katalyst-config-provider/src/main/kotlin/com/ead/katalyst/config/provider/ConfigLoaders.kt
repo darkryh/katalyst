@@ -80,6 +80,19 @@ object ConfigLoaders {
         return provider.getInt(key, default)
     }
 
+
+    /**
+     * Load an optional boolean value with default.
+     *
+     * @param provider ConfigProvider to load from
+     * @param key Configuration key in dot notation
+     * @param default Default value if key is missing
+     * @return Boolean value or default
+     */
+    fun loadOptionalBoolean(provider: ConfigProvider, key: String, default: Boolean = false): Boolean {
+        return provider.getBoolean(key, default)
+    }
+
     /**
      * Load a required long value.
      *

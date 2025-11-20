@@ -11,9 +11,21 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-events-bus")
     implementation("com.ead.katalyst:katalyst-transactions")
     implementation("com.ead.katalyst:katalyst-ktor")
+    implementation("com.ead.katalyst:katalyst-persistence")
 
     // Shared module
     implementation(project(":boshi-server:boshi-shared"))
+
+    // Database - Exposed ORM
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
+
+    // Database connection pooling
+    implementation(libs.hikari)
+
+    // PostgreSQL driver
+    implementation(libs.postgresql)
 
     // Ktor
     implementation(libs.ktor.server.core)

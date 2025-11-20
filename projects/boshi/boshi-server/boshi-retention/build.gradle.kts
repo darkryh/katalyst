@@ -7,14 +7,17 @@ dependencies {
     // Katalyst modules
     implementation("com.ead.katalyst:katalyst-core")
     implementation("com.ead.katalyst:katalyst-di")
+    implementation("com.ead.katalyst:katalyst-persistence")
     implementation("com.ead.katalyst:katalyst-events")
     implementation("com.ead.katalyst:katalyst-events-bus")
     implementation("com.ead.katalyst:katalyst-transactions")
     implementation("com.ead.katalyst:katalyst-scheduler")
     implementation("com.ead.katalyst:katalyst-ktor")
 
-    // Shared module
+    // Boshi modules
     implementation(project(":boshi-server:boshi-shared"))
+    implementation(project(":boshi-server:boshi-storage"))
+    implementation(project(":boshi-server:boshi-smtp"))
 
     // Ktor
     implementation(libs.ktor.server.core)

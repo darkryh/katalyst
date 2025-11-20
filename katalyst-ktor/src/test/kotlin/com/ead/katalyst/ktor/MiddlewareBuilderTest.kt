@@ -3,7 +3,7 @@ package com.ead.katalyst.ktor
 import com.ead.katalyst.ktor.middleware.Middleware
 import com.ead.katalyst.ktor.middleware.MiddlewareBuilder
 import com.ead.katalyst.ktor.middleware.MiddlewareResult
-import com.ead.katalyst.ktor.middleware.inject
+import com.ead.katalyst.ktor.middleware.ktInject
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
@@ -44,7 +44,7 @@ class MiddlewareBuilderTest {
             testApplication {
                 application {
                     val builder = MiddlewareBuilder(this)
-                    val resolved = builder.inject<SampleDependency>()
+                    val resolved = builder.ktInject<SampleDependency>()
                     assertSame(koinApp.koin.get<SampleDependency>(), resolved)
                 }
             }
