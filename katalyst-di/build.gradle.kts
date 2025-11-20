@@ -27,8 +27,8 @@ dependencies {
     implementation(libs.exposed.migration.jdbc)
 
     // Dependency injection
-    implementation(libs.koin.core)
-    implementation(libs.koin.ktor)
+    api(libs.koin.core)
+    api(libs.koin.ktor)
 
     // Ktor integration
     implementation(libs.ktor.server.core)

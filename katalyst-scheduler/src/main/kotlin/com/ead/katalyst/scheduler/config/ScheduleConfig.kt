@@ -18,7 +18,7 @@ import kotlin.time.Duration
 data class ScheduleConfig(
     val taskName: String,
     val tags: Set<String> = emptySet(),
-    val initialDelay: Duration = Duration.Companion.ZERO,
+    val initialDelay: Duration = Duration.ZERO,
     val timeZone: ZoneId = ZoneId.systemDefault(),
     val maxExecutionTime: Duration? = null,
     val onSuccess: (taskName: String, executionTime: Duration) -> Unit = { _, _ -> },
