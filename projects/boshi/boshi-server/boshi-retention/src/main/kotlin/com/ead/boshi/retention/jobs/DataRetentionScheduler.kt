@@ -27,10 +27,6 @@ class DataRetentionScheduler(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val scheduler = requireScheduler()
 
-    init {
-        println("Running scheduled retry of pending emails")
-    }
-
     /**
      * Job: Clean up expired emails
      * Schedule: Daily at 2:00 AM

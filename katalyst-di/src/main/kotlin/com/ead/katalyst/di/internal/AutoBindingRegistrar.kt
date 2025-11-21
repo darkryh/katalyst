@@ -5,9 +5,7 @@ import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.core.exception.DependencyInjectionException
 import com.ead.katalyst.core.persistence.Table
 import com.ead.katalyst.core.transaction.DatabaseTransactionManager
-import com.ead.katalyst.di.lifecycle.DiscoverySummary
 import com.ead.katalyst.events.EventHandler
-import com.ead.katalyst.events.bus.GlobalEventHandlerRegistry
 import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.repositories.CrudRepository
@@ -78,213 +76,6 @@ class AutoBindingRegistrar(
 ) {
 
     private val packages: List<String> = scanPackages.filter { it.isNotBlank() }
-
-    /**
-     * Discovers and registers all framework components.
-     *
-     * This method executes the complete auto-discovery process in a specific order:
-     * 1. Repositories (data access layer)
-     * 2. Components (general framework components)
-     * 3. Services (business logic layer - depends on repositories and components)
-     * 4. Tables (database schema definitions)
-     * 5. Ktor modules (HTTP routing and middleware)
-     * 6. Event handlers (event-driven components)
-     * 7. Route functions (standalone routing DSL functions)
-     *
-     * Components with unresolved dependencies are deferred and retried after
-     * their dependencies become available.
-     */
-    fun registerAll() {
-        registerComponents(CrudRepository::class.java, "repositories")
-        registerComponents(Component::class.java, "components")
-        registerComponents(Service::class.java, "services")
-
-        registerTables()
-
-        registerComponents(KtorModule::class.java, "ktor modules")
-        registerComponents(EventHandler::class.java, "event handlers")
-        registerComponents(KatalystMigration::class.java, "migrations")
-        registerRouteFunctions()
-
-        // Display component discovery summary
-        displayComponentDiscoverySummary()
-    }
-
-    /**
-     * Displays component discovery summary with organized tables.
-     *
-     * Collects all discovered components from Koin and displays them
-     * in a consolidated summary format using DiscoverySummaryLogger.
-     */
-    private fun displayComponentDiscoverySummary() {
-        try {
-            DiscoverySummary.clear()
-
-            koin.safeGetAll<CrudRepository<*, *>>().forEach { repo ->
-                DiscoverySummary.addRepository(
-                    name = repo::class.simpleName ?: "Repository",
-                    annotation = "@Repository"
-                )
-            }
-
-            koin.safeGetAll<Service>().forEach { svc ->
-                DiscoverySummary.addService(
-                    name = svc::class.simpleName ?: "Service",
-                    annotation = "@Service"
-                )
-            }
-
-            koin.safeGetAll<Component>().forEach { component ->
-                DiscoverySummary.addComponent(
-                    name = component::class.simpleName ?: "Component",
-                    type = component::class.simpleName?.replace("Component", "") ?: "Custom",
-                    annotation = "@Component"
-                )
-            }
-
-            // Filter all registered objects for those implementing Table<*, *>
-            val tables = koin.getAll<Any>().filterIsInstance<org.jetbrains.exposed.v1.core.Table>()
-
-            tables.forEach { table ->
-                val tableName = (table as? org.jetbrains.exposed.v1.core.Table)?.tableName ?: table::class.simpleName
-                tableName?.let { DiscoverySummary.addDatabaseTable(it) }
-            }
-
-            koin.safeGetAll<KtorModule>().forEach { module ->
-                DiscoverySummary.addKtorModule(
-                    name = module::class.simpleName ?: "KtorModule",
-                    annotation = "@KtorModule"
-                )
-            }
-
-            koin.safeGetAll<EventHandler<*>>().forEach { handler ->
-                DiscoverySummary.addComponent(
-                    name = handler::class.simpleName ?: "EventHandler",
-                    type = "EventHandler",
-                    annotation = "@EventHandler"
-                )
-            }
-
-            koin.safeGetAll<KatalystMigration>().forEach { migration ->
-                DiscoverySummary.addComponent(
-                    name = migration::class.simpleName ?: "Migration",
-                    type = "Migration",
-                    annotation = "@Migration"
-                )
-            }
-
-            DiscoverySummary.display()
-        } catch (e: Exception) {
-            logger.warn("Error displaying discovery summary: {}", e.message)
-            logger.debug("Full error during discovery summary display", e)
-        }
-    }
-
-    private inline fun <reified T : Any> Koin.safeGetAll(): List<T> =
-        runCatching { getAll<T>() }.getOrElse { emptyList() }
-
-    private inline fun <reified T : Any> registerComponents(baseType: Class<T>, label: String) {
-        val pending = discoverConcreteTypes(baseType).toMutableSet()
-        if (pending.isEmpty()) {
-            logger.debug("No {} discovered for {}", baseType.simpleName, label)
-            return
-        }
-
-        val deferred = mutableSetOf<Class<out T>>()
-
-        while (pending.isNotEmpty()) {
-            var progressMade = false
-            val iterator = pending.iterator()
-
-            while (iterator.hasNext()) {
-                val clazz = iterator.next()
-
-                if (isAlreadyRegistered(clazz)) {
-                    logger.debug("Skipping {} - already registered", clazz.name)
-                    // Still register in ServiceRegistry if this is a Service
-                    if (baseType == Service::class.java) {
-                        runCatching {
-                            val instance = koin.getFromKoinOrNull(clazz.kotlin)
-                            if (instance is Service) {
-                                ServiceRegistry.register(instance)
-                                logger.debug("Registered already-instantiated service {} in ServiceRegistry", clazz.name)
-                            }
-                        }
-                    }
-                    iterator.remove()
-                    progressMade = true
-                    continue
-                }
-
-                val result = runCatching {
-                    val instance = instantiate(clazz.kotlin)
-                    injectWellKnownProperties(instance)
-
-                    val secondaryTypes = computeSecondaryTypes(clazz.kotlin, baseType.kotlin)
-                    registerInstanceWithKoin(instance, clazz.kotlin, secondaryTypes)
-
-                    if (baseType == EventHandler::class.java) {
-                        GlobalEventHandlerRegistry.register(instance as EventHandler<*>)
-                    }
-
-                    if (baseType == KtorModule::class.java) {
-                        KtorModuleRegistry.register(instance as KtorModule)
-                    }
-
-                    if (baseType == Service::class.java) {
-                        ServiceRegistry.register(instance as Service)
-                    }
-
-                    logger.info("Registered {} component {}", label, clazz.name)
-                    if (koin.getFromKoinOrNull(clazz.kotlin) == null) {
-                        logger.warn("Verification failed for {}: instance not retrievable immediately after registration", clazz.name)
-                    }
-                }
-
-                when {
-                    result.isSuccess -> {
-                        iterator.remove()
-                        deferred.remove(clazz)
-                        progressMade = true
-                    }
-
-                    result.exceptionOrNull() is DependencyInjectionException -> {
-                        if (deferred.add(clazz)) {
-                            logger.debug(
-                                "Deferring registration of {} until dependencies are available",
-                                clazz.name
-                            )
-                        }
-                    }
-
-                    else -> {
-                        val error = result.exceptionOrNull()
-
-                        logger.error(
-                            "Failed to register {} {}: {}",
-                            label.dropLastWhile { it == 's' },
-                            clazz.name,
-                            error?.message
-                        )
-                        logger.debug("Full error while registering ${clazz.name}", error)
-                        iterator.remove()
-                        progressMade = true
-                    }
-                }
-            }
-
-            if (!progressMade) {
-                deferred.forEach { deferredClass ->
-                    logger.error(
-                        "Unable to resolve dependencies for {} {}. Please ensure all required components are discoverable.",
-                        label.dropLastWhile { it == 's' },
-                        deferredClass.name
-                    )
-                }
-                break
-            }
-        }
-    }
 
     /**
      * Scans configured packages for concrete implementations of a base type.
@@ -525,7 +316,7 @@ class AutoBindingRegistrar(
      * Discovers and registers Exposed database table definitions.
      *
      * Scans for classes that extend both:
-     * - [org.jetbrains.exposed.sql.Table] (Exposed framework)
+     * - [org.jetbrains.exposed.v1.core.Table] (Exposed framework)
      * - [Table] (Katalyst marker interface)
      *
      * Tables are registered in Koin and later used to initialize the database schema.
@@ -574,7 +365,7 @@ class AutoBindingRegistrar(
     /**
      * Scans classpath for Exposed table implementations with Katalyst marker.
      *
-     * Uses reflection to find all classes extending [org.jetbrains.exposed.sql.Table]
+     * Uses reflection to find all classes extending [org.jetbrains.exposed.v1.core.Table]
      * that also implement the [Table] marker interface.
      *
      * **Instantiation Strategy:**
