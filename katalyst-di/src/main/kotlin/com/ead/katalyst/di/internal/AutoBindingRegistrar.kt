@@ -295,7 +295,7 @@ class AutoBindingRegistrar(
      * @param baseType The Java class of the base type
      * @return Set of concrete implementation classes
      */
-    private fun <T : Any> discoverConcreteTypes(baseType: Class<T>): Set<Class<out T>> {
+    internal fun <T : Any> discoverConcreteTypes(baseType: Class<T>): Set<Class<out T>> {
         val predicate: DiscoveryPredicate<T> = DiscoveryPredicate { candidate ->
             !Modifier.isAbstract(candidate.modifiers) && !candidate.isInterface
         }
@@ -331,7 +331,7 @@ class AutoBindingRegistrar(
      * @throws IllegalStateException if no suitable constructor is found
      * @throws DependencyInjectionException if dependencies cannot be resolved
      */
-    private fun <T : Any> instantiate(target: KClass<T>): T {
+    internal fun <T : Any> instantiate(target: KClass<T>): T {
         val constructor = target.primaryConstructor ?: target.constructors
             .minByOrNull { ctor -> ctor.parameters.count { !it.isOptional && it.kind == KParameter.Kind.VALUE } }
             ?: throw IllegalStateException("No usable constructor found for ${target.qualifiedName}")
@@ -396,7 +396,7 @@ class AutoBindingRegistrar(
      *
      * @param instance The component instance to inject properties into
      */
-    private fun injectWellKnownProperties(instance: Any) {
+    internal fun injectWellKnownProperties(instance: Any) {
         @Suppress("UNCHECKED_CAST")
         val mutableProperties = instance::class.memberProperties
             .filterIsInstance<KMutableProperty1<Any, Any?>>()
@@ -459,7 +459,7 @@ class AutoBindingRegistrar(
      * @param baseType The primary base type being registered
      * @return List of additional interfaces for secondary bindings
      */
-    private fun computeSecondaryTypes(
+    internal fun computeSecondaryTypes(
         clazz: KClass<*>,
         baseType: KClass<*>
     ): List<KClass<*>> {
@@ -491,7 +491,7 @@ class AutoBindingRegistrar(
      * Functions are wrapped in [RouteFunctionModule] and registered in [KtorModuleRegistry]
      * for installation during Ktor application startup.
      */
-    private fun registerRouteFunctions() {
+    internal fun registerRouteFunctions() {
         val methods = discoverRouteFunctions()
             .filter { method ->
                 if (method.usesKatalystDsl()) {
@@ -530,7 +530,7 @@ class AutoBindingRegistrar(
      *
      * Tables are registered in Koin and later used to initialize the database schema.
      */
-    private fun registerTables() {
+    internal fun registerTables() {
         if (packages.isEmpty()) {
             logger.debug("No packages configured for scanning, skipping table discovery")
             return
@@ -794,7 +794,7 @@ class AutoBindingRegistrar(
      * @param primaryType The primary class type for registration
      * @param secondaryTypes Additional interface types for polymorphic binding
      */
-    private fun registerInstanceWithKoin(
+    internal fun registerInstanceWithKoin(
         instance: Any,
         primaryType: KClass<*>,
         secondaryTypes: List<KClass<*>>

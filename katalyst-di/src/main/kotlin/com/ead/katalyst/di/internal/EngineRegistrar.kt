@@ -1,9 +1,8 @@
 package com.ead.katalyst.di.internal
 
-import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import com.ead.katalyst.di.lifecycle.LifecycleException
+import com.ead.katalyst.ktor.engine.KatalystKtorEngine
 import org.koin.core.module.Module
-import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
 /**
@@ -66,6 +65,8 @@ class EngineRegistrar(
         }
 
         val (className, methodName) = moduleInfo
+
+        @Suppress("KotlinUnreachableCode")
         return try {
             val moduleClass = Class.forName(className)
             val method = moduleClass.getDeclaredMethod(methodName)

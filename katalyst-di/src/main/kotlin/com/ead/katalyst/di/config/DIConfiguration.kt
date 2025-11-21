@@ -6,7 +6,6 @@ import com.ead.katalyst.database.DatabaseFactory
 import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
 import com.ead.katalyst.di.exception.FatalDependencyValidationException
 import com.ead.katalyst.di.feature.KatalystFeature
-import com.ead.katalyst.di.internal.AutoBindingRegistrar
 import com.ead.katalyst.di.internal.ComponentRegistrationOrchestrator
 import com.ead.katalyst.di.internal.EngineRegistrar
 import com.ead.katalyst.di.lifecycle.BootstrapProgress

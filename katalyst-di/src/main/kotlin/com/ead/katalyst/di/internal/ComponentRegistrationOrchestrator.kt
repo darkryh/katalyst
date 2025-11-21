@@ -5,7 +5,6 @@ import com.ead.katalyst.core.component.Service
 import com.ead.katalyst.core.config.ConfigProvider
 import com.ead.katalyst.di.analysis.ComponentOrderComputer
 import com.ead.katalyst.di.analysis.DependencyAnalyzer
-import com.ead.katalyst.di.error.ErrorFormatter
 import com.ead.katalyst.di.exception.FatalDependencyValidationException
 import com.ead.katalyst.di.validation.DependencyValidator
 import com.ead.katalyst.events.EventHandler
@@ -14,10 +13,8 @@ import com.ead.katalyst.ktor.KtorModule
 import com.ead.katalyst.migrations.KatalystMigration
 import com.ead.katalyst.repositories.CrudRepository
 import org.koin.core.Koin
-import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
-import kotlin.system.measureTimeMillis
 
 private val logger = LoggerFactory.getLogger("ComponentRegistrationOrchestrator")
 
@@ -119,13 +116,7 @@ class ComponentRegistrationOrchestrator(
         val discovered = mutableMapOf<String, Set<KClass<*>>>()
         val registrar = AutoBindingRegistrar(koin, scanPackages)
 
-        // Use reflection to access the discovery methods
-        val discoverMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-            "discoverConcreteTypes",
-            Class::class.java
-        ).apply { isAccessible = true }
-
-        // Discover each component type
+        // Discover each component type (methods are now internal - no reflection needed)
         listOf(
             "repositories" to CrudRepository::class.java,
             "components" to Component::class.java,
@@ -134,8 +125,7 @@ class ComponentRegistrationOrchestrator(
             "ktor modules" to KtorModule::class.java,
             "migrations" to KatalystMigration::class.java
         ).forEach { (label, baseClass) ->
-            @Suppress("UNCHECKED_CAST")
-            val types = discoverMethod.invoke(registrar, baseClass) as Set<Class<*>>
+            val types = registrar.discoverConcreteTypes(baseClass)
             discovered[label] = types.map { it.kotlin }.toSet()
             logger.debug("Discovered {} {}", types.size, label)
         }
@@ -230,44 +220,28 @@ class ComponentRegistrationOrchestrator(
 
         // Register non-migration components in order
         logger.info("Registering {} non-migration components in topological order", order.size)
-        for ((index, componentType) in order.withIndex()) {
-            try {
-                logger.info("[{}/{}] Registering {}",
-                    index + 1, order.size, componentType.simpleName)
-
-                // Use the existing registration logic
-                registerComponentOfType(registrar, componentType, discovered)
-                allRegisteredComponents.add(componentType)
-
-                logger.info("✓ Registered {}", componentType.simpleName)
-            } catch (e: Exception) {
-                logger.error("✗ Failed to register {} - {}", componentType.simpleName, e.message)
-                logger.error("Exception details: {}", e.toString())
-                throw e
-            }
-        }
+        registerComponentsInLoop(
+            components = order,
+            registrar = registrar,
+            discovered = discovered,
+            label = "",
+            useDebugLogging = false
+        )
+        allRegisteredComponents.addAll(order)
 
         // Register migrations AFTER non-migration components
         // Migrations were excluded from topological sort but still need to be registered
-        val migrations = discovered["migrations"] ?: emptySet()
+        val migrations = (discovered["migrations"] ?: emptySet()).toList()
         if (migrations.isNotEmpty()) {
-            logger.info("Registering {} migrations after service components",
-                migrations.size)
-
-            for ((index, migrationClass) in migrations.withIndex()) {
-                try {
-                    logger.debug("[{}/{}] Registering migration {}",
-                        index + 1, migrations.size, migrationClass.simpleName)
-
-                    registerComponentOfType(registrar, migrationClass, discovered)
-                    allRegisteredComponents.add(migrationClass)
-
-                    logger.debug("✓ Registered migration {}", migrationClass.simpleName)
-                } catch (e: Exception) {
-                    logger.error("✗ Failed to register migration {} - {}", migrationClass.simpleName, e.message)
-                    throw e
-                }
-            }
+            logger.info("Registering {} migrations after service components", migrations.size)
+            registerComponentsInLoop(
+                components = migrations,
+                registrar = registrar,
+                discovered = discovered,
+                label = "migration",
+                useDebugLogging = true
+            )
+            allRegisteredComponents.addAll(migrations)
         }
 
         logger.info("Phase 6: Database Table Discovery and Registration")
@@ -293,13 +267,9 @@ class ComponentRegistrationOrchestrator(
         // They MUST be registered after regular components so services are available for injection
         logger.info("Phase 7: Route Discovery and Registration")
 
-        // Use reflection to call registerRouteFunctions on the existing registrar
+        // Register route functions discovered from packages
         try {
-            val registerRoutesFunctionsMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "registerRouteFunctions"
-            ).apply { isAccessible = true }
-
-            registerRoutesFunctionsMethod.invoke(registrar)
+            registrar.registerRouteFunctions()
             logger.info("✓ Route functions discovered and registered")
         } catch (e: Exception) {
             logger.warn("Could not register route functions: {}", e.message)
@@ -339,22 +309,7 @@ class ComponentRegistrationOrchestrator(
             // Use reflection to call AutomaticConfigLoaderDiscovery.discoverLoaders()
             // This avoids circular dependency between katalyst-di and katalyst-config-provider
             try {
-                val discoveryClass = Class.forName(
-                    "com.ead.katalyst.config.provider.AutomaticConfigLoaderDiscovery"
-                )
-
-                // Get the singleton instance (Kotlin objects have a static INSTANCE field)
-                val instanceField = discoveryClass.getDeclaredField("INSTANCE")
-                instanceField.isAccessible = true
-                val discoveryInstance = instanceField.get(null)
-
-                val discoverMethod = discoveryClass.getDeclaredMethod(
-                    "discoverLoaders",
-                    Array<String>::class.java
-                ).apply { isAccessible = true }
-
-                @Suppress("UNCHECKED_CAST")
-                val loaders = discoverMethod.invoke(discoveryInstance, scanPackages) as Map<KClass<*>, Any>
+                val loaders = discoverAutomaticConfigLoaders()
 
                 if (loaders.isEmpty()) {
                     logger.debug("No AutomaticServiceConfigLoader implementations discovered")
@@ -393,20 +348,10 @@ class ComponentRegistrationOrchestrator(
 
                         // Register the configuration in Koin using AutoBindingRegistrar's method
                         try {
-                            // Get or create an AutoBindingRegistrar to use its registration logic
+                            // Create an AutoBindingRegistrar to use its registration logic
                             val registrar = AutoBindingRegistrar(koin, scanPackages)
-
-                            // Use reflection to call the existing registerInstanceWithKoin method
-                            // This is how components are registered and will properly handle types
-                            val registerMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                                "registerInstanceWithKoin",
-                                Any::class.java,
-                                KClass::class.java,
-                                List::class.java
-                            ).apply { isAccessible = true }
-
-                            @Suppress("UNCHECKED_CAST")
-                            registerMethod.invoke(registrar, config, configType, emptyList<KClass<*>>())
+                            // Call registerInstanceWithKoin directly (method is now internal)
+                            registrar.registerInstanceWithKoin(config, configType, emptyList())
 
                             logger.info("✓ Registered {} configuration", configType.simpleName)
                         } catch (e: Exception) {
@@ -445,15 +390,8 @@ class ComponentRegistrationOrchestrator(
         logger.info("Discovering Exposed table implementations...")
 
         try {
-            // Use reflection to call the registerTables method on AutoBindingRegistrar
-            val registerTablesMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "registerTables"
-            ).apply { isAccessible = true }
-
-            registerTablesMethod.invoke(registrar)
+            registrar.registerTables()
             logger.info("✓ Database table discovery and registration completed")
-        } catch (e: NoSuchMethodException) {
-            logger.warn("registerTables method not found on AutoBindingRegistrar: {}", e.message)
         } catch (e: Exception) {
             logger.error("Error during table discovery and registration: {}", e.message)
             logger.debug("Full error during table discovery", e)
@@ -486,47 +424,12 @@ class ComponentRegistrationOrchestrator(
             }
         }
 
-        // Use reflection to call the existing registration methods
+        // Call the registration methods directly (no reflection needed - methods are internal)
         try {
-            // Get the instantiate method
-            val instantiateMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "instantiate",
-                KClass::class.java
-            ).apply { isAccessible = true }
-
-            val instance = instantiateMethod.invoke(registrar, componentType)
-
-            // Get the injectWellKnownProperties method
-            val injectMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "injectWellKnownProperties",
-                Any::class.java
-            ).apply { isAccessible = true }
-
-            injectMethod.invoke(registrar, instance)
-
-            // Get the computeSecondaryTypes method
-            val secondaryTypesMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "computeSecondaryTypes",
-                KClass::class.java,
-                KClass::class.java
-            ).apply { isAccessible = true }
-
-            @Suppress("UNCHECKED_CAST")
-            val secondaryTypes = secondaryTypesMethod.invoke(
-                registrar,
-                componentType,
-                baseClass
-            ) as List<KClass<*>>
-
-            // Get the registerInstanceWithKoin method
-            val registerMethod = AutoBindingRegistrar::class.java.getDeclaredMethod(
-                "registerInstanceWithKoin",
-                Any::class.java,
-                KClass::class.java,
-                List::class.java
-            ).apply { isAccessible = true }
-
-            registerMethod.invoke(registrar, instance, componentType, secondaryTypes)
+            val instance = registrar.instantiate(componentType)
+            registrar.injectWellKnownProperties(instance)
+            val secondaryTypes = registrar.computeSecondaryTypes(componentType, baseClass)
+            registrar.registerInstanceWithKoin(instance, componentType, secondaryTypes)
 
             // Register in feature-specific registries
             when (instance) {
@@ -537,6 +440,47 @@ class ComponentRegistrationOrchestrator(
         } catch (e: Exception) {
             logger.error("Failed to register component {}: {}", componentType.simpleName, e.message)
             throw e
+        }
+    }
+
+    /**
+     * Helper: Registers components in a loop with consistent error handling and logging.
+     *
+     * @param components Components to register (in order)
+     * @param registrar The AutoBindingRegistrar instance
+     * @param discovered Map of discovered component types
+     * @param label Label for logging (e.g., "", "migration")
+     * @param useDebugLogging Whether to use debug level (true) or info level (false)
+     */
+    private fun registerComponentsInLoop(
+        components: List<KClass<*>>,
+        registrar: AutoBindingRegistrar,
+        discovered: Map<String, Set<KClass<*>>>,
+        label: String = "",
+        useDebugLogging: Boolean = false
+    ) {
+        val logMessage = if (label.isEmpty()) "Registering" else "Registering $label"
+        components.forEachIndexed { index, componentType ->
+            try {
+                val progressMessage = "[${ index + 1}/${ components.size}] $logMessage {}"
+                if (useDebugLogging) {
+                    logger.debug(progressMessage, componentType.simpleName)
+                } else {
+                    logger.info(progressMessage, componentType.simpleName)
+                }
+
+                registerComponentOfType(registrar, componentType, discovered)
+
+                val successMessage = "✓ $logMessage {}"
+                if (useDebugLogging) {
+                    logger.debug(successMessage, componentType.simpleName)
+                } else {
+                    logger.info(successMessage, componentType.simpleName)
+                }
+            } catch (e: Exception) {
+                logger.error("✗ Failed to $logMessage {} - {}", componentType.simpleName, e.message)
+                throw e
+            }
         }
     }
 
@@ -558,12 +502,36 @@ class ComponentRegistrationOrchestrator(
         }
 
         try {
-            // Use reflection to call AutomaticConfigLoaderDiscovery.discoverLoaders()
+            val loaders = discoverAutomaticConfigLoaders()
+            // Extract the config types from the discovered loaders
+            configTypes.addAll(loaders.keys)
+
+            if (loaders.isNotEmpty()) {
+                logger.debug("Pre-discovered {} automatic config types", configTypes.size)
+            }
+        } catch (e: Exception) {
+            logger.warn("Error pre-discovering automatic config types: {}", e.message)
+            logger.debug("Full error during config type pre-discovery", e)
+        }
+
+        return configTypes
+    }
+
+    /**
+     * Helper: Discovers AutomaticServiceConfigLoader implementations via reflection.
+     *
+     * Uses reflection to call AutomaticConfigLoaderDiscovery.discoverLoaders() because
+     * AutomaticConfigLoaderDiscovery is in a different module (katalyst-config-provider)
+     * which may not be on the classpath.
+     *
+     * @return Map of config type to loader instance, or empty map if discovery fails
+     */
+    private fun discoverAutomaticConfigLoaders(): Map<KClass<*>, Any> {
+        return try {
             val discoveryClass = Class.forName(
                 "com.ead.katalyst.config.provider.AutomaticConfigLoaderDiscovery"
             )
 
-            // Get the singleton instance
             val instanceField = discoveryClass.getDeclaredField("INSTANCE")
             instanceField.isAccessible = true
             val discoveryInstance = instanceField.get(null)
@@ -574,19 +542,13 @@ class ComponentRegistrationOrchestrator(
             ).apply { isAccessible = true }
 
             @Suppress("UNCHECKED_CAST")
-            val loaders = discoverMethod.invoke(discoveryInstance, scanPackages) as Map<KClass<*>, Any>
-
-            // Extract the config types from the discovered loaders
-            configTypes.addAll(loaders.keys)
-
-            logger.debug("Pre-discovered {} automatic config types", configTypes.size)
+            discoverMethod.invoke(discoveryInstance, scanPackages) as Map<KClass<*>, Any>
         } catch (e: ClassNotFoundException) {
             logger.debug("AutomaticConfigLoaderDiscovery not found - automatic config loading disabled")
+            emptyMap()
         } catch (e: Exception) {
-            logger.warn("Error pre-discovering automatic config types: {}", e.message)
-            logger.debug("Full error during config type pre-discovery", e)
+            logger.debug("Error discovering automatic config loaders: {}", e.message)
+            emptyMap()
         }
-
-        return configTypes
     }
 }

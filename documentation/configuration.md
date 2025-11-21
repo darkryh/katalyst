@@ -145,6 +145,8 @@ The framework then:
 | **Type safety** | High | High |
 | **Validation** | Required | Built-in |
 
+See "Pattern Comparison: Not Migration, Just Right Tool for Job" section below for more details.
+
 ### Implementing AutomaticServiceConfigLoader
 
 A complete implementation requires three steps:
@@ -448,15 +450,7 @@ You cannot use AutomaticServiceConfigLoader for database config because:
 
 ### Pattern Comparison: Not Migration, Just Right Tool for Job
 
-| Aspect | ServiceConfigLoader | AutomaticServiceConfigLoader |
-|--------|-----|-----|
-| **Purpose** | Infrastructure config needed pre-DI | Service config injected during DI |
-| **When loaded** | Phase 0 (bootstrap) | Phase 5a (during DI) |
-| **Discovery** | Manual (you call it) | Automatic (classpath scanning) |
-| **Injection** | Via bootstrap logic | Via constructor parameter |
-| **Use for** | Database, ports, TLS certs | SMTP, APIs, feature toggles |
-| **Best for** | Fixed infrastructure | Variable per-component config |
-| **Status** | Essential, unchanged | Modern, recommended for services |
+Both patterns serve different purposes and are both essential. Choose ServiceConfigLoader for infrastructure config (database, ports, TLS) needed before DI bootstrap (Phase 0). Choose AutomaticServiceConfigLoader for service config (SMTP, APIs, feature toggles) injected during DI Phase 5a. See "Choosing the Right Pattern for Your Configuration" section for the decision framework.
 
 ---
 
