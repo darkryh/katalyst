@@ -33,7 +33,6 @@ class DataRetentionScheduler(
      * Default retention: 14 days
      */
     // Registered by Katalyst scheduler via return type
-    @Suppress("unused")
     fun cleanupExpiredEmailsJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.cleanup-emails"),
         task = {
@@ -50,7 +49,6 @@ class DataRetentionScheduler(
      * Removes delivery records marked as permanently failed
      */
     // Registered by Katalyst scheduler via return type
-    @Suppress("unused")
     fun cleanupFailedDeliveriesJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.cleanup-failed"),
         task = {
@@ -67,7 +65,6 @@ class DataRetentionScheduler(
      * Removes stale cached MX records
      */
     // Registered by Katalyst scheduler via return type
-    @Suppress("unused")
     fun cleanupMxCacheJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.cleanup-mx-cache"),
         task = {
@@ -84,7 +81,6 @@ class DataRetentionScheduler(
      * Attempts delivery for emails scheduled for retry
      */
     // Registered by Katalyst scheduler via return type
-    @Suppress("unused")
     fun retryPendingEmailsJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.retry-pending-emails"),
         task = {
@@ -92,6 +88,6 @@ class DataRetentionScheduler(
             val retried = retryService.retryPendingEmails()
             logger.info("Retry job completed: processed $retried emails")
         },
-        cronExpression = CronExpression("0 0/1 * * * ?") // Every 30 minutes
+        cronExpression = CronExpression("0 0/30 * * * ?") // Every 30 minutes
     )
 }
