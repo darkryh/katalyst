@@ -339,7 +339,7 @@ class ComponentRegistrationOrchestrator(
                                 Any::class.java
                             ).apply { isAccessible = true }
                             validateMethod.invoke(loader, config)
-                        } catch (e: NoSuchMethodException) {
+                        } catch (_: NoSuchMethodException) {
                             // validate() is optional (default implementation)
                             logger.debug("No validate() method on {}", loader::class.simpleName)
                         }
@@ -367,7 +367,7 @@ class ComponentRegistrationOrchestrator(
                 }
 
                 logger.info("✓ All {} automatic configuration(s) loaded and registered", loaders.size)
-            } catch (e: ClassNotFoundException) {
+            } catch (_: ClassNotFoundException) {
                 logger.debug("AutomaticConfigLoaderDiscovery class not found, skipping automatic config loading")
                 logger.debug("Ensure katalyst-config-provider is on the classpath to enable automatic config loading")
             }
@@ -543,7 +543,7 @@ class ComponentRegistrationOrchestrator(
 
             @Suppress("UNCHECKED_CAST")
             discoverMethod.invoke(discoveryInstance, scanPackages) as Map<KClass<*>, Any>
-        } catch (e: ClassNotFoundException) {
+        } catch (_: ClassNotFoundException) {
             logger.debug("AutomaticConfigLoaderDiscovery not found - automatic config loading disabled")
             emptyMap()
         } catch (e: Exception) {
