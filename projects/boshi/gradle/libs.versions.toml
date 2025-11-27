@@ -1,14 +1,14 @@
 [versions]
 # Core toolchain shared across all modules
 androidx-lifecycle = "2.9.5"
-composeHotReload = "1.0.0-rc02"
+composeHotReload = "1.0.0"
 composeMultiplatform = "1.9.1"
 junit = "4.13.2"
 
 kotlin = "2.2.20"
 kotlinx-coroutines = "1.8.0"
 ktor = "3.3.1"
-koin = "3.5.6"
+koin = "4.2.0-alpha2"
 exposed = "1.0.0-rc-3"
 logback = "1.5.13"
 jansi = "2.4.0"
@@ -28,8 +28,14 @@ kotlinx-serialization = "1.6.3"
 testcontainers = "1.21.3"
 snakeyaml = "2.2"
 migration = "1.0.0-rc-3"
+navigation3 = "1.0.0"
+navigation3ViewModel = "2.10.0"
+composeUiUtil = "1.10.0-beta02"
+nav3Material = "1.3.0-alpha03"
 
 [libraries]
+androidx-material3-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "nav3Material" }
+compose-ui-util = { module = "org.jetbrains.compose.ui:ui-util", version.ref = "composeUiUtil" }
 # --- HTTP stack (Ktor server, serialization, and testing) ---
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
@@ -48,8 +54,16 @@ ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 ktor-server-rate-limit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
 
+# --- Navigation 3 ---
+navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+navigation3-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "navigation3ViewModel" }
+
 # --- Dependency Injection (Koin) ---
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koin-navigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
 koin-core-jvm = { module = "io.insert-koin:koin-core-jvm", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
@@ -99,6 +113,7 @@ jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 kaccelero-core = { module = "dev.kaccelero:core-jvm", version.ref = "kaccelero" }
 kaccelero-messaging-amqp = { module = "dev.kaccelero:messaging-amqp-jvm", version.ref = "kaccelero" }
 kourier-amqp-robust = { module = "dev.kourier:amqp-client-robust-jvm", version.ref = "kourier" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
@@ -129,3 +144,4 @@ composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "com
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
