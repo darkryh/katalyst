@@ -104,8 +104,7 @@ private fun ComposeWindowContent(onDismiss: () -> Unit) {
                 onValueChange = { to = it },
                 label = { Text("To", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                    .fillMaxWidth(),
                 singleLine = true,
                 shape = MaterialTheme.shapes.small,
                 textStyle = MaterialTheme.typography.bodyMedium
@@ -117,8 +116,7 @@ private fun ComposeWindowContent(onDismiss: () -> Unit) {
                 onValueChange = { subject = it },
                 label = { Text("Subject", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                    .fillMaxWidth(),
                 singleLine = true,
                 shape = MaterialTheme.shapes.small,
                 textStyle = MaterialTheme.typography.bodyMedium

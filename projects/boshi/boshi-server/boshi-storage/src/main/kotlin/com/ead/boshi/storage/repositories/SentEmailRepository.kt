@@ -106,4 +106,14 @@ class SentEmailRepository : CrudRepository<Long, SentEmailEntity> {
      */
     fun deleteExpiredBefore(beforeMillis: Long): Int =
         SentEmailsTable.deleteWhere { SentEmailsTable.expiresAtMillis lessEq beforeMillis }
+
+    /**
+     * Find all emails with pagination
+     */
+    fun findAll(page: Int, limit: Int): List<SentEmailEntity> =
+        SentEmailsTable
+            .selectAll()
+            .limit(limit)
+            .offset(((page - 1) * limit).toLong())
+            .map(::map)
 }

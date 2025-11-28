@@ -5,6 +5,8 @@ import com.ead.boshi_client.navigation.Screen
 import com.ead.boshi_client.ui.email.EmailViewModel
 import com.ead.boshi_client.ui.email.inbox.EmailInboxScreen
 import com.ead.boshi_client.ui.email.sent.EmailSentScreen
+import com.ead.boshi_client.ui.settings.SettingsScreen
+import com.ead.boshi_client.ui.smtptesting.SMTPTestingScreen
 import com.ead.boshi_client.ui.stats.StatisticsScreen
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.module
@@ -23,13 +25,12 @@ val navigationModule = module {
     navigation<Screen.EmailSent> {
         val viewModel = get<EmailViewModel>()
 
-        EmailSentScreen()
+        EmailSentScreen(viewModel = viewModel)
     }
 
-    navigation<Screen.Statistics> {
-        StatisticsScreen()
-    }
+    navigation<Screen.Statistics> { StatisticsScreen() }
 
-    navigation<Screen.Settings> {
-    }
+    navigation<Screen.SmtpTesting> { SMTPTestingScreen() }
+
+    navigation<Screen.Settings> { SettingsScreen() }
 }

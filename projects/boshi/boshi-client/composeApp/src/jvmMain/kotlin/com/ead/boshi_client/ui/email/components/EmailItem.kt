@@ -10,8 +10,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ead.boshi_client.ui.util.Email
-import org.jsoup.Jsoup
+import com.ead.boshi_client.domain.models.Email
+import com.ead.boshi_client.data.mappers.stripHtml
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun EmailItem(
@@ -20,15 +23,24 @@ fun EmailItem(
     onClick: () -> Unit
 ) {
     // Strip HTML tags for preview text
-    val previewText = if (email.isHtml) {
-        stripHtmlTags(email.body)
-    } else {
-        email.body
-    }
+    val previewText = email.body.stripHtml()
+        .replace("\n", " ")
+        .take(100)
+        .trimEnd()
+
+    // Format timestamp
+    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
+    val formattedDate = dateFormat.format(Date(email.timestamp))
+
+    // Get sender display name (part before @)
+    val senderDisplay = email.sender.substringBefore("@")
+
+    // Display subject or placeholder
+    val displaySubject = email.subject.takeIf { it.isNotEmpty() } ?: "(no subject)"
 
     Surface(
         onClick = onClick,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Companion.Transparent,
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -36,12 +48,14 @@ fun EmailItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            // Sender and date row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Text(
-                    text = email.sender,
+                    text = senderDisplay,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
@@ -51,21 +65,27 @@ fun EmailItem(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = email.timestamp.toString().substringBefore("T"),
+                    text = formattedDate,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             Spacer(modifier = Modifier.height(4.dp))
+
+            // Subject
             Text(
-                text = email.subject,
+                text = displaySubject,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Companion.Medium,
+                fontWeight = FontWeight.Medium,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Companion.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.Companion.height(2.dp))
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Preview
             Text(
                 text = previewText,
                 style = MaterialTheme.typography.bodySmall,
@@ -75,9 +95,4 @@ fun EmailItem(
             )
         }
     }
-}
-
-// Utility function to strip HTML tags from text
-private fun stripHtmlTags(html: String): String {
-    return Jsoup.parse(html).text()
 }

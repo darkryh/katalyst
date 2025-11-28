@@ -6,6 +6,7 @@ import com.ead.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 import javax.naming.NamingException
 import javax.naming.directory.InitialDirContext
+import java.util.*
 
 /**
  * Service for resolving MX records from DNS
@@ -34,7 +35,11 @@ class MxRecordResolver : Component {
         logger.debug("Resolving MX records for domain: $domain")
 
         return try {
-            val ctx = InitialDirContext()
+            // Configure JNDI for DNS lookups
+            val env = Hashtable<String, String>()
+            env["java.naming.factory.initial"] = "com.sun.jndi.dns.DnsContextFactory"
+
+            val ctx = InitialDirContext(env)
             val attributes = ctx.getAttributes(domain, arrayOf(MX_RECORD_TYPE))
             val mxAttr = attributes.get(MX_RECORD_TYPE)
 

@@ -35,6 +35,15 @@ class DeliveryStatusRepository : CrudRepository<Long, DeliveryStatusEntity> {
             ?.let(::map)
 
     /**
+     * Find delivery statuses by message IDs
+     */
+    fun findByMessageIds(messageIds: List<String>): List<DeliveryStatusEntity> =
+        DeliveryStatusTable
+            .selectAll()
+            .where { DeliveryStatusTable.messageId inList messageIds }
+            .map(::map)
+
+    /**
      * Find all delivery statuses for a sent email
      */
     fun findBySentEmailId(sentEmailId: Long): List<DeliveryStatusEntity> =

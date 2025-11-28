@@ -56,3 +56,23 @@ dependencies {
 application {
     mainClass.set("com.ead.boshi.app.ApplicationKt")
 }
+
+// Create a fat JAR with all dependencies for standalone execution
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "com.ead.boshi.app.ApplicationKt"
+        )
+    }
+
+    // Include all runtime dependencies in the JAR
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/MANIFEST.MF")
+        exclude("META-INF/*.SF")
+        exclude("META-INF/*.RSA")
+        exclude("META-INF/maven/**")
+        exclude("META-INF/proguard/**")
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}

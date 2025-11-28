@@ -44,8 +44,6 @@ data class EmailStats(
 object Stubs {
     val accounts = listOf(
         Account(1, "admin@boshi.com", "Admin"),
-        Account(2, "support@boshi.com", "Support"),
-        Account(3, "marketing@boshi.com", "Marketing")
     )
 
     val emails = listOf(

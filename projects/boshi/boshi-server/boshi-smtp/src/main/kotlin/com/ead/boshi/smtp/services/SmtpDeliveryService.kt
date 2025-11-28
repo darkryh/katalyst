@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory
  * Handles delivery attempts, retries, and status tracking
  */
 class SmtpDeliveryService(
-    val smtpClient : SmtpClient
+    val smtpClient : SmtpClient,
+    val mxResolver : MxRecordResolver
 ) : Component {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -39,7 +40,6 @@ class SmtpDeliveryService(
         return try {
             // Resolve MX records for recipient domain
             val recipientDomain = sentEmail.recipientEmail.substringAfterLast("@")
-            val mxResolver = MxRecordResolver()
 
             val mxRecords = try {
                 mxResolver.resolveMxRecords(recipientDomain)

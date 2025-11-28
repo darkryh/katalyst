@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ead.boshi_client.ui.email.EmailViewModel
 import com.ead.boshi_client.ui.email.components.EmailItem
 import com.ead.boshi_client.ui.email.components.EmailPreview
@@ -19,6 +20,7 @@ fun EmailInboxScreen(
     viewModel: EmailViewModel,
 ) {
     val selectedEmail by viewModel.selectedEmail
+    val receivedEmails by viewModel.receivedEmails.collectAsStateWithLifecycle()
 
     Row(
         modifier = Modifier
@@ -46,7 +48,7 @@ fun EmailInboxScreen(
 
                 // Email list
                 LazyColumn {
-                    items(Stubs.emails) { email ->
+                    items(receivedEmails) { email ->
                         EmailItem(
                             email = email,
                             isSelected = selectedEmail?.id == email.id,

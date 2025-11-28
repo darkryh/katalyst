@@ -61,7 +61,7 @@ class AuthAccountStatusMigrationTest {
         }
 
         val runner = MigrationRunner(databaseFactory, MigrationOptions())
-        runner.runMigrations(listOf(V2024102601NormalizeAuthAccountStatus(databaseFactory)))
+        runner.runMigrations(listOf(V1NormalizeAuthAccountStatus(databaseFactory)))
 
         val dormantStatus = transaction(databaseFactory.database) {
             AuthAccountsTable

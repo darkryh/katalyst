@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.composeHotReload) apply false
     alias(libs.plugins.kotlinSerialization) apply false
+    alias(libs.plugins.ksp) apply false
 }
 
 // Shared configuration for all projects

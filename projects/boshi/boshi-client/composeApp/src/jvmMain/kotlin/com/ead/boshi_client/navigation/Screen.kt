@@ -14,5 +14,8 @@ sealed class Screen {
     data object Statistics : Screen()
 
     @Serializable
+    data object SmtpTesting : Screen()
+
+    @Serializable
     data object Settings : Screen()
 }

@@ -119,3 +119,19 @@ data class EmailStatsResponse(
     val uniqueSenders: Long,
     val uniqueRecipients: Long
 )
+
+/**
+ * DTO for Email details
+ */
+@Serializable
+data class EmailDto(
+    val id: Long,
+    val messageId: String,
+    val sender: String,
+    val recipient: String,
+    val subject: String,
+    val body: String,
+    val status: String,
+    val timestamp: Long,
+    val tags: String? = null
+)

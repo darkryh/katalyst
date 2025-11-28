@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,18 +22,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ead.boshi_client.ui.email.components.renderer.HtmlEmailRenderer
-import com.ead.boshi_client.ui.email.components.renderer.PlainTextEmailRenderer
-import com.ead.boshi_client.ui.util.Email
+import com.ead.boshi_client.domain.models.Email
+import com.ead.boshi_client.domain.models.EmailStatus
+import com.ead.boshi_client.data.mappers.stripHtml
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun EmailPreview(
     modifier: Modifier = Modifier,
     email: Email
 ) {
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    val formattedDate = dateFormat.format(Date(email.timestamp))
+
+    // Get status badge color and text
+    val (statusColor, statusText) = when (email.status) {
+        EmailStatus.PENDING -> Pair(
+            MaterialTheme.colorScheme.surfaceVariant,
+            "Pending"
+        )
+        EmailStatus.DELIVERED -> Pair(
+            MaterialTheme.colorScheme.surfaceVariant,
+            "Delivered"
+        )
+        EmailStatus.FAILED -> Pair(
+            MaterialTheme.colorScheme.errorContainer,
+            "Failed"
+        )
+        EmailStatus.PERMANENTLY_FAILED -> Pair(
+            MaterialTheme.colorScheme.errorContainer,
+            "Permanently Failed"
+        )
+        else -> Pair(
+            MaterialTheme.colorScheme.surfaceVariant,
+            "Unknown"
+        )
+    }
+
     Column(
-        modifier = modifier
-            .fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         // Header section
         Surface(
@@ -44,82 +75,76 @@ fun EmailPreview(
             ) {
                 // Subject
                 Text(
-                    text = email.subject,
+                    text = email.subject.takeIf { it.isNotEmpty() } ?: "(no subject)",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Companion.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.Companion.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Sender info
                 Row(
-                    modifier = Modifier.Companion.fillMaxWidth(),
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Avatar
                     Surface(
                         shape = MaterialTheme.shapes.extraLarge,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.Companion.size(40.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Box(
-                            contentAlignment = Alignment.Companion.Center,
-                            modifier = Modifier.Companion.fillMaxSize()
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             Text(
-                                text = email.sender.first().uppercaseChar().toString(),
+                                text = email.sender.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.Companion.width(12.dp))
-                    Column {
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Sender and recipient info
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = email.sender,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = buildString {
-                                append("to ${email.recipient}")
-                                if (email.cc.isNotEmpty()) {
-                                    append(", cc: ${email.cc.joinToString()}")
-                                }
-                            },
+                            text = "to ${email.recipient}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Spacer(modifier = Modifier.Companion.weight(1f))
+
+                    // Date
                     Text(
-                        text = email.timestamp.toString().substringBefore("T"),
-                        style = MaterialTheme.typography.labelMedium,
+                        text = formattedDate,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Spacer(modifier = Modifier.Companion.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Action buttons
-                EmailActionButtons(
-                    emailId = email.id,
-                    onReply = {
-                        println("Reply to ${email.id}")
-                        // TODO: Open compose window with reply data
-                    },
-                    onReplyAll = {
-                        println("Reply All to ${email.id}")
-                        // TODO: Open compose window with reply all data
-                    },
-                    onForward = {
-                        println("Forward ${email.id}")
-                        // TODO: Open compose window with forward data
-                    },
-                    onDelete = {
-                        println("Delete ${email.id}")
-                        // TODO: Actually delete the email
-                    }
-                )
+                // Status badge
+                Surface(
+                    modifier = Modifier
+                        .padding(4.dp),
+                    color = statusColor,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -129,37 +154,48 @@ fun EmailPreview(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Render HTML or plain text
-            if (email.isHtml) {
-                HtmlEmailRenderer(
-                    htmlContent = email.body,
-                    modifier = Modifier.Companion
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
-            } else {
-                PlainTextEmailRenderer(
-                    textContent = email.body,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
-            }
+            // Email body (rendered as plain text, can be HTML)
+            Text(
+                text = email.body.stripHtml(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Show attachments if any
-            if (email.attachments.isNotEmpty()) {
+            // Metadata if available
+            if (email.tags.isNotEmpty() || email.metadata != null) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                EmailAttachmentList(
-                    attachments = email.attachments,
-                    onDownload = { attachment ->
-                        println("Download attachment: ${attachment.fileName}")
-                        // TODO: Implement actual download
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (email.tags.isNotEmpty()) {
+                        Text(
+                            text = "Tags: ${email.tags.joinToString(", ")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                )
+
+                    if (email.spamDetected) {
+                        Text(
+                            text = "⚠️ Marked as potential spam (score: ${String.format("%.2f", email.spamScore)})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    Text(
+                        text = "Message ID: ${email.messageId}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }

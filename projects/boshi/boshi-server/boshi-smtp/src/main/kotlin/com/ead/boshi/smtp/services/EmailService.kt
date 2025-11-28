@@ -5,6 +5,7 @@ import com.ead.boshi.shared.exceptions.EmailCantBeBlankOrNull
 import com.ead.boshi.shared.exceptions.EmailRequestedNotFound
 import com.ead.boshi.shared.exceptions.EmailSpamException
 import com.ead.boshi.shared.models.DeliveryStatusEntity
+import com.ead.boshi.shared.models.EmailDto
 import com.ead.boshi.shared.models.EmailStatsResponse
 import com.ead.boshi.shared.models.SendEmailRequest
 import com.ead.boshi.shared.models.SentEmailEntity
@@ -112,6 +113,29 @@ class EmailService(
             uniqueSenders = uniqueSenders,
             uniqueRecipients = uniqueRecipients
         )
+    }
+
+    suspend fun getEmails(page: Int, limit: Int): List<EmailDto> = transactionManager.transaction {
+        val emails = sentEmailRepository.findAll(page, limit)
+        if (emails.isEmpty()) return@transaction emptyList()
+
+        val messageIds = emails.map { it.messageId }
+        val statuses = deliveryStatusRepository.findByMessageIds(messageIds).associateBy { it.messageId }
+
+        emails.map { email ->
+            val status = statuses[email.messageId]
+            EmailDto(
+                id = email.id ?: 0,
+                messageId = email.messageId,
+                sender = email.senderEmail,
+                recipient = email.recipientEmail,
+                subject = email.subject,
+                body = email.body,
+                status = status?.status ?: DeliveryStatus.PENDING,
+                timestamp = email.submittedAtMillis,
+                tags = email.tags
+            )
+        }
     }
 
     /**

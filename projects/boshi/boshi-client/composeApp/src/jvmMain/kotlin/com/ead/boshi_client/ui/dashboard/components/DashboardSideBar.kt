@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.sharp.AccountCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,18 +39,15 @@ import androidx.compose.ui.unit.dp
 import com.ead.boshi_client.navigation.Navigator
 import com.ead.boshi_client.navigation.Screen
 import com.ead.boshi_client.ui.dashboard.DashboardCompositionLayoutState
-import com.ead.boshi_client.ui.dashboard.models.EmailAccountNavItem
 import com.ead.boshi_client.ui.util.Account
 import com.ead.boshi_client.ui.util.Stubs
-
 
 @Composable
 fun DashboardSideBar(
     modifier: Modifier = Modifier,
     navigator: Navigator,
     selectedAccount: Account,
-    onAccountSelected: (Account) -> Unit,
-    emailAccountNavItems : List<EmailAccountNavItem> = emptyList()
+    onAccountSelected: (Account) -> Unit
 ) {
     val state = DashboardCompositionLayoutState.current
     var accountExpanded by remember { mutableStateOf(false) }
@@ -132,7 +130,7 @@ fun DashboardSideBar(
                 NavigationDrawerItem(
                     label = { Text("Inbox") },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    selected = false, // TODO: Track selection
+                    selected = navigator.backStack.lastOrNull() == Screen.EmailInbox,
                     onClick = { navigator.goTo(Screen.EmailInbox) },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -140,7 +138,7 @@ fun DashboardSideBar(
                 NavigationDrawerItem(
                     label = { Text("Sent") },
                     icon = { Icon(Icons.Default.Send, contentDescription = null) },
-                    selected = false, // TODO: Track selection
+                    selected = navigator.backStack.lastOrNull() == Screen.EmailSent,
                     onClick = { navigator.goTo(Screen.EmailSent) },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -148,8 +146,16 @@ fun DashboardSideBar(
                 NavigationDrawerItem(
                     label = { Text("Statistics") },
                     icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                    selected = false, // TODO: Track selection
+                    selected = navigator.backStack.lastOrNull() == Screen.Statistics,
                     onClick = { navigator.goTo(Screen.Statistics) },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("SMTP Testing") },
+                    icon = { Icon(Icons.Default.Storage, contentDescription = null) },
+                    selected = navigator.backStack.lastOrNull() == Screen.SmtpTesting,
+                    onClick = { navigator.goTo(Screen.SmtpTesting) },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
@@ -158,7 +164,7 @@ fun DashboardSideBar(
                 NavigationDrawerItem(
                     label = { Text("Settings") },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    selected = false, // TODO: Track selection
+                    selected = navigator.backStack.lastOrNull() == Screen.Settings,
                     onClick = { navigator.goTo(Screen.Settings) },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )

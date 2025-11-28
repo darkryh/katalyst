@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
@@ -24,13 +26,23 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.material3.navigation3)
 
-
             implementation(libs.compose.ui.util)
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.0-beta02")
 
+            // Room Database (JVM only - for proper code generation)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+            implementation(libs.androidx.datastore)
+            implementation(libs.androidx.datastore.preferences)
 
+            // HTTP Client & Networking (shared across platforms)
+            implementation(libs.retrofit)
+            implementation(libs.retrofit.kotlinx.serialization)
+            implementation(libs.okhttp)
+            implementation(libs.okhttp.logging)
 
+            // Serialization & DI (shared)
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
 
@@ -41,6 +53,7 @@ kotlin {
 
             implementation(libs.navigation3.runtime)
             implementation(libs.navigation3.ui)
+
             // HTML sanitization
             implementation("org.jsoup:jsoup:1.17.2")
             implementation(libs.navigation3.viewmodel)
@@ -66,4 +79,14 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+// Room Database Configuration
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+    add("kspJvm", libs.room.compiler)
+    // Add any other platform target you use in your project, for example kspDesktop
 }

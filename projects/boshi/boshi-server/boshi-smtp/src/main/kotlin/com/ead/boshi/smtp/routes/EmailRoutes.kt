@@ -75,4 +75,14 @@ fun Route.emailRoutes() = katalystRouting {
     get("/emails/stats") {
         call.respond(emailService.getEmailStats())
     }
+
+    /**
+     * GET /emails - List emails
+     * Query params: page (default 1), limit (default 20)
+     */
+    get("/emails") {
+        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        call.respond(emailService.getEmails(page, limit))
+    }
 }
