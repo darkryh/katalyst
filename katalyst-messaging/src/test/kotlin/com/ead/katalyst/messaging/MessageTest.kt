@@ -247,7 +247,7 @@ class MessageTest {
         val message = Message(payload = "test".toByteArray())
 
         // Then
-        assertFalse(message == null)
+        assertNotNull(message)
     }
 
     @Test
