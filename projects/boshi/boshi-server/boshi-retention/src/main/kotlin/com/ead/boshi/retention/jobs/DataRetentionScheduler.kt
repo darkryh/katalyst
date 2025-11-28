@@ -32,13 +32,11 @@ class DataRetentionScheduler(
     fun cleanupExpiredEmailsJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.cleanup-emails"),
         task = {
-            logger.debug("Running scheduled cleanup of expired emails")
+            logger.info("Running scheduled cleanup of expired emails")
+
             val deleted = cleanupService.cleanupExpiredEmails()
-            if (deleted > 0) {
-                logger.info("Cleanup job completed: deleted $deleted expired emails")
-            } else {
-                logger.debug("Cleanup job completed: deleted $deleted expired emails")
-            }
+
+            logger.info("Cleanup job completed: deleted $deleted expired emails")
         },
         cronExpression = CronExpression("0 2 * * * ?") // 2:00 AM daily
     )
@@ -51,13 +49,13 @@ class DataRetentionScheduler(
     fun cleanupFailedDeliveriesJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.cleanup-failed"),
         task = {
-            logger.debug("Running scheduled cleanup of permanently failed deliveries")
-            val deleted = cleanupService.cleanupFailedDeliveries()
-            if (deleted > 0) {
-                logger.info("Cleanup job completed: deleted $deleted permanently failed deliveries")
-            } else {
-                logger.debug("Cleanup job completed: deleted $deleted permanently failed deliveries")
+            logger.info("Running scheduled cleanup of permanently failed deliveries")
+
+            val deleted = transactionManager.transaction {
+                cleanupService.cleanupFailedDeliveries()
             }
+
+            logger.info("Cleanup job completed: deleted $deleted permanently failed deliveries")
         },
         cronExpression = CronExpression("0 3 * * * ?") // 3:00 AM daily
     )
@@ -71,12 +69,12 @@ class DataRetentionScheduler(
         config = ScheduleConfig("boshi.scheduler.cleanup-mx-cache"),
         task = {
             logger.debug("Running scheduled cleanup of expired MX record cache")
-            val deleted = cleanupService.cleanupExpiredMxCache()
-            if (deleted > 0) {
-                logger.info("Cleanup job completed: cleaned $deleted expired MX cache entries")
-            } else {
-                logger.debug("Cleanup job completed: cleaned $deleted expired MX cache entries")
+
+            val deleted = transactionManager.transaction {
+                cleanupService.cleanupExpiredMxCache()
             }
+
+            logger.info("Cleanup job completed: cleaned $deleted expired MX cache entries")
         },
         cronExpression = CronExpression("0 4 * * * ?") // 4:00 AM daily
     )

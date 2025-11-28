@@ -28,7 +28,6 @@ class RetryService(
         private const val RETRY_BATCH_SIZE = 100
     }
 
-
     /**
      * Job: Retry pending emails.
      * Schedule: Every 30 minutes.
@@ -39,11 +38,8 @@ class RetryService(
         task = {
             logger.debug("Running scheduled retry of pending emails")
             val retried = retryPendingEmails()
-            if (retried > 0) {
-                logger.info("Retry job completed: processed $retried emails")
-            } else {
-                logger.debug("Retry job completed: processed $retried emails")
-            }
+
+            logger.info("Retry job completed: processed $retried emails")
         },
         cronExpression = CronExpression("0 */30 * * * ?") // Every 30 minutes
     )
@@ -105,11 +101,8 @@ class RetryService(
                     }
                 }
 
-                if (totalRetried > 0) {
-                    logger.info("Retry batch completed: $totalRetried emails processed")
-                } else {
-                    logger.debug("Retry batch completed: $totalRetried emails processed")
-                }
+                logger.info("Retry batch completed: $totalRetried emails processed")
+
             } catch (e: Exception) {
                 logger.error("Error during email retry processing", e)
             }

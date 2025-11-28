@@ -36,13 +36,9 @@ class InitialEmailDeliveryService(
     fun initialEmailDeliveryJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.initial-delivery"),
         task = {
-            logger.debug("Running scheduled initial delivery of pending emails")
             val delivered = deliverPendingEmails()
-            if (delivered > 0) {
-                logger.info("Initial delivery job completed: processed $delivered emails")
-            } else {
-                logger.debug("Initial delivery job completed: processed $delivered emails")
-            }
+
+            logger.info("Initial delivery job completed: processed $delivered emails")
         },
         cronExpression = CronExpression("0 * * * * ?") // Every minute
     )
@@ -111,11 +107,8 @@ class InitialEmailDeliveryService(
                     }
                 }
 
-                if (totalProcessed > 0) {
-                    logger.info("Initial delivery batch completed: $totalProcessed emails processed")
-                } else {
-                    logger.debug("Initial delivery batch completed: $totalProcessed emails processed")
-                }
+                logger.info("Initial delivery batch completed: $totalProcessed emails processed")
+
             } catch (e: Exception) {
                 logger.error("Error during initial email delivery processing", e)
             }

@@ -88,7 +88,6 @@ class CleanupService(
      * @return number of cache entries cleaned
      */
     fun cleanupExpiredMxCache(
-
         batchSize: Int = DataRetention.DEFAULT_CLEANUP_BATCH_SIZE
     ): Long {
         logger.debug("Starting cleanup of expired MX record cache")
