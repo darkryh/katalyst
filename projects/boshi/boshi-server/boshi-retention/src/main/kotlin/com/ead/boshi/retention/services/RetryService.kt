@@ -13,8 +13,7 @@ import com.ead.katalyst.scheduler.extension.requireScheduler
 import org.slf4j.LoggerFactory
 
 /**
- * Service for retrying failed email deliveries
- * Handles batch processing of emails pending retry
+ * Retries failed email deliveries in batches.
  */
 class RetryService(
     private val sentEmailRepository: SentEmailRepository,
@@ -31,28 +30,30 @@ class RetryService(
 
 
     /**
-     * Job: Retry pending emails
-     * Schedule: Every 30 minutes
-     * Attempts delivery for emails scheduled for retry
+     * Job: Retry pending emails.
+     * Schedule: Every 30 minutes.
      */
     // Registered by Katalyst scheduler via return type
     fun retryPendingEmailsJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.retry-pending-emails"),
         task = {
-            logger.info("Running scheduled retry of pending emails")
+            logger.debug("Running scheduled retry of pending emails")
             val retried = retryPendingEmails()
-            logger.info("Retry job completed: processed $retried emails")
+            if (retried > 0) {
+                logger.info("Retry job completed: processed $retried emails")
+            } else {
+                logger.debug("Retry job completed: processed $retried emails")
+            }
         },
         cronExpression = CronExpression("0 */30 * * * ?") // Every 30 minutes
     )
 
     /**
-     * Retry all pending emails that are due for retry
-     * Checks nextRetryAtMillis and attempts delivery for eligible emails
+     * Retries pending emails due for delivery.
      * @return number of emails retried
      */
     suspend fun retryPendingEmails(): Long {
-        logger.info("Starting retry of pending emails")
+        logger.debug("Starting retry of pending emails")
 
         return transactionManager.transaction {
             val now = System.currentTimeMillis()
@@ -67,7 +68,7 @@ class RetryService(
                     return@transaction totalRetried
                 }
 
-                logger.info("Found ${pendingEmails.size} emails due for retry")
+                logger.debug("Found ${pendingEmails.size} emails due for retry")
 
                 for (deliveryStatus in pendingEmails) {
                     try {
@@ -104,7 +105,11 @@ class RetryService(
                     }
                 }
 
-                logger.info("Retry batch completed: $totalRetried emails processed")
+                if (totalRetried > 0) {
+                    logger.info("Retry batch completed: $totalRetried emails processed")
+                } else {
+                    logger.debug("Retry batch completed: $totalRetried emails processed")
+                }
             } catch (e: Exception) {
                 logger.error("Error during email retry processing", e)
             }

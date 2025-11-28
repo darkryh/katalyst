@@ -11,8 +11,7 @@ import com.ead.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 
 /**
- * Service orchestrating email delivery via SMTP
- * Handles delivery attempts, retries, and status tracking
+ * Orchestrates email delivery via SMTP.
  */
 class SmtpDeliveryService(
     val smtpClient : SmtpClient,
@@ -26,7 +25,7 @@ class SmtpDeliveryService(
     }
 
     /**
-     * Attempt to deliver an email
+     * Attempts to deliver an email.
      * @param sentEmail the email entity to deliver
      * @param deliveryStatus current delivery status
      * @return updated delivery status
@@ -35,7 +34,7 @@ class SmtpDeliveryService(
         sentEmail: SentEmailEntity,
         deliveryStatus: DeliveryStatusEntity
     ): DeliveryStatusEntity {
-        logger.info("Attempting delivery of message: ${sentEmail.messageId}, attempt ${deliveryStatus.attemptCount + 1}")
+        logger.debug("Attempting delivery of message: ${sentEmail.messageId}, attempt ${deliveryStatus.attemptCount + 1}")
 
         return try {
             // Resolve MX records for recipient domain
@@ -95,7 +94,7 @@ class SmtpDeliveryService(
     }
 
     /**
-     * Determine delivery status after failure
+     * Determines delivery status after failure.
      */
     private fun handleDeliveryFailure(
         deliveryStatus: DeliveryStatusEntity,
@@ -131,7 +130,7 @@ class SmtpDeliveryService(
     }
 
     /**
-     * Calculate retry delay with exponential backoff
+     * Calculates retry delay with exponential backoff.
      */
     private fun calculateRetryDelay(attemptNumber: Int): Long {
         if (RetryPolicy.USE_EXPONENTIAL_BACKOFF) {

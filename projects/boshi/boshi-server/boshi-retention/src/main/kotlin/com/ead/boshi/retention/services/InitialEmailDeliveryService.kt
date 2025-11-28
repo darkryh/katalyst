@@ -13,8 +13,7 @@ import com.ead.katalyst.scheduler.extension.requireScheduler
 import org.slf4j.LoggerFactory
 
 /**
- * Service for initial email delivery
- * Handles batch processing of PENDING emails waiting for first delivery attempt
+ * Handles initial delivery of pending emails in batches.
  */
 class InitialEmailDeliveryService(
     private val sentEmailRepository: SentEmailRepository,
@@ -30,28 +29,30 @@ class InitialEmailDeliveryService(
     }
 
     /**
-     * Job: Process initial delivery of pending emails
-     * Schedule: Every minute
-     * Attempts initial delivery for emails in PENDING status
+     * Job: Process initial delivery of pending emails.
+     * Schedule: Every minute.
      */
     // Registered by Katalyst scheduler via return type
     fun initialEmailDeliveryJob() = scheduler.scheduleCron(
         config = ScheduleConfig("boshi.scheduler.initial-delivery"),
         task = {
-            logger.info("Running scheduled initial delivery of pending emails")
+            logger.debug("Running scheduled initial delivery of pending emails")
             val delivered = deliverPendingEmails()
-            logger.info("Initial delivery job completed: processed $delivered emails")
+            if (delivered > 0) {
+                logger.info("Initial delivery job completed: processed $delivered emails")
+            } else {
+                logger.debug("Initial delivery job completed: processed $delivered emails")
+            }
         },
         cronExpression = CronExpression("0 * * * * ?") // Every minute
     )
 
     /**
-     * Process all pending emails and attempt initial delivery
-     * Checks for emails in PENDING status and attempts delivery
+     * Process pending emails for initial delivery.
      * @return number of emails processed
      */
     suspend fun deliverPendingEmails(): Long {
-        logger.info("Starting initial delivery of pending emails")
+        logger.debug("Starting initial delivery of pending emails")
 
         return transactionManager.transaction {
             var totalProcessed: Long = 0
@@ -69,7 +70,7 @@ class InitialEmailDeliveryService(
                 val batches = pendingDeliveries.chunked(INITIAL_DELIVERY_BATCH_SIZE)
 
                 for (batch in batches) {
-                    logger.info("Processing batch of ${batch.size} emails for initial delivery")
+                    logger.debug("Processing batch of ${batch.size} emails for initial delivery")
 
                     for (deliveryStatus in batch) {
                         try {
@@ -110,7 +111,11 @@ class InitialEmailDeliveryService(
                     }
                 }
 
-                logger.info("Initial delivery batch completed: $totalProcessed emails processed")
+                if (totalProcessed > 0) {
+                    logger.info("Initial delivery batch completed: $totalProcessed emails processed")
+                } else {
+                    logger.debug("Initial delivery batch completed: $totalProcessed emails processed")
+                }
             } catch (e: Exception) {
                 logger.error("Error during initial email delivery processing", e)
             }

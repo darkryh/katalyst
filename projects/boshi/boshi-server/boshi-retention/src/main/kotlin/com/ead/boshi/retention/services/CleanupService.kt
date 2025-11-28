@@ -9,8 +9,7 @@ import com.ead.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 
 /**
- * Service for cleaning up expired and obsolete data
- * Handles removal of expired emails, outdated MX records, and failed delivery attempts
+ * Cleans up expired and obsolete data.
  */
 class CleanupService(
     private val sentEmailRepository: SentEmailRepository,
@@ -20,7 +19,7 @@ class CleanupService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
-     * Clean up expired sent emails
+     * Cleans up expired sent emails.
      * @param retentionDays number of days to retain emails (null = use default)
      * @param batchSize maximum number of records to delete in one operation
      * @return number of emails deleted
@@ -29,7 +28,7 @@ class CleanupService(
         retentionDays: Int = DataRetention.DEFAULT_RETENTION_DAYS,
         batchSize: Int = DataRetention.DEFAULT_CLEANUP_BATCH_SIZE
     ): Long {
-        logger.info("Starting cleanup of expired emails (retention: $retentionDays days)")
+        logger.debug("Starting cleanup of expired emails (retention: $retentionDays days)")
 
         val now = System.currentTimeMillis()
         var totalDeleted: Long = 0
@@ -40,7 +39,11 @@ class CleanupService(
             val deleted = sentEmailRepository.deleteExpiredBefore(expiredBeforeTime)
             totalDeleted = deleted.toLong()
 
-            logger.info("Cleanup completed: deleted $totalDeleted expired emails")
+            if (totalDeleted > 0) {
+                logger.info("Cleanup completed: deleted $totalDeleted expired emails")
+            } else {
+                logger.debug("Cleanup completed: deleted $totalDeleted expired emails")
+            }
         } catch (e: Exception) {
             logger.error("Error during expired email cleanup", e)
         }
@@ -49,7 +52,7 @@ class CleanupService(
     }
 
     /**
-     * Clean up failed delivery records that can be permanently discarded
+     * Cleans up failed delivery records that can be permanently discarded.
      * @param deliveryStatusRepository repository to perform cleanup
      * @param batchSize maximum number of records to delete in one operation
      * @return number of failed records deleted
@@ -57,7 +60,7 @@ class CleanupService(
     fun cleanupFailedDeliveries(
         batchSize: Int = DataRetention.DEFAULT_CLEANUP_BATCH_SIZE
     ): Long {
-        logger.info("Starting cleanup of permanently failed deliveries")
+        logger.debug("Starting cleanup of permanently failed deliveries")
 
         var totalDeleted: Long = 0
 
@@ -66,7 +69,11 @@ class CleanupService(
             val deleted = deliveryStatusRepository.deleteByStatus(DeliveryStatus.PERMANENTLY_FAILED)
             totalDeleted = deleted.toLong()
 
-            logger.info("Cleanup completed: deleted $totalDeleted permanently failed deliveries")
+            if (totalDeleted > 0) {
+                logger.info("Cleanup completed: deleted $totalDeleted permanently failed deliveries")
+            } else {
+                logger.debug("Cleanup completed: deleted $totalDeleted permanently failed deliveries")
+            }
         } catch (e: Exception) {
             logger.error("Error during failed delivery cleanup", e)
         }
@@ -75,7 +82,7 @@ class CleanupService(
     }
 
     /**
-     * Clean up expired MX record cache entries
+     * Cleans up expired MX record cache entries.
      * @param mxRecordsRepository repository to perform cleanup
      * @param batchSize maximum number of records to delete in one operation
      * @return number of cache entries cleaned
@@ -84,7 +91,7 @@ class CleanupService(
 
         batchSize: Int = DataRetention.DEFAULT_CLEANUP_BATCH_SIZE
     ): Long {
-        logger.info("Starting cleanup of expired MX record cache")
+        logger.debug("Starting cleanup of expired MX record cache")
 
         val now = System.currentTimeMillis()
         var totalDeleted: Long = 0
@@ -94,7 +101,11 @@ class CleanupService(
             val deleted = mxRecordsRepository.deleteExpiredBefore(now)
             totalDeleted = deleted.toLong()
 
-            logger.info("Cleanup completed: cleaned $totalDeleted expired MX cache entries")
+            if (totalDeleted > 0) {
+                logger.info("Cleanup completed: cleaned $totalDeleted expired MX cache entries")
+            } else {
+                logger.debug("Cleanup completed: cleaned $totalDeleted expired MX cache entries")
+            }
         } catch (e: Exception) {
             logger.error("Error during MX cache cleanup", e)
         }
@@ -103,12 +114,12 @@ class CleanupService(
     }
 
     /**
-     * Perform full cleanup cycle
+     * Performs full cleanup cycle.
      */
     fun performFullCleanup(
         retentionDays: Int = DataRetention.DEFAULT_RETENTION_DAYS
     ): CleanupStats {
-        logger.info("Starting full cleanup cycle")
+        logger.debug("Starting full cleanup cycle")
 
         val startTime = System.currentTimeMillis()
 
@@ -133,7 +144,7 @@ class CleanupService(
 }
 
 /**
- * Statistics from a cleanup operation
+ * Statistics from a cleanup operation.
  */
 data class CleanupStats(
     val emailsDeleted: Long,
