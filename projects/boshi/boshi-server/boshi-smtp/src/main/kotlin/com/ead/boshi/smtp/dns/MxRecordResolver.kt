@@ -34,17 +34,55 @@ class MxRecordResolver : Component {
 
         logger.debug("Resolving MX records for domain: $domain")
 
-        return try {
-            // Configure JNDI for DNS lookups
-            val env = Hashtable<String, String>()
-            env["java.naming.factory.initial"] = "com.sun.jndi.dns.DnsContextFactory"
+        // Try DNS servers in order: system default, Google, Cloudflare
+        val dnsServers = listOf(
+            null,         // System default
+            "8.8.8.8",    // Google Public DNS
+            "1.1.1.1"     // Cloudflare DNS
+        )
 
-            val ctx = InitialDirContext(env)
+        var lastException: Exception? = null
+
+        for ((index, dnsServer) in dnsServers.withIndex()) {
+            try {
+                return resolveMxRecordsWithServer(domain, dnsServer, index, dnsServers.size)
+            } catch (e: Exception) {
+                lastException = e
+                logger.warn("DNS attempt ${index + 1}/${dnsServers.size} failed for $domain${if (dnsServer != null) " (server: $dnsServer)" else " (system default)"}: ${e::class.simpleName}")
+                // Continue to next server
+            }
+        }
+
+        // All servers failed
+        logger.error("✗ DNS resolution failed for domain: $domain after ${dnsServers.size} attempts")
+        throw DnsException("Failed to resolve MX records for domain: $domain", lastException)
+    }
+
+    private fun resolveMxRecordsWithServer(
+        domain: String,
+        dnsServer: String?,
+        attemptNumber: Int,
+        totalAttempts: Int
+    ): List<MxRecordEntity> {
+        val serverInfo = dnsServer?.let { " via $it" } ?: " (system default DNS)"
+        logger.debug("Attempt ${attemptNumber + 1}/$totalAttempts: Resolving MX records for $domain$serverInfo")
+
+        val env = Hashtable<String, String>()
+        env["java.naming.factory.initial"] = "com.sun.jndi.dns.DnsContextFactory"
+
+        // Only set provider URL if explicit DNS server specified
+        if (dnsServer != null) {
+            env["java.naming.provider.url"] = "dns://$dnsServer"
+        }
+
+        val ctx = InitialDirContext(env)
+
+        return try {
             val attributes = ctx.getAttributes(domain, arrayOf(MX_RECORD_TYPE))
             val mxAttr = attributes.get(MX_RECORD_TYPE)
 
             if (mxAttr == null) {
-                logger.warn("No MX records found for domain: $domain")
+                logger.warn("No MX records found for domain: $domain$serverInfo")
                 throw DnsException("No MX records found for domain: $domain")
             }
 
@@ -53,6 +91,7 @@ class MxRecordResolver : Component {
             val expiresAt = now + (DEFAULT_TTL_HOURS * 60 * 60 * 1000)
 
             // Parse MX records from DNS response
+            logger.debug("Parsing ${mxAttr.size()} MX record(s) for domain: $domain")
             for (i in 0 until mxAttr.size()) {
                 val mxRecord = mxAttr.get(i) as? String ?: continue
                 val parts = mxRecord.split("\\s+".toRegex())
@@ -61,6 +100,7 @@ class MxRecordResolver : Component {
                     val priority = parts[0].toIntOrNull() ?: continue
                     val hostname = parts[1].trimEnd('.')
 
+                    logger.debug("MX record: priority=$priority, hostname=$hostname")
                     mxRecords.add(
                         MxRecordEntity(
                             domain = domain,
@@ -74,18 +114,18 @@ class MxRecordResolver : Component {
                 }
             }
 
+            if (mxRecords.isEmpty()) {
+                logger.warn("No valid MX records could be parsed for domain: $domain")
+                throw DnsException("No valid MX records found for domain: $domain")
+            }
+
             // Sort by priority (lower is better)
             val sorted = mxRecords.sortedBy { it.priority }
-            logger.debug("Resolved ${sorted.size} MX records for domain: $domain")
+            logger.info("✓ Successfully resolved ${sorted.size} MX record(s) for domain: $domain$serverInfo")
 
-            ctx.close()
             sorted
-        } catch (e: NamingException) {
-            logger.error("DNS lookup failed for domain: $domain", e)
-            throw DnsException("Failed to resolve MX records for domain: $domain", e)
-        } catch (e: Exception) {
-            logger.error("Unexpected error during MX record resolution for domain: $domain", e)
-            throw DnsException("DNS resolution error: ${e.message}", e)
+        } finally {
+            ctx.close()
         }
     }
 

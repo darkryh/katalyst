@@ -9,6 +9,7 @@ import com.ead.boshi_client.data.preferences.DataStoreFactory
 import com.ead.boshi_client.data.preferences.SMTPPreferences
 import com.ead.boshi_client.data.repository.EmailRepository
 import com.ead.boshi_client.data.server.ServerManager
+import com.ead.boshi_client.ui.dashboard.DashboardViewModel
 import com.ead.boshi_client.ui.email.EmailViewModel
 import com.ead.boshi_client.ui.settings.SettingsViewModel
 import com.ead.boshi_client.ui.settings.ServerSettingsViewModel
@@ -53,6 +54,9 @@ val dataModule = module {
  * Provides view model instances with dependency injection.
  */
 val viewModelModule = module {
+    // Dashboard ViewModel for email composition
+    viewModel { DashboardViewModel(get<BoshiService>()) }
+
     // Email ViewModel
     viewModel { EmailViewModel(get()) }
 

@@ -10,7 +10,7 @@ fun main() {
     return application {
         Window(
             onCloseRequest = ::exitApplication,
-            alwaysOnTop = true,
+            alwaysOnTop = false,
             title = "Boshi",
         ) {
             BoshiApp()

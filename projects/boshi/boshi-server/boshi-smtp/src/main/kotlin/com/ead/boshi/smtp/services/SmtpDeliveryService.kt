@@ -44,17 +44,15 @@ class SmtpDeliveryService(
             val mxRecords = try {
                 mxResolver.resolveMxRecords(recipientDomain)
             } catch (e: Exception) {
-                logger.warn("Failed to resolve MX records for $recipientDomain", e)
+                logger.warn("Failed to resolve MX records for $recipientDomain: ${e.message}", e)
                 emptyList()
             }
 
             if (mxRecords.isEmpty()) {
-                logger.error("No MX records found for domain: $recipientDomain")
-                return deliveryStatus.copy(
-                    status = DeliveryStatus.PERMANENTLY_FAILED,
-                    errorMessage = "No MX records found for domain: $recipientDomain",
-                    statusChangedAtMillis = System.currentTimeMillis()
-                )
+                // DNS failure or no MX records found - treat as temporary failure to allow retries
+                logger.error("No MX records found for domain: $recipientDomain - will retry")
+                val errorMsg = "DNS resolution failed or no MX records found for domain: $recipientDomain"
+                return handleDeliveryFailure(deliveryStatus, errorMsg)
             }
 
             // Try each MX record in priority order
