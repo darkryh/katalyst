@@ -11,6 +11,7 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 | Bootstrapping + discovery | `katalyst-di`, `katalyst-scanner` | `katalystApplication`, `initializeKoinStandalone`, auto-binding registrar |
 | Service-specific config loaders (manual) | Your module (e.g., `katalyst-example`) | `ServiceConfigLoader<T>` implementations such as `DatabaseConfigLoader` |
 | Service-specific config loaders (automatic) | Your module (e.g., `boshi-shared`) | `AutomaticServiceConfigLoader<T>` implementations such as `SmtpConfigLoader` |
+| Force flag behavior | CLI | `force`/`--force` loads server config from CLI/defaults only; other configs (DB, services) still load via loaders/YAML |
 
 ## From YAML to Injected Values
 
@@ -451,6 +452,11 @@ You cannot use AutomaticServiceConfigLoader for database config because:
 ### Pattern Comparison: Not Migration, Just Right Tool for Job
 
 Both patterns serve different purposes and are both essential. Choose ServiceConfigLoader for infrastructure config (database, ports, TLS) needed before DI bootstrap (Phase 0). Choose AutomaticServiceConfigLoader for service config (SMTP, APIs, feature toggles) injected during DI Phase 5a. See "Choosing the Right Pattern for Your Configuration" section for the decision framework.
+
+### Startup controls
+
+- **Default features enabled**: ConfigProvider and server configuration features are enabled automatically by the Katalyst builder (no need to call `enableConfigProvider()` / `enableServerConfiguration()`).
+- **Force flag**: Use `force`/`--force` to bypass ConfigProvider for server deployment (ktor.deployment.*) and rely on CLI/defaults. Other configs (database, service configs) still load from loaders/YAML.
 
 ---
 

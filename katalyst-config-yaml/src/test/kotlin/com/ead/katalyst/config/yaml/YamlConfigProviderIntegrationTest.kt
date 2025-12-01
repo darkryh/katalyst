@@ -20,4 +20,16 @@ class YamlConfigProviderIntegrationTest {
         assertEquals(5, provider.getInt("database.retries"))
         assertTrue(provider.getBoolean("feature.enabled"))
     }
+
+    @Test
+    fun `provider fails fast when required keys are missing`() {
+        kotlin.test.assertFailsWith<com.ead.katalyst.core.config.ConfigException> {
+            YamlConfigProvider(
+                profileLoader = YamlProfileLoader(
+                    baseConfigFile = "application-missing-required.yaml",
+                    environmentReader = { null }
+                )
+            )
+        }
+    }
 }

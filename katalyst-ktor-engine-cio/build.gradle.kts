@@ -6,9 +6,6 @@ group = "com.ead.katalyst"
 version = "0.0.1"
 
 dependencies {
-    // Engine abstraction
-    implementation(projects.katalystKtorEngine)
-
     // Katalyst modules
     implementation(projects.katalystCore)
     implementation(projects.katalystDi)

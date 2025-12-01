@@ -74,7 +74,7 @@ class KatalystTestEnvironmentBuilder {
      * Server configuration forwarded to bootstrap. Defaults to test engine.
      */
     var serverConfiguration: ServerConfiguration = ServerConfiguration(
-        engine = TestKatalystEngine,
+        engine = null,
         deployment = ServerDeploymentConfiguration.createDefault()
     )
 

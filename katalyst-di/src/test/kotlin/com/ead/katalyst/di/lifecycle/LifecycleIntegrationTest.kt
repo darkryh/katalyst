@@ -1,7 +1,7 @@
 package com.ead.katalyst.di.lifecycle
 
 import com.ead.katalyst.di.lifecycle.test.TestApplicationInitializer
-import com.ead.katalyst.di.lifecycle.test.TestEngineConfiguration
+import com.ead.katalyst.di.config.ServerDeploymentConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -97,7 +97,7 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `test engine configuration exposes host and port`() {
-        val config = TestEngineConfiguration(
+        val config = ServerDeploymentConfiguration.createDefault().copy(
             host = "192.168.1.1",
             port = 9999
         )
@@ -111,9 +111,9 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `test engine configuration defaults to localhost 8080`() {
-        val config = TestEngineConfiguration()
+        val config = ServerDeploymentConfiguration.createDefault()
 
-        assertEquals("localhost", config.host)
+        assertEquals("0.0.0.0", config.host)
         assertEquals(8080, config.port)
     }
 
@@ -121,10 +121,10 @@ class LifecycleIntegrationTest {
      * Test 7: Engine configuration is correctly typed
      */
     @Test
-    fun `test engine configuration is instance of TestEngineConfiguration`() {
-        val config = TestEngineConfiguration()
+    fun `test engine configuration is instance of ServerDeploymentConfiguration`() {
+        val config = ServerDeploymentConfiguration.createDefault()
 
-        assertTrue(config is TestEngineConfiguration)
+        assertTrue(config is ServerDeploymentConfiguration)
     }
 
     /**
@@ -132,7 +132,7 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `test engine configuration with custom values`() {
-        val config = TestEngineConfiguration(host = "192.168.1.1", port = 9999)
+        val config = ServerDeploymentConfiguration.createDefault().copy(host = "192.168.1.1", port = 9999)
 
         assertEquals("192.168.1.1", config.host)
         assertEquals(9999, config.port)
@@ -185,7 +185,7 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `test engine configuration toString shows host and port`() {
-        val config = TestEngineConfiguration(host = "test-host", port = 1234)
+        val config = ServerDeploymentConfiguration.createDefault().copy(host = "test-host", port = 1234)
         val str = config.toString()
 
         assertTrue(str.contains("test-host"))

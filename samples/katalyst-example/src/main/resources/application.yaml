@@ -9,15 +9,11 @@
 # - ${JWT_SECRET} → resolved from JWT_SECRET env var
 
 ktor:
-  application:
-    modules:
-      - com.ead.katalyst.example.ApplicationKt.module
-
   deployment:
     # Network Configuration
     host: ${SERVER_HOST:0.0.0.0}
     port: ${SERVER_PORT:8080}
-    sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
+    #sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
 
     # Shutdown Configuration
     shutdownGracePeriod: ${SHUTDOWN_GRACE_PERIOD:1000}      # ms
@@ -25,7 +21,7 @@ ktor:
     shutdownUrl: ${SHUTDOWN_URL:}                           # Optional: endpoint for graceful shutdown
 
     # Context & Routing
-    rootPath: ${ROOT_PATH:/}
+    #rootPath: ${ROOT_PATH:/}
     # watchPaths: []  # Optional: watch paths for auto-reload during development
 
     # Thread Pool Configuration (mainly Netty, but defined here for consistency)
@@ -46,8 +42,8 @@ ktor:
     maxThreads: ${MAX_THREADS:}                              # Optional: Jetty max threads
     minThreads: ${MIN_THREADS:}                              # Optional: Jetty min threads
 
-  security:
-    ssl:
+  #security:
+    #ssl:
       # SSL Configuration (only set if sslPort is configured above)
       # keyStore: "path/to/keystore.jks"
       # keyAlias: "server-alias"
@@ -62,6 +58,13 @@ ktor:
 
 # Database Configuration
 # Environment variables: DB_URL, DB_USERNAME, DB_PASSWORD, DB_DRIVER
+ktor:
+  deployment:
+    host: ${SERVER_HOST:0.0.0.0}
+    port: ${SERVER_PORT:8080}
+    shutdownGracePeriod: ${SHUTDOWN_GRACE_PERIOD:1000}
+    shutdownTimeout: ${SHUTDOWN_TIMEOUT:5000}
+
 database:
   url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
   username: ${DB_USERNAME:postgres}

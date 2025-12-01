@@ -144,11 +144,11 @@ data class DependencyGraph(
             componentsToSort.size, migrationsFound.size)
         if (componentsToSort.isNotEmpty()) {
             logger.debug("  Components: {}",
-                componentsToSort.map { it.simpleName }.joinToString(", "))
+                componentsToSort.joinToString(", ") { it.simpleName.toString() })
         }
         if (migrationsFound.isNotEmpty()) {
             logger.debug("  Migrations (excluded): {}",
-                migrationsFound.map { it.simpleName }.joinToString(", "))
+                migrationsFound.joinToString(", ") { it.simpleName.toString() })
         }
 
         val inDegree = mutableMapOf<KClass<*>, Int>()

@@ -41,4 +41,17 @@ class YamlProfileLoaderTest {
         assertEquals(true, feature["enabled"])
         assertEquals(true, config["profileOnly"])
     }
+
+    @Test
+    fun `loadConfiguration fails when requested profile file is missing`() {
+        val loader = YamlProfileLoader(
+            profileEnvVar = "KTL_PROFILE_TEST",
+            baseConfigFile = "application.yaml",
+            environmentReader = { "missing-profile" }
+        )
+
+        kotlin.test.assertFailsWith<IllegalStateException> {
+            loader.loadConfiguration()
+        }
+    }
 }

@@ -4,16 +4,17 @@ package com.ead.katalyst.di
 
 import com.ead.katalyst.core.component.Component
 import com.ead.katalyst.config.DatabaseConfig
+import com.ead.katalyst.core.dsl.KatalystDslMarker
+import com.ead.katalyst.di.config.BootstrapArgs
 import com.ead.katalyst.di.config.KatalystDIOptions
 import com.ead.katalyst.di.config.ServerConfiguration
 import com.ead.katalyst.di.config.ServerDeploymentConfiguration
+import com.ead.katalyst.di.config.ServerConfigurationResolver
 import com.ead.katalyst.di.config.initializeKoinStandalone
 import com.ead.katalyst.di.config.stopKoinStandalone
 import com.ead.katalyst.di.config.wrap
 import com.ead.katalyst.di.internal.KtorModuleRegistry
 import com.ead.katalyst.ktor.KtorModule
-import com.ead.katalyst.ktor.engine.KatalystKtorEngine
-import com.ead.katalyst.ktor.engine.KtorEngineFactory
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.lifecycle.StartupWarnings
 import com.ead.katalyst.di.lifecycle.BootstrapProgress
@@ -25,7 +26,6 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.GlobalContext
-import org.koin.core.error.NoDefinitionFoundException
 import org.slf4j.LoggerFactory
 
 /**
@@ -62,17 +62,22 @@ import org.slf4j.LoggerFactory
  * `enableX()` extension functions to this builder. Simply add the dependency for the
  * feature you need and call the extension inside the [katalystApplication] block.
  */
-class KatalystApplicationBuilder {
+class KatalystApplicationBuilder(
+    bootstrapArgs: BootstrapArgs = BootstrapArgs.EMPTY
+) {
     private val logger = LoggerFactory.getLogger("KatalystApplication")
+    private val serverConfigurationResolver = ServerConfigurationResolver(bootstrapArgs, logger)
 
     private var databaseConfig: DatabaseConfig? = null
     private val features: MutableList<KatalystFeature> = mutableListOf()
     private var componentScanPackages: Array<String> = emptyArray()
-    private var selectedEngine: KatalystKtorEngine? = null
+    private var selectedEngine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>? = null
+    private var cachedDeploymentConfiguration: ServerDeploymentConfiguration? = null
 
     /**
      * Provide the database configuration used to bootstrap core persistence infrastructure.
      */
+    @KatalystDslMarker
     fun database(config: DatabaseConfig): KatalystApplicationBuilder {
         logger.debug("Database configuration supplied for Katalyst DI")
 
@@ -84,6 +89,7 @@ class KatalystApplicationBuilder {
     /**
      * Configure packages that should be scanned for services, repositories, and validators.
      */
+    @KatalystDslMarker
     fun scanPackages(vararg packages: String): KatalystApplicationBuilder {
         logger.debug("Setting component scan packages: {}", packages.joinToString(", "))
 
@@ -94,6 +100,27 @@ class KatalystApplicationBuilder {
 
         return this
     }
+
+    init {
+        // Load config-provider feature if available on classpath (Yaml or other providers)
+        loadOptionalFeature("com.ead.katalyst.config.yaml.ConfigProviderFeature")
+            ?.also { features += it; logger.debug("Registered optional feature: {}", it.id) }
+
+        // Always include server configuration feature (part of DI module)
+        loadOptionalFeature("com.ead.katalyst.di.feature.ServerConfigurationFeature")
+            ?.also { features += it; logger.debug("Registered feature: {}", it.id) }
+    }
+
+    private fun loadOptionalFeature(className: String): KatalystFeature? =
+        runCatching {
+            val clazz = Class.forName(className)
+            val instance = clazz.kotlin.objectInstance
+                ?: runCatching { clazz.getField("INSTANCE").get(null) }.getOrNull()
+                ?: clazz.getDeclaredConstructor().newInstance()
+            instance as? KatalystFeature
+        }.onFailure { error ->
+            logger.debug("Optional feature {} not loaded: {}", className, error.message)
+        }.getOrNull()
 
     /**
      * Explicitly select the Ktor engine for this application.
@@ -118,8 +145,8 @@ class KatalystApplicationBuilder {
      * @return This builder for method chaining
      * @throws IllegalStateException if initializeDI() is called without setting an engine
      */
-    fun engine(engine: KatalystKtorEngine): KatalystApplicationBuilder {
-        logger.debug("Engine explicitly set to: {}", engine.engineType)
+    @KatalystDslMarker
+    fun engine(engine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>): KatalystApplicationBuilder {
         this.selectedEngine = engine
         return this
     }
@@ -128,6 +155,10 @@ class KatalystApplicationBuilder {
      * Registers an optional feature (scheduler, events, websockets, etc.).
      */
     fun feature(feature: KatalystFeature): KatalystApplicationBuilder {
+        if (features.any { it.id == feature.id }) {
+            logger.debug("Feature {} already registered - skipping duplicate", feature.id)
+            return this
+        }
         logger.debug("Registering optional feature: {}", feature.id)
 
         this.features += feature
@@ -168,74 +199,99 @@ class KatalystApplicationBuilder {
                 "Example: engine(NettyEngine)"
             )
 
-        val deployment = loadDeploymentConfigurationFromYaml()
+        val deployment = cachedDeploymentConfiguration ?: serverConfigurationResolver
+            .resolveDeployment()
+            .also { cachedDeploymentConfiguration = it }
 
         return ServerConfiguration(
             engine = engine,
             deployment = deployment
         ).also {
-            logger.info("Using explicitly selected engine: {}", engine.engineType)
             logger.debug("Server bound to {}:{}", it.host, it.port)
         }
     }
 
-    private fun loadDeploymentConfigurationFromYaml(): ServerDeploymentConfiguration {
-        return try {
-            logger.info("Attempting to load ServerDeploymentConfiguration from application.yaml...")
+    private fun resolveDatabaseConfigOrThrow(): DatabaseConfig {
+        databaseConfig?.let { return it }
 
-            // Load ConfigProvider via reflection (YamlConfigProvider if available)
-            logger.debug("Loading YamlConfigProvider...")
-            val providerClass = Class.forName("com.ead.katalyst.config.yaml.YamlConfigProvider")
+        tryAutoLoadDatabaseConfig()?.let { config ->
+            databaseConfig = config
+            return config
+        }
+
+        throw IllegalStateException("Database configuration must be supplied before starting Katalyst.")
+    }
+
+    private fun tryAutoLoadDatabaseConfig(): DatabaseConfig? {
+        if (componentScanPackages.isEmpty()) {
+            logger.debug("Skipping automatic database config loading (no scan packages configured)")
+            return null
+        }
+
+        val provider = serverConfigurationResolver.bootstrapConfigProvider()
+        if (provider == null) {
+            logger.debug("ConfigProvider not available for automatic database loading")
+            return null
+        }
+
+        return runCatching {
+            val metadataClass = Class.forName("com.ead.katalyst.config.provider.ConfigMetadata")
+            val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
             @Suppress("UNCHECKED_CAST")
-            val configProvider = providerClass.getDeclaredConstructor().newInstance() as com.ead.katalyst.core.config.ConfigProvider
-            logger.debug("✓ YamlConfigProvider instantiated")
+            val loaders = discoverMethod.invoke(null, componentScanPackages) as List<*>
 
-            // Load using ServerDeploymentConfigurationLoader via reflection
-            logger.debug("Loading ServerDeploymentConfigurationLoader...")
-            val loaderClass = Class.forName("com.ead.katalyst.config.provider.ServerDeploymentConfigurationLoader")
-
-            // Access the object singleton - Kotlin creates a static INSTANCE field for object declarations
-            val instance = try {
-                logger.debug("Getting INSTANCE field...")
-                loaderClass.getField("INSTANCE").get(null)
-            } catch (e: NoSuchFieldException) {
-                logger.debug("INSTANCE field not found, trying kotlin.objectInstance...")
-                // Fallback: Kotlin reflection for object instance
-                @Suppress("UNCHECKED_CAST")
-                loaderClass.kotlin.objectInstance as Any
+            if (loaders.isEmpty()) {
+                logger.debug("No ServiceConfigLoader implementations discovered for automatic database loading")
+                return null
             }
-            logger.debug("✓ ServerDeploymentConfigurationLoader instance obtained")
 
-            // Call loadConfig and validate
-            logger.debug("Invoking loadConfig method...")
+            val helperClass = Class.forName("com.ead.katalyst.config.provider.ConfigBootstrapHelper")
+            val helperInstance = helperClass.kotlin.objectInstance ?: helperClass.getDeclaredConstructor().newInstance()
+            val loadMethod = helperClass.getMethod(
+                "loadServiceConfig",
+                com.ead.katalyst.core.config.ConfigProvider::class.java,
+                Class.forName("com.ead.katalyst.config.provider.ServiceConfigLoader")
+            )
+
+            loaders.forEach { loader ->
+                val loaded = loadMethod.invoke(helperInstance, provider, loader)
+                if (loaded is DatabaseConfig) {
+                    logger.info("Automatically loaded DatabaseConfig via {}", loader!!::class.java.simpleName)
+                    return loaded
+                }
+            }
+
+            null
+        }.onFailure { error ->
+            logger.debug("Automatic database configuration loading failed: {}", error.message)
+            logger.trace("Full error while auto-loading database configuration", error)
+        }.getOrNull()
+    }
+
+    private fun validateServiceConfigs() {
+        val provider = serverConfigurationResolver.bootstrapConfigProvider() ?: return
+        if (componentScanPackages.isEmpty()) return
+
+        runCatching {
+            val metadataClass = Class.forName("com.ead.katalyst.config.provider.ConfigMetadata")
+            val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
+            val validateMethod = metadataClass.getMethod(
+                "validateLoaders",
+                com.ead.katalyst.core.config.ConfigProvider::class.java,
+                List::class.java
+            )
+
             @Suppress("UNCHECKED_CAST")
-            val loadConfigMethod = loaderClass.getMethod("loadConfig", com.ead.katalyst.core.config.ConfigProvider::class.java)
-            val validateMethod = loaderClass.getMethod("validate", ServerDeploymentConfiguration::class.java)
+            val loaders = discoverMethod.invoke(null, componentScanPackages) as List<*>
+            if (loaders.isEmpty()) {
+                logger.debug("No ServiceConfigLoader implementations discovered for validation")
+                return
+            }
 
-            @Suppress("UNCHECKED_CAST")
-            val deployment = loadConfigMethod.invoke(instance, configProvider) as ServerDeploymentConfiguration
-            logger.info("✓ ServerDeploymentConfiguration loaded: host={}, port={}", deployment.host, deployment.port)
-
-            logger.debug("Invoking validate method...")
-            validateMethod.invoke(instance, deployment)
-            logger.info("✓ ServerDeploymentConfiguration validated successfully")
-
-            logger.info("✅ Successfully loaded ktor.deployment configuration from application.yaml")
-            deployment
-        } catch (e: ClassNotFoundException) {
-            logger.error("❌ ClassNotFoundException - YamlConfigProvider or ServerDeploymentConfigurationLoader not found on classpath")
-            logger.error("   Ensure katalyst-config-provider is included as a dependency")
-            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
-            ServerDeploymentConfiguration.createDefault()
-        } catch (e: NoSuchMethodException) {
-            logger.error("❌ NoSuchMethodException - Could not find expected method on loader: {}", e.message)
-            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
-            ServerDeploymentConfiguration.createDefault()
-        } catch (e: Exception) {
-            logger.error("❌ Error loading ServerDeploymentConfiguration from application.yaml: {}", e.message)
-            logger.error("Stack trace:", e)
-            logger.info("Using sensible defaults: host=0.0.0.0, port=8080")
-            ServerDeploymentConfiguration.createDefault()
+            logger.info("Validating {} ServiceConfigLoader implementation(s)", loaders.size)
+            validateMethod.invoke(null, provider, loaders)
+        }.onFailure { error ->
+            logger.debug("Service config validation skipped: {}", error.message)
         }
     }
 
@@ -243,16 +299,20 @@ class KatalystApplicationBuilder {
      * Initialize DI with all configured modules.
      */
     internal fun initializeDI() {
-        val config = databaseConfig
-            ?: throw IllegalStateException("Database configuration must be supplied before starting Katalyst.")
+        val config = resolveDatabaseConfigOrThrow()
 
         val scanTargets = if (componentScanPackages.isNotEmpty()) componentScanPackages else emptyArray()
+
+        // Validate all service config loaders (beyond DB) when a provider is available
+        validateServiceConfigs()
 
         // Resolve server configuration (auto-detect if not explicitly set)
         val resolvedServerConfig = resolveServerConfiguration()
 
         val featureSummary = if (features.isEmpty()) "none" else features.joinToString { it.id }
-        logger.info("Initializing Katalyst DI (features={}, engine={})", featureSummary, resolvedServerConfig.engine.engineType)
+
+        logger.info("Initializing Katalyst DI (features={})", featureSummary)
+
         initializeKoinStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
@@ -261,6 +321,7 @@ class KatalystApplicationBuilder {
             ),
             serverConfiguration = resolvedServerConfig
         )
+
         logger.info("Katalyst DI initialized successfully")
     }
 
@@ -290,6 +351,7 @@ class KatalystApplicationBuilder {
         val ktorModules = registryModules + koinModules
 
         logger.info("Discovered {} Ktor module(s) for installation", ktorModules.size)
+
         ktorModules
             .sortedBy { it.order }
             .forEach { module ->
@@ -340,6 +402,7 @@ class KatalystApplicationBuilder {
  *
  * @param block Configuration builder executed before the Ktor engine starts
  */
+@KatalystDslMarker
 fun katalystApplication(
     args: Array<String> = emptyArray(),
     block: suspend KatalystApplicationBuilder.() -> Unit
@@ -348,7 +411,9 @@ fun katalystApplication(
     val bootStart = System.nanoTime()
 
     printKatalystBanner()
-    val builder = KatalystApplicationBuilder()
+
+    val bootstrapArgs = BootstrapArgs.parse(args).also { it.applyProfileOverride() }
+    val builder = KatalystApplicationBuilder(bootstrapArgs)
 
     try {
         logger.info("Starting Katalyst application")
@@ -359,7 +424,7 @@ fun katalystApplication(
 
         builder.initializeDI()
         val serverConfig = builder.resolveServerConfiguration()
-        val embeddedServer = createEmbeddedServer(args, serverConfig, logger)
+        val embeddedServer = serverConfig.engine ?: throw IllegalStateException("There is not specified embeddedServer")
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
             // PHASE 7: Ktor Engine Startup
@@ -416,6 +481,7 @@ fun katalystApplication(
         logger.info("║                                                    ║")
         logger.info("╚════════════════════════════════════════════════════╝")
         logger.info("")
+
     } catch (e: Exception) {
         logger.error("Failed to start Katalyst application", e)
         throw e
@@ -434,35 +500,4 @@ private fun printKatalystBanner() {
 ╚═╝  ╚═╝ ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝ ╚══════╝ ╚═╝    ╚══════╝    ╚═╝                                                              
     """.trimIndent()
     println("$blue$banner$reset")
-}
-
-private fun createEmbeddedServer(
-    args: Array<String>,
-    serverConfiguration: ServerConfiguration,
-    logger: org.slf4j.Logger
-): EmbeddedServer<out ApplicationEngine, *> {
-    logger.info("Creating embedded server: ${serverConfiguration.engine.engineType} on ${serverConfiguration.host}:${serverConfiguration.port}")
-
-    return try {
-        // Get factory from Koin (previously ignored!)
-        val engineFactory = GlobalContext.get().get<KtorEngineFactory>()
-
-        // Create server with factory and config
-        engineFactory.createServer(
-            host = serverConfiguration.host,
-            port = serverConfiguration.port,
-            connectingIdleTimeoutMs = serverConfiguration.connectionIdleTimeoutMs,
-            block = {}  // Empty block - application configuration happens later
-        )
-    } catch (e: NoDefinitionFoundException) {
-        logger.error("No KtorEngineFactory registered. Is the engine module loaded?")
-        throw IllegalStateException(
-            "Engine factory not available in DI container. " +
-            "Ensure the engine module (katalyst-ktor-engine-${serverConfiguration.engine.engineType}) is on the classpath.",
-            e
-        )
-    } catch (e: Exception) {
-        logger.error("Failed to create embedded server", e)
-        throw e
-    }
 }

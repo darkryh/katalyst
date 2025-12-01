@@ -20,14 +20,11 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-migrations")
     implementation("com.ead.katalyst:katalyst-scheduler")
     implementation("com.ead.katalyst:katalyst-websockets")
+    implementation("com.ead.katalyst:katalyst-ktor-engine-netty")
 
     // Configuration management
     implementation("com.ead.katalyst:katalyst-config-provider")
     implementation("com.ead.katalyst:katalyst-config-yaml")
-
-    // Ktor engine implementation
-    implementation("com.ead.katalyst:katalyst-ktor-engine")
-    implementation("com.ead.katalyst:katalyst-ktor-engine-netty")
 
     // Event system
     implementation("com.ead.katalyst:katalyst-events")

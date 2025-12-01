@@ -28,6 +28,9 @@ class YamlProfileLoader(
     private val baseConfigFile: String = "application.yaml",
     private val environmentReader: (String) -> String? = { envVar ->
         System.getenv(envVar)
+    },
+    private val propertyReader: (String) -> String? = { property ->
+        System.getProperty(property)
     }
 ) {
     companion object {
@@ -46,18 +49,22 @@ class YamlProfileLoader(
      *
      * @return Merged configuration map
      */
-    fun loadConfiguration(): Map<String, Any> {
+    fun loadConfiguration(profileOverride: String? = null): Map<String, Any> {
         log.debug("Loading YAML configuration...")
         val baseConfig = loadYamlFile(baseConfigFile)
-        val profile = environmentReader(profileEnvVar)
+        val profile = (profileOverride ?: propertyReader("katalyst.profile") ?: environmentReader(profileEnvVar))
+            ?.takeIf { it.isNotBlank() }
 
         return if (profile != null && profile.isNotBlank()) {
             val profileFile = "application-$profile.yaml"
             log.info("Loading profile-specific configuration: $profileFile")
             val profileConfig = loadYamlFile(profileFile)
-            baseConfig.merge(profileConfig).also {
-                logActiveProfile(profile)
+            if (profileConfig.isEmpty()) {
+                throw IllegalStateException("Profile '$profile' requested but $profileFile not found or empty. Add the file or remove the profile.")
             }
+            val merged = baseConfig.merge(profileConfig)
+            logProfileFallbacks(baseConfig, profileConfig, profile)
+            merged.also { logActiveProfile(profile) }
         } else {
             baseConfig.also {
                 log.info("No active profile set (using default configuration)")
@@ -116,5 +123,32 @@ class YamlProfileLoader(
 
     private fun logActiveProfile(profile: String) {
         log.info("Active profile: $profile")
+    }
+
+    private fun logProfileFallbacks(base: Map<String, Any>, profile: Map<String, Any>, profileName: String) {
+        val baseKeys = flattenKeys(base)
+        val profileKeys = flattenKeys(profile)
+        val missing = baseKeys.subtract(profileKeys)
+        if (missing.isNotEmpty()) {
+            log.warn(
+                "Profile '{}' is missing {} key(s); falling back to base configuration for those keys",
+                profileName,
+                missing.size
+            )
+            log.debug("Fallback keys: {}", missing.joinToString(", "))
+        }
+    }
+
+    private fun flattenKeys(map: Map<String, Any>, prefix: String = ""): Set<String> {
+        val keys = mutableSetOf<String>()
+        map.forEach { (k, v) ->
+            val key = if (prefix.isEmpty()) k else "$prefix.$k"
+            keys.add(key)
+            if (v is Map<*, *>) {
+                @Suppress("UNCHECKED_CAST")
+                keys.addAll(flattenKeys(v as Map<String, Any>, key))
+            }
+        }
+        return keys
     }
 }

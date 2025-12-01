@@ -16,7 +16,6 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-scheduler")
     implementation("com.ead.katalyst:katalyst-config-provider")
     implementation("com.ead.katalyst:katalyst-config-yaml")
-    implementation("com.ead.katalyst:katalyst-ktor-engine")
     implementation("com.ead.katalyst:katalyst-ktor-engine-netty")
 
     // Feature modules
@@ -33,6 +32,8 @@ dependencies {
     implementation(libs.ktor.server.rate.limit)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.config.yaml)
 
     // Logging
     implementation(libs.logback)

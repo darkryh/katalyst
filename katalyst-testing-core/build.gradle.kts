@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    `java-test-fixtures`
 }
 
 group = "com.ead.katalyst"
@@ -10,7 +11,6 @@ dependencies {
     api(project(":katalyst-core"))
     api(project(":katalyst-config-provider"))
     api(project(":katalyst-ktor"))
-    api(project(":katalyst-ktor-engine"))
     api(project(":katalyst-persistence"))
     api(libs.koin.core)
     api(kotlin("test"))
@@ -22,7 +22,12 @@ dependencies {
     implementation(project(":katalyst-websockets"))
     implementation(project(":katalyst-events"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.ktor.server.core)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
+
+    testFixturesImplementation(kotlin("test"))
+    testFixturesImplementation(libs.ktor.server.core)
+    testFixturesImplementation(libs.kotlinx.coroutines.core)
 }

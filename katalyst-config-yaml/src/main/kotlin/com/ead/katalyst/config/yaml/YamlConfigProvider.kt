@@ -72,6 +72,7 @@ class YamlConfigProvider(
         try {
             log.info("Loading YAML configuration...")
             data = substitutor.substitute(profileLoader.loadConfiguration())
+            validateRequiredKeys()
             log.info("✓ Configuration loaded successfully (${data.size} keys)")
         } catch (e: Exception) {
             throw ConfigException("Failed to load YAML configuration: ${e.message}", e)
@@ -178,5 +179,30 @@ class YamlConfigProvider(
         }
 
         return current
+    }
+
+    /**
+     * Validate presence of critical keys after merging base/profile configs.
+     * Crashes fast when required settings are missing to avoid silent fallbacks.
+     */
+    private fun validateRequiredKeys() {
+        val requiredKeys = listOf(
+            // Ktor deployment essentials
+            "ktor.deployment.host",
+            "ktor.deployment.port",
+            "ktor.deployment.shutdownGracePeriod",
+            "ktor.deployment.shutdownTimeout",
+            // Database essentials
+            "database.url",
+            "database.username",
+            "database.driver"
+        )
+
+        val missing = requiredKeys.filter { navigatePath(it) == null }
+        if (missing.isNotEmpty()) {
+            throw ConfigException(
+                "Missing required configuration keys: ${missing.joinToString(", ")}"
+            )
+        }
     }
 }

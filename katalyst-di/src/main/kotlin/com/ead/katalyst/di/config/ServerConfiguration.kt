@@ -1,9 +1,7 @@
 package com.ead.katalyst.di.config
 
-import com.ead.katalyst.ktor.engine.KatalystKtorEngine
-import io.ktor.server.application.Application
-import io.ktor.server.engine.ApplicationEngine
-import org.slf4j.LoggerFactory
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
 
 /**
  * Server engine type alias for Ktor application engines.
@@ -84,7 +82,7 @@ typealias ApplicationWrapper = (Application) -> Application
  * @param applicationWrapper Optional lambda to wrap/configure the application
  */
 data class ServerConfiguration(
-    val engine: KatalystKtorEngine,
+    val engine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>? = null,
     val deployment: ServerDeploymentConfiguration,
     val serverWrapper: ServerWrapper? = null,
     val applicationWrapper: ApplicationWrapper? = null
@@ -95,124 +93,6 @@ data class ServerConfiguration(
     val workerThreads: Int get() = deployment.workerGroupSize
     val connectionIdleTimeoutMs: Long get() = deployment.connectionIdleTimeoutMs
 
-    init {
-        // ServerDeploymentConfiguration validates itself in its init block
-        // No additional validation needed here
-    }
-
-    companion object {
-        private val logger = LoggerFactory.getLogger("ServerConfiguration.Companion")
-
-        /**
-         * Creates a default Netty server configuration with minimal Ktor defaults.
-         *
-         * Uses sensible defaults matching Ktor's standard configuration:
-         * - host: "0.0.0.0" (all interfaces)
-         * - port: 8080
-         * - shutdownGracePeriod: 1000ms
-         * - shutdownTimeout: 5000ms
-         * - Thread pools: 8 threads each
-         * - HTTP limits: standard safe limits
-         * - connectionIdleTimeoutMs: 180000ms (3 minutes)
-         *
-         * @param serverWrapper Optional lambda to wrap/configure the server engine
-         * @param applicationWrapper Optional lambda to wrap/configure the application
-         * @return ServerConfiguration with Netty engine and default deployment config
-         */
-        fun netty(
-            serverWrapper: ServerWrapper? = null,
-            applicationWrapper: ApplicationWrapper? = null
-        ): ServerConfiguration = ServerConfiguration(
-            engine = loadEngineByName("netty"),
-            deployment = ServerDeploymentConfiguration.createDefault(),
-            serverWrapper = serverWrapper,
-            applicationWrapper = applicationWrapper
-        )
-
-        /**
-         * Creates a Jetty server configuration with minimal Ktor defaults.
-         *
-         * @param serverWrapper Optional lambda to wrap/configure the server engine
-         * @param applicationWrapper Optional lambda to wrap/configure the application
-         * @return ServerConfiguration with Jetty engine and default deployment config
-         */
-        fun jetty(
-            serverWrapper: ServerWrapper? = null,
-            applicationWrapper: ApplicationWrapper? = null
-        ): ServerConfiguration = ServerConfiguration(
-            engine = loadEngineByName("jetty"),
-            deployment = ServerDeploymentConfiguration.createDefault(),
-            serverWrapper = serverWrapper,
-            applicationWrapper = applicationWrapper
-        )
-
-        /**
-         * Creates a CIO (Coroutine-based I/O) server configuration with minimal Ktor defaults.
-         *
-         * @param serverWrapper Optional lambda to wrap/configure the server engine
-         * @param applicationWrapper Optional lambda to wrap/configure the application
-         * @return ServerConfiguration with CIO engine and default deployment config
-         */
-        fun cio(
-            serverWrapper: ServerWrapper? = null,
-            applicationWrapper: ApplicationWrapper? = null
-        ): ServerConfiguration = ServerConfiguration(
-            engine = loadEngineByName("cio"),
-            deployment = ServerDeploymentConfiguration.createDefault(),
-            serverWrapper = serverWrapper,
-            applicationWrapper = applicationWrapper
-        )
-
-        /**
-         * Load an engine object by name using reflection.
-         * @param engineName The name of the engine (netty, jetty, cio)
-         * @return The engine object singleton instance
-         * @throws IllegalStateException if the engine cannot be loaded
-         */
-        fun loadEngineByName(engineName: String): KatalystKtorEngine {
-            return try {
-                val engineClassName = when (engineName) {
-                    "netty" -> "com.ead.katalyst.ktor.engine.netty.NettyEngine"
-                    "jetty" -> "com.ead.katalyst.ktor.engine.jetty.JettyEngine"
-                    "cio" -> "com.ead.katalyst.ktor.engine.cio.CioEngine"
-                    else -> throw IllegalStateException("Unknown engine name: $engineName")
-                }
-
-                val engineClass = Class.forName(engineClassName)
-                val instanceField = engineClass.getDeclaredField("INSTANCE")
-                instanceField.get(null) as KatalystKtorEngine
-            } catch (e: ClassNotFoundException) {
-                throw IllegalStateException(
-                    "Engine '${engineName}' not found on classpath. " +
-                    "Ensure katalyst-ktor-engine-${engineName} dependency is included.",
-                    e
-                )
-            } catch (e: NoSuchFieldException) {
-                throw IllegalStateException(
-                    "Engine '${engineName}' INSTANCE field not found. " +
-                    "Engine class may not be a Kotlin object.",
-                    e
-                )
-            } catch (e: Exception) {
-                throw IllegalStateException(
-                    "Failed to load engine '${engineName}': ${e.message}",
-                    e
-                )
-            }
-        }
-    }
-}
-
-/**
- * Extension function to apply server wrapper to an engine.
- *
- * **Usage:**
- * ```kotlin
- * val wrappedEngine = engine.wrap(serverWrapper)
- * ```
- */
-fun ApplicationEngine.wrap(wrapper: ServerWrapper?): ApplicationEngine {
-    return wrapper?.invoke(this) ?: this
 }
 
 /**

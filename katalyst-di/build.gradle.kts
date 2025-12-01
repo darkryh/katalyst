@@ -13,9 +13,6 @@ dependencies {
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
 
-    // Ktor engine abstraction (decoupled from specific engine implementations)
-    implementation(projects.katalystKtorEngine)
-
     // Event system modules
     implementation(projects.katalystEvents)
     implementation(projects.katalystEventsBus)
@@ -56,6 +53,7 @@ dependencies {
     testImplementation(libs.ktor.server.content.negotiation)
     testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.junit.platform.launcher)
+    testImplementation(testFixtures(projects.katalystTestingCore))
 }
 
 tasks.test {

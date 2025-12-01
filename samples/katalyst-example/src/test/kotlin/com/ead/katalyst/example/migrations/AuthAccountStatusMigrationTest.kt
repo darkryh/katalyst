@@ -81,9 +81,10 @@ class AuthAccountStatusMigrationTest {
         assertEquals("disabled", dormantStatus)
         assertEquals("active", activeStatus)
 
+        val migrationId = com.ead.katalyst.example.migrations.V1NormalizeAuthAccountStatus(databaseFactory).id
         val historyCount = transaction(databaseFactory.database) {
             exec(
-                "SELECT COUNT(*) FROM katalyst_schema_migrations WHERE migration_id = '2024102601_normalize_auth_account_status'"
+                "SELECT COUNT(*) FROM katalyst_schema_migrations WHERE migration_id = '$migrationId'"
             ) { rs ->
                 if (rs.next()) rs.getLong(1) else 0L
             }

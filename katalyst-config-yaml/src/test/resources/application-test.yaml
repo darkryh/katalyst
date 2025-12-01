@@ -1,6 +1,7 @@
 database:
   retries: 5
   url: jdbc:test://${DB_HOST:localhost}
+  username: test
 feature:
   enabled: true
 profileOnly: true

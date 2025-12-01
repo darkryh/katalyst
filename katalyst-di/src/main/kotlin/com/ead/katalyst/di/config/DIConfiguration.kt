@@ -7,7 +7,6 @@ import com.ead.katalyst.database.adapter.PersistenceTransactionAdapter
 import com.ead.katalyst.di.exception.FatalDependencyValidationException
 import com.ead.katalyst.di.feature.KatalystFeature
 import com.ead.katalyst.di.internal.ComponentRegistrationOrchestrator
-import com.ead.katalyst.di.internal.EngineRegistrar
 import com.ead.katalyst.di.lifecycle.BootstrapProgress
 import com.ead.katalyst.di.lifecycle.StartupWarnings
 import com.ead.katalyst.di.lifecycle.StartupWarningsAggregator
@@ -110,10 +109,7 @@ fun bootstrapKatalystDI(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
     features: List<KatalystFeature> = emptyList(),
-    serverConfig: ServerConfiguration = ServerConfiguration(
-        engine = ServerConfiguration.loadEngineByName("netty"),
-        deployment = ServerDeploymentConfiguration.createDefault()
-    ),
+    serverConfig: ServerConfiguration,
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {
@@ -124,16 +120,15 @@ fun bootstrapKatalystDI(
         scannerDIModule()
     )
 
-    // Discover and register the selected engine
-    logger.info("▶ Phase 2: Discovering and registering engine")
-    val engineRegistrar = EngineRegistrar(serverConfig.engine, logger)
-    engineRegistrar.registerEngineModules(modules)
 
     // Register ServerConfiguration and engine as singletons for DI injection
-    modules.add(module {
-        single { serverConfig }
-        single<com.ead.katalyst.ktor.engine.KatalystKtorEngine> { serverConfig.engine }
-    })
+    modules.add(
+        module {
+            single {
+                serverConfig
+            }
+        }
+    )
 
     features.forEach { feature ->
         logger.debug("Including feature '{}' modules", feature.id)
@@ -316,10 +311,7 @@ fun bootstrapKatalystDI(
  */
 fun initializeKoinStandalone(
     options: KatalystDIOptions,
-    serverConfiguration: ServerConfiguration = ServerConfiguration(
-        engine = ServerConfiguration.loadEngineByName("netty"),
-        deployment = ServerDeploymentConfiguration.createDefault()
-    ),
+    serverConfiguration: ServerConfiguration,
     additionalModules: List<Module> = emptyList(),
     allowOverrides: Boolean = false
 ): Koin {

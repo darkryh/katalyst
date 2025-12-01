@@ -17,7 +17,7 @@ ktor:
     # Network Configuration
     host: ${SERVER_HOST:0.0.0.0}
     port: ${SERVER_PORT:8080}
-    sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
+    #sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
 
     # Shutdown Configuration
     shutdownGracePeriod: ${SHUTDOWN_GRACE_PERIOD:1000}      # ms
@@ -46,8 +46,8 @@ ktor:
     maxThreads: ${MAX_THREADS:}                              # Optional: Jetty max threads
     minThreads: ${MIN_THREADS:}                              # Optional: Jetty min threads
 
-  security:
-    ssl:
+  #security:
+    #ssl:
       # SSL Configuration (only set if sslPort is configured above)
       # keyStore: "path/to/keystore.jks"
       # keyAlias: "server-alias"

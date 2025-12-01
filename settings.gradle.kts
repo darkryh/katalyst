@@ -13,12 +13,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":katalyst-scanner")
 include(":katalyst-ktor")
 
-// Ktor engine abstraction and implementations
-include(":katalyst-ktor-engine")
-include(":katalyst-ktor-engine-netty")
-include(":katalyst-ktor-engine-cio")
-include(":katalyst-ktor-engine-jetty")
-
 // Dependency Injection and Orchestration
 include(":katalyst-di")
 
@@ -50,3 +44,6 @@ include(":katalyst-events-client")
 include(":katalyst-transactions")
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
+include("katalyst-ktor-engine-netty")
+include("katalyst-ktor-engine-jetty")
+include("katalyst-ktor-engine-cio")
