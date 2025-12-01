@@ -2,8 +2,9 @@
 
 Katalyst wraps Ktor with batteries-included tooling so you can ship services faster: automatic DI, YAML-driven config, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing utilities.
 
+- **Versions:** Kotlin 2.2.20, Ktor 3.3.1, Exposed 1.0.0-rc-3 (see `gradle/libs.versions.toml`).
 - **Under the hood:** Koin for DI (`katalyst-di`), Exposed + HikariCP + JDBC for persistence (`katalyst-persistence`), SnakeYAML-based configuration (`katalyst-config-provider`/`yaml`), and coroutine-powered scheduler/events (`katalyst-scheduler`, `katalyst-events`).
-- **Modules in a nutshell: ** DI (`katalyst-di`), configuration (`katalyst-config-provider`/`yaml`), persistence (`katalyst-persistence`, `katalyst-migrations`), HTTP/WebSockets (`katalyst-ktor`, `katalyst-websockets`), scheduler (`katalyst-scheduler`), events (`katalyst-events-*`), testing (`katalyst-testing-core`/`ktor`). Messaging/AMQP modules are **in development**.
+- **Modules in a nutshell:** DI (`katalyst-di`), configuration (`katalyst-config-provider`/`yaml`), persistence (`katalyst-persistence`, `katalyst-migrations`), HTTP/WebSockets (`katalyst-ktor`, `katalyst-websockets`), scheduler (`katalyst-scheduler`), events (`katalyst-events-*`), testing (`katalyst-testing-core`/`ktor`). Messaging/AMQP modules are **in development**.
 - **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
 
 ## Minimal Boot Sequence
@@ -13,10 +14,10 @@ package com.ead.katalyst.example // EXAMPLE - BASE PACKAGE
 import com.ead.katalyst.di.katalystApplication
 import com.ead.katalyst.di.feature.enableServerConfiguration
 import com.ead.katalyst.config.yaml.enableConfigProvider
-import com.ead.katalyst.ktor.engine.netty.NettyEngine
+import com.ead.katalyst.com.ead.katalyst.ktor.engine.netty.embeddedServer
 
 fun main(args: Array<String>) = katalystApplication(args) {
-    engine(NettyEngine)
+    engine(embeddedServer())
     database(DbConfigImpl.loadDatabaseConfig())
     scanPackages("com.ead.katalyst.example") // REQUIRED
     enableServerConfiguration()

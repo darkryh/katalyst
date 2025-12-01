@@ -131,16 +131,16 @@ fun Route.notificationWebSocketRoutes() = katalystWebSockets {
 
 Service-specific configuration objects are discovered and auto-injected just like components. Use `AutomaticServiceConfigLoader<T>` for configuration that's only needed by components (not infrastructure). This enables automatic discovery, loading, and injection during DI bootstrap Phase 5a.
 
-**Example:** Define `SmtpConfigLoader` implementing `AutomaticServiceConfigLoader<SmtpConfig>`, then inject it:
+**Example:** Define `NotificationApiConfigLoader` implementing `AutomaticServiceConfigLoader<NotificationApiConfig>`, then inject it:
 
 ```kotlin
-class SmtpDeliveryService(
-    val smtpConfig: SmtpConfig  // ✅ Auto-injected by DI!
+class NotificationService(
+    val notificationConfig: NotificationApiConfig  // ✅ Auto-injected by DI!
 ) : Service {
-    fun sendEmail(to: String, subject: String, body: String) {
-        val host = smtpConfig.host
-        val port = smtpConfig.port
-        // Send email...
+    fun sendMessage(to: String, message: String) {
+        val baseUrl = notificationConfig.baseUrl
+        val apiKey = notificationConfig.apiKey
+        // Call external API...
     }
 }
 ```

@@ -7,10 +7,11 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 | Concern | Module | Key APIs |
 | --- | --- | --- |
 | Runtime config tree + DI integration | `katalyst-config-provider` | `ConfigProvider`, `ConfigLoaders`, `ConfigBootstrapHelper` |
-| YAML loader with profile support | `katalyst-config-yaml` | `YamlConfigProvider`, `${ENV:default}` interpolation |
+| Config loader SPI (format-agnostic) | `katalyst-config-spi` | `ConfigLoader`, `ProfileAwareConfigLoader`, `ConfigLoaderResolver` |
+| YAML loader with profile support | `katalyst-config-yaml` | `YamlApplicationConfigLoader` (SPI), `${ENV:default}` interpolation |
 | Bootstrapping + discovery | `katalyst-di`, `katalyst-scanner` | `katalystApplication`, `initializeKoinStandalone`, auto-binding registrar |
 | Service-specific config loaders (manual) | Your module (e.g., `katalyst-example`) | `ServiceConfigLoader<T>` implementations such as `DatabaseConfigLoader` |
-| Service-specific config loaders (automatic) | Your module (e.g., `boshi-shared`) | `AutomaticServiceConfigLoader<T>` implementations such as `SmtpConfigLoader` |
+| Service-specific config loaders (automatic) | Your module (e.g., `katalyst-example`, feature modules) | `AutomaticServiceConfigLoader<T>` implementations such as `NotificationApiConfigLoader` |
 | Force flag behavior | CLI | `force`/`--force` loads server config from CLI/defaults only; other configs (DB, services) still load via loaders/YAML |
 
 ## From YAML to Injected Values
@@ -30,17 +31,16 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 2. **Load the configuration provider** before DI boot:
    ```kotlin
    import com.ead.katalyst.config.provider.ConfigBootstrapHelper
-   import com.ead.katalyst.config.yaml.YamlConfigProvider
 
    object DbConfigImpl {
        fun loadDatabaseConfig(): DatabaseConfig {
-           val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
-           return ConfigBootstrapHelper.loadServiceConfig(config, DatabaseConfigLoader)
+           val provider = ConfigBootstrapHelper.loadConfig() // discovers provider via SPI
+           return ConfigBootstrapHelper.loadServiceConfig(provider, DatabaseConfigLoader)
        }
    }
    ```
    - `ConfigBootstrapHelper` comes from `katalyst-config-provider`.
-   - `YamlConfigProvider` lives in `katalyst-config-yaml` and automatically merges base + profile-specific YAML files (controlled via `KATALYST_PROFILE`).
+   - Provider is discovered via SPI (`ConfigProviderFactory`) and will use YAML by default if `katalyst-config-yaml` is on the classpath.
 
 3. **Register the config with the application builder**:
    ```kotlin
@@ -104,7 +104,7 @@ class JwtSettingsService(config: ConfigProvider) : Service {
 
 ## Advanced: Custom Profiles & Overrides
 
-- **Profiles**: Set `KATALYST_PROFILE=prod` (or `dev`, `staging`) and `YamlConfigProvider` automatically loads `application-prod.yaml` after `application.yaml`, overriding matching keys.
+- **Profiles**: Set `KATALYST_PROFILE=prod` (or `dev`, `staging`); the YAML provider (if on the classpath) automatically loads `application-prod.yaml` after `application.yaml`, overriding matching keys.
 - **External overrides**: Environment variables always win thanks to SnakeYAML interpolation.
 - **Custom providers**: Implement `ConfigProvider` (e.g., to read from Consul/Secrets Manager) and register it via a feature in `katalystApplication { feature(ConfigProviderFeature(myProvider)) }`.
 
@@ -155,14 +155,11 @@ A complete implementation requires three steps:
 **Step 1: Define your config data class**
 
 ```kotlin
-data class SmtpConfig(
-    val host: String,
-    val port: Int = 25,
-    val username: String = "",
-    val password: String = "",
-    val useTls: Boolean = false,
-    val connectionTimeoutSeconds: Int = 30,
-    val readTimeoutSeconds: Int = 30
+data class NotificationApiConfig(
+    val baseUrl: String,
+    val apiKey: String,
+    val timeoutSeconds: Int = 30,
+    val retryCount: Int = 3
 )
 ```
 
@@ -174,33 +171,28 @@ import com.ead.katalyst.config.provider.ConfigLoaders
 import com.ead.katalyst.core.config.ConfigProvider
 import kotlin.reflect.KClass
 
-object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
+object NotificationApiConfigLoader : AutomaticServiceConfigLoader<NotificationApiConfig> {
 
     // REQUIRED: Tell the framework what type this loader produces
-    override val configType: KClass<SmtpConfig> = SmtpConfig::class
+    override val configType: KClass<NotificationApiConfig> = NotificationApiConfig::class
 
     // REQUIRED: Load configuration from ConfigProvider
-    override fun loadConfig(provider: ConfigProvider): SmtpConfig {
-        return SmtpConfig(
-            // Use ConfigLoaders for consistent patterns
-            host = ConfigLoaders.loadRequiredString(provider, "smtp.host"),
-            port = ConfigLoaders.loadOptionalInt(provider, "smtp.port", 25),
-            username = ConfigLoaders.loadOptionalString(provider, "smtp.username", ""),
-            password = ConfigLoaders.loadOptionalString(provider, "smtp.password", ""),
-            useTls = ConfigLoaders.loadOptionalBoolean(provider, "smtp.useTls", false),
-            connectionTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.connectionTimeoutSeconds", 30),
-            readTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.readTimeoutSeconds", 30)
+    override fun loadConfig(provider: ConfigProvider): NotificationApiConfig {
+        return NotificationApiConfig(
+            baseUrl = ConfigLoaders.loadRequiredString(provider, "notification.baseUrl"),
+            apiKey = ConfigLoaders.loadRequiredString(provider, "notification.apiKey"),
+            timeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "notification.timeoutSeconds", 30),
+            retryCount = ConfigLoaders.loadOptionalInt(provider, "notification.retryCount", 3)
         )
     }
 
     // OPTIONAL: Validate loaded configuration
     // Validation errors are caught at startup (fail-fast)
-    override fun validate(config: SmtpConfig) {
-        require(config.host.isNotBlank()) { "SMTP host is required" }
-        require(config.port > 0) { "SMTP port must be > 0" }
-        require(config.port <= 65535) { "SMTP port must be <= 65535" }
-        require(config.connectionTimeoutSeconds > 0) { "Connection timeout must be > 0" }
-        require(config.readTimeoutSeconds > 0) { "Read timeout must be > 0" }
+    override fun validate(config: NotificationApiConfig) {
+        require(config.baseUrl.isNotBlank()) { "notification.baseUrl is required" }
+        require(config.apiKey.isNotBlank()) { "notification.apiKey is required" }
+        require(config.timeoutSeconds > 0) { "timeoutSeconds must be > 0" }
+        require(config.retryCount >= 0) { "retryCount must be >= 0" }
     }
 }
 ```
@@ -210,16 +202,14 @@ object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
 ```kotlin
 import com.ead.katalyst.core.component.Component
 
-class SmtpClient(
-    val smtpConfig: SmtpConfig  // ✅ Auto-injected by DI!
+class NotificationClient(
+    val config: NotificationApiConfig  // ✅ Auto-injected by DI!
 ) : Component {
 
-    fun sendEmail(host: String, email: String, subject: String, body: String) {
-        // Use smtpConfig directly - it's already loaded and validated
-        val port = smtpConfig.port
-        val auth = smtpConfig.username to smtpConfig.password
-
-        // Send email...
+    fun sendMessage(recipient: String, body: String) {
+        // Use config directly - it's already loaded and validated
+        val url = "${config.baseUrl}/messages"
+        // call the API with config.apiKey, config.timeoutSeconds, config.retryCount...
     }
 }
 ```
@@ -231,15 +221,11 @@ That's it! No manual loading, no helper functions, just clean constructor inject
 Define your configuration in `application.yaml` (or profile-specific variants):
 
 ```yaml
-smtp:
-  # Client configuration for sending emails via external SMTP server
-  host: ${SMTP_HOST:localhost}                     # REQUIRED (or empty default)
-  port: ${SMTP_PORT:25}                            # OPTIONAL: default 25
-  username: ${SMTP_USERNAME:}                      # OPTIONAL
-  password: ${SMTP_PASSWORD:}                      # OPTIONAL
-  useTls: ${SMTP_USE_TLS:false}                    # OPTIONAL: default false
-  connectionTimeoutSeconds: ${SMTP_TIMEOUT:30}     # OPTIONAL: default 30
-  readTimeoutSeconds: ${SMTP_READ_TIMEOUT:30}      # OPTIONAL: default 30
+notification:
+  baseUrl: ${NOTIFICATION_BASE_URL:https://api.notifications.local}
+  apiKey: ${NOTIFICATION_API_KEY:dev-api-key}
+  timeoutSeconds: ${NOTIFICATION_TIMEOUT_SECONDS:30}
+  retryCount: ${NOTIFICATION_RETRY_COUNT:3}
 ```
 
 Environment variables always override YAML defaults via `${VAR:default}` interpolation.
@@ -272,94 +258,37 @@ Phase 7: Route Discovery               (register HTTP routes)
 - Errors are fatal (fail-fast) and prevent startup
 - Registered configs are available for Phase 5b component injection
 
-### Real-World Example: SmtpConfig
+### Startup trace example
 
-The Boshi SMTP server project includes a complete working example:
-
-**File:** `projects/boshi/boshi-server/boshi-shared/src/main/kotlin/com/ead/boshi/shared/config/SmtpConfigLoader.kt`
-
-```kotlin
-@Suppress("unused")
-object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
-    override val configType: KClass<SmtpConfig> = SmtpConfig::class
-
-    override fun loadConfig(provider: ConfigProvider): SmtpConfig {
-        return SmtpConfig(
-            host = ConfigLoaders.loadRequiredString(provider, "smtp.host"),
-            port = ConfigLoaders.loadOptionalInt(provider, "smtp.port", 25),
-            localHostname = ConfigLoaders.loadOptionalString(provider, "smtp.localHostname", "boshi.local"),
-            username = ConfigLoaders.loadOptionalString(provider, "smtp.username", ""),
-            password = ConfigLoaders.loadOptionalString(provider, "smtp.password", ""),
-            useTls = ConfigLoaders.loadOptionalBoolean(provider, "smtp.useTls", false),
-            connectionTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.connectionTimeoutSeconds", 30),
-            readTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.readTimeoutSeconds", 30)
-        )
-    }
-
-    override fun validate(config: SmtpConfig) {
-        require(config.host.isNotBlank()) { "SMTP host is required and cannot be blank" }
-        require(config.port > 0) { "SMTP port must be > 0" }
-        require(config.port <= 65535) { "SMTP port must be <= 65535" }
-        require(config.connectionTimeoutSeconds > 0) { "Connection timeout must be > 0" }
-        require(config.readTimeoutSeconds > 0) { "Read timeout must be > 0" }
-    }
-}
-```
-
-**File:** `projects/boshi/boshi-server/boshi-smtp/src/main/kotlin/com/ead/boshi/smtp/clients/SmtpClient.kt`
-
-```kotlin
-class SmtpClient(
-    val smtpConfig: SmtpConfig  // ✅ Auto-injected by DI!
-) : Component {
-
-    fun sendEmail(
-        smtpHost: String,
-        senderEmail: String,
-        recipientEmail: String,
-        subject: String,
-        body: String,
-        messageId: String
-    ): String {
-        // SmtpConfig is already loaded, validated, and available
-        val socket = Socket()
-        socket.connect(
-            java.net.InetSocketAddress(smtpHost, smtpConfig.port),
-            SMTP_CONNECT_TIMEOUT_MS
-        )
-        // ... SMTP protocol implementation using smtpConfig
-        return acceptResponse
-    }
-}
-```
-
-At startup, the output shows:
+Expect to see your loaders discovered and registered during Phase 5a:
 
 ```
 2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - Phase 5a: Automatic Configuration Loading and Registration
 2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - Discovering AutomaticServiceConfigLoader implementations...
 2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - Discovered 1 automatic config loader(s)
-2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - Loading configuration for SmtpConfig
-2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - ✓ Registered SmtpConfig configuration
+2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - Loading configuration for NotificationApiConfig
+2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - ✓ Registered NotificationApiConfig configuration
 2025-11-20 15:06:41.565 INFO  ComponentRegistrationOrchestrator - ✓ All 1 automatic configuration(s) loaded and registered
 ```
+
+Need a fully fleshed example? The Boshi SMTP module under `projects/boshi/boshi-server` shows a production-grade loader and client wired the same way; the pattern is identical for any external API config.
 
 ### Error Handling & Validation
 
 Configuration errors are caught **at startup** (fail-fast), preventing silent failures:
 
 ```kotlin
-// Example YAML (missing required smtp.host)
-smtp:
-  port: 587
-  # ERROR: host is missing!
+// Example YAML (missing required notification.baseUrl)
+notification:
+  apiKey: abc123
+  # ERROR: baseUrl is missing!
 ```
 
 At startup, you'll see:
 
 ```
-ConfigException: Required configuration key 'smtp.host' is missing or blank
-  at SmtpConfigLoader.validate()
+ConfigException: Required configuration key 'notification.baseUrl' is missing or blank
+  at NotificationApiConfigLoader.validate()
   at ComponentRegistrationOrchestrator.registerAutomaticConfigurations()
 ```
 
@@ -379,49 +308,45 @@ Both `ServiceConfigLoader` and `AutomaticServiceConfigLoader` are first-class pa
 | Question | Answer | Use Pattern |
 |----------|--------|-------------|
 | Do you need this config before DI can start? | Yes (e.g., database) | **ServiceConfigLoader** |
-| Do you need this config injected into components? | Yes (e.g., SMTP settings) | **AutomaticServiceConfigLoader** |
+| Do you need this config injected into components? | Yes (e.g., API keys, feature toggles) | **AutomaticServiceConfigLoader** |
 | Must this be available in `katalystApplication` block? | Yes | **ServiceConfigLoader** |
 | Does this only affect components/services? | Yes | **AutomaticServiceConfigLoader** |
 | Do you want constructor injection? | Yes | **AutomaticServiceConfigLoader** |
 | Do you want manual bootstrap control? | Yes | **ServiceConfigLoader** |
 
-### Example: Choosing for SmtpConfig
+### Example: Choosing for NotificationApiConfig
 
-**If you were using ServiceConfigLoader for SmtpConfig:**
+**If you used ServiceConfigLoader for NotificationApiConfig (manual):**
 
 ```kotlin
-// ServiceConfigLoader pattern (manual loading)
-object SmtpConfigLoader : ServiceConfigLoader<SmtpConfig> {
-    override fun loadConfig(provider: ConfigProvider): SmtpConfig { ... }
+object NotificationApiConfigLoader : ServiceConfigLoader<NotificationApiConfig> {
+    override fun loadConfig(provider: ConfigProvider): NotificationApiConfig { ... }
 }
 
-object SmtpConfigImpl {
-    fun loadConfig(): SmtpConfig = /* manual loading logic */
+object NotificationApiConfigImpl {
+    fun loadConfig(): NotificationApiConfig = /* manual loading logic */
 }
 
-class SmtpClient() : Component {
-    val smtpConfig = SmtpConfigImpl.loadConfig()  // Manual loading
+class NotificationClient() : Component {
+    val config = NotificationApiConfigImpl.loadConfig()  // Manual loading
 }
 ```
 
-**Better approach: Use AutomaticServiceConfigLoader**
+**Preferred approach: AutomaticServiceConfigLoader**
 
 ```kotlin
-// AutomaticServiceConfigLoader pattern (automatic)
-object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
-    override val configType = SmtpConfig::class  // ← Type declaration
-    override fun loadConfig(provider: ConfigProvider): SmtpConfig { ... }
+object NotificationApiConfigLoader : AutomaticServiceConfigLoader<NotificationApiConfig> {
+    override val configType = NotificationApiConfig::class
+    override fun loadConfig(provider: ConfigProvider): NotificationApiConfig { ... }
 }
 
-// No helper function needed!
-
-class SmtpClient(
-    val smtpConfig: SmtpConfig  // ← Clean constructor injection
+class NotificationClient(
+    val config: NotificationApiConfig  // Clean constructor injection
 ) : Component { ... }
 ```
 
-**Why this is better for SmtpConfig specifically:**
-- SmtpConfig is only needed by components (not infrastructure)
+**Why this is better for NotificationApiConfig:**
+- The config is only needed by components (not infrastructure)
 - Components declare their dependency clearly (constructor parameter)
 - No manual helper functions needed
 - Automatic discovery during Phase 5a
@@ -466,12 +391,11 @@ Both patterns use `ConfigLoaders` for consistent, type-safe configuration extrac
 
 ```kotlin
 // Required values (throw ConfigException if missing/blank)
-val host = ConfigLoaders.loadRequiredString(provider, "smtp.host")
-val port = ConfigLoaders.loadRequiredInt(provider, "smtp.port")
+val baseUrl = ConfigLoaders.loadRequiredString(provider, "notification.baseUrl")
+val apiKey = ConfigLoaders.loadRequiredString(provider, "notification.apiKey")
 
 // Optional values (return default if missing)
-val username = ConfigLoaders.loadOptionalString(provider, "smtp.username", "")
-val timeout = ConfigLoaders.loadOptionalLong(provider, "timeout.ms", 30_000L)
+val timeout = ConfigLoaders.loadOptionalLong(provider, "notification.timeoutMillis", 30_000L)
 
 // Special types
 val duration = ConfigLoaders.loadOptionalDuration(provider, "request.timeout", Duration.ofSeconds(30))

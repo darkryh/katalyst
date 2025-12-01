@@ -6,30 +6,33 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 
 ### Core Concepts (Start Here)
 
-1. **[auto-wiring.md](auto-wiring.md)** – How components, services, scheduler jobs, events, routes, middleware, websockets, and **configuration objects** are automatically discovered and injected.
+1. **[bootstrap.md](bootstrap.md)** – How to start a Katalyst app (engine, database, `scanPackages`, optional features like scheduler/events/websockets/config provider) using the same DSL as the sample and Boshi server.
 
-2. **[configuration.md](configuration.md)** – Complete guide to Katalyst's configuration system:
+2. **[auto-wiring.md](auto-wiring.md)** – How components, services, scheduler jobs, events, routes, middleware, websockets, and **configuration objects** are automatically discovered and injected.
+
+3. **[configuration.md](configuration.md)** – Complete guide to Katalyst's configuration system:
    - **`ServiceConfigLoader`** – Manual pattern for infrastructure config (database, ports, TLS)
    - **`AutomaticServiceConfigLoader`** – Modern pattern for service config (SMTP, APIs, feature flags)
    - YAML structure, environment variables, profiles, validation, type-safety
-   - Real working example: SmtpConfig from the Boshi SMTP server project
+   - Real working example: Notification API config loader; the Boshi SMTP module offers an email-focused variant if you want a production-size sample.
 
 ### Persistence & Database
 
-3. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 0.52.0 JDBC integration, imports, transaction patterns, DSL reference.
+4. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 1.0.0-rc-3 JDBC integration, imports, transaction patterns, DSL reference.
 
-4. **[persistence.md](persistence.md)** – Defining tables, repositories, and custom queries with Exposed/Hikari.
+5. **[persistence.md](persistence.md)** – Defining tables, repositories, and custom queries with Exposed/Hikari.
 
 ### Testing
 
-5. **[testing.md](testing.md)** – Using `katalystTestEnvironment`/`katalystTestApplication`, overrides, Postgres/Testcontainers, coverage.
+6. **[testing.md](testing.md)** – Using `katalystTestEnvironment`/`katalystTestApplication`, overrides, Postgres/Testcontainers, coverage.
 
 ## Quick Navigation
 
 | Need | See |
 |------|-----|
+| Bootstrap a server with scheduler/events/websockets/config provider | [bootstrap.md](bootstrap.md) |
 | Choose between configuration patterns | [configuration.md](configuration.md) → **Choosing the Right Pattern** |
-| Add service configuration (SMTP, APIs, etc.) | [configuration.md](configuration.md) → **AutomaticServiceConfigLoader** |
+| Add service configuration (APIs, messaging, feature flags) | [configuration.md](configuration.md) → **AutomaticServiceConfigLoader** |
 | Add infrastructure config (database, ports, etc.) | [configuration.md](configuration.md) → **ServiceConfigLoader** |
 | Wire components, services, routes | [auto-wiring.md](auto-wiring.md) |
 | Work with databases and repositories | [persistence.md](persistence.md) |
@@ -66,17 +69,17 @@ For configuration **injected into components during DI** (Phase 5a):
 
 ```kotlin
 // AutomaticServiceConfigLoader for service config
-object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
-    override val configType = SmtpConfig::class
-    override fun loadConfig(provider: ConfigProvider): SmtpConfig { ... }
-    override fun validate(config: SmtpConfig) { ... }
+object NotificationApiConfigLoader : AutomaticServiceConfigLoader<NotificationApiConfig> {
+    override val configType = NotificationApiConfig::class
+    override fun loadConfig(provider: ConfigProvider): NotificationApiConfig { ... }
+    override fun validate(config: NotificationApiConfig) { ... }
 }
 
 // Auto-injected into components
-class SmtpDeliveryService(val smtpConfig: SmtpConfig) : Service { ... }
+class NotificationService(val config: NotificationApiConfig) : Service { ... }
 ```
 
-**Use for:** SMTP, API credentials, feature toggles—anything component-scoped.
+**Use for:** API credentials, messaging endpoints, feature toggles—anything component-scoped.
 
 **Advantages:** Automatic discovery, constructor injection, fail-fast validation, no boilerplate.
 

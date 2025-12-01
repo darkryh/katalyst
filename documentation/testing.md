@@ -51,6 +51,7 @@ class AuthenticationServiceIntegrationTest {
 - Access the real `DatabaseTransactionManager`, `EventBus`, `SchedulerService`, etc.
 - Override bindings with `overrideModules(module { single { FakeClock() } })`.
 - Swap databases (e.g., Testcontainers Postgres) by passing a custom `DatabaseConfig` to `database(...)`.
+- Features installed match production: ConfigProvider, events, migrations, scheduler, websockets (when present on classpath) are enabled automatically so service-level calls like `requireScheduler()` behave the same.
 
 ## katalystTestApplication
 
@@ -90,6 +91,7 @@ Because the environment loads the real `EventBus`/`SchedulerService`, you can te
 
 - Publish events to ensure handlers/projectors run.
 - Schedule tasks via `SchedulerService.schedule(...)` and await completion with `CompletableDeferred` + `withTimeout`.
+- WebSockets are exercised the same way as HTTP using `katalystTestApplication` + the Ktor WebSockets client plugin.
 
 ## Coverage & CI
 
@@ -99,3 +101,14 @@ Because the environment loads the real `EventBus`/`SchedulerService`, you can te
 ## Messaging / AMQP
 
 Messaging modules are **in development**. Once available, spin up the relevant broker (e.g., RabbitMQ Testcontainer) and use the same testing helpers to override configuration and drive end-to-end messaging flows.
+
+## Reference tests (from `samples/katalyst-example`)
+
+Use these files as concrete patterns when writing your own tests:
+
+- `AuthenticationServiceIntegrationTest` – boots `katalystTestEnvironment` with H2, exercises service + repository + events.
+- `AuthenticationServicePostgresTest` – same flow against Testcontainers Postgres; auto-skips when Docker is unavailable.
+- `ExampleApiE2ETest` – end-to-end HTTP using `katalystTestApplication` (auto-installs routes/middleware/websockets).
+- `NotificationWebSocketRoutesTest` – WebSocket roundtrip with the provided client inside `katalystTestApplication`.
+- `SchedulerIntegrationTest` – verifies scheduler registrations run inside the test environment.
+- `AuthAccountStatusMigrationTest` – runs a migration directly with in-memory DB to verify schema/data changes.

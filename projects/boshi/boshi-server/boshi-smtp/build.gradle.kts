@@ -13,6 +13,8 @@ dependencies {
     implementation("com.ead.katalyst:katalyst-transactions")
     implementation("com.ead.katalyst:katalyst-ktor")
 
+    // DNS resolution
+    implementation("dnsjava:dnsjava:3.5.2")
 
     // Shared and storage modules
     implementation(project(":boshi-server:boshi-shared"))

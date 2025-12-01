@@ -1,10 +1,10 @@
 # Exposed Database Framework Integration
 
-Katalyst uses **Exposed 0.52.0** with JDBC transaction support for type-safe database operations. This guide details the imports, transaction patterns, and best practices for working with Exposed in Katalyst.
+Katalyst uses **Exposed 1.0.0-rc-3** with JDBC transaction support for type-safe database operations. This guide details the imports, transaction patterns, and best practices for working with Exposed in Katalyst.
 
 ## Version Information
 
-- **Exposed Version**: 0.52.0
+- **Exposed Version**: 1.0.0-rc-3
 - **Transaction Driver**: JDBC (via `org.jetbrains.exposed.v1.jdbc.transactions.transaction`)
 - **Primary API**: JDBC DSL (not DAO/Entity classes)
 - **Table Inheritance**: `LongIdTable` for entity ID management
@@ -332,4 +332,4 @@ statement[accountId] = EntityID(123L, AuthAccountsTable)
 - **Use `transactionManager.transaction { }` in services** (event consistency)
 - **Use direct `transaction(database) { }` in migrations** (one-time operations)
 - **Always wrap IDs in `EntityID`** when building INSERT/UPDATE statements
-- **Reference Exposed 0.52.0 documentation** for advanced DSL patterns not covered here
+- **Reference Exposed 1.0.0-rc-3 documentation** for advanced DSL patterns not covered here

@@ -33,6 +33,9 @@ class ServerManager {
                 logs = emptyList()
             ).withLog("Initializing server launch...")
 
+            // Optionally rebuild the server jar before launch
+            rebuildServerJar()
+
             val jarFile = config.jarPath?.let { File(it) }
             if (jarFile != null && !jarFile.exists()) {
                 throw IllegalArgumentException("JAR file not found: ${config.jarPath}")
@@ -82,6 +85,49 @@ class ServerManager {
                 isRunning = true,
                 config = config
             ).withLog("Server is running. Waiting for startup logs...")
+        }
+    }
+
+    /**
+     * Run a Gradle build to refresh the boshi-server jar before launching.
+     * Best-effort; logs any errors and continues with existing jar if build fails.
+     */
+    private fun rebuildServerJar() {
+        val projectRoot = File(System.getProperty("user.dir"))
+        val gradlew = File(projectRoot, "projects/boshi/gradlew")
+        if (!gradlew.exists()) {
+            _state.value = _state.value.withLog("Gradle wrapper not found at projects/boshi/gradlew; skipping rebuild")
+            return
+        }
+
+        val cmd = listOf(
+            gradlew.absolutePath,
+            ":boshi-server:boshi-app:build",
+            "-x", "test"
+        )
+
+        _state.value = _state.value.withLog("Rebuilding server jar: ${cmd.joinToString(" ")}")
+
+        try {
+            val process = ProcessBuilder(cmd)
+                .directory(File(projectRoot, "projects/boshi"))
+                .redirectErrorStream(true)
+                .start()
+
+            process.inputStream.bufferedReader().use { reader ->
+                reader.lineSequence().forEach { line ->
+                    _state.value = _state.value.withLog(line)
+                }
+            }
+
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                _state.value = _state.value.withLog("Gradle build failed (exit $exitCode); using existing jar")
+            } else {
+                _state.value = _state.value.withLog("Gradle build succeeded; using freshly built jar")
+            }
+        } catch (e: Exception) {
+            _state.value = _state.value.withLog("Gradle build error: ${e.message}; using existing jar")
         }
     }
 
