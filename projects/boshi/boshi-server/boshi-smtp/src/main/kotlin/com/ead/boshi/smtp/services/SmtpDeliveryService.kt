@@ -57,30 +57,37 @@ class SmtpDeliveryService(
             // Try each MX record in priority order
             var lastError: String? = null
             for (mxRecord in mxRecords) {
-                try {
-                    logger.debug("Trying MX host: ${mxRecord.mxHostname} (priority: ${mxRecord.priority})")
+                // Try multiple ports for each MX server (25, 587, 465)
+                val portsToTry = listOf(25, 587, 465)
 
-                    smtpClient.sendEmail(
-                        smtpHost = mxRecord.mxHostname,
-                        senderEmail = sentEmail.senderEmail,
-                        recipientEmail = sentEmail.recipientEmail,
-                        subject = sentEmail.subject,
-                        body = sentEmail.body,
-                        messageId = sentEmail.messageId
-                    )
+                for (port in portsToTry) {
+                    try {
+                        logger.debug("Trying MX host: ${mxRecord.mxHostname}:$port (priority: ${mxRecord.priority})")
 
-                    logger.info("Email delivered successfully: ${sentEmail.messageId} to ${sentEmail.recipientEmail}")
-                    return deliveryStatus.copy(
-                        status = DeliveryStatus.DELIVERED,
-                        deliveredAtMillis = System.currentTimeMillis(),
-                        statusChangedAtMillis = System.currentTimeMillis(),
-                        attemptCount = deliveryStatus.attemptCount + 1,
-                        lastAttemptAtMillis = System.currentTimeMillis()
-                    )
-                } catch (e: DeliveryException) {
-                    logger.warn("Delivery attempt failed for MX host ${mxRecord.mxHostname}: ${e.message}")
-                    lastError = e.message
-                    // Continue to next MX record
+                        smtpClient.sendEmail(
+                            smtpHost = mxRecord.mxHostname,
+                            senderEmail = sentEmail.senderEmail,
+                            recipientEmail = sentEmail.recipientEmail,
+                            subject = sentEmail.subject,
+                            body = sentEmail.body,
+                            messageId = sentEmail.messageId,
+                            port = port,
+                            useTls = port == 587 || port == 465
+                        )
+
+                        logger.info("Email delivered successfully: ${sentEmail.messageId} to ${sentEmail.recipientEmail} via ${mxRecord.mxHostname}:$port")
+                        return deliveryStatus.copy(
+                            status = DeliveryStatus.DELIVERED,
+                            deliveredAtMillis = System.currentTimeMillis(),
+                            statusChangedAtMillis = System.currentTimeMillis(),
+                            attemptCount = deliveryStatus.attemptCount + 1,
+                            lastAttemptAtMillis = System.currentTimeMillis()
+                        )
+                    } catch (e: DeliveryException) {
+                        logger.debug("Delivery attempt failed for ${mxRecord.mxHostname}:$port: ${e.message}")
+                        lastError = e.message
+                        // Continue to next port
+                    }
                 }
             }
 

@@ -92,12 +92,14 @@ rateLimit:
 # Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_USE_TLS, SMTP_CONNECTION_TIMEOUT, SMTP_READ_TIMEOUT
 smtp:
   # Client configuration (for sending emails via external SMTP server)
-  host: ${SMTP_HOST:localhost}
-  port: ${SMTP_PORT:25}
+  # Default: Gmail SMTP (requires authentication)
+  # For Gmail: Use app password from https://myaccount.google.com/apppasswords
+  host: ${SMTP_HOST:smtp.gmail.com}
+  port: ${SMTP_PORT:587}
   localHostname: ${SMTP_LOCAL_HOSTNAME:boshi.local}
-  username: ${SMTP_USERNAME:}
+  username: ${SMTP_USERNAME:xavier.torres.ac@gmail.com}
   password: ${SMTP_PASSWORD:}
-  useTls: ${SMTP_USE_TLS:false}
+  useTls: ${SMTP_USE_TLS:true}
   connectionTimeoutSeconds: ${SMTP_CONNECTION_TIMEOUT:30}
   readTimeoutSeconds: ${SMTP_READ_TIMEOUT:30}
 

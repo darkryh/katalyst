@@ -10,6 +10,7 @@ import org.xbill.DNS.Resolver
 import org.xbill.DNS.SimpleResolver
 import org.xbill.DNS.TextParseException
 import org.xbill.DNS.Type
+import java.time.Duration
 
 /**
  * Service for resolving MX records from DNS
@@ -59,9 +60,9 @@ class MxRecordResolver : Component {
             listOf(false, true).mapNotNull { useTcp ->
                 runCatching {
                     SimpleResolver(host).apply {
-                        setTCP(useTcp)
+                        tcp = useTcp
                         // dnsjava expects seconds + nanos
-                        setTimeout((DNS_TIMEOUT_MS / 1000).toInt(), ((DNS_TIMEOUT_MS % 1000) * 1_000_000L).toInt())
+                        timeout = Duration.ofMillis(DNS_TIMEOUT_MS)
                     }
                 }.getOrNull()
             }
@@ -99,7 +100,7 @@ class MxRecordResolver : Component {
             MxRecordEntity(
                 domain = domain,
                 mxHostname = mx.target.toString(true),
-                priority = mx.priority.toInt(),
+                priority = mx.priority,
                 resolvedAtMillis = now,
                 expiresAtMillis = expiresAt,
                 failedAttempts = 0

@@ -286,8 +286,8 @@ The factory is automatically injected during DI initialization and manages:
 - Schema creation via `SchemaUtils.createMissingTablesAndColumns`
 - Lifecycle management (startup/shutdown)
 
-## Troubleshooting
-
+## Troubleshooting*
+*
 ### Import Errors
 
 **Problem**: `Cannot resolve symbol 'selectAll'`

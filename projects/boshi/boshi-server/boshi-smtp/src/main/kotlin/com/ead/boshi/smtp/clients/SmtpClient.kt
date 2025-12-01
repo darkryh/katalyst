@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter
 import java.net.Socket
 import java.time.Instant
 import java.util.Base64
+import javax.net.ssl.SSLSocketFactory
 
 /**
  * SMTP client for sending emails to mail servers
@@ -53,17 +54,27 @@ class SmtpClient(
         recipientEmail: String,
         subject: String,
         body: String,
-        messageId: String
+        messageId: String,
+        port: Int = smtpConfig.port,
+        useTls: Boolean = smtpConfig.useTls
     ): String {
         logger.debug("Sending email via SMTP to $smtpHost for message: $messageId")
 
-        val socket = Socket()
+        // Port 465 uses implicit TLS (immediate SSL), others use STARTTLS
+        val implicitTls = port == 465
+        val socket = if (implicitTls) {
+            val sslFactory = SSLSocketFactory.getDefault() as javax.net.ssl.SSLSocketFactory
+            sslFactory.createSocket() as javax.net.ssl.SSLSocket
+        } else {
+            Socket()
+        }
 
         try {
             socket.soTimeout = SMTP_READ_TIMEOUT_MS
 
+            logger.debug("Connecting to $smtpHost:$port (TLS: $useTls, ImplicitTLS: $implicitTls)")
             socket.connect(
-                java.net.InetSocketAddress(smtpHost, smtpConfig.port),
+                java.net.InetSocketAddress(smtpHost, port),
                 SMTP_CONNECT_TIMEOUT_MS
             )
 
@@ -72,12 +83,15 @@ class SmtpClient(
                     return performSmtpExchange(
                         reader,
                         writer,
+                        socket,
                         smtpHost,
                         senderEmail,
                         recipientEmail,
                         subject,
                         body,
-                        messageId
+                        messageId,
+                        useTls,
+                        implicitTls
                     )
                 }
             }
@@ -103,72 +117,125 @@ class SmtpClient(
      * Perform SMTP protocol conversation with mail server
      */
     private fun performSmtpExchange(
-        reader: BufferedReader,
-        writer: BufferedWriter,
+        initialReader: BufferedReader,
+        initialWriter: BufferedWriter,
+        initialSocket: Socket,
         smtpHost: String,
         senderEmail: String,
         recipientEmail: String,
         subject: String,
         body: String,
-        messageId: String
+        messageId: String,
+        useTls: Boolean,
+        implicitTls: Boolean = false
     ): String {
-        // Read initial server response
-        val welcomeResponse = readSmtpResponse(reader)
+        var reader = initialReader
+        var writer = initialWriter
+        var socket = initialSocket
 
-        if (!welcomeResponse.startsWith("220")) {
-            throw DeliveryException("Unexpected SMTP welcome response: $welcomeResponse")
+        try {
+            // Read initial server response
+            val welcomeResponse = reader.readLine() ?: throw DeliveryException("No welcome response from $smtpHost")
+            logger.trace("SMTP << $welcomeResponse")
+
+            if (!welcomeResponse.startsWith("220")) {
+                throw DeliveryException("Unexpected SMTP welcome response: $welcomeResponse")
+            }
+
+            // Send EHLO
+            sendCommand(writer, "EHLO ${smtpConfig.localHostname}")
+            val ehloResponse = readSmtpResponse(reader)
+
+            if (!ehloResponse.startsWith("250")) {
+                throw DeliveryException("EHLO rejected by $smtpHost: $ehloResponse")
+            }
+
+            // Upgrade to TLS if required (skip if we already have implicit TLS on port 465)
+            if (useTls && !implicitTls) {
+                logger.debug("Upgrading connection to $smtpHost to TLS via STARTTLS")
+                sendCommand(writer, "STARTTLS")
+                val starttlsResponse = readSmtpResponse(reader)
+
+                if (!starttlsResponse.startsWith("220")) {
+                    throw DeliveryException("STARTTLS not supported: $starttlsResponse")
+                }
+
+                // Close old streams
+                writer.close()
+                reader.close()
+
+                // Upgrade to SSL socket
+                val sslFactory = SSLSocketFactory.getDefault() as javax.net.ssl.SSLSocketFactory
+                val sslSocket = sslFactory.createSocket(
+                    socket,
+                    smtpHost,
+                    smtpConfig.port,
+                    true
+                ) as javax.net.ssl.SSLSocket
+                sslSocket.soTimeout = SMTP_READ_TIMEOUT_MS
+
+                socket = sslSocket
+                reader = BufferedReader(InputStreamReader(socket.inputStream))
+                writer = BufferedWriter(OutputStreamWriter(socket.outputStream))
+
+                // Send EHLO again after TLS
+                sendCommand(writer, "EHLO ${smtpConfig.localHostname}")
+                val ehloAfterTls = readSmtpResponse(reader)
+                if (!ehloAfterTls.startsWith("250")) {
+                    throw DeliveryException("EHLO after STARTTLS rejected: $ehloAfterTls")
+                }
+            }
+
+            // Authenticate if credentials provided
+            if (smtpConfig.username.isNotEmpty() && smtpConfig.password.isNotEmpty()) {
+                performSmtpAuth(reader, writer)
+            }
+
+            // Send message
+            sendCommand(writer, "MAIL FROM:<$senderEmail>")
+            val mailFromResponse = readSmtpResponse(reader)
+            if (mailFromResponse.code() != SMTP_OK) {
+                throw DeliveryException("MAIL FROM rejected: $mailFromResponse")
+            }
+
+            // Send recipient
+            sendCommand(writer, "RCPT TO:<$recipientEmail>")
+            val rcptToResponse = readSmtpResponse(reader)
+            if (rcptToResponse.code() != SMTP_OK) {
+                throw DeliveryException("RCPT TO rejected: $rcptToResponse")
+            }
+
+            // Send data
+            sendCommand(writer, "DATA")
+            val dataResponse = readSmtpResponse(reader)
+            if (dataResponse.code() != SMTP_DATA_OK) {
+                throw DeliveryException("DATA command rejected: $dataResponse")
+            }
+
+            // Send email headers and body
+            sendEmailData(writer, senderEmail, recipientEmail, subject, body, messageId)
+
+            // Complete message
+            sendCommand(writer, ".")
+            val acceptResponse = readSmtpResponse(reader)
+            if (acceptResponse.code() != SMTP_ACCEPTED) {
+                throw DeliveryException("Message rejected by server: $acceptResponse")
+            }
+
+            // Quit
+            sendCommand(writer, "QUIT")
+            readSmtpResponse(reader)
+
+            logger.debug("Email sent successfully via $smtpHost for message: $messageId")
+            return acceptResponse
+        } finally {
+            try {
+                writer.close()
+                reader.close()
+            } catch (e: Exception) {
+                logger.warn("Error closing SMTP streams", e)
+            }
         }
-
-        // Send EHLO
-        sendCommand(writer, "EHLO ${smtpConfig.localHostname}")
-        val ehloResponse = readSmtpResponse(reader)
-
-        if (!ehloResponse.startsWith("250")) {
-            throw DeliveryException("EHLO rejected by $smtpHost: $ehloResponse")
-        }
-
-        // Authenticate if credentials provided
-        if (smtpConfig.username.isNotEmpty() && smtpConfig.password.isNotEmpty()) {
-            performSmtpAuth(reader, writer)
-        }
-
-        // Send message
-        sendCommand(writer, "MAIL FROM:<$senderEmail>")
-        val mailFromResponse = readSmtpResponse(reader)
-        if (mailFromResponse.code() != SMTP_OK) {
-            throw DeliveryException("MAIL FROM rejected: $mailFromResponse")
-        }
-
-        // Send recipient
-        sendCommand(writer, "RCPT TO:<$recipientEmail>")
-        val rcptToResponse = readSmtpResponse(reader)
-        if (rcptToResponse.code() != SMTP_OK) {
-            throw DeliveryException("RCPT TO rejected: $rcptToResponse")
-        }
-
-        // Send data
-        sendCommand(writer, "DATA")
-        val dataResponse = readSmtpResponse(reader)
-        if (dataResponse.code() != SMTP_DATA_OK) {
-            throw DeliveryException("DATA command rejected: $dataResponse")
-        }
-
-        // Send email headers and body
-        sendEmailData(writer, senderEmail, recipientEmail, subject, body, messageId)
-
-        // Complete message
-        sendCommand(writer, ".")
-        val acceptResponse = readSmtpResponse(reader)
-        if (acceptResponse.code() != SMTP_ACCEPTED) {
-            throw DeliveryException("Message rejected by server: $acceptResponse")
-        }
-
-        // Quit
-        sendCommand(writer, "QUIT")
-        readSmtpResponse(reader)
-
-        logger.debug("Email sent successfully via $smtpHost for message: $messageId")
-        return acceptResponse
     }
 
     /**
