@@ -106,7 +106,8 @@ private fun augmentArgsWithProfileConfig(bootstrapArgs: BootstrapArgs): Array<St
         "-config=application.yaml",
         "-config=application-$profile.yaml"
     )
-    return bootstrapArgs.ktorArgs + profileArgs
+    // Put profile configs first so explicit CLI flags (-P host/port) win
+    return profileArgs + bootstrapArgs.ktorArgs
 }
 private fun flattenConfig(
     config: ApplicationConfig,

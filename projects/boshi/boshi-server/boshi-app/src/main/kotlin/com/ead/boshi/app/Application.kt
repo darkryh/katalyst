@@ -8,7 +8,7 @@ import com.ead.katalyst.di.katalystApplication
 import com.ead.katalyst.migrations.extensions.enableMigrations
 import com.ead.katalyst.scheduler.enableScheduler
 
-fun main(args: Array<String>) = katalystApplication {
+fun main(args: Array<String>) = katalystApplication(args) {
     // Step 1: Select engine (REQUIRED)
     engine(args.embeddedServer())
 

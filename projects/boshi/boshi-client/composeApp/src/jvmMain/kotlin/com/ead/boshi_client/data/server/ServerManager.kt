@@ -42,11 +42,14 @@ class ServerManager {
                 throw IllegalArgumentException("JAR path not configured. Please select a server JAR file.")
             }
 
-            _state.value = _state.value.withLog("JAR path: ${jarFile.absolutePath}")
+            // Always prefer the newest jar in the same directory to avoid running stale builds
+            val selectedJar = pickLatestJar(jarFile)
+
+            _state.value = _state.value.withLog("JAR path: ${selectedJar.absolutePath}")
             _state.value = _state.value.withLog("Server config: host=${config.host}, port=${config.port}")
 
             // Create a wrapper script with the proper process name
-            val wrapperScript = createWrapperScript(jarFile, config)
+            val wrapperScript = createWrapperScript(selectedJar, config)
             _state.value = _state.value.withLog("Wrapper script: ${wrapperScript.absolutePath}")
 
             // Build ProcessBuilder to launch the wrapper script
@@ -89,14 +92,39 @@ class ServerManager {
         val tmpDir = File(System.getProperty("java.io.tmpdir"))
         val scriptFile = File(tmpDir, "boshi-server-${config.port}.sh")
 
-        val scriptContent = """#!/bin/bash
-exec java -jar "${jarFile.absolutePath}" --server.port=${config.port} --server.address=${config.host}
-"""
+        val scriptContent = buildString {
+            appendLine("#!/bin/bash")
+            append("exec java -jar \"${jarFile.absolutePath}\" ")
+            // Profile configs first, then CLI overrides so -P wins
+            append("-config=application.yaml -config=application-${'$'}{KATALYST_PROFILE:-dev}.yaml ")
+            append("-P:ktor.deployment.host=${config.host} ")
+            append("-P:ktor.deployment.port=${config.port}")
+            appendLine()
+        }
 
         scriptFile.writeText(scriptContent)
         scriptFile.setExecutable(true)
 
         return scriptFile
+    }
+
+    /**
+     * If there is a newer boshi-app-*.jar in the same folder, prefer it.
+     */
+    private fun pickLatestJar(current: File): File {
+        val parent = current.parentFile ?: return current
+        if (!parent.exists()) return current
+
+        val latest = parent.listFiles { file ->
+            file.isFile && file.name.startsWith("boshi-app-") && file.name.endsWith(".jar")
+        }?.maxByOrNull { it.lastModified() } ?: return current
+
+        return if (latest.lastModified() > current.lastModified() && latest.absolutePath != current.absolutePath) {
+            _state.value = _state.value.withLog("Found newer JAR: ${latest.name}, using it instead of ${current.name}")
+            latest
+        } else {
+            current
+        }
     }
 
     /**

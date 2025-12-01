@@ -46,7 +46,7 @@ import com.ead.katalyst.websockets.enableWebSockets
  * java -jar app.jar
  * ```
  */
-fun main(args: Array<String>) = katalystApplication {
+fun main(args: Array<String>) = katalystApplication(args) {
     // Step 1: Select engine (REQUIRED)
     engine(args.embeddedServer())
     // Step 2: Configure database
