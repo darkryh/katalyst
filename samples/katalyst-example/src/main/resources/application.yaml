@@ -12,7 +12,7 @@ ktor:
   deployment:
     # Network Configuration
     host: ${SERVER_HOST:0.0.0.0}
-    port: ${SERVER_PORT:8080}
+    port: ${SERVER_PORT:8081}
     #sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
 
     # Shutdown Configuration
@@ -58,13 +58,6 @@ ktor:
 
 # Database Configuration
 # Environment variables: DB_URL, DB_USERNAME, DB_PASSWORD, DB_DRIVER
-ktor:
-  deployment:
-    host: ${SERVER_HOST:0.0.0.0}
-    port: ${SERVER_PORT:8080}
-    shutdownGracePeriod: ${SHUTDOWN_GRACE_PERIOD:1000}
-    shutdownTimeout: ${SHUTDOWN_TIMEOUT:5000}
-
 database:
   url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
   username: ${DB_USERNAME:postgres}

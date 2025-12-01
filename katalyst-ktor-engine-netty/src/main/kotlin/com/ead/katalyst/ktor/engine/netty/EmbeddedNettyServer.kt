@@ -10,7 +10,8 @@ import io.ktor.server.netty.*
 
 fun Array<String>.embeddedServer(): EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration> {
     val bootstrapArgs = BootstrapArgs.parse(this).also { it.applyProfileOverride() }
-    val rawConfig = CommandLineConfig(bootstrapArgs.ktorArgs)
+    val argsWithProfileConfig = augmentArgsWithProfileConfig(bootstrapArgs)
+    val rawConfig = CommandLineConfig(argsWithProfileConfig)
     val config = sanitizeCommandLineConfig(rawConfig, force = bootstrapArgs.forceCliConfig)
 
     return EmbeddedServer(config.rootConfig, Netty) {
@@ -89,6 +90,24 @@ private fun sanitizeCommandLineConfig(
     }.getOrElse { config }
 }
 
+private fun augmentArgsWithProfileConfig(bootstrapArgs: BootstrapArgs): Array<String> {
+    // If user already passed -config, respect it
+    if (bootstrapArgs.ktorArgs.any { it.startsWith("-config") }) return bootstrapArgs.ktorArgs
+
+    val profile = System.getProperty("katalyst.profile")
+        ?.takeIf { it.isNotBlank() }
+        ?: System.getenv("KATALYST_PROFILE")
+            ?.takeIf { it.isNotBlank() }
+
+    if (profile.isNullOrBlank()) return bootstrapArgs.ktorArgs
+
+    // Provide both base and profile configs; rightmost has priority
+    val profileArgs = arrayOf(
+        "-config=application.yaml",
+        "-config=application-$profile.yaml"
+    )
+    return bootstrapArgs.ktorArgs + profileArgs
+}
 private fun flattenConfig(
     config: ApplicationConfig,
     includeKey: (String) -> Boolean

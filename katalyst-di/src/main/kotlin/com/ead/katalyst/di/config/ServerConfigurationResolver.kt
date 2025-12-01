@@ -65,7 +65,7 @@ internal class ServerConfigurationResolver(
 
     private fun resolveBootstrapProvider(): ConfigProvider? {
         if (bootstrapArgs.forceCliConfig) {
-            logger.info("Force mode enabled; skipping ConfigProvider bootstrap")
+            logger.info("Force mode enabled; skipping ConfigProvider bootstrap for server deployment")
             return null
         }
         return runCatching {

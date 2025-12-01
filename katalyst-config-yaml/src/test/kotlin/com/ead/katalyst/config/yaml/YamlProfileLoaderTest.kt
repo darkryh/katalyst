@@ -54,4 +54,21 @@ class YamlProfileLoaderTest {
             loader.loadConfiguration()
         }
     }
+
+    @Test
+    fun `profile overrides base values and falls back when missing`() {
+        val loader = YamlProfileLoader(
+            profileEnvVar = "KTL_PROFILE_TEST",
+            baseConfigFile = "application.yaml",
+            environmentReader = { "partial" }
+        )
+
+        val config = loader.loadConfiguration()
+        @Suppress("UNCHECKED_CAST")
+        val database = config["database"] as Map<String, Any>
+        // port overridden by profile
+        assertEquals(9090, database["port"])
+        // retries comes from base (missing in profile)
+        assertEquals(1, database["retries"])
+    }
 }

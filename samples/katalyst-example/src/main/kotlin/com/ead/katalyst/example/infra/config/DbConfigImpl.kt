@@ -2,7 +2,7 @@ package com.ead.katalyst.example.infra.config
 
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.config.provider.ConfigBootstrapHelper
-import com.ead.katalyst.config.yaml.YamlConfigProvider
+import com.ead.katalyst.config.provider.ConfigProviderFactory
 import org.slf4j.LoggerFactory
 
 /**
@@ -17,8 +17,8 @@ object DbConfigImpl {
     fun loadDatabaseConfig(): DatabaseConfig {
         log.info("Loading database configuration...")
         try {
-            val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
-            val dbConfig = ConfigBootstrapHelper.loadServiceConfig(config, DatabaseConfigLoader)
+            val provider = ConfigProviderFactory.create()
+            val dbConfig = ConfigBootstrapHelper.loadServiceConfig(provider, DatabaseConfigLoader)
             log.info("✓ Database configuration loaded")
             return dbConfig
         } catch (e: Exception) {
