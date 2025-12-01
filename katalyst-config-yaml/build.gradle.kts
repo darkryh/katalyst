@@ -9,6 +9,9 @@ dependencies {
     // Katalyst core - provides ConfigProvider interface
     implementation(projects.katalystCore)
 
+    // Config SPI for pluggable loaders
+    api(projects.katalystConfigSpi)
+
     // Katalyst config provider - provides ServiceConfigLoader, ConfigLoaders, etc.
     implementation(projects.katalystConfigProvider)
 
@@ -20,6 +23,7 @@ dependencies {
 
     // YAML parsing
     implementation(libs.snakeyaml)
+    implementation(libs.ktor.server.config.yaml)
 
     // Logging
     implementation(libs.logback)

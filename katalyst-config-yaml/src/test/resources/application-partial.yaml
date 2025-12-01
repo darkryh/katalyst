@@ -1,0 +1,5 @@
+database:
+  # override only port
+  port: 9090
+feature:
+  enabled: true

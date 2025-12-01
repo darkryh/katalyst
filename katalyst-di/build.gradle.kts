@@ -12,6 +12,8 @@ dependencies {
     implementation(projects.katalystPersistence)
     implementation(projects.katalystScanner)
     implementation(projects.katalystKtor)
+    implementation(projects.katalystConfigProvider)
+    implementation(projects.katalystConfigSpi)
 
     // Event system modules
     implementation(projects.katalystEvents)

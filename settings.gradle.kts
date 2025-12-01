@@ -25,6 +25,7 @@ include(":katalyst-websockets")
 // Configuration management modules
 include(":katalyst-config-provider")
 include(":katalyst-config-yaml")
+include(":katalyst-config-spi")
 
 include(":katalyst-migrations")
 

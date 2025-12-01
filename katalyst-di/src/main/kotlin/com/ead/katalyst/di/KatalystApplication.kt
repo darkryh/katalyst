@@ -6,6 +6,7 @@ import com.ead.katalyst.core.component.Component
 import com.ead.katalyst.config.DatabaseConfig
 import com.ead.katalyst.core.dsl.KatalystDslMarker
 import com.ead.katalyst.di.config.BootstrapArgs
+import com.ead.katalyst.di.config.BootstrapArgsHolder
 import com.ead.katalyst.di.config.KatalystDIOptions
 import com.ead.katalyst.di.config.ServerConfiguration
 import com.ead.katalyst.di.config.ServerDeploymentConfiguration
@@ -413,6 +414,7 @@ fun katalystApplication(
     printKatalystBanner()
 
     val bootstrapArgs = BootstrapArgs.parse(args).also { it.applyProfileOverride() }
+    BootstrapArgsHolder.set(bootstrapArgs)
     val builder = KatalystApplicationBuilder(bootstrapArgs)
 
     try {
@@ -485,6 +487,9 @@ fun katalystApplication(
     } catch (e: Exception) {
         logger.error("Failed to start Katalyst application", e)
         throw e
+    } finally {
+        stopKoinStandalone()
+        BootstrapArgsHolder.clear()
     }
 }
 

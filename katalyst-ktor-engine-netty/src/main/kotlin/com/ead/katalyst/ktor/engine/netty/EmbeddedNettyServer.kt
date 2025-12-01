@@ -3,13 +3,35 @@
 package com.ead.katalyst.com.ead.katalyst.ktor.engine.netty
 
 import com.ead.katalyst.di.config.BootstrapArgs
+import com.ead.katalyst.di.config.BootstrapArgsHolder
+import com.ead.katalyst.config.spi.ConfigLoaderResolver
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 
+/**
+ * Build an embedded Netty server using the CLI/profile args captured during bootstrap.
+ * Falls back to empty args if no bootstrap args were recorded.
+ */
+fun embeddedServer(): EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration> {
+    val bootstrapArgs = BootstrapArgsHolder.current() ?: BootstrapArgs.EMPTY
+    return buildEmbeddedServer(bootstrapArgs)
+}
+
+/**
+ * Legacy entry point: build an embedded server from explicit args.
+ * Also records the parsed args for downstream consumers.
+ */
 fun Array<String>.embeddedServer(): EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration> {
     val bootstrapArgs = BootstrapArgs.parse(this).also { it.applyProfileOverride() }
+    BootstrapArgsHolder.set(bootstrapArgs)
+    return buildEmbeddedServer(bootstrapArgs)
+}
+
+private fun buildEmbeddedServer(
+    bootstrapArgs: BootstrapArgs
+): EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration> {
     val argsWithProfileConfig = augmentArgsWithProfileConfig(bootstrapArgs)
     val rawConfig = CommandLineConfig(argsWithProfileConfig)
     val config = sanitizeCommandLineConfig(rawConfig, force = bootstrapArgs.forceCliConfig)
@@ -94,18 +116,10 @@ private fun augmentArgsWithProfileConfig(bootstrapArgs: BootstrapArgs): Array<St
     // If user already passed -config, respect it
     if (bootstrapArgs.ktorArgs.any { it.startsWith("-config") }) return bootstrapArgs.ktorArgs
 
-    val profile = System.getProperty("katalyst.profile")
-        ?.takeIf { it.isNotBlank() }
-        ?: System.getenv("KATALYST_PROFILE")
-            ?.takeIf { it.isNotBlank() }
+    val profiled = ConfigLoaderResolver.resolveProfiledPaths(baseName = "application")
+    if (profiled.isEmpty()) return bootstrapArgs.ktorArgs
 
-    if (profile.isNullOrBlank()) return bootstrapArgs.ktorArgs
-
-    // Provide both base and profile configs; rightmost has priority
-    val profileArgs = arrayOf(
-        "-config=application.yaml",
-        "-config=application-$profile.yaml"
-    )
+    val profileArgs = profiled.map { "-config=$it" }.toTypedArray()
     // Put profile configs first so explicit CLI flags (-P host/port) win
     return profileArgs + bootstrapArgs.ktorArgs
 }

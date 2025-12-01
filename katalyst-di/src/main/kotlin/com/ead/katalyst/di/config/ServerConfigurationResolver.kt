@@ -1,5 +1,6 @@
 package com.ead.katalyst.di.config
 
+import com.ead.katalyst.config.provider.ConfigProviderFactory
 import com.ead.katalyst.core.config.ConfigProvider
 import io.ktor.server.engine.*
 import org.slf4j.Logger
@@ -53,7 +54,7 @@ internal class ServerConfigurationResolver(
     private fun buildCliProvider(): ConfigProvider? {
         return runCatching {
             if (bootstrapArgs.ktorArgs.isEmpty()) {
-                return null
+                return@runCatching null
             }
             val cliConfig = CommandLineConfig(bootstrapArgs.ktorArgs)
             ApplicationConfigProvider(cliConfig.rootConfig.environment.config)
@@ -69,11 +70,10 @@ internal class ServerConfigurationResolver(
             return null
         }
         return runCatching {
-            val providerClass = Class.forName("com.ead.katalyst.config.yaml.YamlConfigProvider")
-            providerClass.getDeclaredConstructor().newInstance() as ConfigProvider
+            ConfigProviderFactory.create()
         }.onFailure { error ->
             when (error) {
-                is ClassNotFoundException -> logger.debug("YamlConfigProvider not found on classpath; skipping YAML fallback")
+                is ClassNotFoundException -> logger.debug("No ConfigProvider implementation found on classpath; skipping ConfigProvider fallback")
                 else -> logger.warn("Failed to instantiate ConfigProvider for server configuration: {}", error.message)
             }
         }.getOrNull()
@@ -83,7 +83,7 @@ internal class ServerConfigurationResolver(
 
     private fun resolveLoaderInstance(): Any? {
         return runCatching {
-            val loaderClass = Class.forName("com.ead.katalyst.config.provider.ServerDeploymentConfigurationLoader")
+            val loaderClass = Class.forName("com.ead.katalyst.di.config.ServerDeploymentConfigurationLoader")
             runCatching { loaderClass.getField("INSTANCE").get(null) }
                 .getOrElse { loaderClass.kotlin.objectInstance ?: loaderClass.getDeclaredConstructor().newInstance() }
         }.onFailure { error ->

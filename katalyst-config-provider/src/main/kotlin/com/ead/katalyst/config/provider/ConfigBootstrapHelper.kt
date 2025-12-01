@@ -63,6 +63,18 @@ object ConfigBootstrapHelper {
     }
 
     /**
+     * Load configuration using the first available ConfigProvider on the classpath.
+     * Falls back to known providers (e.g., YAML) if no service-registered provider is found.
+     */
+    fun loadConfig(): ConfigProvider {
+        return runCatching {
+            ConfigProviderFactory.create()
+        }.getOrElse { error ->
+            throw ConfigException("Failed to load configuration: ${error.message}", error)
+        }
+    }
+
+    /**
      * Load database configuration from ConfigProvider.
      *
      * Extracts database-specific configuration values as a map.

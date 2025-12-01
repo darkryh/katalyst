@@ -10,7 +10,7 @@ import com.ead.katalyst.scheduler.enableScheduler
 
 fun main(args: Array<String>) = katalystApplication(args) {
     // Step 1: Select engine (REQUIRED)
-    engine(args.embeddedServer())
+    engine(embeddedServer())
 
     // Step 2: Configure database
     database(DbConfigImpl.loadDatabaseConfig())
