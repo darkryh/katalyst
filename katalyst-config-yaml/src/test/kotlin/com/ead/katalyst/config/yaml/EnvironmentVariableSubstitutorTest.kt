@@ -1,6 +1,6 @@
 package com.ead.katalyst.config.yaml
 
-import org.junit.Assume.assumeTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import kotlin.test.*
 
 /**
@@ -42,7 +42,7 @@ class EnvironmentVariableSubstitutorTest {
         // Given - PATH exists on all systems
         val envVar = "PATH"
         val envValue = System.getenv(envVar)
-        assumeTrue("PATH environment variable should exist",envValue != null, )
+        assumeTrue(envValue != null, "PATH environment variable should exist")
 
         val input = "\${$envVar:default_value}"
 

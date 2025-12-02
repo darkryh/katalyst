@@ -1,9 +1,6 @@
 plugins {
-    kotlin("jvm")
+    id("com.ead.katalyst.conventions.common")
 }
-
-group = "com.ead.katalyst"
-version = "0.0.1"
 
 dependencies {
     // Katalyst core - provides ConfigProvider interface
@@ -25,14 +22,6 @@ dependencies {
     implementation(libs.snakeyaml)
     implementation(libs.ktor.server.config.yaml)
 
-    // Logging
-    implementation(libs.logback)
-
     // Testing
-    testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
-}
-
-kotlin {
-    jvmToolchain(21)
 }

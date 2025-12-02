@@ -1,10 +1,6 @@
 plugins {
-    kotlin("jvm")
-    `java-test-fixtures`
+    id("com.ead.katalyst.conventions.testing")
 }
-
-group = "com.ead.katalyst"
-version = "0.0.1"
 
 dependencies {
     api(project(":katalyst-di"))

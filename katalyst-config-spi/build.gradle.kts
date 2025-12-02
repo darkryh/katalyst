@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    id("com.ead.katalyst.conventions.base")
 }
 
 dependencies {

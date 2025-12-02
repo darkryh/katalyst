@@ -1,9 +1,6 @@
 plugins {
-    kotlin("jvm")
+    id("com.ead.katalyst.conventions.common")
 }
-
-group = "com.ead.katalyst"
-version = "0.0.1"
 
 dependencies {
     // Katalyst modules orchestrated by DI
@@ -34,18 +31,14 @@ dependencies {
     implementation(libs.ktor.server.host.common)
 
     // Language/runtime utilities
-    implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
-    implementation(libs.kotlinx.coroutines.core)
 
     // Diagnostics & reflection aids
-    implementation(libs.logback)
     implementation(libs.jansi)
     implementation(libs.reflections)
     implementation(libs.asm)
 
     // Testing
-    testImplementation(kotlin("test"))
     testImplementation(libs.koin.test)
     testImplementation(libs.exposed.core)
     testImplementation(libs.exposed.dao)
@@ -56,12 +49,4 @@ dependencies {
     testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.junit.platform.launcher)
     testImplementation(testFixtures(projects.katalystTestingCore))
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(21)
 }
