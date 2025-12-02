@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     application
 }
 
@@ -58,22 +59,34 @@ application {
     mainClass.set("com.ead.boshi.app.ApplicationKt")
 }
 
-// Create a fat JAR with all dependencies for standalone execution
-tasks.jar {
+// Configure ShadowJar for fat JAR creation
+tasks.shadowJar {
+    archiveFileName.set("boshi-server.jar")
+
+    // Merge service files (important for Ktor and other frameworks)
+    mergeServiceFiles()
+
+    // Exclude unnecessary files to reduce JAR size
+    exclude("META-INF/maven/**")
+    exclude("META-INF/proguard/**")
+    exclude("META-INF/versions/**")
+    exclude("**/module-info.class")
+
+    // Manifest configuration
     manifest {
         attributes(
-            "Main-Class" to "com.ead.boshi.app.ApplicationKt"
+            "Main-Class" to "com.ead.boshi.app.ApplicationKt",
+            "Implementation-Title" to "Boshi SMTP Server",
+            "Implementation-Version" to project.version,
+            "Created-By" to "Gradle ShadowJar"
         )
     }
 
-    // Include all runtime dependencies in the JAR
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
-        exclude("META-INF/MANIFEST.MF")
-        exclude("META-INF/*.SF")
-        exclude("META-INF/*.RSA")
-        exclude("META-INF/maven/**")
-        exclude("META-INF/proguard/**")
-    }
+    // Use shadowJar as the default JAR
+    isZip64 = true
+}
 
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+// Make build task depend on shadowJar
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }

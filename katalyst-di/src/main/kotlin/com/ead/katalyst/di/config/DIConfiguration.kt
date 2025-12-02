@@ -206,10 +206,10 @@ fun bootstrapKatalystDI(
 
             // Auto-create missing tables in schema using Exposed's SchemaUtils
             logger.info("Ensuring database schema...")
-            val txManager = koin.get<DatabaseTransactionManager>()
+            val transactionManager = koin.get<DatabaseTransactionManager>()
 
             runBlocking {
-                txManager.transaction {
+                transactionManager.transaction {
                     MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables)
                 }
             }

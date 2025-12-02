@@ -8,9 +8,7 @@ import com.ead.katalyst.transactions.manager.DatabaseTransactionManager as Trans
  * DatabaseTransactionManager has been moved to katalyst-transactions module
  * to centralize all transaction-related logic.
  *
- * **Migration Path:**
  * ```
- * OLD: import com.ead.katalyst.core.transaction.DatabaseTransactionManager
  * NEW: import com.ead.katalyst.transactions.manager.DatabaseTransactionManager
  * ```
  *

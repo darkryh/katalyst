@@ -142,8 +142,8 @@ class ServerManager {
             appendLine("#!/bin/bash")
             append("exec java -jar \"${jarFile.absolutePath}\" ")
             // Profile configs first, then CLI overrides so -P wins
-            append("-config=application.yaml -config=application-${'$'}{KATALYST_PROFILE:-dev}.yaml ")
-            append("-P:ktor.deployment.host=${config.host} ")
+            //append("-config=application.yaml -config=application-${'$'}{KATALYST_PROFILE:-dev}.yaml ")
+            //append("-P:ktor.deployment.host=${config.host} ")
             append("-P:ktor.deployment.port=${config.port}")
             appendLine()
         }

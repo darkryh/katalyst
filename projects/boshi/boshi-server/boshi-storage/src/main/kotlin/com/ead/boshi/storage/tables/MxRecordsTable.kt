@@ -12,7 +12,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * Maps to mx_records table in database
  * Used to cache MX lookups (24 hour TTL)
  */
-object MxRecordsTable : LongIdTable("mx_records"), Table<Long, MxRecordEntity> {
+object MxRecordsTable : LongIdTable("dns_service.mx_records"), Table<Long, MxRecordEntity> {
     // Domain being cached
     val domain = varchar("domain", 255).uniqueIndex()
 

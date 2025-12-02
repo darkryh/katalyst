@@ -13,7 +13,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * Maps to delivery_status table in database
  * Has foreign key to sent_emails with CASCADE delete
  */
-object DeliveryStatusTable : LongIdTable("delivery_status"), Table<Long, DeliveryStatusEntity> {
+object DeliveryStatusTable : LongIdTable("delivering_service.delivery_status"), Table<Long, DeliveryStatusEntity> {
     // Foreign key to sent_emails
     val sentEmailId = reference(
         name = "sent_email_id",

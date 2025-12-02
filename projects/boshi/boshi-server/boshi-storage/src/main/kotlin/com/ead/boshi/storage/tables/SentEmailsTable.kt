@@ -11,7 +11,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * Exposed table definition for sent emails
  * Maps to sent_emails table in database
  */
-object SentEmailsTable : LongIdTable("sent_emails"), Table<Long, SentEmailEntity> {
+object SentEmailsTable : LongIdTable("email_service.sent_emails"), Table<Long, SentEmailEntity> {
     // Core fields
     val messageId = varchar("message_id", 255).uniqueIndex()
     val userId = long("user_id").index()

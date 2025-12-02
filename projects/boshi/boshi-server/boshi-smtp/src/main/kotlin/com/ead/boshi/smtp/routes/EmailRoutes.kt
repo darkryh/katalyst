@@ -9,6 +9,7 @@ import com.ead.boshi.smtp.services.EmailService
 import com.ead.katalyst.ktor.builder.katalystRouting
 import com.ead.katalyst.ktor.extension.ktInject
 import io.ktor.http.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -23,6 +24,7 @@ fun Route.emailRoutes() = katalystRouting {
 
     /**
      * POST /emails/send - Submit email for delivery
+     * Requires: Authorization: Bearer <API_KEY>
      * Rate limited: 100 requests per minute
      * Request body:
      * {
@@ -34,67 +36,80 @@ fun Route.emailRoutes() = katalystRouting {
      *   "metadata": {"key": "value"}
      * }
      */
-    post("/emails/send") {
-        val request = call.receive<SendEmailRequest>()
+    authenticate("api-key") {
+        post("/emails/send") {
+            val request = call.receive<SendEmailRequest>()
 
-        val result = emailService
-            .send(
-                request = request,
-                remoteHost = call.request.local.remoteHost
-            )
+            val result = emailService
+                .send(
+                    request = request,
+                    remoteHost = call.request.local.remoteHost
+                )
 
-        call.respond(
-            HttpStatusCode.Accepted,
-            SendEmailResponse(
-                messageId = result.messageId,
-                status = DeliveryStatus.PENDING,
-                message = "Email accepted for delivery"
+            call.respond(
+                HttpStatusCode.Accepted,
+                SendEmailResponse(
+                    messageId = result.messageId,
+                    status = DeliveryStatus.PENDING,
+                    message = "Email accepted for delivery"
+                )
             )
-        )
+        }
     }
 
     /**
      * GET /emails/{messageId}/status - Get email delivery status
+     * Requires: Authorization: Bearer <API_KEY>
      * Rate limited: 100 requests per minute
      */
-    get("/emails/{messageId}/status") {
+    authenticate("api-key") {
+        get("/emails/{messageId}/status") {
 
-        val messageId = call.parameters["messageId"]
-        val deliveryStatus = emailService.getMessageStatus(messageId)
+            val messageId = call.parameters["messageId"]
+            val deliveryStatus = emailService.getMessageStatus(messageId)
 
-        call.respond(
-            EmailStatusResponse(
-                messageId = deliveryStatus.messageId,
-                status = deliveryStatus.status,
-                attempts = deliveryStatus.attemptCount,
-                errorMessage = deliveryStatus.errorMessage,
-                deliveredAt = deliveryStatus.deliveredAtMillis
+            call.respond(
+                EmailStatusResponse(
+                    messageId = deliveryStatus.messageId,
+                    status = deliveryStatus.status,
+                    attempts = deliveryStatus.attemptCount,
+                    errorMessage = deliveryStatus.errorMessage,
+                    deliveredAt = deliveryStatus.deliveredAtMillis
+                )
             )
-        )
+        }
     }
 
     /**
      * GET /emails/stats - Get server statistics
+     * Requires: Authorization: Bearer <API_KEY>
      */
-    get("/emails/stats") {
-        call.respond(emailService.getEmailStats())
+    authenticate("api-key") {
+        get("/emails/stats") {
+            call.respond(emailService.getEmailStats())
+        }
     }
 
     /**
      * GET /emails - List emails
+     * Requires: Authorization: Bearer <API_KEY>
      * Query params: page (default 1), limit (default 20)
      */
-    get("/emails") {
-        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-        call.respond(emailService.getEmails(page, limit))
+    authenticate("api-key") {
+        get("/emails") {
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+            call.respond(emailService.getEmails(page, limit))
+        }
     }
 
     /**
      * GET /debug/dns/{domain} - Diagnostic endpoint to test DNS resolution from within JVM
+     * Requires: Authorization: Bearer <API_KEY>
      * Example: GET http://localhost:8080/debug/dns/gmail.com
      */
-    get("/debug/dns/{domain}") {
+    authenticate("api-key") {
+        get("/debug/dns/{domain}") {
         val domain = call.parameters["domain"] ?: "gmail.com"
 
         logger.info("=== DNS Diagnostic Request for: $domain ===")
@@ -207,5 +222,6 @@ fun Route.emailRoutes() = katalystRouting {
         """.trimIndent()
 
         call.respondText(responseText, ContentType.Text.Plain)
+        }
     }
 }
