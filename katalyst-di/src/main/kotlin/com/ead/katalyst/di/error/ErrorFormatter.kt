@@ -47,7 +47,6 @@ class ErrorFormatter(private val graph: DependencyGraph? = null) {
         is SecondaryTypeBindingError -> "[MISSING INTERFACE BINDING] ${error.component.simpleName} → ${error.requiredType.simpleName}"
         is FeatureProvidedTypeError -> "[MISSING FEATURE] ${error.component.simpleName} needs ${error.featureName}"
         is InstantiationFailureError -> "[INSTANTIATION FAILURE] ${error.component.simpleName}"
-        else -> "[VALIDATION ERROR] ${error.message}"
     }
 
     /**

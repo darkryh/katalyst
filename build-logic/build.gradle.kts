@@ -1,7 +1,4 @@
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.gradle.api.tasks.testing.Test
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
 
 plugins {
     `kotlin-dsl`
