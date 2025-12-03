@@ -6,6 +6,7 @@ Katalyst wraps Ktor with batteries-included tooling so you can ship services fas
 - **Under the hood:** Koin for DI (`katalyst-di`), Exposed + HikariCP + JDBC for persistence (`katalyst-persistence`), SnakeYAML-based configuration (`katalyst-config-provider`/`yaml`), and coroutine-powered scheduler/events (`katalyst-scheduler`, `katalyst-events`).
 - **Modules in a nutshell:** DI (`katalyst-di`), configuration (`katalyst-config-provider`/`yaml`), persistence (`katalyst-persistence`, `katalyst-migrations`), HTTP/WebSockets (`katalyst-ktor`, `katalyst-websockets`), scheduler (`katalyst-scheduler`), events (`katalyst-events-*`), testing (`katalyst-testing-core`/`ktor`). Messaging/AMQP modules are **in development**.
 - **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
+- **Latest version:** `0.0.21-alpha` (e.g. [`katalyst-core` on Maven Central](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/0.0.21-alpha/)).
 
 ## Add Katalyst to your project (Gradle)
 
