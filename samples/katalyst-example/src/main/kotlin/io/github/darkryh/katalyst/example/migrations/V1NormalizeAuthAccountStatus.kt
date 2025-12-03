@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.example.migrations
 
 import io.github.darkryh.katalyst.database.DatabaseFactory
+import io.github.darkryh.katalyst.example.infra.database.tables.AuthAccountsTable
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
@@ -19,7 +20,7 @@ class V1NormalizeAuthAccountStatus(
         transaction(databaseFactory.database) {
             exec(
                 """
-                UPDATE auth_accounts
+                UPDATE ${AuthAccountsTable.tableName}
                 SET status = CASE
                     WHEN last_login_at_millis IS NULL THEN 'disabled'
                     ELSE 'active'

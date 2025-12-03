@@ -5,16 +5,17 @@ import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.example.infra.database.tables.AuthAccountsTable
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
 import io.github.darkryh.katalyst.migrations.runner.MigrationRunner
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class AuthAccountStatusMigrationTest {
 
@@ -32,6 +33,10 @@ class AuthAccountStatusMigrationTest {
         )
 
         transaction(databaseFactory.database) {
+            AuthAccountsTable.schemaName?.let {
+                val schemas = Schema(it)
+                SchemaUtils.createSchema(schemas)
+            }
             SchemaUtils.create(AuthAccountsTable)
         }
     }
