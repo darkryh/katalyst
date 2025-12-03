@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-group = "com.ead"
+group = "io.github.darkryh"
 version = "0.0.1"
 
 application { mainClass = "io.github.darkryh.katalyst.example.ApplicationKt" }
