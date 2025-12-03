@@ -127,3 +127,60 @@ Commands:
 ```
 
 Need deeper walkthroughs? Check the `documentation/` folder. Messaging/AMQP modules will follow the same patterns once they graduate from development.
+
+## Add Katalyst to your project (Gradle)
+
+Use the published artifacts (current: `0.0.21-alpha`). Versions under the hood: Ktor `3.3.1`, Exposed `1.0.0-rc-3`, HikariCP `5.1.0`, Koin `3.5.6`.
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.2.20"
+    id("io.ktor.plugin") version "3.3.1"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    val katalystVersion = "0.0.21-alpha"
+    val ktorVersion = "3.3.1"
+    val exposedVersion = "1.0.0-rc-3"
+    val hikariVersion = "5.1.0"
+    val postgresVersion = "42.7.8"
+
+    // Core Katalyst modules
+    implementation("io.github.darkryh.katalyst:katalyst-core:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-di:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-migrations:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-scheduler:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-websockets:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalystVersion")
+
+    // Config
+    implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalystVersion")
+
+    // Events
+    implementation("io.github.darkryh.katalyst:katalyst-events:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-events-transport:$katalystVersion")
+    implementation("io.github.darkryh.katalyst:katalyst-events-client:$katalystVersion")
+
+    // Testing helpers
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalystVersion")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:$katalystVersion")
+
+    // Ktor surface + persistence (pin to your needs; shown for reference)
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("com.zaxxer:HikariCP:$hikariVersion")
+    implementation("org.postgresql:postgresql:$postgresVersion")
+}
+```
