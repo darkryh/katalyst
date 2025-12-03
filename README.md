@@ -1,15 +1,15 @@
 # Katalyst – Ktor Bootstrap Starter Kit
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh.katalyst/katalyst-core?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.darkryh.katalyst/katalyst-core)
 
 Katalyst gives you a ready-to-use Ktor backend stack: automatic DI, YAML configuration, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing helpers—so you can focus on business logic instead of wiring.
 
-- **Versions:** Kotlin 2.2.20, Ktor 3.3.1, Exposed 1.0.0-rc-3 (see `gradle/libs.versions.toml`).
 - **What you get:** DI (Koin), persistence with Exposed + HikariCP, YAML config, scheduler + events, websockets, migrations, and testing utilities—all packaged for Ktor services.
 - **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
 - **Latest version:** see [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the current release.
 
 ## Add Katalyst to your project (Gradle)
 
-Use the published artifacts (current: `0.0.21-alpha`). Versions under the hood: Ktor `3.3.1`, Exposed `1.0.0-rc-3`, HikariCP `5.1.0`, Koin `3.5.6`.
+Use the published artifacts from Maven Central (see badge above or [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the latest version).
 
 ```kotlin
 plugins {
@@ -23,8 +23,9 @@ repositories {
 }
 
 dependencies {
-    // Replace with the latest from maven-metadata.xml
+    // Replace with the latest Katalyst version from Maven Central
     val katalystVersion = "<katalyst-version>"
+    // Pin your app stack as needed
     val ktorVersion = "3.3.1"
     val exposedVersion = "1.0.0-rc-3"
     val hikariVersion = "5.1.0"
