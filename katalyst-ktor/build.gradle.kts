@@ -1,5 +1,5 @@
 plugins {
-    id("com.ead.katalyst.conventions.ktor-server")
+    id("io.github.darkryh.katalyst.conventions.ktor-server")
 }
 
 dependencies {

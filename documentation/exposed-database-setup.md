@@ -16,7 +16,7 @@ Katalyst uses **Exposed 1.0.0-rc-3** with JDBC transaction support for type-safe
 When defining tables that implement `Table<Id, Entity>`, use these imports:
 
 ```kotlin
-import com.ead.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.Table
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -76,7 +76,7 @@ import org.jetbrains.exposed.v1.core.eq
 ## Complete Example: Table with Foreign Key
 
 ```kotlin
-import com.ead.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.Table
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -120,7 +120,7 @@ object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfile
 ## Complete Example: Repository with Custom Queries
 
 ```kotlin
-import com.ead.katalyst.repositories.CrudRepository
+import io.github.darkryh.katalyst.repositories.CrudRepository
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -155,7 +155,7 @@ class UserProfileRepository : CrudRepository<Long, UserProfileEntity> {
 Katalyst's `DatabaseTransactionManager` wraps Exposed transactions and ensures event consistency:
 
 ```kotlin
-import com.ead.katalyst.core.component.Service
+import io.github.darkryh.katalyst.core.component.Service
 
 class UserService(
     private val repository: UserProfileRepository
@@ -270,7 +270,7 @@ The `EntityID` wrapper associates the ID value with its table context, required 
 Katalyst manages the `Database` instance via `DatabaseFactory`, accessible in migrations and advanced scenarios:
 
 ```kotlin
-import com.ead.katalyst.database.DatabaseFactory
+import io.github.darkryh.katalyst.database.DatabaseFactory
 
 class MyMigration(private val databaseFactory: DatabaseFactory) {
     fun execute() {

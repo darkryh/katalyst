@@ -1,7 +1,7 @@
 package com.ead.boshi.storage.tables
 
 import com.ead.boshi.shared.models.DeliveryStatusEntity
-import com.ead.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.Table
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID

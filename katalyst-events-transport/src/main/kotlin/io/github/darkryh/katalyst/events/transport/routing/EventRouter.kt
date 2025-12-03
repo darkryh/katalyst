@@ -1,0 +1,57 @@
+package io.github.darkryh.katalyst.events.transport.routing
+
+import io.github.darkryh.katalyst.events.DomainEvent
+import io.github.darkryh.katalyst.messaging.Destination
+import io.github.darkryh.katalyst.messaging.routing.RoutingConfig
+
+/**
+ * Determines the destination for an event.
+ *
+ * Routes events to appropriate message broker destinations based on
+ * event type, content, or other criteria.
+ *
+ * **Responsibilities:**
+ * - Map event types to destination names
+ * - Support different destination types (QUEUE, TOPIC, STREAM)
+ * - Optionally return routing configuration
+ *
+ * **Implementations:**
+ * - Prefixed: All events → "events.eventtype"
+ * - PackageBased: Group by package name
+ * - Custom: Application-specific routing logic
+ *
+ * **Usage:**
+ *
+ * ```kotlin
+ * val router = RoutingStrategies.prefixed("events")
+ *
+ * val event = UserCreatedEvent(...)
+ * val destination = router.resolve(event)
+ * // Returns: Destination("events.user.created", TOPIC)
+ * ```
+ */
+interface EventRouter {
+    /**
+     * Resolve the destination for an event.
+     *
+     * @param event The event to route
+     * @return Destination where event should be published
+     * @throws io.github.darkryh.katalyst.events.transport.exception.EventRoutingException if routing fails
+     */
+    fun resolve(event: DomainEvent): Destination
+
+    /**
+     * Get optional routing configuration for the event.
+     *
+     * **Default:** null (use default routing)
+     *
+     * Can specify:
+     * - Routing key (for DIRECT/TOPIC routing)
+     * - Priority
+     * - TTL
+     *
+     * @param event The event being routed
+     * @return RoutingConfig or null to use defaults
+     */
+    fun getRouting(event: DomainEvent): RoutingConfig? = null
+}

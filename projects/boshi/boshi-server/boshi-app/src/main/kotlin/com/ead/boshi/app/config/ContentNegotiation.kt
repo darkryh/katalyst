@@ -1,6 +1,6 @@
 package com.ead.boshi.app.config
 
-import com.ead.katalyst.ktor.middleware.katalystMiddleware
+import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

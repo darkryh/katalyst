@@ -5,14 +5,14 @@ plugins {
 
 dependencies {
     // Katalyst modules
-    implementation("com.ead.katalyst:katalyst-core")
-    implementation("com.ead.katalyst:katalyst-di")
-    implementation("com.ead.katalyst:katalyst-events")
-    implementation("com.ead.katalyst:katalyst-events-bus")
-    implementation("com.ead.katalyst:katalyst-transactions")
-    implementation("com.ead.katalyst:katalyst-ktor")
-    implementation("com.ead.katalyst:katalyst-config-provider")
-    implementation("com.ead.katalyst:katalyst-config-yaml")
+    implementation("io.github.darkryh.katalyst:katalyst-core")
+    implementation("io.github.darkryh.katalyst:katalyst-di")
+    implementation("io.github.darkryh.katalyst:katalyst-events")
+    implementation("io.github.darkryh.katalyst:katalyst-events-bus")
+    implementation("io.github.darkryh.katalyst:katalyst-transactions")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor")
+    implementation("io.github.darkryh.katalyst:katalyst-config-provider")
+    implementation("io.github.darkryh.katalyst:katalyst-config-yaml")
 
     // Shared modules
     implementation(project(":boshi-server:boshi-shared"))
@@ -31,8 +31,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     // Testing
-    testImplementation("com.ead.katalyst:katalyst-testing-core")
-    testImplementation("com.ead.katalyst:katalyst-testing-ktor")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor")
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.kotest.runner.junit5)

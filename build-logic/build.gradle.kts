@@ -18,28 +18,28 @@ dependencies {
 gradlePlugin {
     plugins {
         register("katalystBase") {
-            id = "com.ead.katalyst.conventions.base"
-            implementationClass = "com.ead.katalyst.buildlogic.BaseConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.base"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.BaseConventionPlugin"
         }
         register("katalystCommon") {
-            id = "com.ead.katalyst.conventions.common"
-            implementationClass = "com.ead.katalyst.buildlogic.CommonConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.common"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.CommonConventionPlugin"
         }
         register("katalystKtorServer") {
-            id = "com.ead.katalyst.conventions.ktor-server"
-            implementationClass = "com.ead.katalyst.buildlogic.KtorServerConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.ktor-server"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.KtorServerConventionPlugin"
         }
         register("katalystPersistence") {
-            id = "com.ead.katalyst.conventions.persistence"
-            implementationClass = "com.ead.katalyst.buildlogic.PersistenceConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.persistence"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.PersistenceConventionPlugin"
         }
         register("katalystScheduler") {
-            id = "com.ead.katalyst.conventions.scheduler"
-            implementationClass = "com.ead.katalyst.buildlogic.SchedulerConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.scheduler"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.SchedulerConventionPlugin"
         }
         register("katalystTesting") {
-            id = "com.ead.katalyst.conventions.testing"
-            implementationClass = "com.ead.katalyst.buildlogic.TestingConventionPlugin"
+            id = "io.github.darkryh.katalyst.conventions.testing"
+            implementationClass = "io.github.darkryh.katalyst.buildlogic.TestingConventionPlugin"
         }
     }
 }

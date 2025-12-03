@@ -1,0 +1,142 @@
+{
+  "_postman_id": "boshi-email-server-api-collection",
+  "info": {
+    "name": "Boshi Email Server API",
+    "description": "Boshi Server - Email Delivery API\nBase URL: http://5.161.194.64:8080\n\nAll endpoints require API Key authentication via Bearer token",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Email Operations",
+      "item": [
+        {
+          "name": "Send Email",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"sender@example.com\",\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Test Email\",\n  \"html\": \"<html><body><h1>Hello!</h1><p>This is a test email.</p></body></html>\",\n  \"tags\": \"newsletter,marketing\",\n  \"metadata\": {\n    \"campaign_id\": \"camp_123\",\n    \"user_segment\": \"premium\"\n  }\n}"
+            },
+            "url": "http://5.161.194.64:8080/emails/send",
+            "description": "Submit an email for delivery\n\nRate Limit: 100 requests per minute\n\nRequired fields:\n- from: Sender email address\n- to: Recipient email address\n- subject: Email subject\n- html: Email body (HTML format)\n\nOptional fields:\n- tags: Comma-separated tags\n- metadata: Key-value pairs for tracking"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Status",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": "http://5.161.194.64:8080/emails/{{messageId}}/status",
+            "description": "Get the delivery status of a specific email\n\nRate Limit: 100 requests per minute\n\nPath Parameters:\n- messageId: The message ID returned from send email request\n\nResponse includes:\n- messageId: The message identifier\n- status: Current delivery status (PENDING, DELIVERED, FAILED, etc.)\n- attempts: Number of delivery attempts\n- errorMessage: Error details if failed\n- deliveredAt: Timestamp when delivered (if applicable)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Emails",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://5.161.194.64:8080/emails?page=1&limit=20",
+              "protocol": "http",
+              "host": ["5", "161", "194", "64"],
+              "port": "8080",
+              "path": ["emails"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all emails with pagination\n\nRate Limit: 100 requests per minute\n\nQuery Parameters:\n- page: Page number (default: 1)\n- limit: Number of emails per page (default: 20)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Stats",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": "http://5.161.194.64:8080/emails/stats",
+            "description": "Get server-wide email statistics\n\nRate Limit: 100 requests per minute\n\nResponse includes:\n- totalReceived: Total emails submitted\n- pending: Emails waiting for delivery\n- delivered: Successfully delivered emails\n- failed: Permanently failed deliveries\n- permanentlyFailed: Emails that won't be retried\n- uniqueSenders: Count of unique sender addresses\n- uniqueRecipients: Count of unique recipient addresses"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Diagnostic & Debugging",
+      "item": [
+        {
+          "name": "DNS Diagnostic Test",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": "http://5.161.194.64:8080/debug/dns/gmail.com",
+            "description": "Diagnostic endpoint to test DNS resolution from within the JVM\n\nUseful for debugging email delivery issues\n\nPath Parameters:\n- domain: Domain to test DNS resolution for (e.g., gmail.com, example.com)\n\nTests performed:\n1. System InetAddress resolution\n2. dnsjava MX record resolution\n3. Java DNS configuration\n4. JNDI DNS resolution\n\nResponse: Plain text report with detailed diagnostic results"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "string"
+    },
+    {
+      "key": "messageId",
+      "value": "msg_1234567890",
+      "type": "string"
+    }
+  ]
+}

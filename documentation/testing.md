@@ -23,9 +23,9 @@ Katalyst’s testing helpers mirror your production wiring so you can run unit, 
 Boots the full DI graph (database, migrations, scheduler, events, components) inside tests.
 
 ```kotlin
-import com.ead.katalyst.testing.core.KatalystTestEnvironment
-import com.ead.katalyst.testing.core.katalystTestEnvironment
-import com.ead.katalyst.testing.core.inMemoryDatabaseConfig
+import io.github.darkryh.katalyst.testing.core.KatalystTestEnvironment
+import io.github.darkryh.katalyst.testing.core.katalystTestEnvironment
+import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlin.test.BeforeTest
 import kotlin.test.AfterTest
 
@@ -36,7 +36,7 @@ class AuthenticationServiceIntegrationTest {
     fun bootstrap() {
         environment = katalystTestEnvironment {
             database(inMemoryDatabaseConfig())
-            scan("com.ead.katalyst.example")
+            scan("io.github.darkryh.katalyst.example")
         }
     }
 
@@ -58,8 +58,8 @@ class AuthenticationServiceIntegrationTest {
 Wraps Ktor's `testApplication` so all auto-discovered modules are installed before requests run.
 
 ```kotlin
-import com.ead.katalyst.testing.ktor.katalystTestApplication
-import com.ead.katalyst.testing.core.inMemoryDatabaseConfig
+import io.github.darkryh.katalyst.testing.ktor.katalystTestApplication
+import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
@@ -71,7 +71,7 @@ class AuthenticationServiceHttpTest {
     fun `register login over HTTP`() = katalystTestApplication(
         configureEnvironment = {
             database(inMemoryDatabaseConfig())
-            scan("com.ead.katalyst.example")
+            scan("io.github.darkryh.katalyst.example")
         }
     ) { env ->
         val registerResponse = client.post("/api/auth/register") { /* body */ }

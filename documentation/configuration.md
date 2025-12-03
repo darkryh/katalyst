@@ -30,7 +30,7 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 
 2. **Load the configuration provider** before DI boot:
    ```kotlin
-   import com.ead.katalyst.config.provider.ConfigBootstrapHelper
+   import io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper
 
    object DbConfigImpl {
        fun loadDatabaseConfig(): DatabaseConfig {
@@ -44,15 +44,15 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 
 3. **Register the config with the application builder**:
    ```kotlin
-   import com.ead.katalyst.di.katalystApplication
-   import com.ead.katalyst.di.feature.enableServerConfiguration
-   import com.ead.katalyst.config.yaml.enableConfigProvider
-   import com.ead.katalyst.ktor.engine.netty.NettyEngine
+   import io.github.darkryh.katalyst.di.katalystApplication
+   import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
+   import io.github.darkryh.katalyst.config.yaml.enableConfigProvider
+   import io.github.darkryh.katalyst.ktor.engine.netty.NettyEngine
 
    fun main(args: Array<String>) = katalystApplication(args) {
        engine(NettyEngine)
        database(DbConfigImpl.loadDatabaseConfig())
-       scanPackages("com.ead.katalyst.example")
+       scanPackages("io.github.darkryh.katalyst.example")
        enableServerConfiguration()
        enableConfigProvider()
        // …
@@ -65,9 +65,9 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 Service-specific configuration objects should implement `ServiceConfigLoader<T>` so they can be discovered/validated automatically.
 
 ```kotlin
-import com.ead.katalyst.config.provider.ServiceConfigLoader
-import com.ead.katalyst.config.provider.ConfigLoaders
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 
 object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
     override fun loadConfig(provider: ConfigProvider): DatabaseConfig {
@@ -92,8 +92,8 @@ object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
 Any constructor parameter typed as `ConfigProvider` (or a config object loaded via `ServiceConfigLoader`) is injected automatically—no manual `GlobalContext` lookups required. Example:
 
 ```kotlin
-import com.ead.katalyst.core.component.Service
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 
 class JwtSettingsService(config: ConfigProvider) : Service {
     private val secret = config.getString("jwt.secret")
@@ -166,9 +166,9 @@ data class NotificationApiConfig(
 **Step 2: Implement AutomaticServiceConfigLoader**
 
 ```kotlin
-import com.ead.katalyst.config.provider.AutomaticServiceConfigLoader
-import com.ead.katalyst.config.provider.ConfigLoaders
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.reflect.KClass
 
 object NotificationApiConfigLoader : AutomaticServiceConfigLoader<NotificationApiConfig> {
@@ -200,7 +200,7 @@ object NotificationApiConfigLoader : AutomaticServiceConfigLoader<NotificationAp
 **Step 3: Inject into your service/component**
 
 ```kotlin
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 
 class NotificationClient(
     val config: NotificationApiConfig  // ✅ Auto-injected by DI!

@@ -5,7 +5,7 @@ import com.ead.boshi.shared.constants.DeliveryStatus
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.MxRecordsRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 
 /**

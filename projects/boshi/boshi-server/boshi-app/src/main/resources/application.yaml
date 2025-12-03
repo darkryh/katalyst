@@ -16,7 +16,7 @@ ktor:
   deployment:
     # Network Configuration
     host: ${SERVER_HOST:0.0.0.0}
-    port: ${SERVER_PORT:8080}
+    port: ${SERVER_PORT:8081}
     #sslPort: ${SERVER_SSL_PORT:}  # Optional: set to enable HTTPS (e.g., 8443)
 
     # Shutdown Configuration

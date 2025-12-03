@@ -1,6 +1,6 @@
 package com.ead.boshi.shared.events
 
-import com.ead.katalyst.events.DomainEvent
+import io.github.darkryh.katalyst.events.DomainEvent
 
 /**
  * Published when an email is received via API and stored in database

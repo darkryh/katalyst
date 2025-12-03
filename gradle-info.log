@@ -342,31 +342,31 @@ InitializeKatalystDITest > initializeKatalystDI registers framework components S
     13:08:54.901 [Test worker @coroutine#1] DEBUG ScannerDIModule --   - GenericTypeExtractor: Utility for resolving generic type parameters
     13:08:54.901 [Test worker @coroutine#1] INFO ScannerDIModule -- Scanner DI Module initialized successfully
     13:08:54.901 [Test worker @coroutine#1] INFO DIConfiguration -- Starting new Koin context for Katalyst modules
-    13:08:54.906 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for Repository implementations
-    13:08:54.906 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:54.906 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning io.github.darkryh.katalyst.di.fixtures for Repository implementations
+    13:08:54.906 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: io.github.darkryh.katalyst.di.fixtures
     13:08:54.923 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 13 ms to scan 1 urls, producing 13 keys and 29 values
-    13:08:54.929 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 Repository implementation(s)
-    13:08:54.929 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
-    13:08:54.930 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
-    13:08:54.930 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestRepository
-    13:08:55.040 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered repositories component com.ead.katalyst.di.fixtures.TestRepository
-    13:08:55.040 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for Component implementations
-    13:08:55.040 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:54.929 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 Repository implementation(s)
+    13:08:54.929 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:54.930 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
+    13:08:54.930 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestRepository
+    13:08:55.040 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered repositories component io.github.darkryh.katalyst.di.fixtures.TestRepository
+    13:08:55.040 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning io.github.darkryh.katalyst.di.fixtures for Component implementations
+    13:08:55.040 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: io.github.darkryh.katalyst.di.fixtures
     13:08:55.043 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 3 ms to scan 1 urls, producing 13 keys and 29 values
-    13:08:55.044 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 4 Component implementation(s)
-    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
-    13:08:55.044 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 2 implementation(s)
-    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestService
-    13:08:55.044 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestValidator
-    13:08:55.046 [Test worker @coroutine#1] ERROR AutoBindingRegistrar -- Failed to register component com.ead.katalyst.di.fixtures.TestService: Cannot resolve dependency com.ead.katalyst.di.fixtures.TestValidator for com.ead.katalyst.di.fixtures.TestService
-    13:08:55.046 [Test worker @coroutine#1] DEBUG AutoBindingRegistrar -- Full error while registering com.ead.katalyst.di.fixtures.TestService
-    java.lang.IllegalStateException: Cannot resolve dependency com.ead.katalyst.di.fixtures.TestValidator for com.ead.katalyst.di.fixtures.TestService
-    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.resolveDependency(AutoBindingRegistrar.kt:131)
-    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.instantiate(AutoBindingRegistrar.kt:113)
-    	at com.ead.katalyst.di.internal.AutoBindingRegistrar.registerAll(AutoBindingRegistrar.kt:280)
-    	at com.ead.katalyst.di.DIConfigurationKt.bootstrapKatalystDI(DIConfiguration.kt:79)
-    	at com.ead.katalyst.di.DIConfigurationKt.bootstrapKatalystDI$default(DIConfiguration.kt:55)
-    	at com.ead.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:35)
+    13:08:55.044 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 4 Component implementation(s)
+    13:08:55.044 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.044 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 2 implementation(s)
+    13:08:55.044 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestService
+    13:08:55.044 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: TestValidator
+    13:08:55.046 [Test worker @coroutine#1] ERROR AutoBindingRegistrar -- Failed to register component io.github.darkryh.katalyst.di.fixtures.TestService: Cannot resolve dependency io.github.darkryh.katalyst.di.fixtures.TestValidator for io.github.darkryh.katalyst.di.fixtures.TestService
+    13:08:55.046 [Test worker @coroutine#1] DEBUG AutoBindingRegistrar -- Full error while registering io.github.darkryh.katalyst.di.fixtures.TestService
+    java.lang.IllegalStateException: Cannot resolve dependency io.github.darkryh.katalyst.di.fixtures.TestValidator for io.github.darkryh.katalyst.di.fixtures.TestService
+    	at io.github.darkryh.katalyst.di.internal.AutoBindingRegistrar.resolveDependency(AutoBindingRegistrar.kt:131)
+    	at io.github.darkryh.katalyst.di.internal.AutoBindingRegistrar.instantiate(AutoBindingRegistrar.kt:113)
+    	at io.github.darkryh.katalyst.di.internal.AutoBindingRegistrar.registerAll(AutoBindingRegistrar.kt:280)
+    	at io.github.darkryh.katalyst.di.DIConfigurationKt.bootstrapKatalystDI(DIConfiguration.kt:79)
+    	at io.github.darkryh.katalyst.di.DIConfigurationKt.bootstrapKatalystDI$default(DIConfiguration.kt:55)
+    	at io.github.darkryh.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:35)
     	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
     	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
     	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
@@ -375,7 +375,7 @@ InitializeKatalystDITest > initializeKatalystDI registers framework components S
     	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
     	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
     	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
-    	at com.ead.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
+    	at io.github.darkryh.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
     	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
     	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
     	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
@@ -417,32 +417,32 @@ InitializeKatalystDITest > initializeKatalystDI registers framework components S
     	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
     	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
     	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
-    13:08:55.050 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered components component com.ead.katalyst.di.fixtures.TestValidator
-    13:08:55.050 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for KtorModule implementations
-    13:08:55.050 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:55.050 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered components component io.github.darkryh.katalyst.di.fixtures.TestValidator
+    13:08:55.050 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning io.github.darkryh.katalyst.di.fixtures for KtorModule implementations
+    13:08:55.050 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: io.github.darkryh.katalyst.di.fixtures
     13:08:55.052 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 2 ms to scan 1 urls, producing 13 keys and 29 values
-    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 0 KtorModule implementation(s)
-    13:08:55.053 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
-    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 0 implementation(s)
+    13:08:55.053 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 0 KtorModule implementation(s)
+    13:08:55.053 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.053 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 0 implementation(s)
     13:08:55.053 [Test worker @coroutine#1] DEBUG AutoBindingRegistrar -- No KtorModule discovered for ktor modules
-    13:08:55.053 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning com.ead.katalyst.di.fixtures for EventHandler implementations
-    13:08:55.053 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: com.ead.katalyst.di.fixtures
+    13:08:55.053 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- 🔍 Scanning io.github.darkryh.katalyst.di.fixtures for EventHandler implementations
+    13:08:55.053 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Scanning specified packages: io.github.darkryh.katalyst.di.fixtures
     13:08:55.054 [Test worker @coroutine#1] INFO org.reflections.Reflections -- Reflections took 1 ms to scan 1 urls, producing 13 keys and 29 values
-    13:08:55.055 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 EventHandler implementation(s)
-    13:08:55.055 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
-    13:08:55.055 [Test worker @coroutine#1] INFO com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
-    13:08:55.055 [Test worker @coroutine#1] DEBUG com.ead.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: SampleEventHandler
-    13:08:55.059 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered event handlers component com.ead.katalyst.di.fixtures.SampleEventHandler
+    13:08:55.055 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- ✓ Found 1 EventHandler implementation(s)
+    13:08:55.055 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner -- Applying predicate filter...
+    13:08:55.055 [Test worker @coroutine#1] INFO io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   After predicate: 1 implementation(s)
+    13:08:55.055 [Test worker @coroutine#1] DEBUG io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner --   └─ Found: SampleEventHandler
+    13:08:55.059 [Test worker @coroutine#1] INFO AutoBindingRegistrar -- Registered event handlers component io.github.darkryh.katalyst.di.fixtures.SampleEventHandler
 
 InitializeKatalystDITest > initializeKatalystDI registers framework components FAILED
-    org.koin.core.error.NoDefinitionFoundException: No definition found for type 'com.ead.katalyst.di.fixtures.TestService'. Check your Modules configuration and add missing type and/or qualifier!
+    org.koin.core.error.NoDefinitionFoundException: No definition found for type 'io.github.darkryh.katalyst.di.fixtures.TestService'. Check your Modules configuration and add missing type and/or qualifier!
         at app//org.koin.core.resolution.CoreResolver.resolveFromContext(CoreResolver.kt:178)
         at app//org.koin.core.scope.Scope.resolveFromContext(Scope.kt:321)
         at app//org.koin.core.scope.Scope.stackParametersCall(Scope.kt:284)
         at app//org.koin.core.scope.Scope.resolveInstance(Scope.kt:270)
         at app//org.koin.core.scope.Scope.resolve(Scope.kt:243)
         at app//org.koin.core.scope.Scope.get(Scope.kt:225)
-        at app//com.ead.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:80)
+        at app//io.github.darkryh.katalyst.di.InitializeKatalystDITest$initializeKatalystDI registers framework components$1.invokeSuspend(InitializeKatalystDITest.kt:80)
         at app//kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
         at app//kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
         at app//kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
@@ -451,7 +451,7 @@ InitializeKatalystDITest > initializeKatalystDI registers framework components F
         at app//kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
         at app//kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
         at app//kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
-        at app//com.ead.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
+        at app//io.github.darkryh.katalyst.di.InitializeKatalystDITest.initializeKatalystDI registers framework components(InitializeKatalystDITest.kt:34)
 Finished generating test XML results (0.0 secs) into: /Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/test-results/test
 Generating HTML test report...
 Finished generating test html results (0.0 secs) into: /Users/darkryh/Desktop/Libraries/Backend/katalyst/dependency-injection/build/reports/tests/test

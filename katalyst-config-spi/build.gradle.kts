@@ -1,5 +1,5 @@
 plugins {
-    id("com.ead.katalyst.conventions.base")
+    id("io.github.darkryh.katalyst.conventions.base")
 }
 
 dependencies {

@@ -4,7 +4,7 @@ import com.ead.boshi.shared.constants.ValidationLevel
 import com.ead.boshi.shared.exceptions.InvalidEmailException
 import com.ead.boshi.shared.exceptions.ValidationException
 import com.ead.boshi.shared.models.EmailValidationResult
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 import java.util.regex.Pattern
 

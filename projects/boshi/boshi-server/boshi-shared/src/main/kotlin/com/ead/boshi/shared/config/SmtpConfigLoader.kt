@@ -1,9 +1,9 @@
 package com.ead.boshi.shared.config
 
 import com.ead.boshi.shared.config.models.SmtpConfig
-import com.ead.katalyst.config.provider.AutomaticServiceConfigLoader
-import com.ead.katalyst.config.provider.ConfigLoaders
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.reflect.KClass
 
 /**

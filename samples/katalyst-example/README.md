@@ -19,7 +19,7 @@ Reusable helpers now live in `:katalyst-testing-core` and `:katalyst-testing-kto
 ```kotlin
 val environment = katalystTestEnvironment {
     database(inMemoryDatabaseConfig())
-    scan("com.ead.katalyst.example")
+    scan("io.github.darkryh.katalyst.example")
 }
 val service = environment.get<AuthenticationService>()
 environment.close()

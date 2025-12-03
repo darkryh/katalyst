@@ -5,7 +5,7 @@ import com.ead.boshi.shared.exceptions.EmailSpamException
 import com.ead.boshi.shared.exceptions.InvalidEmailException
 import com.ead.boshi.shared.exceptions.SmtpException
 import com.ead.boshi.shared.exceptions.ValidationException
-import com.ead.katalyst.ktor.builder.katalystExceptionHandler
+import io.github.darkryh.katalyst.ktor.builder.katalystExceptionHandler
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond

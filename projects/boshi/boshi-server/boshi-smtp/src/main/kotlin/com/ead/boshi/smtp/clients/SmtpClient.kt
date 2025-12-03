@@ -2,7 +2,7 @@ package com.ead.boshi.smtp.clients
 
 import com.ead.boshi.shared.config.models.SmtpConfig
 import com.ead.boshi.shared.exceptions.DeliveryException
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.BufferedWriter

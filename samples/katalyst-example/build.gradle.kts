@@ -7,38 +7,38 @@ plugins {
 group = "com.ead"
 version = "0.0.1"
 
-application { mainClass = "io.ktor.server.netty.EngineMain" }
+application { mainClass = "io.github.darkryh.katalyst.example.ApplicationKt" }
 
 dependencies {
     // Katalyst modules
-    implementation("com.ead.katalyst:katalyst-core")
-    implementation("com.ead.katalyst:katalyst-transactions")
-    implementation("com.ead.katalyst:katalyst-persistence")
-    implementation("com.ead.katalyst:katalyst-ktor")
-    implementation("com.ead.katalyst:katalyst-scanner")
-    implementation("com.ead.katalyst:katalyst-di")
-    implementation("com.ead.katalyst:katalyst-migrations")
-    implementation("com.ead.katalyst:katalyst-scheduler")
-    implementation("com.ead.katalyst:katalyst-websockets")
-    implementation("com.ead.katalyst:katalyst-ktor-engine-netty")
+    implementation("io.github.darkryh.katalyst:katalyst-core")
+    implementation("io.github.darkryh.katalyst:katalyst-transactions")
+    implementation("io.github.darkryh.katalyst:katalyst-persistence")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor")
+    implementation("io.github.darkryh.katalyst:katalyst-scanner")
+    implementation("io.github.darkryh.katalyst:katalyst-di")
+    implementation("io.github.darkryh.katalyst:katalyst-migrations")
+    implementation("io.github.darkryh.katalyst:katalyst-scheduler")
+    implementation("io.github.darkryh.katalyst:katalyst-websockets")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty")
 
     // Configuration management
-    implementation("com.ead.katalyst:katalyst-config-provider")
-    implementation("com.ead.katalyst:katalyst-config-yaml")
+    implementation("io.github.darkryh.katalyst:katalyst-config-provider")
+    implementation("io.github.darkryh.katalyst:katalyst-config-yaml")
 
     // Event system
-    implementation("com.ead.katalyst:katalyst-events")
-    implementation("com.ead.katalyst:katalyst-events-bus")
-    implementation("com.ead.katalyst:katalyst-events-transport")
-    implementation("com.ead.katalyst:katalyst-events-client")
+    implementation("io.github.darkryh.katalyst:katalyst-events")
+    implementation("io.github.darkryh.katalyst:katalyst-events-bus")
+    implementation("io.github.darkryh.katalyst:katalyst-events-transport")
+    implementation("io.github.darkryh.katalyst:katalyst-events-client")
 
     // Messaging abstraction
-    /*implementation("com.ead.katalyst:katalyst-messaging")
-    implementation("com.ead.katalyst:katalyst-messaging-amqp"))*/
+    /*implementation("io.github.darkryh.katalyst:katalyst-messaging")
+    implementation("io.github.darkryh.katalyst:katalyst-messaging-amqp"))*/
 
     // testing katalyst
-    testImplementation("com.ead.katalyst:katalyst-testing-core")
-    testImplementation("com.ead.katalyst:katalyst-testing-ktor")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor")
 
     // Ktor server surface
     implementation(libs.ktor.server.core)

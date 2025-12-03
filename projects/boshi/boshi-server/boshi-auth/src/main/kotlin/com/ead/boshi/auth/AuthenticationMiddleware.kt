@@ -1,7 +1,7 @@
 package com.ead.boshi.auth
 
 import com.ead.boshi.auth.config.AuthConfigImpl
-import com.ead.katalyst.ktor.middleware.katalystMiddleware
+import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 

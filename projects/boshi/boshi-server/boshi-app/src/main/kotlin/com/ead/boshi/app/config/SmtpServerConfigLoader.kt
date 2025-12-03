@@ -2,9 +2,9 @@
 
 package com.ead.boshi.app.config
 
-import com.ead.katalyst.config.provider.ServiceConfigLoader
-import com.ead.katalyst.config.provider.ConfigLoaders
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 
 
 data class SmtpServerConfig(

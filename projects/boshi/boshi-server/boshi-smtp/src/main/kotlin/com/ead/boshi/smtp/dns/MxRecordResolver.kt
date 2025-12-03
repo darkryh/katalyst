@@ -2,7 +2,7 @@ package com.ead.boshi.smtp.dns
 
 import com.ead.boshi.shared.exceptions.DnsException
 import com.ead.boshi.shared.models.MxRecordEntity
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 import org.xbill.DNS.Lookup
 import org.xbill.DNS.MXRecord

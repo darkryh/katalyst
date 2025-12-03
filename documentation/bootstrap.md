@@ -5,13 +5,13 @@ This guide shows how to start a Katalyst application the same way the sample (`s
 ## Quickstart (katalystApplication)
 
 ```kotlin
-import com.ead.katalyst.com.ead.katalyst.ktor.engine.netty.embeddedServer
-import com.ead.katalyst.config.yaml.enableConfigProvider
-import com.ead.katalyst.di.feature.enableServerConfiguration
-import com.ead.katalyst.di.katalystApplication
-import com.ead.katalyst.migrations.extensions.enableMigrations
-import com.ead.katalyst.scheduler.enableScheduler
-import com.ead.katalyst.websockets.enableWebSockets
+import io.github.darkryh.katalyst.ktor.engine.netty.embeddedServer
+import io.github.darkryh.katalyst.config.yaml.enableConfigProvider
+import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
+import io.github.darkryh.katalyst.di.katalystApplication
+import io.github.darkryh.katalyst.migrations.extensions.enableMigrations
+import io.github.darkryh.katalyst.scheduler.enableScheduler
+import io.github.darkryh.katalyst.websockets.enableWebSockets
 
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(embeddedServer())              // REQUIRED: choose engine (Netty shown; CIO/Jetty also available)
@@ -47,7 +47,7 @@ Katalyst wraps Exposed 1.0.0-rc-3 + HikariCP:
 - Tables extend `LongIdTable` (or friends) and implement `Table<Id, Entity>` to map rows and assign entities.
 - Repositories implement `CrudRepository<Id, Entity>`; custom queries use the Exposed DSL (`selectAll`, `eq`, `and`, etc.).
 - Use `transactionManager.transaction { ... }` in Services to ensure DB writes and EventBus publications are atomic; migrations may use raw `transaction(database)` where appropriate.
-See `samples/katalyst-example/src/main/kotlin/com/ead/katalyst/example/infra/database` and `projects/boshi/boshi-server/boshi-storage` for concrete patterns.
+See `samples/katalyst-example/src/main/kotlin/io/github/darkryh/katalyst/example/infra/database` and `projects/boshi/boshi-server/boshi-storage` for concrete patterns.
 
 ## Configuration & YAML
 

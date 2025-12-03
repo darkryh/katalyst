@@ -7,7 +7,7 @@ import com.ead.boshi.shared.models.DeliveryStatusEntity
 import com.ead.boshi.shared.models.SentEmailEntity
 import com.ead.boshi.smtp.clients.SmtpClient
 import com.ead.boshi.smtp.dns.MxRecordResolver
-import com.ead.katalyst.core.component.Component
+import io.github.darkryh.katalyst.core.component.Component
 import org.slf4j.LoggerFactory
 
 /**

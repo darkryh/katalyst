@@ -16,7 +16,7 @@
         <appender-ref ref="STDOUT"/>
     </root>
     <!-- Default INFO for framework logs; override with -DKATALYST_LOG_LEVEL=DEBUG when needed -->
-    <logger name="com.ead.katalyst" level="${KATALYST_LOG_LEVEL}"/>
+    <logger name="io.github.darkryh.katalyst" level="${KATALYST_LOG_LEVEL}"/>
     <logger name="bootstrapKatalystDI" level="INFO"/>
     <logger name="DIConfiguration" level="INFO"/>
     <logger name="AutoBindingRegistrar" level="INFO"/>

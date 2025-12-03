@@ -1,10 +1,10 @@
 package com.ead.boshi.app.config
 
-import com.ead.katalyst.config.DatabaseConfig
-import com.ead.katalyst.config.provider.ConfigLoaders
-import com.ead.katalyst.config.provider.ServiceConfigLoader
-import com.ead.katalyst.core.config.ConfigException
-import com.ead.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
+import io.github.darkryh.katalyst.core.config.ConfigException
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
 
 /**
@@ -46,13 +46,13 @@ import org.slf4j.LoggerFactory
  *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
  *     val dbConfig = ConfigBootstrapHelper.loadServiceConfig(config, DatabaseConfigLoader())
  *     database(dbConfig)
- *     scanPackages("com.ead.katalyst.example")
+ *     scanPackages("io.github.darkryh.katalyst.example")
  * }
  * ```
  *
  * **Auto-Discovery:**
  * ```kotlin
- * val loaders = ConfigMetadata.discoverLoaders(arrayOf("com.ead.katalyst.example"))
+ * val loaders = ConfigMetadata.discoverLoaders(arrayOf("io.github.darkryh.katalyst.example"))
  * // DatabaseConfigLoader is automatically discovered and validated
  * ```
  */

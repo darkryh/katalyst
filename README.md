@@ -10,16 +10,16 @@ Katalyst wraps Ktor with batteries-included tooling so you can ship services fas
 ## Minimal Boot Sequence
 
 ```kotlin
-package com.ead.katalyst.example // EXAMPLE - BASE PACKAGE
-import com.ead.katalyst.di.katalystApplication
-import com.ead.katalyst.di.feature.enableServerConfiguration
-import com.ead.katalyst.config.yaml.enableConfigProvider
-import com.ead.katalyst.com.ead.katalyst.ktor.engine.netty.embeddedServer
+package io.github.darkryh.katalyst.example // EXAMPLE - BASE PACKAGE
+import io.github.darkryh.katalyst.di.katalystApplication
+import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
+import io.github.darkryh.katalyst.config.yaml.enableConfigProvider
+import io.github.darkryh.katalyst.ktor.engine.netty.embeddedServer
 
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(embeddedServer())
     database(DbConfigImpl.loadDatabaseConfig())
-    scanPackages("com.ead.katalyst.example") // REQUIRED
+    scanPackages("io.github.darkryh.katalyst.example") // REQUIRED
     enableServerConfiguration()
     enableConfigProvider()
     enableEvents {
@@ -107,7 +107,7 @@ Prefer the testing modules over ad-hoc bootstrapping (full details in [`document
 fun `register login over HTTP`() = katalystTestApplication(
     configureEnvironment = {
         database(inMemoryDatabaseConfig())
-        scan("com.ead.katalyst.example")
+        scan("io.github.darkryh.katalyst.example")
     }
 ) { env ->
     val register = client.post("/api/auth/register") { /* body */ }

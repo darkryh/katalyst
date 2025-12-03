@@ -1,8 +1,8 @@
 package com.ead.boshi.auth.config
 
 import com.ead.boshi.auth.config.models.AuthConfig
-import com.ead.katalyst.config.provider.ConfigBootstrapHelper
-import com.ead.katalyst.config.yaml.YamlConfigProvider
+import io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper
+import io.github.darkryh.katalyst.config.yaml.YamlConfigProvider
 
 object AuthConfigImpl {
     fun loadConfig() : AuthConfig {

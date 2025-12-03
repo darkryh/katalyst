@@ -6,10 +6,10 @@ import com.ead.boshi.shared.constants.DeliveryStatus
 import com.ead.boshi.smtp.services.SmtpDeliveryService
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
-import com.ead.katalyst.core.component.Service
-import com.ead.katalyst.scheduler.config.ScheduleConfig
-import com.ead.katalyst.scheduler.cron.CronExpression
-import com.ead.katalyst.scheduler.extension.requireScheduler
+import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
+import io.github.darkryh.katalyst.scheduler.cron.CronExpression
+import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import org.slf4j.LoggerFactory
 
 /**

@@ -18,9 +18,9 @@ Katalyst’s scanner wires components any time you implement the right interface
 Implement `Component` for lightweight collaborators (observers, helpers) that still need DI. Implementing the interface is the only signal needed for auto-registration.
 
 ```kotlin
-import com.ead.katalyst.core.component.Component
-import com.ead.katalyst.events.bus.EventBus
-import com.ead.katalyst.events.bus.eventsOf
+import io.github.darkryh.katalyst.core.component.Component
+import io.github.darkryh.katalyst.events.bus.EventBus
+import io.github.darkryh.katalyst.events.bus.eventsOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,11 +49,11 @@ class UserRegistrationFlowMonitor(
 Extend `Service` for transactional business logic. Constructor parameters are injected automatically; `transactionManager` and `requireScheduler()` are available via the interface.
 
 ```kotlin
-import com.ead.katalyst.core.component.Service
-import com.ead.katalyst.events.bus.EventBus
-import com.ead.katalyst.scheduler.config.ScheduleConfig
-import com.ead.katalyst.scheduler.cron.CronExpression
-import com.ead.katalyst.scheduler.extension.requireScheduler
+import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.events.bus.EventBus
+import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
+import io.github.darkryh.katalyst.scheduler.cron.CronExpression
+import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 
 class AuthenticationService(
     private val repository: AuthAccountRepository,
@@ -95,10 +95,10 @@ Returning `SchedulerJobHandle` from a parameterless function marks it as a sched
 Use the provided DSLs; the scanner installs them automatically once DI is ready.
 
 ```kotlin
-import com.ead.katalyst.ktor.builder.katalystRouting
-import com.ead.katalyst.ktor.middleware.katalystMiddleware
-import com.ead.katalyst.ktor.extension.ktInject
-import com.ead.katalyst.websockets.builder.katalystWebSockets
+import io.github.darkryh.katalyst.ktor.builder.katalystRouting
+import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
+import io.github.darkryh.katalyst.ktor.extension.ktInject
+import io.github.darkryh.katalyst.websockets.builder.katalystWebSockets
 
 @Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {

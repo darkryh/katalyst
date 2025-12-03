@@ -11,7 +11,7 @@ import com.ead.boshi.shared.models.SendEmailRequest
 import com.ead.boshi.shared.models.SentEmailEntity
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
-import com.ead.katalyst.core.component.Service
+import io.github.darkryh.katalyst.core.component.Service
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant

@@ -2,7 +2,7 @@ package com.ead.boshi.storage.repositories
 
 import com.ead.boshi.shared.models.SentEmailEntity
 import com.ead.boshi.storage.tables.SentEmailsTable
-import com.ead.katalyst.repositories.CrudRepository
+import io.github.darkryh.katalyst.repositories.CrudRepository
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq

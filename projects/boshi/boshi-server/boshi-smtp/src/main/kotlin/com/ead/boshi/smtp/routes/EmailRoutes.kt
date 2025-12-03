@@ -6,8 +6,8 @@ import com.ead.boshi.shared.models.SendEmailRequest
 import com.ead.boshi.shared.models.SendEmailResponse
 import com.ead.boshi.smtp.dns.MxRecordResolver
 import com.ead.boshi.smtp.services.EmailService
-import com.ead.katalyst.ktor.builder.katalystRouting
-import com.ead.katalyst.ktor.extension.ktInject
+import io.github.darkryh.katalyst.ktor.builder.katalystRouting
+import io.github.darkryh.katalyst.ktor.extension.ktInject
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*

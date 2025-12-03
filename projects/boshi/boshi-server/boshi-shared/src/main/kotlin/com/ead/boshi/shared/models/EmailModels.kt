@@ -1,6 +1,6 @@
 package com.ead.boshi.shared.models
 
-import com.ead.katalyst.repositories.Identifiable
+import io.github.darkryh.katalyst.repositories.Identifiable
 import kotlinx.serialization.Serializable
 
 /**

@@ -1,7 +1,7 @@
 package com.ead.boshi.app.config
 
-import com.ead.katalyst.config.DatabaseConfig
-import com.ead.katalyst.config.provider.ConfigBootstrapHelper
+import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper
 import org.slf4j.LoggerFactory
 
 /**
