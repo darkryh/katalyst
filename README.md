@@ -1,12 +1,11 @@
 # Katalyst – Ktor Bootstrap Starter Kit
 
-Katalyst wraps Ktor with batteries-included tooling so you can ship services faster: automatic DI, YAML-driven config, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing utilities.
+Katalyst gives you a ready-to-use Ktor backend stack: automatic DI, YAML configuration, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing helpers—so you can focus on business logic instead of wiring.
 
 - **Versions:** Kotlin 2.2.20, Ktor 3.3.1, Exposed 1.0.0-rc-3 (see `gradle/libs.versions.toml`).
-- **Under the hood:** Koin for DI (`katalyst-di`), Exposed + HikariCP + JDBC for persistence (`katalyst-persistence`), SnakeYAML-based configuration (`katalyst-config-provider`/`yaml`), and coroutine-powered scheduler/events (`katalyst-scheduler`, `katalyst-events`).
-- **Modules in a nutshell:** DI (`katalyst-di`), configuration (`katalyst-config-provider`/`yaml`), persistence (`katalyst-persistence`, `katalyst-migrations`), HTTP/WebSockets (`katalyst-ktor`, `katalyst-websockets`), scheduler (`katalyst-scheduler`), events (`katalyst-events-*`), testing (`katalyst-testing-core`/`ktor`). Messaging/AMQP modules are **in development**.
+- **What you get:** DI (Koin), persistence with Exposed + HikariCP, YAML config, scheduler + events, websockets, migrations, and testing utilities—all packaged for Ktor services.
 - **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
-- **Latest version:** `0.0.21-alpha` (e.g. [`katalyst-core` on Maven Central](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/0.0.21-alpha/)).
+- **Latest version:** see [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the current release.
 
 ## Add Katalyst to your project (Gradle)
 
@@ -24,7 +23,8 @@ repositories {
 }
 
 dependencies {
-    val katalystVersion = "0.0.21-alpha"
+    // Replace with the latest from maven-metadata.xml
+    val katalystVersion = "<katalyst-version>"
     val ktorVersion = "3.3.1"
     val exposedVersion = "1.0.0-rc-3"
     val hikariVersion = "5.1.0"
