@@ -61,7 +61,9 @@ application {
 
 // Configure ShadowJar for fat JAR creation
 tasks.shadowJar {
-    archiveFileName.set("boshi-server.jar")
+    // Make the shadow JAR the default artifact name so launch scripts that
+    // expect build/libs/boshi-app-<version>.jar pick up the fat JAR.
+    archiveClassifier.set("")
 
     // Merge service files (important for Ktor and other frameworks)
     mergeServiceFiles()
@@ -84,6 +86,11 @@ tasks.shadowJar {
 
     // Use shadowJar as the default JAR
     isZip64 = true
+}
+
+// Keep the plain JAR but avoid name clash with the fat JAR
+tasks.jar {
+    archiveClassifier.set("plain")
 }
 
 // Make build task depend on shadowJar

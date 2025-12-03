@@ -19,7 +19,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * - [mapRow] transforms a database row into a fully-populated AuthAccountEntity
  * - [assignEntity] populates an INSERT/UPDATE statement from an AuthAccountEntity
  */
-object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccountEntity> {
+object AuthAccountsTable : LongIdTable("katalyst_example_service.auth_accounts"), Table<Long, AuthAccountEntity> {
     val email = varchar("email", 150).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
     val createdAtMillis = long("created_at_millis")

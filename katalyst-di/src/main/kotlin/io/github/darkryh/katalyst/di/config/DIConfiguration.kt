@@ -15,6 +15,9 @@ import io.github.darkryh.katalyst.di.module.scannerDIModule
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
 import io.github.darkryh.katalyst.events.bus.adapter.EventsTransactionAdapter
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.core.Schema
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
@@ -210,7 +213,17 @@ fun bootstrapKatalystDI(
 
             runBlocking {
                 transactionManager.transaction {
-                    MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables)
+                    val schemas = exposedTables
+                        .mapNotNull { table -> table.schemaName?.let { Schema(it) } }
+                        .distinct()
+
+                    if (schemas.isNotEmpty()) {
+                        SchemaUtils.createSchema(*schemas.toTypedArray())
+                        logger.info("Created {} schema(s) for discovered tables", schemas.size)
+                    }
+
+                    MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables, withLogs = true)
+                    logger.info("Ensured missing tables/columns are created")
                 }
             }
 

@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.database.DatabaseFactory.Companion.create
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -103,14 +104,15 @@ class DatabaseFactory private constructor(
 
             // Create tables if provided
             if (tables.isNotEmpty()) {
-                try {
-                    transaction(database) {
-                        SchemaUtils.create(*tables.toTypedArray())
-                        logger.info("Created {} table(s)", tables.size)
+                transaction(database) {
+                    val schemas = tables.mapNotNull { it.schemaName }.distinct()
+                    if (schemas.isNotEmpty()) {
+                        SchemaUtils.createSchema(*schemas.map(::Schema).toTypedArray())
+                        logger.info("Created {} schema(s)", schemas.size)
                     }
-                } catch (e: Exception) {
-                    logger.warn("Failed to create tables (may already exist): {}", e.message)
-                    // Don't fail if tables already exist
+
+                    SchemaUtils.create(*tables.toTypedArray())
+                    logger.info("Created {} table(s)", tables.size)
                 }
             }
 

@@ -9,7 +9,7 @@ import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManage
  * to centralize all transaction-related logic.
  *
  * ```
- * NEW: import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
+ * import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
  * ```
  *
  * Both import paths work for now via this type alias, but the latter is preferred.

@@ -20,7 +20,7 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * - [mapRow] transforms a database row into a fully-populated UserProfileEntity
  * - [assignEntity] populates an INSERT/UPDATE statement from a UserProfileEntity
  */
-object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfileEntity> {
+object UserProfilesTable : LongIdTable("katalyst_example_service.user_profiles"), Table<Long, UserProfileEntity> {
     val accountId = reference(
         name = "account_id",
         foreign = AuthAccountsTable,

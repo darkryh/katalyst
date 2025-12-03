@@ -13,6 +13,7 @@ val libs = the<LibrariesForLibs>()
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.kover.gradle.plugin)
+    implementation(libs.vanniktech.maven.publish)
 }
 
 gradlePlugin {

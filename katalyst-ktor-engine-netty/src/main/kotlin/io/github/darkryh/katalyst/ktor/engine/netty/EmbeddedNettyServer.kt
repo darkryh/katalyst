@@ -83,13 +83,13 @@ private fun sanitizeCommandLineConfig(
         val parentContext = readField<kotlin.coroutines.CoroutineContext>(originalRoot, "parentCoroutineContext")
             ?: kotlin.coroutines.EmptyCoroutineContext
 
-        val env = applicationEnvironment {
+        val environment = applicationEnvironment {
             log = originalRoot.environment.log
             classLoader = originalRoot.environment.classLoader
             this.config = sanitizedConfig
         }
 
-        val sanitizedRoot = serverConfig(env) {
+        val sanitizedRoot = serverConfig(environment) {
             rootPath = originalRoot.rootPath
             developmentMode = originalRoot.developmentMode
             this.watchPaths = watchPaths

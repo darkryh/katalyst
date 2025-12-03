@@ -8,7 +8,7 @@ dependencies {
     // Internal modules
     implementation(projects.katalystCore)
     implementation(projects.katalystEvents)
-    implementation(projects.katalystTransactions)  // NEW: For DatabaseTransactionManager
+    implementation(projects.katalystTransactions)
 
     testImplementation(projects.katalystTestingCore)
     testImplementation(libs.kotlinx.coroutines.test)
