@@ -6,6 +6,7 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.di.analysis.ComponentOrderComputer
 import io.github.darkryh.katalyst.di.analysis.DependencyAnalyzer
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
+import io.github.darkryh.katalyst.di.exception.KatalystDIException
 import io.github.darkryh.katalyst.di.validation.DependencyValidator
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
@@ -36,6 +37,12 @@ class ComponentRegistrationOrchestrator(
     private val koin: Koin,
     private val scanPackages: Array<String>
 ) {
+
+    /**
+     * Cache for discovered config loaders to avoid redundant classpath scanning.
+     * Discovery is expensive (reflection + bytecode scanning), so we cache results.
+     */
+    private var cachedConfigLoaders: Map<KClass<*>, Any>? = null
 
     /**
      * Executes the complete enhanced component registration process.
@@ -281,7 +288,7 @@ class ComponentRegistrationOrchestrator(
      * Phase 6: Discovers, loads, validates, and registers AutomaticServiceConfigLoader implementations.
      *
      * This phase:
-     * 1. Discovers all [AutomaticServiceConfigLoader] implementations in scan packages
+     * 1. Discovers all [io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader] implementations in scan packages
      * 2. Loads each configuration using the discovered loader
      * 3. Validates each loaded configuration
      * 4. Registers each configuration as a singleton in Koin
@@ -299,81 +306,100 @@ class ComponentRegistrationOrchestrator(
         logger.info("Discovering AutomaticServiceConfigLoader implementations...")
 
         try {
-            // Get ConfigProvider from Koin (available from features)
-            val configProvider = runCatching { koin.get<ConfigProvider>() }.getOrNull()
-            if (configProvider == null) {
-                logger.debug("ConfigProvider not available, skipping automatic configuration loading")
-                return
-            }
-
-            // Use reflection to call AutomaticConfigLoaderDiscovery.discoverLoaders()
-            // This avoids circular dependency between katalyst-di and katalyst-config-provider
-            try {
-                val loaders = discoverAutomaticConfigLoaders()
-
-                if (loaders.isEmpty()) {
-                    logger.debug("No AutomaticServiceConfigLoader implementations discovered")
-                    return
-                }
-
-                logger.info("Discovered {} automatic config loader(s)", loaders.size)
-
-                // Load, validate, and register each configuration
-                loaders.forEach { (configType, loader) ->
-                    try {
-                        logger.info("Loading configuration for {}", configType.simpleName)
-
-                        // Call loader.loadConfig(configProvider)
-                        val loadConfigMethod = loader::class.java.getDeclaredMethod(
-                            "loadConfig",
-                            ConfigProvider::class.java
-                        ).apply { isAccessible = true }
-
-                        val config = loadConfigMethod.invoke(loader, configProvider)
-                        logger.debug("Loaded configuration: {}", config)
-
-                        // Call loader.validate(config)
-                        try {
-                            val validateMethod = loader::class.java.getDeclaredMethod(
-                                "validate",
-                                Any::class.java
-                            ).apply { isAccessible = true }
-                            validateMethod.invoke(loader, config)
-                        } catch (_: NoSuchMethodException) {
-                            // validate() is optional (default implementation)
-                            logger.debug("No validate() method on {}", loader::class.simpleName)
-                        }
-
-                        logger.debug("Configuration validated: {}", configType.simpleName)
-
-                        // Register the configuration in Koin using AutoBindingRegistrar's method
-                        try {
-                            // Create an AutoBindingRegistrar to use its registration logic
-                            val registrar = AutoBindingRegistrar(koin, scanPackages)
-                            // Call registerInstanceWithKoin directly (method is now internal)
-                            registrar.registerInstanceWithKoin(config, configType, emptyList())
-
-                            logger.info("✓ Registered {} configuration", configType.simpleName)
-                        } catch (e: Exception) {
-                            logger.error("Failed to register {} in Koin: {}", configType.simpleName, e.message)
-                            throw e
-                        }
-                    } catch (e: Exception) {
-                        logger.error("✗ Failed to load {} configuration: {}",
-                            configType.simpleName, e.message)
-                        logger.error("Exception details: {}", e.toString())
-                        throw e  // Fail-fast - config errors are fatal
-                    }
-                }
-
-                logger.info("✓ All {} automatic configuration(s) loaded and registered", loaders.size)
+            // Discover loaders FIRST to know if we need ConfigProvider
+            val loaders = try {
+                discoverAutomaticConfigLoaders()
             } catch (_: ClassNotFoundException) {
                 logger.debug("AutomaticConfigLoaderDiscovery class not found, skipping automatic config loading")
                 logger.debug("Ensure katalyst-config-provider is on the classpath to enable automatic config loading")
+                return
             }
-        } catch (e: NoSuchElementException) {
-            // ConfigProvider not in Koin
-            logger.debug("ConfigProvider not registered in Koin, skipping automatic configuration loading: {}", e.message)
+
+            if (loaders.isEmpty()) {
+                logger.debug("No AutomaticServiceConfigLoader implementations discovered")
+                return
+            }
+
+            logger.info("Discovered {} automatic config loader(s)", loaders.size)
+
+            // Now check if ConfigProvider is available - FAIL FAST if not
+            val configProvider = runCatching { koin.get<ConfigProvider>() }.getOrNull()
+            if (configProvider == null) {
+                throw KatalystDIException(
+                    buildString {
+                        appendLine("ConfigProvider is required but not available!")
+                        appendLine()
+                        appendLine("Found ${loaders.size} AutomaticServiceConfigLoader(s) requiring ConfigProvider:")
+                        loaders.keys.forEach { configType ->
+                            appendLine("  - ${configType.simpleName}")
+                        }
+                        appendLine()
+                        appendLine("Add enableConfigProvider() to your katalystApplication block:")
+                        appendLine()
+                        appendLine("  katalystApplication(args) {")
+                        appendLine("      enableConfigProvider()  // Required for automatic config loading")
+                        appendLine("      scanPackages(\"your.app.package\")")
+                        appendLine("      // ... other configuration")
+                        appendLine("  }")
+                    }
+                )
+            }
+
+            // Load, validate, and register each configuration
+            loaders.forEach { (configType, loader) ->
+                try {
+                    logger.info("Loading configuration for {}", configType.simpleName)
+
+                    // Call loader.loadConfig(configProvider)
+                    val loadConfigMethod = loader::class.java.getDeclaredMethod(
+                        "loadConfig",
+                        ConfigProvider::class.java
+                    ).apply { isAccessible = true }
+
+                    val config = loadConfigMethod.invoke(loader, configProvider)
+                    logger.debug("Loaded configuration: {}", config)
+
+                    // Call loader.validate(config) - try exact type first, then Any
+                    val validateMethod = try {
+                        loader::class.java.getDeclaredMethod("validate", configType.java)
+                    } catch (_: NoSuchMethodException) {
+                        try {
+                            loader::class.java.getDeclaredMethod("validate", Any::class.java)
+                        } catch (_: NoSuchMethodException) {
+                            null // validate() is optional (default implementation)
+                        }
+                    }
+
+                    validateMethod?.let { method ->
+                        method.isAccessible = true
+                        method.invoke(loader, config)
+                        logger.debug("Configuration validated: {}", configType.simpleName)
+                    }
+
+                    // Register the configuration in Koin using AutoBindingRegistrar's method
+                    try {
+                        // Create an AutoBindingRegistrar to use its registration logic
+                        val registrar = AutoBindingRegistrar(koin, scanPackages)
+                        // Call registerInstanceWithKoin directly (method is now internal)
+                        registrar.registerInstanceWithKoin(config, configType, emptyList())
+
+                        logger.info("✓ Registered {} configuration", configType.simpleName)
+                    } catch (e: Exception) {
+                        logger.error("Failed to register {} in Koin: {}", configType.simpleName, e.message)
+                        throw e
+                    }
+                } catch (e: Exception) {
+                    logger.error("✗ Failed to load {} configuration: {}",
+                        configType.simpleName, e.message)
+                    logger.error("Exception details: {}", e.toString())
+                    throw e  // Fail-fast - config errors are fatal
+                }
+            }
+
+            logger.info("✓ All {} automatic configuration(s) loaded and registered", loaders.size)
+        } catch (e: KatalystDIException) {
+            // Re-throw DI exceptions as-is (includes FatalDependencyValidationException)
+            throw e
         } catch (e: Exception) {
             logger.error("Error during automatic configuration loading: {}", e.message)
             logger.debug("Full error during config loading", e)
@@ -524,10 +550,19 @@ class ComponentRegistrationOrchestrator(
      * AutomaticConfigLoaderDiscovery is in a different module (katalyst-config-provider)
      * which may not be on the classpath.
      *
+     * Results are cached to avoid redundant classpath scanning (discovery is called
+     * in both Phase 2 for pre-discovery and Phase 5a for actual loading).
+     *
      * @return Map of config type to loader instance, or empty map if discovery fails
      */
     private fun discoverAutomaticConfigLoaders(): Map<KClass<*>, Any> {
-        return try {
+        // Return cached result if available
+        cachedConfigLoaders?.let {
+            logger.debug("Using cached config loaders ({} loaders)", it.size)
+            return it
+        }
+
+        val loaders = try {
             val discoveryClass = Class.forName(
                 "io.github.darkryh.katalyst.config.provider.AutomaticConfigLoaderDiscovery"
             )
@@ -550,5 +585,9 @@ class ComponentRegistrationOrchestrator(
             logger.debug("Error discovering automatic config loaders: {}", e.message)
             emptyMap()
         }
+
+        // Cache the result
+        cachedConfigLoaders = loaders
+        return loaders
     }
 }

@@ -77,6 +77,26 @@ class AutoBindingRegistrar(
 
     private val packages: List<String> = scanPackages.filter { it.isNotBlank() }
 
+    companion object {
+        /**
+         * Tracks which component provides each secondary type binding.
+         * Used to detect collisions when multiple components implement the same interface.
+         *
+         * Key: Secondary type (interface)
+         * Value: Primary type (concrete component) that provides the binding
+         */
+        private val secondaryTypeOwners = ConcurrentHashMap<KClass<*>, KClass<*>>()
+
+        /**
+         * Resets the secondary type ownership tracking.
+         * Call this in tests to ensure clean state between test cases.
+         */
+        fun resetSecondaryTypeTracking() {
+            secondaryTypeOwners.clear()
+            logger.debug("Secondary type ownership tracking reset")
+        }
+    }
+
     /**
      * Scans configured packages for concrete implementations of a base type.
      *
@@ -260,7 +280,8 @@ class AutoBindingRegistrar(
             Service::class,
             CrudRepository::class,
             EventHandler::class,
-            KatalystMigration::class
+            KatalystMigration::class,
+            Table::class
         )
 
         return clazz.supertypes
@@ -336,10 +357,13 @@ class AutoBindingRegistrar(
 
         tables.forEach { (tableClass, instance) ->
             try {
+                // Tables are registered only under their primary type (concrete class)
+                // Secondary types (Table, org.jetbrains.exposed.Table) are NOT registered
+                // because multiple tables implementing these interfaces is expected
                 registerInstanceWithKoin(
                     instance = instance,
                     primaryType = tableClass,
-                    secondaryTypes = listOf(Table::class, org.jetbrains.exposed.v1.core.Table::class)
+                    secondaryTypes = emptyList()
                 )
                 // Also register with TableRegistry for reliable access by StartupValidator
                 @Suppress("UNCHECKED_CAST")
@@ -581,9 +605,14 @@ class AutoBindingRegistrar(
      * All types are registered to resolve to the same instance, enabling
      * dependency injection by any of the component's interfaces.
      *
+     * **Collision Detection:**
+     * If a secondary type is already bound to a different primary type, this method
+     * throws a [DependencyInjectionException] to fail-fast on ambiguous bindings.
+     *
      * @param instance The component instance to register
      * @param primaryType The primary class type for registration
      * @param secondaryTypes Additional interface types for polymorphic binding
+     * @throws DependencyInjectionException if a secondary type collision is detected
      */
     internal fun registerInstanceWithKoin(
         instance: Any,
@@ -595,6 +624,33 @@ class AutoBindingRegistrar(
             primaryType.qualifiedName,
             secondaryTypes.joinToString { it.qualifiedName ?: it.simpleName.orEmpty() }
         )
+
+        // Check for secondary type collisions BEFORE registering
+        secondaryTypes.forEach { type ->
+            val existingOwner = secondaryTypeOwners[type]
+            if (existingOwner != null && existingOwner != primaryType) {
+                throw DependencyInjectionException(
+                    buildString {
+                        appendLine("Secondary type binding collision detected!")
+                        appendLine()
+                        appendLine("Interface: ${type.simpleName} (${type.qualifiedName})")
+                        appendLine("Already provided by: ${existingOwner.simpleName}")
+                        appendLine("Conflicting provider: ${primaryType.simpleName}")
+                        appendLine()
+                        appendLine("Resolution options:")
+                        appendLine("  1. Use @Qualifier annotations to distinguish implementations")
+                        appendLine("  2. Remove one of the conflicting implementations")
+                        appendLine("  3. Inject by concrete type instead of interface")
+                        appendLine("  4. Create a wrapper interface specific to each implementation")
+                    }
+                )
+            }
+        }
+
+        // Track ownership of secondary types
+        secondaryTypes.forEach { type ->
+            secondaryTypeOwners[type] = primaryType
+        }
 
         val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
 
