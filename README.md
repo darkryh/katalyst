@@ -13,9 +13,9 @@ Use the published artifacts from Maven Central (see badge above or [`maven-metad
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.2.20"
-    id("io.ktor.plugin") version "3.3.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+    kotlin("jvm") version "2.2.21"
+    id("io.ktor.plugin") version "3.3.3"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
 }
 
 repositories {
@@ -26,8 +26,8 @@ dependencies {
     // Replace with the latest Katalyst version from Maven Central
     val katalystVersion = "<katalyst-version>"
     // Pin your app stack as needed
-    val ktorVersion = "3.3.1"
-    val exposedVersion = "1.0.0-rc-3"
+    val ktorVersion = "3.3.3"
+    val exposedVersion = "1.0.0-rc-4"
     val hikariVersion = "5.1.0"
     val postgresVersion = "42.7.8"
 
