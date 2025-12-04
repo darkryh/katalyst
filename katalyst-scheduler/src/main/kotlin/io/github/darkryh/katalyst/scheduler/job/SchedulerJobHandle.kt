@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.scheduler.job
 
+import kotlinx.coroutines.InternalForInheritanceCoroutinesApi
 import kotlinx.coroutines.Job
 
 /**
@@ -41,6 +42,7 @@ import kotlinx.coroutines.Job
  * - No parameters to pass
  * - Returns a scheduled job handle
  */
+@OptIn(InternalForInheritanceCoroutinesApi::class)
 interface SchedulerJobHandle : Job {
     // Extends Job to inherit all cancellation and status methods
     // No additional methods needed - pure marker interface
@@ -54,6 +56,7 @@ interface SchedulerJobHandle : Job {
  *
  * @param delegate The actual Job from coroutine launch
  */
+@OptIn(InternalForInheritanceCoroutinesApi::class)
 internal class SchedulerJobHandleImpl(
     private val delegate: Job
 ) : SchedulerJobHandle, Job by delegate

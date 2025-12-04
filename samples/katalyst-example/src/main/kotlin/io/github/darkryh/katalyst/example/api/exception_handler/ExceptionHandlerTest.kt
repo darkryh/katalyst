@@ -1,12 +1,13 @@
 package io.github.darkryh.katalyst.example.api.exception_handler
 
 import io.github.darkryh.katalyst.example.api.dto.ErrorResponse
+import io.github.darkryh.katalyst.example.domain.exception.TestException
 import io.github.darkryh.katalyst.example.domain.exception.UserExampleValidationException
 import io.github.darkryh.katalyst.ktor.builder.katalystExceptionHandler
 import io.ktor.http.*
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
 import io.ktor.server.response.*
-import io.ktor.util.logging.*
+import io.ktor.util.logging.KtorSimpleLogger
 
 /**
  * Exception Handlers
@@ -49,48 +50,27 @@ import io.ktor.util.logging.*
  * - Consider client API contracts when designing responses
  */
 @Suppress("unused")
-fun Application.exceptionHandlers() = katalystExceptionHandler {
+fun Application.exceptionHandlersTest() = katalystExceptionHandler {
     val logger = KtorSimpleLogger("ExceptionHandler")
 
-    /**
-     * Handles validation errors
-     *
-     * Demonstrates: Custom business exception handling
-     * Status Code: 400 Bad Request (client error - invalid input)
-     *
-     * Example triggers:
-     * - Email validation failed
-     * - Required field missing
-     * - Format validation failed
-     */
-    exception<UserExampleValidationException> { call, exception ->
-        logger.warn("Validation error: ${exception.message}")
-        call.respond(
-            HttpStatusCode.BadRequest,
-            ErrorResponse(
-                error = "VALIDATION_ERROR",
-                message = exception.message,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
 
     /**
-     * Fallback handler for unexpected exceptions
+     * Handles test/demo exceptions
      *
-     * Demonstrates: Generic exception handling
-     * Status Code: 500 Internal Server Error (server error)
+     * Demonstrates: Different exception type handling
+     * Status Code: 409 Conflict (operation conflict)
      *
-     * Catches all unhandled exceptions and returns generic error message
-     * Details are logged for debugging but not exposed to client
+     * Example triggers:
+     * - Scheduled task failures (in demo)
+     * - State conflicts in business logic
      */
-    exception<Exception> { call, exception ->
-        logger.error("Unexpected exception: ${exception.message}", exception)
+    exception<TestException> { call, exception ->
+        logger.error("Test exception occurred: ${exception.message}")
         call.respond(
-            HttpStatusCode.InternalServerError,
+            HttpStatusCode.Conflict,
             ErrorResponse(
-                error = "INTERNAL_SERVER_ERROR",
-                message = "An unexpected error occurred. Please try again later.",
+                error = "OPERATION_CONFLICT",
+                message = exception.message,
                 timestamp = System.currentTimeMillis()
             )
         )

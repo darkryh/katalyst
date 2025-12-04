@@ -23,6 +23,7 @@ class ExceptionHandlerTest {
         application {
             httpConfigMiddleware()
             exceptionHandlers()
+            exceptionHandlersTest()
             routing {
                 get("/validation") { throw UserExampleValidationException("invalid") }
                 get("/conflict") { throw TestException("conflict") }

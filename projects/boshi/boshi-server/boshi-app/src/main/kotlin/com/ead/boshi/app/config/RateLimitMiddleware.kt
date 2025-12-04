@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @Suppress("unused")
 fun Application.installRateLimit() = katalystMiddleware {
-    val config = ktInject<RateLimitConfig>()
+    val config by ktInject<RateLimitConfig>()
 
     if (!config.enabled) {
         return@katalystMiddleware

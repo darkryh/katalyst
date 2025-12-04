@@ -44,8 +44,8 @@ class MiddlewareBuilderTest {
             testApplication {
                 application {
                     val builder = MiddlewareBuilder(this)
-                    val resolved = builder.ktInject<SampleDependency>()
-                    assertSame(koinApp.koin.get<SampleDependency>(), resolved)
+                    val resolved: Lazy<SampleDependency> = builder.ktInject()
+                    assertSame(koinApp.koin.get<SampleDependency>(), resolved.value)
                 }
             }
         } finally {
