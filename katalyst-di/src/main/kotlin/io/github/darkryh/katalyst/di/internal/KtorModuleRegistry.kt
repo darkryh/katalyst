@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.internal
 
+import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.registry.ResettableRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -15,8 +17,14 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * **Thread Safety:**
  * Uses [CopyOnWriteArrayList] for concurrent access during registration.
+ *
+ * **Test Isolation:**
+ * Implements [ResettableRegistry] and registers with [RegistryManager] for centralized reset.
+ * Call `RegistryManager.resetAll()` in test setup to clear state between tests.
  */
-object KtorModuleRegistry {
+object KtorModuleRegistry : ResettableRegistry {
+    init { RegistryManager.register(this) }
+
     private val modules = CopyOnWriteArrayList<KtorModule>()
 
     /**
@@ -51,5 +59,15 @@ object KtorModuleRegistry {
         val snapshot = modules.toList()
         modules.clear()
         return snapshot
+    }
+
+    /**
+     * Resets the registry to its initial empty state.
+     *
+     * Implements [ResettableRegistry.reset] for test isolation.
+     * Call this in test setup to ensure clean state between test cases.
+     */
+    override fun reset() {
+        modules.clear()
     }
 }

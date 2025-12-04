@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.internal
 
+import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.registry.ResettableRegistry
 import org.jetbrains.exposed.v1.core.Table
 
 /**
@@ -15,8 +17,13 @@ import org.jetbrains.exposed.v1.core.Table
  * Koin's `getAll<Any>()` doesn't reliably return singleton instances that
  * were registered during dynamic module loading. This registry provides a
  * reliable way to track tables as they're discovered.
+ *
+ * **Test Isolation:**
+ * Implements [ResettableRegistry] and registers with [RegistryManager] for centralized reset.
  */
-internal object TableRegistry {
+internal object TableRegistry : ResettableRegistry {
+    init { RegistryManager.register(this) }
+
     private val tables = mutableListOf<Table>()
     private val lock = Any()
 
@@ -50,6 +57,17 @@ internal object TableRegistry {
      * Used for testing and reinitialization scenarios.
      */
     fun clear() {
+        synchronized(lock) {
+            tables.clear()
+        }
+    }
+
+    /**
+     * Resets the registry to its initial empty state.
+     *
+     * Implements [ResettableRegistry.reset] for test isolation.
+     */
+    override fun reset() {
         synchronized(lock) {
             tables.clear()
         }
