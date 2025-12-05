@@ -710,7 +710,7 @@ private val schedulerServiceKClass: KClass<*>? = runCatching {
  * Wrapper for route function methods to enable ordered installation.
  *
  * Wraps a static route function method ([Route] or [Application] extension)
- * and provides ordering hints based on function naming conventions:
+ * and provides ordering hints based on detected DSL usage:
  * - Exception handlers (order -100): installed first
  * - Middleware/plugins (order -50): installed second
  * - Regular routes (order 0): installed last
@@ -725,10 +725,14 @@ private class RouteFunctionModule(
 
     // Exception handlers and middleware should be installed FIRST (negative order)
     // Regular routes should be installed AFTER (positive order)
+    private val dslCalls = method.katalystDslCalls()
+
     override val order: Int = when {
-        method.name.contains("exception", ignoreCase = true) -> -100  // Install exception handlers first
-        method.name.contains("middleware", ignoreCase = true) -> -50   // Then middleware
-        method.name.contains("plugin", ignoreCase = true) -> -50       // Then plugins
+        "katalystExceptionHandler" in dslCalls -> -100  // Install exception handlers first
+        method.name.contains("exception", ignoreCase = true) -> -100
+        "katalystMiddleware" in dslCalls -> -50   // Then middleware/plugins
+        method.name.contains("middleware", ignoreCase = true) -> -50
+        method.name.contains("plugin", ignoreCase = true) -> -50
         else -> 0  // Regular routes last
     }
 
@@ -810,7 +814,7 @@ private val katalystDslMethods = setOf(
 /**
  * Cache for bytecode analysis results to avoid repeated scanning.
  */
-private val methodUsageCache = ConcurrentHashMap<Method, Boolean>()
+private val methodDslCallCache = ConcurrentHashMap<Method, Set<String>>()
 
 /**
  * Checks if a route function uses Katalyst routing DSL.
@@ -820,9 +824,14 @@ private val methodUsageCache = ConcurrentHashMap<Method, Boolean>()
  *
  * @return true if the method calls Katalyst DSL functions, false otherwise
  */
-private fun Method.usesKatalystDsl(): Boolean =
-    methodUsageCache.computeIfAbsent(this) { method ->
-        runCatching { method.scanForKatalystDsl() }
+private fun Method.usesKatalystDsl(): Boolean = katalystDslCalls().isNotEmpty()
+
+/**
+ * Returns the set of Katalyst DSL methods invoked by this route function.
+ */
+private fun Method.katalystDslCalls(): Set<String> =
+    methodDslCallCache.computeIfAbsent(this) { method ->
+        runCatching { method.scanForKatalystDslCalls() }
             .onFailure { error ->
                 LoggerFactory.getLogger("AutoBindingRegistrar")
                     .debug(
@@ -832,7 +841,7 @@ private fun Method.usesKatalystDsl(): Boolean =
                         error.message
                     )
             }
-            .getOrDefault(false)
+            .getOrDefault(emptySet())
     }
 
 /**
@@ -845,20 +854,20 @@ private fun Method.usesKatalystDsl(): Boolean =
  * 1. Loads the class bytecode
  * 2. Finds the target method by signature
  * 3. Scans method instructions for DSL calls
- * 4. Returns true if any Katalyst DSL method is called
+ * 4. Returns the set of called Katalyst DSL functions
  *
- * @return true if Katalyst DSL methods are detected, false otherwise
+ * @return names of Katalyst DSL methods used by this function
  */
-private fun Method.scanForKatalystDsl(): Boolean {
+private fun Method.scanForKatalystDslCalls(): Set<String> {
     val className = declaringClass.name.replace('.', '/') + ".class"
     val stream = declaringClass.classLoader?.getResourceAsStream(className)
         ?: Thread.currentThread().contextClassLoader?.getResourceAsStream(className)
-        ?: return false
+        ?: return emptySet()
 
     stream.use { input ->
         val reader = ClassReader(input)
         val targetDescriptor = Type.getMethodDescriptor(this)
-        var found = false
+        val found = mutableSetOf<String>()
 
         reader.accept(object : ClassVisitor(Opcodes.ASM9) {
             override fun visitMethod(
@@ -869,7 +878,7 @@ private fun Method.scanForKatalystDsl(): Boolean {
                 exceptions: Array<out String>?
             ): MethodVisitor? {
                 val parent = super.visitMethod(access, name, descriptor, signature, exceptions)
-                if (name != this@scanForKatalystDsl.name || descriptor != targetDescriptor) {
+                if (name != this@scanForKatalystDslCalls.name || descriptor != targetDescriptor) {
                     return parent
                 }
                 return object : MethodVisitor(Opcodes.ASM9, parent) {
@@ -881,7 +890,7 @@ private fun Method.scanForKatalystDsl(): Boolean {
                         isInterface: Boolean
                     ) {
                         if (owner in katalystDslOwners && name in katalystDslMethods) {
-                            found = true
+                            found += name
                         }
                         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
                     }
