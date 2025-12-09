@@ -74,7 +74,7 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
 
     /**
      * Maps a database [ResultRow] to a domain [IdentifiableEntityId] using the
-     * mapper provided by the associated Katalyst [Table].
+     * mapper provided by the associated Katalyst [io.github.darkryh.katalyst.core.persistence.Table].
      *
      * **Mapping Success Indicators:**
      * - Non-null return value indicates successful row → entity transformation
@@ -93,16 +93,19 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
      * to ensure fresh values (including generated columns).
      */
     fun save(entity: IdentifiableEntityId): IdentifiableEntityId {
-        val identifier = entity.id
-        val persistedId = if (identifier == null) {
-            insertEntity(entity)
+        val id = entity.id
+        val persistedId = if (id != null) {
+            val updated = updateEntity(id, entity) // returns rows updated
+            if (updated > 0) id else insertEntity(entity, skipIdColumn = false)
         } else {
-            updateEntity(identifier, entity)
+            insertEntity(entity, skipIdColumn = true)
         }
 
         return findById(persistedId)
             ?: error("Entity with id=$persistedId could not be loaded after persistence")
     }
+
+
 
     /**
      * Finds an entity by ID.
@@ -169,20 +172,19 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
         }
     }
 
-    private fun insertEntity(entity: IdentifiableEntityId): Id {
+    private fun insertEntity(entity: IdentifiableEntityId,skipIdColumn : Boolean = true): Id {
         val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
-        val generatedId = table.insertAndGetId { statement ->
-            katalystTable.assignEntity(statement, entity, skipIdColumn = true)
+        val generatedId = table.insertAndGetId { insertStatement ->
+            katalystTable.assignEntity(insertStatement, entity, skipIdColumn = skipIdColumn)
         }.value
         return generatedId
     }
 
-    private fun updateEntity(id: Id, entity: IdentifiableEntityId): Id {
+    private fun updateEntity(id: Id, entity: IdentifiableEntityId, skipIdColumn: Boolean = true): Int {
         val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
-        table.update({ table.id eq entityId(id) }) { statement ->
-            katalystTable.assignEntity(statement, entity, skipIdColumn = true)
+        return table.update({ table.id eq entityId(id) }) { updateStatement ->
+            katalystTable.assignEntity(updateStatement, entity, skipIdColumn = skipIdColumn)
         }
-        return id
     }
 
     private fun SortOrder.toExposed(): ExposedSortOder =
