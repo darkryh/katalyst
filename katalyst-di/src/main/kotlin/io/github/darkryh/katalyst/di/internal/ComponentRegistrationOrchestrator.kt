@@ -78,7 +78,7 @@ class ComponentRegistrationOrchestrator(
                 discoveredTypes = discovered,
                 koin = koin
             )
-            exception.printDetailedReport()
+            exception.printReport()
             throw exception
         }
 

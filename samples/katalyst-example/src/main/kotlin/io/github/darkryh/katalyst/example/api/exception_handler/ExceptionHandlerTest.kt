@@ -2,12 +2,11 @@ package io.github.darkryh.katalyst.example.api.exception_handler
 
 import io.github.darkryh.katalyst.example.api.dto.ErrorResponse
 import io.github.darkryh.katalyst.example.domain.exception.TestException
-import io.github.darkryh.katalyst.example.domain.exception.UserExampleValidationException
 import io.github.darkryh.katalyst.ktor.builder.katalystExceptionHandler
 import io.ktor.http.*
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 import io.ktor.server.response.*
-import io.ktor.util.logging.KtorSimpleLogger
+import io.ktor.util.logging.*
 
 /**
  * Exception Handlers

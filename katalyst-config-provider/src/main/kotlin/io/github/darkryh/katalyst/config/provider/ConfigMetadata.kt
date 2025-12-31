@@ -69,8 +69,7 @@ object ConfigMetadata {
             val loaders = mutableListOf<ServiceConfigLoader<*>>()
             for (loaderType in loaderTypes) {
                 try {
-                    @Suppress("UNCHECKED_CAST")
-                    val loader = loaderType.getDeclaredConstructor().newInstance() as ServiceConfigLoader<*>
+                    val loader = instantiateLoader(loaderType)
                     loaders.add(loader)
                     log.debug("Loaded: ${loaderType.simpleName}")
                 } catch (e: Exception) {
@@ -154,6 +153,18 @@ object ConfigMetadata {
             packageName = loaderClass.packageName,
             loadedType = "Unknown"  // Type information is erased at runtime
         )
+    }
+
+    private fun instantiateLoader(loaderType: Class<*>): ServiceConfigLoader<*> {
+        return try {
+            val instanceField = loaderType.getDeclaredField("INSTANCE")
+            instanceField.isAccessible = true
+            instanceField.get(null) as ServiceConfigLoader<*>
+        } catch (_: NoSuchFieldException) {
+            val constructor = loaderType.getDeclaredConstructor()
+            constructor.isAccessible = true
+            constructor.newInstance() as ServiceConfigLoader<*>
+        }
     }
 
     /**

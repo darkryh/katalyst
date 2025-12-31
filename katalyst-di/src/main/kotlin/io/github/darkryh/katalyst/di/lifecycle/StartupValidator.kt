@@ -50,7 +50,7 @@ internal class StartupValidator : ApplicationInitializer {
     override suspend fun onApplicationReady(koin: Koin) {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ PHASE 1: Startup Validation (FAIL-FAST)           ║")
+        logger.info("║ STARTUP VALIDATION (FAIL-FAST)                    ║")
         logger.info("║ Validates database schema BEFORE scheduler init   ║")
         logger.info("╚════════════════════════════════════════════════════╝")
         logger.info("")
@@ -86,12 +86,12 @@ internal class StartupValidator : ApplicationInitializer {
                 discoveredTables.forEach { table ->
                     logger.info("    • {}", table.tableName)
                 }
-                logger.info("  ✓ Database schema verified (created during Phase 4)")
+                logger.info("  ✓ Database schema verified (created during Phase 3)")
             }
 
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ PHASE 1 PASSED                                  ║")
+            logger.info("║ ✓ STARTUP VALIDATION PASSED                       ║")
             logger.info("║ ✓ Database ready for scheduler initialization     ║")
             logger.info("║ ✓ Safe to proceed to next phases                  ║")
             logger.info("╚════════════════════════════════════════════════════╝")

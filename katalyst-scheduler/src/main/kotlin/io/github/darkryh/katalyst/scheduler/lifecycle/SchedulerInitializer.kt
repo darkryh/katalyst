@@ -82,8 +82,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
     override suspend fun onApplicationReady(koin: Koin) {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ PHASE 2: Scheduler Discovery & Registration       ║")
-        logger.info("║ (Database schema guaranteed ready by Phase 1)      ║")
+        logger.info("║ SCHEDULER DISCOVERY & REGISTRATION                ║")
+        logger.info("║ (Database schema validated before initialization)  ║")
         logger.info("╚════════════════════════════════════════════════════╝")
         logger.info("")
 
@@ -98,7 +98,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 logger.warn("⚠ SchedulerService not available - scheduler disabled")
                 logger.info("")
                 logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ PHASE 2 SKIPPED: Scheduler not enabled          ║")
+                logger.info("║ ✓ SCHEDULER SKIPPED: Scheduler not enabled        ║")
                 logger.info("╚════════════════════════════════════════════════════╝")
                 logger.info("")
                 // Log as debug, don't throw - scheduler is optional
@@ -118,7 +118,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 logger.info("No services found")
                 logger.info("")
                 logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ PHASE 2 PASSED: No scheduler methods            ║")
+                logger.info("║ ✓ SCHEDULER PASSED: No scheduler methods          ║")
                 logger.info("╚════════════════════════════════════════════════════╝")
                 logger.info("")
                 return
@@ -135,7 +135,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 logger.info("No candidate scheduler methods found")
                 logger.info("")
                 logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ PHASE 2 PASSED: No scheduler methods            ║")
+                logger.info("║ ✓ SCHEDULER PASSED: No scheduler methods          ║")
                 logger.info("╚════════════════════════════════════════════════════╝")
                 logger.info("")
                 return
@@ -156,7 +156,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 logger.warn("⚠ No candidates passed bytecode validation")
                 logger.info("")
                 logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ PHASE 2 PASSED: No valid scheduler methods      ║")
+                logger.info("║ ✓ SCHEDULER PASSED: No valid scheduler methods    ║")
                 logger.info("╚════════════════════════════════════════════════════╝")
                 logger.info("")
                 return
@@ -212,7 +212,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
 
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ PHASE 2 PASSED: {} scheduler task(s) registered ║", successCount)
+            logger.info("║ ✓ SCHEDULER PASSED: {} task(s) registered         ║", successCount)
             logger.info("╚════════════════════════════════════════════════════╝")
             logger.info("")
 

@@ -140,35 +140,42 @@ fun bootstrapKatalystDI(
 
     modules += additionalModules
 
-    val koin = currentKoinOrNull()?.also {
-        logger.info("Loading Katalyst modules into existing Koin context")
-        it.loadModules(modules, createEagerInstances = true)
-    } ?: run {
-        logger.info("Starting new Koin context for Katalyst modules")
-        startKoin {
-            if (allowOverrides) {
-                allowOverride(true)
-            }
-            modules(modules)
-        }.koin
+    BootstrapProgress.startPhase(1)
+    val koin = try {
+        currentKoinOrNull()?.also {
+            logger.info("Loading Katalyst modules into existing Koin context")
+            it.loadModules(modules, createEagerInstances = true)
+        } ?: run {
+            logger.info("Starting new Koin context for Katalyst modules")
+            startKoin {
+                if (allowOverrides) {
+                    allowOverride(true)
+                }
+                modules(modules)
+            }.koin
+        }
+    } catch (e: Exception) {
+        BootstrapProgress.failPhase(1, e)
+        throw e
     }
+    BootstrapProgress.completePhase(1, "Koin context ready with ${modules.size} module(s)")
 
     // Register components including tables
-    // PHASE 3: Component Discovery & Registration with Validation
-    BootstrapProgress.startPhase(3)
+    // PHASE 2: Component Discovery & Registration with Validation
+    BootstrapProgress.startPhase(2)
     try {
         logger.info("Starting ComponentRegistrationOrchestrator with dependency validation...")
         val orchestrator = ComponentRegistrationOrchestrator(koin, scanPackages)
         orchestrator.registerAllWithValidation()
         logger.info("ComponentRegistrationOrchestrator completed with full validation")
-        BootstrapProgress.completePhase(3, "Discovered repositories, services, components, and validators with dependency validation")
+        BootstrapProgress.completePhase(2, "Discovered repositories, services, components, and validators with dependency validation")
     } catch (e: FatalDependencyValidationException) {
         logger.error("✗ FATAL: Dependency validation failed - application cannot start")
-        BootstrapProgress.failPhase(3, e)
+        BootstrapProgress.failPhase(2, e)
         throw e
     } catch (e: Exception) {
         logger.error("✗ Error during component registration: {}", e.message)
-        BootstrapProgress.failPhase(3, e)
+        BootstrapProgress.failPhase(2, e)
         throw e
     }
 
@@ -177,8 +184,8 @@ fun bootstrapKatalystDI(
         feature.onKoinReady(koin)
     }
 
-    // PHASE 4: Database Schema Initialization & Table Creation
-    BootstrapProgress.startPhase(4)
+    // PHASE 3: Database Schema Initialization & Table Creation
+    BootstrapProgress.startPhase(3)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from TableRegistry...")
         // Use TableRegistry instead of koin.getAll() because:
@@ -231,16 +238,16 @@ fun bootstrapKatalystDI(
         } else {
             logger.info("  ℹ  No tables registered - skipping schema creation")
         }
-        BootstrapProgress.completePhase(4, "Database schema initialized with ${discoveredTables.size} tables")
+        BootstrapProgress.completePhase(3, "Database schema initialized with ${discoveredTables.size} tables")
     } catch (e: Exception) {
         logger.warn("Error discovering tables or creating DatabaseFactory: {}", e.message)
         logger.debug("Full error during table discovery", e)
-        BootstrapProgress.failPhase(4, e)
+        BootstrapProgress.failPhase(3, e)
         throw e
     }
 
-    // PHASE 5: Transaction Adapter Registration
-    BootstrapProgress.startPhase(5)
+    // PHASE 4: Transaction Adapter Registration
+    BootstrapProgress.startPhase(4)
     try {
         logger.info("Registering transaction adapters...")
         val transactionManager = koin.get<DatabaseTransactionManager>()
@@ -275,10 +282,10 @@ fun bootstrapKatalystDI(
         }
 
         logger.info("Transaction adapter registration completed with {} adapter(s)", adaptersRegistered)
-        BootstrapProgress.completePhase(5, "Registered $adaptersRegistered transaction adapter(s)")
+        BootstrapProgress.completePhase(4, "Registered $adaptersRegistered transaction adapter(s)")
     } catch (e: Exception) {
         logger.warn("Error registering transaction adapters: {}", e.message)
-        BootstrapProgress.failPhase(5, e)
+        BootstrapProgress.failPhase(4, e)
         throw e
     }
 

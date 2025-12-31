@@ -237,9 +237,13 @@ class KatalystApplicationBuilder(
 
         return runCatching {
             val metadataClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigMetadata")
+            val metadataInstance = metadataClass.kotlin.objectInstance
+                ?: runCatching { metadataClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null) }
+                    .getOrNull()
+                ?: throw IllegalStateException("ConfigMetadata INSTANCE not available for discovery")
             val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
             @Suppress("UNCHECKED_CAST")
-            val loaders = discoverMethod.invoke(null, componentScanPackages) as List<*>
+            val loaders = discoverMethod.invoke(metadataInstance, componentScanPackages) as List<*>
 
             if (loaders.isEmpty()) {
                 logger.debug("No ServiceConfigLoader implementations discovered for automatic database loading")
@@ -273,26 +277,35 @@ class KatalystApplicationBuilder(
         val provider = serverConfigurationResolver.bootstrapConfigProvider() ?: return
         if (componentScanPackages.isEmpty()) return
 
-        runCatching {
-            val metadataClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigMetadata")
-            val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
-            val validateMethod = metadataClass.getMethod(
-                "validateLoaders",
-                io.github.darkryh.katalyst.core.config.ConfigProvider::class.java,
-                List::class.java
-            )
+        val metadataClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigMetadata")
+        val metadataInstance = metadataClass.kotlin.objectInstance
+            ?: runCatching { metadataClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null) }
+                .getOrNull()
+            ?: throw IllegalStateException("ConfigMetadata INSTANCE not available for validation")
+        val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
+        val validateMethod = metadataClass.getMethod(
+            "validateLoaders",
+            io.github.darkryh.katalyst.core.config.ConfigProvider::class.java,
+            List::class.java
+        )
 
-            @Suppress("UNCHECKED_CAST")
-            val loaders = discoverMethod.invoke(null, componentScanPackages) as List<*>
-            if (loaders.isEmpty()) {
-                logger.debug("No ServiceConfigLoader implementations discovered for validation")
-                return
-            }
+        @Suppress("UNCHECKED_CAST")
+        val loaders = discoverMethod.invoke(metadataInstance, componentScanPackages) as List<*>
+        if (loaders.isEmpty()) {
+            logger.debug("No ServiceConfigLoader implementations discovered for validation")
+            return
+        }
 
-            logger.info("Validating {} ServiceConfigLoader implementation(s)", loaders.size)
-            validateMethod.invoke(null, provider, loaders)
-        }.onFailure { error ->
-            logger.debug("Service config validation skipped: {}", error.message)
+        logger.info("Validating {} ServiceConfigLoader implementation(s)", loaders.size)
+        try {
+            validateMethod.invoke(metadataInstance, provider, loaders)
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            val cause = e.cause ?: e
+            logger.error("Service config validation failed: {}", cause.message)
+            throw cause
+        } catch (e: Exception) {
+            logger.error("Service config validation failed: {}", e.message)
+            throw e
         }
     }
 
@@ -429,15 +442,15 @@ fun katalystApplication(
         val embeddedServer = serverConfig.engine ?: throw IllegalStateException("There is not specified embeddedServer")
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
-            // PHASE 7: Ktor Engine Startup
-            BootstrapProgress.startPhase(7)
+            // PHASE 6: Ktor Engine Startup
+            BootstrapProgress.startPhase(6)
 
             runCatching {
                 val wrappedApplication = application.wrap(serverConfig.applicationWrapper)
                 builder.configureApplication(wrappedApplication)
             }.onFailure { error ->
                 logger.error("Failed to configure Ktor application", error)
-                BootstrapProgress.failPhase(7, error)
+                BootstrapProgress.failPhase(6, error)
                 throw error
             }
         }
@@ -446,8 +459,27 @@ fun katalystApplication(
             val elapsedSeconds = (System.nanoTime() - bootStart) / 1_000_000_000.0
             logger.info("Katalyst started in {} s (actual)", String.format("%.3f", elapsedSeconds))
 
-            BootstrapProgress.completePhase(7, "Ktor server is listening")
+            BootstrapProgress.completePhase(6, "Ktor server is listening")
             BootstrapProgress.displayProgressSummary()
+
+            // Display any aggregated startup warnings before completion banner
+            StartupWarnings.display()
+
+            logger.info("")
+            logger.info("╔════════════════════════════════════════════════════╗")
+            logger.info("║ ✓ APPLICATION STARTUP COMPLETE                     ║")
+            logger.info("║                                                    ║")
+            logger.info("║ Status: READY FOR TRAFFIC                          ║")
+            logger.info("║                                                    ║")
+            logger.info("║ ✓ Ktor server listening                            ║")
+            logger.info("║ ✓ All components instantiated                      ║")
+            logger.info("║ ✓ Database operational & schema ready              ║")
+            logger.info("║ ✓ Transaction adapters configured                  ║")
+            logger.info("║ ✓ Scheduler tasks registered & running             ║")
+            logger.info("║ ✓ All initializer hooks completed                  ║")
+            logger.info("║                                                    ║")
+            logger.info("╚════════════════════════════════════════════════════╝")
+            logger.info("")
         }
 
         embeddedServer.monitor.subscribe(ApplicationStopping) {
@@ -464,25 +496,6 @@ fun katalystApplication(
         }
 
         embeddedServer.start(wait = true)
-
-        // Display any aggregated startup warnings before completion banner
-        StartupWarnings.display()
-
-        logger.info("")
-        logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ ✓ APPLICATION STARTUP COMPLETE                     ║")
-        logger.info("║                                                    ║")
-        logger.info("║ Status: READY FOR TRAFFIC                          ║")
-        logger.info("║                                                    ║")
-        logger.info("║ ✓ Ktor server listening                            ║")
-        logger.info("║ ✓ All components instantiated                      ║")
-        logger.info("║ ✓ Database operational & schema ready              ║")
-        logger.info("║ ✓ Transaction adapters configured                  ║")
-        logger.info("║ ✓ Scheduler tasks registered & running             ║")
-        logger.info("║ ✓ All initializer hooks completed                  ║")
-        logger.info("║                                                    ║")
-        logger.info("╚════════════════════════════════════════════════════╝")
-        logger.info("")
 
     } catch (e: Exception) {
         logger.error("Failed to start Katalyst application", e)

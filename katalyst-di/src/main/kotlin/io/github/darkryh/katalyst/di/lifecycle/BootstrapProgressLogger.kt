@@ -49,13 +49,12 @@ class BootstrapProgressLogger {
     }
 
     private fun initializePhases() {
-        phases.add(PhaseInfo(1, "Koin DI Bootstrap", "Component scanning and initialization"))
-        phases.add(PhaseInfo(2, "Scheduler Method Discovery", "Discovering scheduled methods"))
-        phases.add(PhaseInfo(3, "Component Discovery", "Auto-discovering repositories, services, components"))
-        phases.add(PhaseInfo(4, "Database Schema Initialization", "Creating database schema"))
-        phases.add(PhaseInfo(5, "Transaction Adapter Registration", "Registering transaction adapters"))
-        phases.add(PhaseInfo(6, "Application Initialization Hooks", "Running custom initializers"))
-        phases.add(PhaseInfo(7, "Ktor Engine Startup", "Starting HTTP server"))
+        phases.add(PhaseInfo(1, "Koin DI Bootstrap", "Loading modules and starting DI context"))
+        phases.add(PhaseInfo(2, "Component Discovery & Registration", "Auto-discovering and validating components"))
+        phases.add(PhaseInfo(3, "Database Schema Initialization", "Creating database schema"))
+        phases.add(PhaseInfo(4, "Transaction Adapter Registration", "Registering transaction adapters"))
+        phases.add(PhaseInfo(5, "Application Initialization Hooks", "Running startup validators and initializers"))
+        phases.add(PhaseInfo(6, "Ktor Engine Startup", "Starting HTTP server"))
     }
 
     /**

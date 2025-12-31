@@ -1,6 +1,12 @@
 package io.github.darkryh.katalyst.di.exception
 
+import io.github.darkryh.katalyst.di.error.CircularDependencyError
+import io.github.darkryh.katalyst.di.error.FeatureProvidedTypeError
+import io.github.darkryh.katalyst.di.error.MissingDependencyError
+import io.github.darkryh.katalyst.di.error.SecondaryTypeBindingError
+import io.github.darkryh.katalyst.di.error.UninstantiableTypeError
 import io.github.darkryh.katalyst.di.error.ValidationError
+import io.github.darkryh.katalyst.di.error.WellKnownPropertyError
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -201,6 +207,40 @@ class FatalDependencyValidationException(
     }
 
     /**
+     * Generates a concise summary report for fatal validation failures.
+     *
+     * @param maxErrors Maximum number of errors to include in the summary.
+     */
+    fun generateSummaryReport(maxErrors: Int = 5): String = buildString {
+        val totalErrors = validationErrors.size
+        val missingDeps = validationErrors.count { it is MissingDependencyError }
+        val cycles = validationErrors.count { it is CircularDependencyError }
+        val uninstantiable = validationErrors.count { it is UninstantiableTypeError }
+        val featureMissing = validationErrors.count { it is FeatureProvidedTypeError }
+        val secondaryMissing = validationErrors.count { it is SecondaryTypeBindingError }
+        val propertyMissing = validationErrors.count { it is WellKnownPropertyError }
+
+        appendLine()
+        appendLine("✗ FATAL DEPENDENCY INJECTION VALIDATION ERROR")
+        appendLine("Total errors: $totalErrors")
+        appendLine("Breakdown: missing=$missingDeps, cycles=$cycles, uninstantiable=$uninstantiable, " +
+            "featureMissing=$featureMissing, secondaryMissing=$secondaryMissing, wellKnownMissing=$propertyMissing")
+        appendLine()
+        appendLine("Top issues:")
+
+        validationErrors.take(maxErrors).forEachIndexed { index, error ->
+            appendLine("  ${index + 1}. ${formatSummaryLine(error)}")
+        }
+
+        if (totalErrors > maxErrors) {
+            appendLine("  ... and ${totalErrors - maxErrors} more")
+        }
+
+        appendLine()
+        appendLine("Set KATALYST_DI_VERBOSE=true to display the full report.")
+    }
+
+    /**
      * Logs the detailed error report to the logger and returns it.
      *
      * This is useful for ensuring the detailed report appears in application logs
@@ -212,6 +252,41 @@ class FatalDependencyValidationException(
         println(report)  // Also print to stdout for visibility
         return report
     }
+
+    /**
+     * Logs a concise or detailed report depending on verbosity settings.
+     *
+     * @param maxErrors Maximum number of errors to include in the summary.
+     * @param verbose When true, prints the full detailed report.
+     */
+    fun printReport(maxErrors: Int = 5, verbose: Boolean = isVerboseEnabled()): String {
+        val report = if (verbose) generateDetailedReport() else generateSummaryReport(maxErrors)
+        logger.error(report)
+        println(report)
+        return report
+    }
+
+    private fun formatSummaryLine(error: ValidationError): String =
+        when (error) {
+            is MissingDependencyError ->
+                "Missing dependency: ${error.component.simpleName} requires ${error.requiredType.simpleName} " +
+                    "(param '${error.parameterName}')"
+            is CircularDependencyError ->
+                "Circular dependency: ${error.cycle.joinToString(" -> ") { it.simpleName ?: "Unknown" }}"
+            is UninstantiableTypeError ->
+                "Uninstantiable: ${error.component.simpleName} - ${error.reason}"
+            is FeatureProvidedTypeError ->
+                "Missing feature: ${error.component.simpleName} requires ${error.requiredType.simpleName} " +
+                    "(feature '${error.featureName}')"
+            is SecondaryTypeBindingError ->
+                "Missing secondary binding: ${error.component.simpleName} requires ${error.requiredType.simpleName} " +
+                    "(param '${error.parameterName}')"
+            is WellKnownPropertyError ->
+                "Missing well-known property: ${error.component.simpleName}.${error.propertyName} " +
+                    "(${error.propertyType.simpleName})"
+            else ->
+                error.message
+        }
 
     companion object {
         private fun buildErrorMessage(errors: List<ValidationError>): String {
@@ -226,6 +301,12 @@ class FatalDependencyValidationException(
                 if (cycles > 0) append(" - $cycles circular dependencies")
                 if (uninstantiable > 0) append(" - $uninstantiable uninstantiable types")
             }
+        }
+
+        private fun isVerboseEnabled(): Boolean {
+            val env = System.getenv("KATALYST_DI_VERBOSE")?.equals("true", ignoreCase = true) == true
+            val prop = System.getProperty("katalyst.di.verbose")?.equals("true", ignoreCase = true) == true
+            return env || prop
         }
     }
 }
