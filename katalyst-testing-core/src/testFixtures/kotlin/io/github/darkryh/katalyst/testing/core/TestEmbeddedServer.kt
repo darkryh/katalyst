@@ -9,7 +9,6 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.ApplicationEngineFactory
 import io.ktor.server.engine.EngineConnectorConfig
 import io.ktor.server.engine.EmbeddedServer
-import io.ktor.server.engine.embeddedServer
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -37,8 +36,8 @@ class TestApplicationEngine(
 }
 
 class TestEngineFactory : ApplicationEngineFactory<TestApplicationEngine, ApplicationEngine.Configuration> {
-    override fun configuration(block: ApplicationEngine.Configuration.() -> Unit): ApplicationEngine.Configuration =
-        ApplicationEngine.Configuration().apply(block)
+    override fun configuration(configure: ApplicationEngine.Configuration.() -> Unit): ApplicationEngine.Configuration =
+        ApplicationEngine.Configuration().apply(configure)
 
     override fun create(
         environment: ApplicationEnvironment,
