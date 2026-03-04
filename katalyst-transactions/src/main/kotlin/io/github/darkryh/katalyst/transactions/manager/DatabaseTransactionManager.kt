@@ -21,6 +21,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
 import java.util.*
+import kotlin.reflect.KClass
 import kotlin.math.min
 import kotlin.math.pow
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager as ExposedTransactionManager
@@ -340,46 +341,50 @@ class DatabaseTransactionManager(
         attempt: Int,
         maxAttempts: Int
     ): Boolean {
-        // Don't retry if we've exhausted all attempts
-        if (attempt >= maxAttempts - 1) {
+        val isRetryable = shouldRetryException(
+            exception = exception,
+            retryPolicy = config.retryPolicy,
+            attempt = attempt,
+            maxAttempts = maxAttempts
+        )
+        if (!isRetryable && attempt >= maxAttempts - 1) {
             logger.debug("Maximum retry attempts (${maxAttempts}) reached")
-            return false
         }
-
-        // Check if exception is in non-retryable list
-        if (config.retryPolicy.nonRetryableExceptions.any { exception::class == it }) {
+        if (!isRetryable && exception.matchesAny(config.retryPolicy.nonRetryableExceptions)) {
             logger.debug("Exception ${exception::class.simpleName} is explicitly non-retryable")
-            return false
         }
-
-        // Check if exception is in explicitly retryable list
-        if (config.retryPolicy.retryableExceptions.any { exception::class == it }) {
+        if (isRetryable && exception.matchesAny(config.retryPolicy.retryableExceptions)) {
             logger.debug("Exception ${exception::class.simpleName} is explicitly retryable")
-            return true
         }
-
-        // Check if exception is a general transient error
-        val isTransient = exception.isTransient() || isDeadlockException(exception)
+        val isTransient = isRetryable && (
+            exception.isTransient() ||
+                exception.causeChain().filterIsInstance<Exception>().any { it.isTransient() } ||
+                isDeadlockException(exception) ||
+                exception.isTransientSqlConnectionIssue()
+            )
         if (isTransient) {
             logger.debug("Exception ${exception::class.simpleName} detected as transient error, retrying")
         }
-
-        return isTransient
+        return isRetryable
     }
 
     /**
      * Determines if an exception is a database deadlock.
      */
     private fun isDeadlockException(exception: Exception): Boolean {
-        return when (exception) {
-            is DeadlockException -> true
-            is SQLException -> {
-                val errorCode = exception.errorCode
-                // MySQL deadlock: 1213, lock timeout: 1205
-                // PostgreSQL deadlock: 40P01
-                errorCode in setOf(1213, 1205, 40001)
+        return exception.causeChain().any { cause ->
+            when (cause) {
+                is DeadlockException -> true
+                is SQLException -> {
+                    val sqlState = cause.sqlState
+                    val errorCode = cause.errorCode
+                    // MySQL deadlock: 1213, lock timeout: 1205
+                    // PostgreSQL deadlock: 40P01, serialization: 40001
+                    errorCode in setOf(1213, 1205) ||
+                        sqlState in setOf("40P01", "40001")
+                }
+                else -> false
             }
-            else -> false
         }
     }
 
@@ -444,3 +449,32 @@ class DatabaseTransactionManager(
         adapterRegistry.unregister(adapter)
     }
 }
+
+internal fun shouldRetryException(
+    exception: Exception,
+    retryPolicy: RetryPolicy,
+    attempt: Int,
+    maxAttempts: Int
+): Boolean {
+    if (attempt >= maxAttempts - 1) return false
+
+    // Non-retryable explicit rules must always win.
+    if (exception.matchesAny(retryPolicy.nonRetryableExceptions)) return false
+
+    if (exception.matchesAny(retryPolicy.retryableExceptions)) return true
+
+    return exception.isTransient() ||
+        exception.causeChain().filterIsInstance<Exception>().any { it.isTransient() } ||
+        exception.isTransientSqlConnectionIssue()
+}
+
+internal fun Throwable.causeChain(): Sequence<Throwable> = generateSequence(this) { it.cause }
+
+internal fun Throwable.matchesAny(types: Set<KClass<out Exception>>): Boolean =
+    causeChain().any { cause -> cause is Exception && types.any { it.isInstance(cause) } }
+
+internal fun Throwable.isTransientSqlConnectionIssue(): Boolean =
+    causeChain().filterIsInstance<SQLException>().any { sqlException ->
+        val state = sqlException.sqlState ?: return@any false
+        state == "08003" || state.startsWith("08") || state.startsWith("40")
+    }
