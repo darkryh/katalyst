@@ -11,6 +11,10 @@ dependencyResolutionManagement {
 }
 
 includeBuild("build-logic")
+includeBuild("samples")
+if (providers.gradleProperty("includeBoshiComposite").orNull == "true") {
+    includeBuild("projects/boshi")
+}
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 

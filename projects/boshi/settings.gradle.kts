@@ -17,7 +17,9 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    includeBuild("../../../katalyst")
+    if (gradle.parent == null) {
+        includeBuild("../../../katalyst")
+    }
     repositories {
         google {
             mavenContent {

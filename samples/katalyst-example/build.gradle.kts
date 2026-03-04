@@ -75,3 +75,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+// IntelliJ/Tooling may request this task as a project-scoped path.
+// Keep a local alias so :katalyst-example:prepareKotlinBuildScriptModel resolves.
+tasks.register("prepareKotlinBuildScriptModel") {
+    dependsOn(":prepareKotlinBuildScriptModel")
+}

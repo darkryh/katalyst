@@ -7,7 +7,9 @@ plugins {
 }
 
 dependencyResolutionManagement {
-    includeBuild("../../katalyst")
+    if (gradle.parent == null) {
+        includeBuild("../../katalyst")
+    }
     @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
