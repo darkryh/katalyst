@@ -28,7 +28,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
 ```
 
 Key points:
-- `database(...)` accepts any `DatabaseConfig` (HikariCP + Exposed 1.0.0-rc-4). Load it with `ServiceConfigLoader` before DI starts.
+- `database(...)` accepts any `DatabaseConfig` (HikariCP + Exposed 1.1.1). Load it with `ServiceConfigLoader` before DI starts.
 - `scanPackages` is the discovery hook; everything else is interface-driven (no annotations).
 - Feature toggles (`enable*`) opt your app into migrations, scheduler, events, websockets, and YAML-backed ConfigProvider.
 - Deferred constructor injection is supported (`Provider<T>`, `Lazy<T>`, `() -> T`) with optional `@InjectNamed`.
@@ -68,7 +68,7 @@ Behavior:
 
 ## Persistence & Transactions
 
-Katalyst wraps Exposed 1.0.0-rc-4 + HikariCP:
+Katalyst wraps Exposed 1.1.1 + HikariCP:
 - Tables extend `LongIdTable` (or friends) and implement `Table<Id, Entity>` to map rows and assign entities.
 - Repositories implement `CrudRepository<Id, Entity>`; custom queries use the Exposed DSL (`selectAll`, `eq`, `and`, etc.).
 - Use `transactionManager.transaction { ... }` in Services to ensure DB writes and EventBus publications are atomic; migrations may use raw `transaction(database)` where appropriate.
