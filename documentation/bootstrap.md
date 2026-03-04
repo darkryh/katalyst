@@ -23,7 +23,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
     enableMigrations()                    // OPTIONAL: run Katalyst migrations at startup
     enableScheduler()                     // OPTIONAL: register Scheduler jobs discovered in scanPackages
     enableWebSockets()                    // OPTIONAL: auto-install websocket routes
-    enableEvents { withBus(true) }        // OPTIONAL: enable EventBus + client features
+    enableEvents()                        // OPTIONAL: enable local transactional EventBus
 }
 ```
 

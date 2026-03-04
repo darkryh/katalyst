@@ -187,7 +187,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         appendLine("       // Check for features like:")
                         appendLine("       enableConfigProvider()     // For ConfigProvider")
                         appendLine("       enableScheduler()           // For SchedulerService")
-                        appendLine("       enableEvents { withBus(true) }  // For EventBus")
+                        appendLine("       enableEvents()                   // For EventBus")
                         appendLine("   }")
                         appendLine()
                         appendLine("2. If '${dependency.type.simpleName}' is a custom service/repository:")

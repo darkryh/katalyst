@@ -11,7 +11,7 @@ Katalyst’s scanner wires components any time you implement the right interface
 | Scheduler | `katalyst-scheduler` | `SchedulerService`, `ScheduleConfig`, `SchedulerJobHandle` |
 | Events | `katalyst-events-*` | `EventBus`, `EventHandler`, Flow observers |
 | HTTP & WebSockets | `katalyst-ktor`, `katalyst-websockets` | `katalystRouting`, `katalystMiddleware`, `katalystWebSockets`, `ktInject` |
-| Messaging | `katalyst-messaging`, `katalyst-messaging-amqp` | **In development** |
+| Events (local only) | `katalyst-events`, `katalyst-events-bus` | `EventBus`, `EventHandler`, Flow observers |
 
 ## Components
 
@@ -174,7 +174,3 @@ For the complete decision framework and detailed patterns, see [configuration.md
 ## Persistence
 
 Tables (`Table<Id, Entity>`) and repositories (`CrudRepository<Id, Entity>`) are covered in detail in [documentation/persistence.md](persistence.md). Once defined under the scanned packages, they are injected just like any other dependency.
-
-## Messaging / AMQP
-
-The messaging modules are **in development**. When released, implement their handler interfaces and register them under the scanned packages; the scanner will wire them like other components.

@@ -155,8 +155,6 @@ katalyst-ktor-engine = { module = "io.github.darkryh.katalyst:katalyst-ktor-engi
 katalyst-ktor-engine-netty = { module = "io.github.darkryh.katalyst:katalyst-ktor-engine-netty" }
 katalyst-events = { module = "io.github.darkryh.katalyst:katalyst-events" }
 katalyst-events-bus = { module = "io.github.darkryh.katalyst:katalyst-events-bus" }
-katalyst-events-transport = { module = "io.github.darkryh.katalyst:katalyst-events-transport" }
-katalyst-events-client = { module = "io.github.darkryh.katalyst:katalyst-events-client" }
 katalyst-testing-core = { module = "io.github.darkryh.katalyst:katalyst-testing-core" }
 katalyst-testing-ktor = { module = "io.github.darkryh.katalyst:katalyst-testing-ktor" }
 

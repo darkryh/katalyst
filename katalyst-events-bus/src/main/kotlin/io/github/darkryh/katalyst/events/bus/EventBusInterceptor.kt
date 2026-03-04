@@ -11,7 +11,7 @@ import io.github.darkryh.katalyst.events.DomainEvent
  * - Perform tracing
  * - Validate events
  * - Abort publishing based on conditions
- * - Coordinate with external systems (in EventClient layer)
+ * - Coordinate with local publishing hooks
  *
  * **Usage:**
  *
@@ -44,7 +44,7 @@ interface EventBusInterceptor {
      *
      * **Important:** This is called before handlers, not after.
      * For coordinating with external systems (like EventMessagingPublisher),
-     * use afterPublish() or implement as EventClient interceptor instead.
+     * use afterPublish() for post-publish actions.
      *
      * @param event The event about to be published
      * @return InterceptResult.Continue to proceed, or InterceptResult.Abort to stop

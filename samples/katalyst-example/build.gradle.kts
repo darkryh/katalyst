@@ -29,12 +29,6 @@ dependencies {
     // Event system
     implementation("io.github.darkryh.katalyst:katalyst-events")
     implementation("io.github.darkryh.katalyst:katalyst-events-bus")
-    implementation("io.github.darkryh.katalyst:katalyst-events-transport")
-    implementation("io.github.darkryh.katalyst:katalyst-events-client")
-
-    // Messaging abstraction
-    /*implementation("io.github.darkryh.katalyst:katalyst-messaging")
-    implementation("io.github.darkryh.katalyst:katalyst-messaging-amqp"))*/
 
     // testing katalyst
     testImplementation("io.github.darkryh.katalyst:katalyst-testing-core")

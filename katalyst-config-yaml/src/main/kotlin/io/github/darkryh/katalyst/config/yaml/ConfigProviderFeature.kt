@@ -124,7 +124,7 @@ class ConfigProviderFeature : KatalystFeature {
  *     scanPackages("io.github.darkryh.katalyst.example")
  *
  *     enableConfigProvider()  // Register ConfigProvider feature
- *     enableEvents { withBus(true) }
+ *     enableEvents()
  *     enableScheduler()
  *     enableWebSockets()
  * }

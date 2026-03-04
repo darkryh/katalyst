@@ -50,8 +50,6 @@ dependencies {
     // Events
     implementation("io.github.darkryh.katalyst:katalyst-events:$katalystVersion")
     implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-events-transport:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-events-client:$katalystVersion")
 
     // Testing helpers
     testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalystVersion")
@@ -87,9 +85,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
     scanPackages("io.github.darkryh.katalyst.example") // REQUIRED
     enableServerConfiguration()
     enableConfigProvider()
-    enableEvents {
-        withBus(true)
-    }
+    enableEvents()
     enableMigrations()
     enableScheduler()
     enableWebSockets()
@@ -191,4 +187,4 @@ Commands:
 ./gradlew :katalyst-example:koverHtmlReport  # coverage report (build/reports/kover/html/index.html)
 ```
 
-Need deeper walkthroughs? Check the `documentation/` folder. Messaging/AMQP modules will follow the same patterns once they graduate from development.
+Need deeper walkthroughs? Check the `documentation/` folder.

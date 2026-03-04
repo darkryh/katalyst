@@ -1,3 +1,6 @@
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
 rootProject.name = "katalyst"
 
 dependencyResolutionManagement {
@@ -31,18 +34,9 @@ include(":katalyst-config-spi")
 
 include(":katalyst-migrations")
 
-// Messaging abstraction and implementations
-include(":katalyst-messaging")
-include(":katalyst-messaging-amqp")
-
-// New Event System Modules (4-layer architecture)
-// Layer 1: Event domain + Bus (local pub/sub)
+// Event domain + local bus
 include(":katalyst-events")
 include(":katalyst-events-bus")
-
-// Layer 2: Transport (serialization + routing) + Client (public API)
-include(":katalyst-events-transport")
-include(":katalyst-events-client")
 
 include(":katalyst-transactions")
 include(":katalyst-testing-core")

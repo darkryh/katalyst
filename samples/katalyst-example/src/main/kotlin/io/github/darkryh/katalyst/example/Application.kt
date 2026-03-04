@@ -1,8 +1,8 @@
 package io.github.darkryh.katalyst.example
 
-import io.github.darkryh.katalyst.client.feature.enableEvents
 import io.github.darkryh.katalyst.config.yaml.enableConfigProvider
 import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
+import io.github.darkryh.katalyst.di.feature.enableEvents
 import io.github.darkryh.katalyst.di.katalystApplication
 import io.github.darkryh.katalyst.example.infra.config.DbConfigImpl
 import io.github.darkryh.katalyst.ktor.engine.netty.embeddedServer
@@ -62,9 +62,7 @@ fun main(args: Array<String>) = katalystApplication(args) {
     enableConfigProvider()
 
     // Step 6: Enable optional features
-    enableEvents {
-        withBus(true)
-    }
+    enableEvents()
     enableMigrations()
     enableScheduler()
     enableWebSockets()

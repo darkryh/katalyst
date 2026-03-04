@@ -12,7 +12,7 @@ dependencies {
     api(kotlin("test"))
 
     implementation(project(":katalyst-config-yaml"))
-    implementation(project(":katalyst-events-client"))
+    implementation(project(":katalyst-events-bus"))
     implementation(project(":katalyst-migrations"))
     implementation(project(":katalyst-scheduler"))
     implementation(project(":katalyst-websockets"))

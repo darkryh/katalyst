@@ -16,7 +16,7 @@ Katalyst’s testing helpers mirror your production wiring so you can run unit, 
 | Unit tests (config, validators) | Inject `FakeConfigProvider`, no DI bootstrap required |
 | Service/repository/event/scheduler integration | `katalystTestEnvironment` |
 | HTTP/WebSocket end-to-end | `katalystTestApplication` |
-| External systems (Postgres, RabbitMQ) | `katalystTestEnvironment` + Testcontainers, override config via builder |
+| External systems (Postgres) | `katalystTestEnvironment` + Testcontainers, override config via builder |
 
 ## katalystTestEnvironment
 
@@ -98,9 +98,6 @@ Because the environment loads the real `EventBus`/`SchedulerService`, you can te
 - Kover is applied at the root; run `./gradlew :module:koverHtmlReport` for HTML output (`build/reports/kover/html/index.html`).
 - Add `./gradlew :module:test` and coverage commands to CI to keep the harness green.
 
-## Messaging / AMQP
-
-Messaging modules are **in development**. Once available, spin up the relevant broker (e.g., RabbitMQ Testcontainer) and use the same testing helpers to override configuration and drive end-to-end messaging flows.
 
 ## Reference tests (from `samples/katalyst-example`)
 

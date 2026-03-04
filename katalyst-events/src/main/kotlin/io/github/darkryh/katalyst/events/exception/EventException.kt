@@ -18,7 +18,7 @@ open class EventException(
  *
  * Indicates that an event could not be published because it failed validation.
  *
- * **Usage in EventClient:**
+ * **Usage in Event Publishing:**
  *
  * ```kotlin
  * try {

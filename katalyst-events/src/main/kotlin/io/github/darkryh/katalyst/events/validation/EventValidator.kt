@@ -41,9 +41,9 @@ import kotlin.reflect.KClass
  * }
  * ```
  *
- * **Integration with EventClient:**
+ * **Integration with EventBus Publishing Flows:**
  *
- * Validators are invoked by EventClient before publishing:
+ * Validators can be invoked by application services before publishing:
  *
  * ```kotlin
  * val result = eventClient.publish(userCreatedEvent)

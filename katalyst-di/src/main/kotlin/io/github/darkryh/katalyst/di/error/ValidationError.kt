@@ -252,7 +252,7 @@ data class FeatureProvidedTypeError(
             appendLine("Enable the feature in katalystApplication { }:")
             append("    ")
             append(when (featureName) {
-                "events" -> "enableEvents { withBus(true) }"
+                "events" -> "enableEvents()"
                 "scheduler" -> "enableScheduler()"
                 "migrations" -> "enableMigrations()"
                 "websockets" -> "enableWebSockets()"
