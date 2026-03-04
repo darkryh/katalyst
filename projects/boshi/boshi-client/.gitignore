@@ -1,12 +1,6 @@
-*.iml
 .kotlin
-.gradle
-**/build/
 xcuserdata
-!src/**/build/
 local.properties
-.idea
-.DS_Store
 captures
 .externalNativeBuild
 .cxx
@@ -17,3 +11,4 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+!src/**/build/
