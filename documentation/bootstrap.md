@@ -28,9 +28,10 @@ fun main(args: Array<String>) = katalystApplication(args) {
 ```
 
 Key points:
-- `database(...)` accepts any `DatabaseConfig` (HikariCP + Exposed 1.0.0-rc-3). Load it with `ServiceConfigLoader` before DI starts.
+- `database(...)` accepts any `DatabaseConfig` (HikariCP + Exposed 1.0.0-rc-4). Load it with `ServiceConfigLoader` before DI starts.
 - `scanPackages` is the discovery hook; everything else is interface-driven (no annotations).
 - Feature toggles (`enable*`) opt your app into migrations, scheduler, events, websockets, and YAML-backed ConfigProvider.
+- Deferred constructor injection is supported (`Provider<T>`, `Lazy<T>`, `() -> T`) with optional `@InjectNamed`.
 
 ## Discovery Signals (no annotations)
 
@@ -39,11 +40,35 @@ Place classes under the scanned packages and implement the right interfaces/retu
 - `CrudRepository<Id, Entity>` and `Table<Id, Entity>` – repositories and tables are auto-registered; Exposed/Hikari wiring happens for you.
 - Scheduler registrations – functions returning `SchedulerJobHandle` (e.g., `scheduler.scheduleCron(...)`) are picked up automatically.
 - `EventHandler<T>` – handlers are bound to the in-process `EventBus`; events published inside `transactionManager.transaction { }` are delayed until commit.
+- `ApplicationInitializer` – multiple implementations are allowed and executed deterministically by `order`.
 - Ktor DSL entry points – `katalystRouting`, `katalystMiddleware`, `katalystWebSockets` functions are installed automatically; use `ktInject<T>()` inside them for constructor-free wiring.
+
+## Application Initializers
+
+You can split bootstrap work across multiple `ApplicationInitializer` implementations.
+
+```kotlin
+class CacheWarmupInitializer : ApplicationInitializer {
+    override val initializerId: String = "cacheWarmup"
+    override val order: Int = 50
+    override suspend fun onApplicationReady(koin: Koin) { /* ... */ }
+}
+
+class MetricsInitializer : ApplicationInitializer {
+    override val initializerId: String = "metrics"
+    override val order: Int = 60
+    override suspend fun onApplicationReady(koin: Koin) { /* ... */ }
+}
+```
+
+Behavior:
+- Multiple initializers can coexist (multibinding).
+- Execution order is deterministic (`order` ascending, then class-name tie-break).
+- Strict collision behavior remains for non-allowlisted secondary interfaces.
 
 ## Persistence & Transactions
 
-Katalyst wraps Exposed 1.0.0-rc-3 + HikariCP:
+Katalyst wraps Exposed 1.0.0-rc-4 + HikariCP:
 - Tables extend `LongIdTable` (or friends) and implement `Table<Id, Entity>` to map rows and assign entities.
 - Repositories implement `CrudRepository<Id, Entity>`; custom queries use the Exposed DSL (`selectAll`, `eq`, `and`, etc.).
 - Use `transactionManager.transaction { ... }` in Services to ensure DB writes and EventBus publications are atomic; migrations may use raw `transaction(database)` where appropriate.

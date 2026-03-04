@@ -3,12 +3,15 @@ package io.github.darkryh.katalyst.di.analysis
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.di.injection.InjectNamed
+import io.github.darkryh.katalyst.di.injection.internal.parseDependencyRequest
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import kotlinx.serialization.Serializable
 import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.jvmErasure
@@ -111,7 +114,7 @@ class DependencyAnalyzer(
 
             // Create edges for all dependencies
             val dependencyTypes = dependencies
-                .filter { !it.isOptional }  // Only required dependencies form edges
+                .filter { !it.isOptional && !it.isDeferred }  // Deferred dependencies do not block startup order
                 .map { it.type }
                 .toSet()
 
@@ -183,11 +186,15 @@ class DependencyAnalyzer(
         return constructor.parameters
             .filter { it.kind.name == "VALUE" }  // Only VALUE parameters, not receivers
             .map { param ->
-                val paramType = param.type.jvmErasure
+                val request = parseDependencyRequest(param.type)
                 Dependency(
-                    type = paramType,
+                    type = request.targetType,
+                    requestedType = request.requestedType,
                     parameterName = param.name ?: "param",
                     isOptional = param.isOptional,
+                    isDeferred = request.isDeferred,
+                    injectionMode = request.mode,
+                    qualifierName = param.findAnnotation<InjectNamed>()?.value,
                     source = DependencySource.CONSTRUCTOR
                 )
             }

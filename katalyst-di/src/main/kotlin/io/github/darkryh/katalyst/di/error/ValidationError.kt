@@ -53,11 +53,22 @@ data class MissingDependencyError(
     val parameterName: String,
     val isInKoin: Boolean,
     val isDiscoverable: Boolean,
+    val requestedType: KClass<*> = requiredType,
+    val isDeferred: Boolean = false,
+    val qualifierName: String? = null,
     override val suggestion: String = ""
 ) : ValidationError() {
     override val message: String
-        get() = "Component ${component.simpleName} requires ${requiredType.simpleName} " +
+        get() {
+            val requestedLabel = if (isDeferred) {
+                "${requestedType.simpleName}<${requiredType.simpleName}>"
+            } else {
+                requiredType.simpleName
+            }
+            val qualifierSuffix = qualifierName?.let { " with qualifier '$it'" } ?: ""
+            return "Component ${component.simpleName} requires $requestedLabel$qualifierSuffix " +
                 "for parameter '$parameterName' which is not available"
+        }
 
     override val context: String
         get() {

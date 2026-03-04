@@ -33,6 +33,27 @@ production. For HTTP tests, `katalystTestApplication { ... }` installs all
 auto-discovered Ktor modules before executing requests so the pipeline mirrors
 runtime behavior.
 
+## New DI/Persistence Patterns
+
+Latest Katalyst alpha adds two useful patterns you can adopt in the sample:
+
+1. Deferred DI resolution (DSL-first style):
+```kotlin
+class ExampleService(
+    private val mailerProvider: Provider<MailerService>,
+    private val auditClient: Lazy<AuditClient>
+) : Service
+```
+
+2. Managed JDBC bootstrap/custom SQL:
+```kotlin
+class ExampleBootstrap(private val sqlExecutor: SqlExecutor) : Service {
+    suspend fun prepare() = sqlExecutor.executeBatch(
+        listOf("CREATE TABLE IF NOT EXISTS sample_marker (id INT PRIMARY KEY)")
+    )
+}
+```
+
 ## Running the suite
 
 ```bash

@@ -9,6 +9,10 @@ import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
+import io.github.darkryh.katalyst.di.injection.InjectNamed
+import io.github.darkryh.katalyst.di.injection.Provider
+import io.github.darkryh.katalyst.di.injection.internal.KoinProvider
+import io.github.darkryh.katalyst.di.injection.internal.parseDependencyRequest
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
@@ -37,6 +41,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
@@ -155,10 +160,13 @@ class AutoBindingRegistrar(
             if (parameter.kind != KParameter.Kind.VALUE) return@forEach
             if (parameter.isOptional) return@forEach
 
-            val dependencyType = parameter.type.classifier as? KClass<*>
-                ?: throw IllegalStateException("Unsupported constructor parameter ${parameter.name} in ${target.qualifiedName}")
-
-            val resolved = resolveDependency(dependencyType, parameter.type, target)
+            val qualifierName = parameter.findAnnotation<InjectNamed>()?.value
+            val resolved = resolveDependency(
+                kType = parameter.type,
+                owner = target,
+                parameterName = parameter.name,
+                qualifierName = qualifierName
+            )
             args[parameter] = resolved
         }
 
@@ -183,17 +191,99 @@ class AutoBindingRegistrar(
      * @return The resolved dependency instance, or null for nullable types
      * @throws DependencyInjectionException if a required dependency cannot be resolved
      */
-    private fun resolveDependency(type: KClass<*>, kType: KType, owner: KClass<*>): Any? =
-        when (type) {
-            Koin::class -> koin
-            else -> koin.getFromKoinOrNull(type) ?: if (kType.isMarkedNullable) {
-                null
-            } else {
-                throw DependencyInjectionException(
-                    "Cannot resolve dependency ${type.qualifiedName} for ${owner.qualifiedName}"
-                )
+    private fun resolveDependency(
+        kType: KType,
+        owner: KClass<*>,
+        parameterName: String?,
+        qualifierName: String?
+    ): Any? {
+        val request = parseDependencyRequest(kType)
+
+        return when (request.mode) {
+            io.github.darkryh.katalyst.di.analysis.InjectionMode.DIRECT -> {
+                when (request.targetType) {
+                    Koin::class -> koin
+                    else -> resolveImmediateDependency(
+                        type = request.targetType,
+                        owner = owner,
+                        nullable = request.targetNullable,
+                        qualifierName = qualifierName
+                    )
+                }
+            }
+
+            io.github.darkryh.katalyst.di.analysis.InjectionMode.PROVIDER -> {
+                @Suppress("UNCHECKED_CAST")
+                KoinProvider {
+                    resolveRuntimeDependency(
+                        type = request.targetType,
+                        owner = owner,
+                        parameterName = parameterName,
+                        nullable = request.targetNullable,
+                        qualifierName = qualifierName
+                    ) as Any
+                } as Provider<*>
+            }
+
+            io.github.darkryh.katalyst.di.analysis.InjectionMode.LAZY -> {
+                lazy {
+                    resolveRuntimeDependency(
+                        type = request.targetType,
+                        owner = owner,
+                        parameterName = parameterName,
+                        nullable = request.targetNullable,
+                        qualifierName = qualifierName
+                    )
+                }
+            }
+
+            io.github.darkryh.katalyst.di.analysis.InjectionMode.FUNCTION -> {
+                {
+                    resolveRuntimeDependency(
+                        type = request.targetType,
+                        owner = owner,
+                        parameterName = parameterName,
+                        nullable = request.targetNullable,
+                        qualifierName = qualifierName
+                    )
+                }
             }
         }
+    }
+
+    private fun resolveImmediateDependency(
+        type: KClass<*>,
+        owner: KClass<*>,
+        nullable: Boolean,
+        qualifierName: String?
+    ): Any? {
+        return koin.getFromKoinOrNull(type, qualifierName) ?: if (nullable) {
+            null
+        } else {
+            val qualifierHint = qualifierName?.let { " with qualifier '$it'" } ?: ""
+            throw DependencyInjectionException(
+                "Cannot resolve dependency ${type.qualifiedName}$qualifierHint for ${owner.qualifiedName}"
+            )
+        }
+    }
+
+    private fun resolveRuntimeDependency(
+        type: KClass<*>,
+        owner: KClass<*>,
+        parameterName: String?,
+        nullable: Boolean,
+        qualifierName: String?
+    ): Any? {
+        return koin.getFromKoinOrNull(type, qualifierName) ?: if (nullable) {
+            null
+        } else {
+            val param = parameterName?.let { " for parameter '$it'" } ?: ""
+            val qualifierHint = qualifierName?.let { " with qualifier '$it'" } ?: ""
+            throw DependencyInjectionException(
+                "Cannot resolve deferred dependency ${type.qualifiedName}$qualifierHint$param in ${owner.qualifiedName}"
+            )
+        }
+    }
 
     /**
      * Performs property injection for well-known framework services.
@@ -714,10 +804,13 @@ class AutoBindingRegistrar(
  * @param kClass The class type to retrieve
  * @return The instance if found, null otherwise
  */
-private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
+private fun Koin.getFromKoinOrNull(kClass: KClass<*>, qualifierName: String? = null): Any? =
     try {
         @Suppress("UNCHECKED_CAST")
-        get(kClass as KClass<Any>, qualifier = null) as Any
+        get(
+            kClass as KClass<Any>,
+            qualifier = qualifierName?.let { org.koin.core.qualifier.named(it) }
+        ) as Any
     } catch (_: Exception) {
         null
     }

@@ -9,6 +9,7 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 1. **[bootstrap.md](bootstrap.md)** – How to start a Katalyst app (engine, database, `scanPackages`, optional features like scheduler/events/websockets/config provider) using the same DSL as the sample and Boshi server.
 
 2. **[auto-wiring.md](auto-wiring.md)** – How components, services, scheduler jobs, events, routes, middleware, websockets, and **configuration objects** are automatically discovered and injected.
+   - Includes deferred injection patterns (`Provider<T>`, `Lazy<T>`, `() -> T`) and optional qualifier annotation (`@InjectNamed`).
 
 3. **[configuration.md](configuration.md)** – Complete guide to Katalyst's configuration system:
    - **`ServiceConfigLoader`** – Manual pattern for infrastructure config (database, ports, TLS)
@@ -18,9 +19,10 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 
 ### Persistence & Database
 
-4. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 1.0.0-rc-3 JDBC integration, imports, transaction patterns, DSL reference.
+4. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 1.0.0-rc-4 JDBC integration, imports, transaction patterns, DSL reference.
 
 5. **[persistence.md](persistence.md)** – Defining tables, repositories, and custom queries with Exposed/Hikari.
+   - Includes managed JDBC access with `SqlExecutor` for bootstrap DDL and custom SQL.
 
 ### Testing
 
@@ -35,7 +37,10 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 | Add service configuration (APIs, messaging, feature flags) | [configuration.md](configuration.md) → **AutomaticServiceConfigLoader** |
 | Add infrastructure config (database, ports, etc.) | [configuration.md](configuration.md) → **ServiceConfigLoader** |
 | Wire components, services, routes | [auto-wiring.md](auto-wiring.md) |
+| Use deferred injection (`Provider<T>`, `Lazy<T>`, `() -> T`) | [auto-wiring.md](auto-wiring.md) → **Deferred Injection Patterns** |
+| Use qualifier disambiguation for multiple impls | [auto-wiring.md](auto-wiring.md) → **Qualifiers (Optional)** |
 | Work with databases and repositories | [persistence.md](persistence.md) |
+| Run managed bootstrap/custom JDBC SQL | [persistence.md](persistence.md) → **Managed SQL Executor** |
 | Write tests and integration tests | [testing.md](testing.md) |
 | Understand full JDBC integration | [exposed-database-setup.md](exposed-database-setup.md) |
 

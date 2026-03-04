@@ -80,6 +80,49 @@ class AuthenticationService(
 }
 ```
 
+## Deferred Injection Patterns
+
+Katalyst supports deferred dependency resolution without leaving constructor-injection style.
+
+```kotlin
+import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.di.injection.Provider
+
+class NotificationOrchestrator(
+    private val realtimeGateway: Provider<RealtimeGateway>, // resolve when needed
+    private val auditClient: Lazy<AuditClient>,             // resolve once, then cache
+    private val clock: () -> ClockService                   // function-provider style
+) : Service {
+    suspend fun notifyNow() {
+        realtimeGateway.get().broadcast()
+        auditClient.value.record("notify")
+        clock().mark()
+    }
+}
+```
+
+When to use each:
+- `T` (direct): default for normal dependencies.
+- `Provider<T>`: runtime resolution, no caching.
+- `Lazy<T>`: defer and cache first resolution.
+- `() -> T`: lightweight provider syntax.
+
+Deferred dependencies are validated by DI, but they are not treated as hard startup-order edges.
+
+## Qualifiers (Optional)
+
+Use qualifiers only when multiple implementations of the same type are intentionally registered.
+
+```kotlin
+import io.github.darkryh.katalyst.di.injection.InjectNamed
+
+class PaymentService(
+    @InjectNamed("stripe") private val gateway: PaymentGateway
+) : Service
+```
+
+For most services, you should keep constructor injection type-only and annotation-free.
+
 ## Scheduler Jobs
 
 Returning `SchedulerJobHandle` from a parameterless function marks it as a scheduler registration point. The scheduler module (`katalyst-scheduler`) invokes the method at startup and manages the underlying coroutine job.

@@ -21,13 +21,23 @@ data class Dependency(
     val parameterName: String,
     val isOptional: Boolean = false,
     val isResolvable: Boolean = false,
-    val source: DependencySource = DependencySource.CONSTRUCTOR
+    val source: DependencySource = DependencySource.CONSTRUCTOR,
+    val requestedType: KClass<*> = type,
+    val isDeferred: Boolean = false,
+    val injectionMode: InjectionMode = InjectionMode.DIRECT,
+    val qualifierName: String? = null
 ) {
     /**
      * Get a human-readable description of this dependency.
      */
     fun describe(): String = when (source) {
-        DependencySource.CONSTRUCTOR -> "constructor parameter '$parameterName' of type ${type.simpleName}"
+        DependencySource.CONSTRUCTOR -> {
+            val requested = requestedType.simpleName ?: requestedType.qualifiedName ?: "Unknown"
+            val target = type.simpleName ?: type.qualifiedName ?: "Unknown"
+            val deferredSuffix = if (isDeferred) " (deferred -> $target)" else ""
+            val qualifierSuffix = qualifierName?.let { " [qualifier=$it]" } ?: ""
+            "constructor parameter '$parameterName' of type $requested$deferredSuffix$qualifierSuffix"
+        }
         DependencySource.WELL_KNOWN_PROPERTY -> "well-known property '$parameterName' of type ${type.simpleName}"
         DependencySource.SECONDARY_TYPE -> "secondary type binding ${type.simpleName}"
     }

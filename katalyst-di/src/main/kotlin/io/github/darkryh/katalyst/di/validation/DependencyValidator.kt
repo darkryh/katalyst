@@ -177,11 +177,17 @@ class DependencyValidator(private val graph: DependencyGraph) {
                 if (!dependency.isResolvable) {
                     val isInKoin = dependency.type in graph.koinProvidedTypes
                     val isDiscoverable = dependency.type in graph.nodes
+                    val requiredLabel = when {
+                        dependency.isDeferred ->
+                            "${dependency.requestedType.simpleName}<${dependency.type.simpleName}>"
+                        else -> dependency.type.simpleName ?: "Unknown"
+                    }
+                    val qualifierHint = dependency.qualifierName?.let { " (qualifier='$it')" } ?: ""
 
                     val suggestion = buildString {
                         appendLine("To fix this missing dependency, try one of these approaches:")
                         appendLine()
-                        appendLine("1. If '${dependency.type.simpleName}' is from a feature module:")
+                        appendLine("1. If '$requiredLabel' is from a feature module:")
                         appendLine("   Add the feature enabler to Application.kt:")
                         appendLine("   fun main(args: Array<String>) = katalystApplication(args) {")
                         appendLine("       // Check for features like:")
@@ -190,7 +196,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         appendLine("       enableEvents()                   // For EventBus")
                         appendLine("   }")
                         appendLine()
-                        appendLine("2. If '${dependency.type.simpleName}' is a custom service/repository:")
+                        appendLine("2. If '$requiredLabel' is a custom service/repository:")
                         appendLine("   Make sure it extends Service, Component, or CrudRepository:")
                         appendLine("   class ${dependency.type.simpleName} : Service {")
                         appendLine("       // implementation")
@@ -204,6 +210,10 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         appendLine("       single { ${dependency.type.simpleName}() }")
                         appendLine("   }")
                         appendLine("   enableCustomModule(myModule)")
+                        if (dependency.isDeferred) {
+                            appendLine()
+                            appendLine("5. For runtime/deferred dependencies, inject Provider<T> or Lazy<T>.")
+                        }
                     }
 
                     val error = MissingDependencyError(
@@ -212,15 +222,20 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         parameterName = dependency.parameterName,
                         isInKoin = isInKoin,
                         isDiscoverable = isDiscoverable,
+                        requestedType = dependency.requestedType,
+                        isDeferred = dependency.isDeferred,
+                        qualifierName = dependency.qualifierName,
                         suggestion = suggestion
                     )
 
                     errors.add(error)
                     logger.error(
-                        "Missing dependency: {} requires {} (from {})",
+                        "Missing dependency: {} requires {}{} (from {}, deferred={})",
                         componentType.simpleName,
                         dependency.type.simpleName,
-                        dependency.source
+                        qualifierHint,
+                        dependency.source,
+                        dependency.isDeferred
                     )
                 }
             }

@@ -110,6 +110,16 @@ class JwtSettingsService(config: ConfigProvider) : Service {
 
 Keep secrets out of source control, rely on `${ENV:default}` interpolation, and use `ConfigLoaders.loadRequired*` helpers so misconfigurations fail fast during bootstrap.
 
+## DI Deferred Dependency Validation
+
+Katalyst DI supports deferred constructor injection (`Provider<T>`, `Lazy<T>`, `() -> T`) and keeps validation strict:
+
+- The target type `T` is still validated during dependency analysis.
+- Missing deferred targets fail fast with actionable diagnostics.
+- Deferred edges are not treated as hard startup-order edges, which helps represent runtime-resolved/cycle-breaking flows safely.
+
+If multiple implementations exist, use `@InjectNamed("...")` on the constructor parameter to disambiguate.
+
 ---
 
 ## AutomaticServiceConfigLoader: Automatic Discovery & Injection

@@ -7,6 +7,16 @@ Katalyst gives you a ready-to-use Ktor backend stack: automatic DI, YAML configu
 - **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
 - **Latest version:** see [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the current release.
 
+## What's New (Latest Alpha)
+
+- Deferred DI injection primitives in `katalyst-di`:
+  - `Provider<T>` for runtime resolution
+  - `Lazy<T>` constructor injection
+  - `() -> T` function-provider injection
+  - Optional `@InjectNamed("...")` for qualifier disambiguation
+- `ApplicationInitializer` supports multi-binding with deterministic execution order.
+- Managed low-level SQL API in `katalyst-persistence` via `SqlExecutor` (`executeUpdate`, `query`, `queryOne`, `executeBatch`), reusing active transaction connections when present.
+
 ## Add Katalyst to your project (Gradle)
 
 Use the published artifacts from Maven Central (see badge above or [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the latest version).

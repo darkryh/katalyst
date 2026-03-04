@@ -103,6 +103,44 @@ fun findDormantAccounts(): List<AuthAccountEntity> =
         .map(::map)
 ```
 
+## Managed SQL Executor
+
+For bootstrap preconditions or custom JDBC operations outside repository/Exposed convenience, use `SqlExecutor` from `katalyst-persistence`.
+
+```kotlin
+class SchemaBootstrap(
+    private val sqlExecutor: SqlExecutor
+) : Service {
+    suspend fun ensurePreconditions() {
+        sqlExecutor.executeBatch(
+            listOf(
+                "CREATE TABLE IF NOT EXISTS feature_flags (key VARCHAR(80) PRIMARY KEY, enabled BOOLEAN)",
+                "INSERT INTO feature_flags (key, enabled) VALUES ('new_ui', FALSE)"
+            )
+        )
+    }
+}
+```
+
+Common operations:
+
+```kotlin
+val affected = sqlExecutor.executeUpdate(
+    "UPDATE auth_accounts SET status = ? WHERE id = ?",
+    listOf("active", accountId)
+)
+
+val emails = sqlExecutor.query(
+    "SELECT email FROM auth_accounts WHERE status = ?",
+    listOf("active")
+) { row -> row.getString("email") }
+```
+
+Behavior:
+- Uses Katalyst-managed datasource/pool (no raw `DriverManager` required).
+- Reuses the current Exposed transaction connection when called inside an active transaction.
+- Outside transaction contexts, runs with managed pooled connections and commit/rollback handling.
+
 ## Testing Repositories
 
 `katalystTestEnvironment` wires repositories the same way as production. Seed data using repositories or Exposed DSL inside a transaction from the environment's `DatabaseTransactionManager`.
