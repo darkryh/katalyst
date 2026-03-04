@@ -51,6 +51,14 @@ class DatabaseFactory private constructor(
     private val dataSource: HikariDataSource
 ) : AutoCloseable {
 
+    /**
+     * Creates a managed SQL executor backed by this factory's datasource.
+     *
+     * The returned executor reuses the current Exposed transaction connection when available,
+     * otherwise it opens pooled connections from this factory.
+     */
+    fun createSqlExecutor(): SqlExecutor = ManagedSqlExecutor(dataSource)
+
     companion object {
         private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
 

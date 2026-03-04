@@ -52,6 +52,13 @@ fun databaseModule(config: DatabaseConfig) = module {
         DatabaseTransactionManager(factory.database)
     }
 
+    // Register managed SQL executor for low-level JDBC scenarios
+    single<SqlExecutor> {
+        logger.debug("Creating managed SqlExecutor")
+        val factory = get<DatabaseFactory>()
+        factory.createSqlExecutor()
+    }
+
     // Register OperationLog implementation backed by the shared database
     single<OperationLog> {
         logger.debug("Creating OperationLogRepository")
