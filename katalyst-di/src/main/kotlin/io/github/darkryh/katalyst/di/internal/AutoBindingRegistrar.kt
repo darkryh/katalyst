@@ -7,6 +7,8 @@ import io.github.darkryh.katalyst.core.persistence.Table
 import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
@@ -606,8 +608,13 @@ class AutoBindingRegistrar(
      * dependency injection by any of the component's interfaces.
      *
      * **Collision Detection:**
+     * By default secondary type bindings are strict single-owner mappings.
      * If a secondary type is already bound to a different primary type, this method
      * throws a [DependencyInjectionException] to fail-fast on ambiguous bindings.
+     *
+     * Selected lifecycle extension points (such as [ApplicationInitializer]) are treated
+     * as multibinding types and are tracked via dedicated registries instead of Koin
+     * secondary key mappings.
      *
      * @param instance The component instance to register
      * @param primaryType The primary class type for registration
@@ -625,8 +632,10 @@ class AutoBindingRegistrar(
             secondaryTypes.joinToString { it.qualifiedName ?: it.simpleName.orEmpty() }
         )
 
+        val (multiBindingTypes, singleBindingTypes) = secondaryTypes.partition { it in multiBindingSecondaryTypes }
+
         // Check for secondary type collisions BEFORE registering
-        secondaryTypes.forEach { type ->
+        singleBindingTypes.forEach { type ->
             val existingOwner = secondaryTypeOwners[type]
             if (existingOwner != null && existingOwner != primaryType) {
                 throw DependencyInjectionException(
@@ -648,8 +657,12 @@ class AutoBindingRegistrar(
         }
 
         // Track ownership of secondary types
-        secondaryTypes.forEach { type ->
+        singleBindingTypes.forEach { type ->
             secondaryTypeOwners[type] = primaryType
+        }
+
+        if (instance is ApplicationInitializer) {
+            ApplicationInitializerRegistry.register(instance)
         }
 
         val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
@@ -660,7 +673,7 @@ class AutoBindingRegistrar(
             qualifier = null,
             definition = { instance },
             kind = Kind.Singleton,
-            secondaryTypes = secondaryTypes
+            secondaryTypes = singleBindingTypes
         )
 
         val factory = SingleInstanceFactory(definition)
@@ -668,9 +681,16 @@ class AutoBindingRegistrar(
 
         runCatching {
             koin.instanceRegistry.saveMapping(true, primaryKey, factory, logWarning = false)
-            secondaryTypes.forEach { type ->
+            singleBindingTypes.forEach { type ->
                 val key = indexKey(type, definition.qualifier, scopeQualifier)
                 koin.instanceRegistry.saveMapping(true, key, factory, logWarning = false)
+            }
+            if (multiBindingTypes.isNotEmpty()) {
+                logger.debug(
+                    "Skipping Koin secondary mapping for multibinding types on {}: {}",
+                    primaryType.simpleName,
+                    multiBindingTypes.joinToString { it.simpleName.orEmpty() }
+                )
             }
             logger.debug("Registered {} as {} in Koin", primaryType.qualifiedName, primaryKey)
             logger.trace(
@@ -705,6 +725,10 @@ private fun Koin.getFromKoinOrNull(kClass: KClass<*>): Any? =
 private val schedulerServiceKClass: KClass<*>? = runCatching {
     Class.forName("io.github.darkryh.katalyst.services.service.SchedulerService").kotlin
 }.getOrNull()
+
+private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
+    ApplicationInitializer::class
+)
 
 /**
  * Wrapper for route function methods to enable ordered installation.

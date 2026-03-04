@@ -60,11 +60,19 @@ internal class InitializerRegistry(private val koin: Koin) {
             )
 
             // Discover feature-provided initializers from Koin
-            val discoveredInitializers = runCatching {
+            val koinInitializers = runCatching {
                 koin.getAll<ApplicationInitializer>()
             }.getOrElse { emptyList() }
+            val registryInitializers = ApplicationInitializerRegistry.getAll()
+            val discoveredInitializers = (registryInitializers + koinInitializers)
+                .distinctBy { it::class }
 
-            logger.debug("Discovered {} ApplicationInitializer(s) from Koin", discoveredInitializers.size)
+            logger.debug(
+                "Discovered {} ApplicationInitializer(s) (registry={}, koin={})",
+                discoveredInitializers.size,
+                registryInitializers.size,
+                koinInitializers.size
+            )
             discoveredInitializers.forEach { init ->
                 logger.debug("  Found: {} (order={})", init.initializerId, init.order)
             }
@@ -72,8 +80,7 @@ internal class InitializerRegistry(private val koin: Koin) {
             // Combine all initializers
             val initializers = (builtInInitializers + discoveredInitializers).toMutableList()
 
-            // Sort by order (lower first)
-            initializers.sortBy { it.order }
+            initializers.sortWith(initializerOrderComparator)
 
             logger.info("")
             logger.info("╔════════════════════════════════════════════════════╗")
@@ -144,3 +151,7 @@ internal class InitializerRegistry(private val koin: Koin) {
         }
     }
 }
+
+internal val initializerOrderComparator: Comparator<ApplicationInitializer> =
+    compareBy<ApplicationInitializer> { it.order }
+        .thenBy { it::class.qualifiedName ?: it::class.simpleName ?: "" }
