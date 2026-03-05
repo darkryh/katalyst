@@ -6,19 +6,24 @@ import io.github.darkryh.katalyst.transactions.config.BackoffStrategy
 import io.github.darkryh.katalyst.transactions.config.RetryPolicy
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
+import io.github.darkryh.katalyst.transactions.context.TransactionScopeContext
+import io.github.darkryh.katalyst.transactions.context.TransactionScopeState
 import io.github.darkryh.katalyst.transactions.exception.DeadlockException
 import io.github.darkryh.katalyst.transactions.exception.TransactionFailedException
 import io.github.darkryh.katalyst.transactions.exception.TransactionTimeoutException
 import io.github.darkryh.katalyst.transactions.exception.isTransient
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import io.github.darkryh.katalyst.transactions.workflow.CurrentWorkflowContext
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.slf4j.LoggerFactory
+import java.sql.Connection
 import java.sql.SQLException
 import java.util.*
 import kotlin.reflect.KClass
@@ -161,93 +166,144 @@ class DatabaseTransactionManager(
         config: TransactionConfig,
         block: suspend Transaction.() -> T
     ): T {
-        // If we're already inside an Exposed transaction, just reuse it instead of starting a new one.
+        val currentScope = currentCoroutineContext()[TransactionScopeContext]
+
+        // Join only when both scope and connection are still active/valid.
         val existingTransaction = ExposedTransactionManager.currentOrNull()
-        if (existingTransaction != null) {
-            logger.debug(
-                "Joining existing transaction context (workflowId={})",
-                workflowId ?: CurrentWorkflowContext.get() ?: "unknown"
-            )
-            return block(existingTransaction)
-        }
-
-        // Use provided workflowId or generate a new one
-        val txId = workflowId ?: UUID.randomUUID().toString()
-        logger.debug("Starting transaction with workflowId: {} (timeout: {})", txId, config.timeout)
-
-        // Set workflow context for auto-tracking
-        CurrentWorkflowContext.set(txId)
-
-        // Retry loop with backoff
-        var lastException: Exception? = null
-        val maxAttempts = config.retryPolicy.maxRetries + 1
-
-        repeat(maxAttempts) { attempt ->
-            try {
-                // Create transaction event context for queuing events during transaction
-                val transactionEventContext = TransactionEventContext()
-
-                // Execute with timeout
-                val result = withTimeoutOrNull(config.timeout) {
-                    executeTransactionBlock(
-                        txId,
-                        transactionEventContext,
-                        block
-                    )
-                }
-
-                return result ?: throw TransactionTimeoutException(
-                    message = "Transaction timeout after ${config.timeout}",
-                    transactionId = txId,
-                    attemptNumber = attempt,
-                    timeout = config.timeout
+        if (existingTransaction != null && currentScope != null && currentScope.state == TransactionScopeState.ACTIVE) {
+            if (!isTransactionJoinable(existingTransaction)) {
+                currentScope.state = TransactionScopeState.CLOSED
+                logger.warn(
+                    "Existing transaction scope found but connection is invalid/closed; starting a new root transaction " +
+                        "(workflowId={}, txScopeId={})",
+                    workflowId ?: currentScope.workflowId ?: CurrentWorkflowContext.get() ?: "unknown",
+                    currentScope.transactionId
                 )
-            } catch (e: Exception) {
-                lastException = e
-                val isRetryable = shouldRetry(e, config, attempt, maxAttempts)
-
-                if (isRetryable) {
-                    logger.warn(
-                        "Attempt {} failed for transaction {} - {}: {}. Retrying...",
-                        attempt + 1,
-                        txId,
-                        e::class.simpleName,
-                        e.message
-                    )
-
-                    if (attempt < maxAttempts - 1) {
-                        val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
-                        logger.debug("Waiting {}ms before retry", delayMs)
-                        delay(delayMs)
-                    }
-                } else {
-                    logger.error(
-                        "Non-retryable exception in transaction {} - {}: {}",
-                        txId,
-                        e::class.simpleName,
-                        e.message
-                    )
-                    throw e
-                }
-            } finally {
-                // Clear workflow context on last attempt
-                if (attempt == maxAttempts - 1) {
-                    CurrentWorkflowContext.clear()
+            } else {
+                currentScope.depth += 1
+                logger.debug(
+                    "Joining existing transaction context (workflowId={}, txScopeId={}, depth={})",
+                    workflowId ?: currentScope.workflowId ?: CurrentWorkflowContext.get() ?: "unknown",
+                    currentScope.transactionId,
+                    currentScope.depth
+                )
+                return try {
+                    block(existingTransaction)
+                } finally {
+                    currentScope.depth -= 1
                 }
             }
+        } else if (existingTransaction != null && currentScope == null) {
+            logger.warn(
+                "Exposed current transaction exists without scope context; treating as non-joinable and starting new root transaction " +
+                    "(workflowId={})",
+                workflowId ?: CurrentWorkflowContext.get() ?: "unknown"
+            )
+        } else if (existingTransaction != null && currentScope?.state != TransactionScopeState.ACTIVE) {
+            logger.warn(
+                "Exposed current transaction exists but scope state is {}; treating as non-joinable and starting new root transaction " +
+                    "(workflowId={}, txScopeId={})",
+                currentScope?.state,
+                workflowId ?: currentScope?.workflowId ?: CurrentWorkflowContext.get() ?: "unknown",
+                currentScope?.transactionId ?: "unknown"
+            )
         }
 
-        // All retries exhausted
-        CurrentWorkflowContext.clear()
-        throw when (lastException) {
-            is TransactionTimeoutException -> lastException
-            else -> TransactionFailedException(
-                message = "Transaction failed after $maxAttempts attempts",
-                transactionId = txId,
-                finalAttemptNumber = maxAttempts,
-                totalRetries = config.retryPolicy.maxRetries,
-                cause = lastException
-            )
+        val previousWorkflowId = CurrentWorkflowContext.get()
+        val resolvedWorkflowId = workflowId ?: previousWorkflowId ?: UUID.randomUUID().toString()
+        CurrentWorkflowContext.set(resolvedWorkflowId)
+
+        try {
+            // Retry loop with backoff
+            var lastException: Exception? = null
+            val maxAttempts = config.retryPolicy.maxRetries + 1
+
+            repeat(maxAttempts) { attempt ->
+                try {
+                    // Create transaction contexts for this attempt.
+                    val transactionEventContext = TransactionEventContext()
+                    val transactionScopeContext = TransactionScopeContext(
+                        transactionId = UUID.randomUUID().toString(),
+                        workflowId = resolvedWorkflowId
+                    )
+
+                    // Execute with timeout
+                    val result = withTimeoutOrNull(config.timeout) {
+                        executeTransactionBlock(
+                            txId = resolvedWorkflowId,
+                            transactionEventContext = transactionEventContext,
+                            transactionScopeContext = transactionScopeContext,
+                            block = block
+                        )
+                    }
+
+                    return result ?: throw TransactionTimeoutException(
+                        message = "Transaction timeout after ${config.timeout}",
+                        transactionId = resolvedWorkflowId,
+                        attemptNumber = attempt,
+                        timeout = config.timeout
+                    )
+                } catch (e: Exception) {
+                    lastException = e
+                    val isRetryable = shouldRetry(e, config, attempt, maxAttempts)
+
+                    if (isRetryable) {
+                        logger.warn(
+                            "Attempt {} failed for transaction {} - {}: {}. Retrying...",
+                            attempt + 1,
+                            resolvedWorkflowId,
+                            e::class.simpleName,
+                            e.message
+                        )
+
+                        if (attempt < maxAttempts - 1) {
+                            val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
+                            logger.debug("Waiting {}ms before retry", delayMs)
+                            delay(delayMs)
+                        }
+                    } else {
+                        logger.error(
+                            "Non-retryable exception in transaction {} - {}: {}",
+                            resolvedWorkflowId,
+                            e::class.simpleName,
+                            e.message
+                        )
+                        throw e
+                    }
+                }
+            }
+
+            // All retries exhausted
+            throw when (lastException) {
+                is TransactionTimeoutException -> lastException
+                else -> TransactionFailedException(
+                    message = "Transaction failed after $maxAttempts attempts",
+                    transactionId = resolvedWorkflowId,
+                    finalAttemptNumber = maxAttempts,
+                    totalRetries = config.retryPolicy.maxRetries,
+                    cause = lastException
+                )
+            }
+        } finally {
+            if (previousWorkflowId != null) {
+                CurrentWorkflowContext.set(previousWorkflowId)
+            } else {
+                CurrentWorkflowContext.clear()
+            }
+        }
+    }
+
+    internal fun isTransactionJoinable(transaction: JdbcTransaction): Boolean {
+        return try {
+            val rawConnection = transaction.connection.connection
+            val jdbcConnection = rawConnection as? Connection ?: return false
+            if (jdbcConnection.isClosed) {
+                return false
+            }
+            // Drivers can throw for isValid; treat that as "unknown but usable".
+            runCatching { jdbcConnection.isValid(1) }.getOrElse { true }
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -257,6 +313,7 @@ class DatabaseTransactionManager(
     private suspend fun <T> executeTransactionBlock(
         txId: String,
         transactionEventContext: TransactionEventContext,
+        transactionScopeContext: TransactionScopeContext,
         block: suspend Transaction.() -> T
     ): T {
         return try {
@@ -264,16 +321,20 @@ class DatabaseTransactionManager(
             logger.debug("Executing BEFORE_BEGIN adapters for workflow: {}", txId)
             adapterRegistry.executeAdapters(TransactionPhase.BEFORE_BEGIN, transactionEventContext)
 
-            // Phase 2-6: Execute the transaction with the event context
-            val result = withContext(transactionEventContext) {
+            // Phase 2-6: Execute the transaction with contexts
+            val result = withContext(transactionEventContext + transactionScopeContext) {
                 // Phase 2: AFTER_BEGIN adapters (within context)
                 logger.debug("Executing AFTER_BEGIN adapters")
                 adapterRegistry.executeAdapters(TransactionPhase.AFTER_BEGIN, transactionEventContext)
 
                 // DON'T pass dispatcher to preserve coroutine context inheritance
-                // The context element (transactionEventContext) must be inherited by the transaction block
+                // The context elements must be inherited by the transaction block
                 suspendTransaction(database) {
-                    logger.debug("Transaction context established, executing block")
+                    logger.debug(
+                        "Transaction context established, executing block (workflowId={}, txScopeId={})",
+                        txId,
+                        transactionScopeContext.transactionId
+                    )
                     val outcome = block()
 
                     // Phase 3: BEFORE_COMMIT_VALIDATION adapters (P0 Critical)
@@ -301,11 +362,13 @@ class DatabaseTransactionManager(
             // Phase 5: AFTER_COMMIT adapters (after transaction commits)
             logger.debug("Executing AFTER_COMMIT adapters")
             adapterRegistry.executeAdapters(TransactionPhase.AFTER_COMMIT, transactionEventContext)
+            transactionScopeContext.state = TransactionScopeState.COMPLETED
 
             logger.info("Transaction succeeded for workflow: {}", txId)
             result
         } catch (e: Exception) {
             logger.error("Transaction failed for workflow: {} - {}", txId, e.message, e)
+            transactionScopeContext.state = TransactionScopeState.ROLLED_BACK
 
             // Phase 5: ON_ROLLBACK adapters
             logger.debug("Executing ON_ROLLBACK adapters")
@@ -326,6 +389,8 @@ class DatabaseTransactionManager(
             }
 
             throw e
+        } finally {
+            transactionScopeContext.state = TransactionScopeState.CLOSED
         }
     }
 
