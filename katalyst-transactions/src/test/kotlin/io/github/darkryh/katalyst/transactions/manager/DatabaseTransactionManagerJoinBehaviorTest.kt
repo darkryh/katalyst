@@ -2,7 +2,9 @@ package io.github.darkryh.katalyst.transactions.manager
 
 import io.github.darkryh.katalyst.transactions.config.RetryPolicy
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
+import io.github.darkryh.katalyst.transactions.exception.TransactionTimeoutException
 import io.github.darkryh.katalyst.transactions.workflow.CurrentWorkflowContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -13,7 +15,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertNotEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class DatabaseTransactionManagerJoinBehaviorTest {
 
@@ -116,6 +121,82 @@ class DatabaseTransactionManagerJoinBehaviorTest {
 
         val closedTransaction = requireNotNull(transactionRef)
         assertFalse(manager.isTransactionJoinable(closedTransaction))
+    }
+
+    @Test
+    fun `nullable transaction result returns null without timeout retry`() = runBlocking {
+        val database = testDatabase("nullable_result_without_timeout")
+        val manager = DatabaseTransactionManager(database)
+        var attempts = 0
+
+        val result: String? = manager.transaction(
+            config = TransactionConfig(
+                retryPolicy = RetryPolicy(maxRetries = 2)
+            )
+        ) {
+            attempts++
+            null
+        }
+
+        assertNull(result)
+        assertEquals(1, attempts)
+        assertNull(CurrentWorkflowContext.get())
+    }
+
+    @Test
+    fun `real timeout still maps to TransactionTimeoutException and retries`() = runBlocking {
+        val database = testDatabase("real_timeout_retry")
+        val manager = DatabaseTransactionManager(database)
+        var attempts = 0
+
+        val exception = assertFailsWith<TransactionTimeoutException> {
+            manager.transaction(
+                config = TransactionConfig(
+                    timeout = 10.toDuration(DurationUnit.MILLISECONDS),
+                    retryPolicy = RetryPolicy(
+                        maxRetries = 1,
+                        backoffStrategy = io.github.darkryh.katalyst.transactions.config.BackoffStrategy.IMMEDIATE
+                    )
+                )
+            ) {
+                attempts++
+                delay(30)
+                "never"
+            }
+        }
+
+        assertTrue(exception.message?.contains("Transaction timeout") == true)
+        assertEquals(2, attempts)
+        assertNull(CurrentWorkflowContext.get())
+    }
+
+    @Test
+    fun `timeout on first attempt then nullable success returns null`() = runBlocking {
+        val database = testDatabase("timeout_then_nullable_success")
+        val manager = DatabaseTransactionManager(database)
+        var attempts = 0
+
+        val result: String? = manager.transaction(
+            config = TransactionConfig(
+                timeout = 20.toDuration(DurationUnit.MILLISECONDS),
+                retryPolicy = RetryPolicy(
+                    maxRetries = 1,
+                    backoffStrategy = io.github.darkryh.katalyst.transactions.config.BackoffStrategy.IMMEDIATE
+                )
+            )
+        ) {
+            attempts++
+            if (attempts == 1) {
+                delay(40)
+                "never"
+            } else {
+                null
+            }
+        }
+
+        assertNull(result)
+        assertEquals(2, attempts)
+        assertNull(CurrentWorkflowContext.get())
     }
 
     private fun testDatabase(name: String): Database {

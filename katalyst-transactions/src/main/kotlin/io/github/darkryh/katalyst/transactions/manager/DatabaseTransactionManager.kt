@@ -16,8 +16,9 @@ import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import io.github.darkryh.katalyst.transactions.workflow.CurrentWorkflowContext
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -227,8 +228,9 @@ class DatabaseTransactionManager(
                         workflowId = resolvedWorkflowId
                     )
 
-                    // Execute with timeout
-                    val result = withTimeoutOrNull(config.timeout) {
+                    // Use exception-based timeout detection so nullable transaction results
+                    // are not misclassified as timeouts.
+                    return withTimeout(config.timeout) {
                         executeTransactionBlock(
                             txId = resolvedWorkflowId,
                             transactionEventContext = transactionEventContext,
@@ -236,13 +238,40 @@ class DatabaseTransactionManager(
                             block = block
                         )
                     }
-
-                    return result ?: throw TransactionTimeoutException(
+                } catch (e: TimeoutCancellationException) {
+                    val timeoutException = TransactionTimeoutException(
                         message = "Transaction timeout after ${config.timeout}",
                         transactionId = resolvedWorkflowId,
                         attemptNumber = attempt,
-                        timeout = config.timeout
+                        timeout = config.timeout,
+                        cause = e
                     )
+                    lastException = timeoutException
+                    val isRetryable = shouldRetry(timeoutException, config, attempt, maxAttempts)
+
+                    if (isRetryable) {
+                        logger.warn(
+                            "Attempt {} failed for transaction {} - {}: {}. Retrying...",
+                            attempt + 1,
+                            resolvedWorkflowId,
+                            timeoutException::class.simpleName,
+                            timeoutException.message
+                        )
+
+                        if (attempt < maxAttempts - 1) {
+                            val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
+                            logger.debug("Waiting {}ms before retry", delayMs)
+                            delay(delayMs)
+                        }
+                    } else {
+                        logger.error(
+                            "Non-retryable exception in transaction {} - {}: {}",
+                            resolvedWorkflowId,
+                            timeoutException::class.simpleName,
+                            timeoutException.message
+                        )
+                        throw timeoutException
+                    }
                 } catch (e: Exception) {
                     lastException = e
                     val isRetryable = shouldRetry(e, config, attempt, maxAttempts)

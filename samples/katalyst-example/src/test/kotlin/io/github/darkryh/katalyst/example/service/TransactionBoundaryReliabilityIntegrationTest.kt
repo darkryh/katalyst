@@ -12,6 +12,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
@@ -95,6 +96,19 @@ class TransactionBoundaryReliabilityIntegrationTest {
 
             assertNotNull(reloaded, "Expected account to be readable in immediate follow-up transaction")
             assertTrue(reloaded.id == accountId)
+        }
+    }
+
+    @Test
+    fun `nullable repository lookup returns null without timeout misclassification`() = runBlocking {
+        val transactionManager = environment.get<DatabaseTransactionManager>()
+        val repository = environment.get<AuthAccountRepository>()
+
+        repeat(30) { index ->
+            val result = transactionManager.transaction {
+                repository.findByEmail("missing-$index-${System.currentTimeMillis()}@example.com")
+            }
+            assertNull(result, "Missing email lookup should return null instead of timeout/retry failure")
         }
     }
 }
