@@ -5,7 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(23)
+    jvmToolchain(21)
 }
 
 val libs = the<LibrariesForLibs>()
