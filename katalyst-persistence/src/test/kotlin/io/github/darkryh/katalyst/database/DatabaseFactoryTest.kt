@@ -119,7 +119,7 @@ class DatabaseFactoryTest {
         val config = createTestConfig()
 
         // When
-        val factory = DatabaseFactory.create(config, tables = emptyList())
+        val factory = DatabaseFactory.create(config)
 
         // Then
         assertNotNull(factory.database)
@@ -135,7 +135,8 @@ class DatabaseFactoryTest {
         val testTable = TestUsersTable
 
         // When
-        val factory = DatabaseFactory.create(config, tables = listOf(testTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(testTable)
 
         // Then - Verify table exists
         val tableExists = transaction(factory.database) {
@@ -163,7 +164,8 @@ class DatabaseFactoryTest {
         val tables = listOf(TestUsersTable, TestOrdersTable, TestProductsTable)
 
         // When
-        val factory = DatabaseFactory.create(config, tables = tables)
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(*tables.toTypedArray())
 
         // Then - Verify all tables exist
         val allTablesExist = transaction(factory.database) {
@@ -190,12 +192,11 @@ class DatabaseFactoryTest {
     fun `create should handle tables that already exist`() {
         // Given
         val config = createTestConfig()
-        val factory1 = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory1 = DatabaseFactory.create(config)
 
         // When - Create second factory with same table
         val factory2 = DatabaseFactory.create(
-            config.copy(url = config.url),  // Same database
-            tables = listOf(TestUsersTable)
+            config.copy(url = config.url)  // Same database
         )
 
         // Then - Should not throw exception
@@ -215,10 +216,8 @@ class DatabaseFactoryTest {
         val config = createTestConfig()
 
         // When
-        val factory = DatabaseFactory.create(
-            config,
-            tables = listOf(TestUsersTable, TestOrdersTable)
-        )
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(*listOf(TestUsersTable, TestOrdersTable).toTypedArray())
 
         // Then - Both tables should be usable
         transaction(factory.database) {
@@ -282,7 +281,8 @@ class DatabaseFactoryTest {
     fun `should support multiple concurrent transactions`() {
         // Given
         val config = createTestConfig()
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         // When - Execute multiple transactions
         val results = (1..5).map { index ->
@@ -348,7 +348,8 @@ class DatabaseFactoryTest {
     fun `database should support basic insert operations`() {
         // Given
         val config = createTestConfig()
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         // When
         transaction(factory.database) {
@@ -376,7 +377,8 @@ class DatabaseFactoryTest {
     fun `database should support basic select operations`() {
         // Given
         val config = createTestConfig()
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         transaction(factory.database) {
             TestUsersTable.insert {
@@ -407,7 +409,8 @@ class DatabaseFactoryTest {
     fun `database should support basic update operations`() {
         // Given
         val config = createTestConfig()
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         transaction(factory.database) {
             TestUsersTable.insert {
@@ -444,7 +447,8 @@ class DatabaseFactoryTest {
     fun `database should support basic delete operations`() {
         // Given
         val config = createTestConfig()
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         transaction(factory.database) {
             TestUsersTable.insert {
@@ -524,7 +528,8 @@ class DatabaseFactoryTest {
         val config = createTestConfig()
 
         // When - Create
-        val factory = DatabaseFactory.create(config, tables = listOf(TestUsersTable))
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(TestUsersTable)
 
         // When - Use
         transaction(factory.database) {
@@ -555,10 +560,8 @@ class DatabaseFactoryTest {
         val config = createTestConfig()
 
         // When - Create
-        val factory = DatabaseFactory.create(
-            config,
-            tables = listOf(TestUsersTable, TestOrdersTable)
-        )
+        val factory = DatabaseFactory.create(config)
+        factory.createTable(*listOf(TestUsersTable, TestOrdersTable).toTypedArray())
 
         // When - Use
         transaction(factory.database) {
