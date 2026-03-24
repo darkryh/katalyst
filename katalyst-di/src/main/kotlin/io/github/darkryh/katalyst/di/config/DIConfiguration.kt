@@ -7,17 +7,20 @@ import io.github.darkryh.katalyst.database.adapter.PersistenceTransactionAdapter
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.internal.ComponentRegistrationOrchestrator
+import io.github.darkryh.katalyst.di.internal.TableRegistry
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
+import io.github.darkryh.katalyst.di.lifecycle.InitializerRegistry
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
 import io.github.darkryh.katalyst.di.module.scannerDIModule
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
 import io.github.darkryh.katalyst.events.bus.adapter.EventsTransactionAdapter
+import io.github.darkryh.katalyst.transactions.config.TransactionConfig
+import io.github.darkryh.katalyst.transactions.config.TransactionIsolationLevel
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
@@ -26,6 +29,8 @@ import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 /**
  * Complete DI Configuration for the Katalyst Application.
@@ -191,7 +196,7 @@ fun bootstrapKatalystDI(
         // Use TableRegistry instead of koin.getAll() because:
         // - Koin's getAll<Any>() doesn't reliably return dynamically registered singletons
         // - TableRegistry provides guaranteed access to all discovered tables from Phase 3
-        val discoveredTables = io.github.darkryh.katalyst.di.internal.TableRegistry.getAll()
+        val discoveredTables = TableRegistry.getAll()
         logger.info("Discovered {} table(s) for initialization", discoveredTables.size)
 
         if (discoveredTables.isNotEmpty()) {
@@ -201,7 +206,7 @@ fun bootstrapKatalystDI(
             val exposedTables = discoveredTables.toTypedArray()
 
             // Create new DatabaseFactory with discovered tables
-            val databaseFactory = DatabaseFactory.create(databaseConfig, exposedTables.toList())
+            val databaseFactory = DatabaseFactory.create(databaseConfig)
 
             // Register it in Koin, replacing the one created by coreDIModule
             val databaseModule = module {
@@ -223,12 +228,26 @@ fun bootstrapKatalystDI(
                     val schemas = exposedTables
                         .mapNotNull { table -> table.schemaName?.let { Schema(it) } }
                         .distinct()
+                        .toTypedArray()
 
                     if (schemas.isNotEmpty()) {
-                        SchemaUtils.createSchema(*schemas.toTypedArray())
+                        databaseFactory.createSchema(*schemas, inBatch = schemas.size > 1)
+                        SchemaUtils.createSchema()
                         logger.info("Created {} schema(s) for discovered tables", schemas.size)
                     }
 
+                    if (exposedTables.isNotEmpty()) {
+                        databaseFactory.createTable(*exposedTables, inBatch = exposedTables.size > 1)
+                        logger.info("Created {} table(s)", exposedTables.size)
+                    }
+                }
+
+                transactionManager.transaction(
+                    config = TransactionConfig(
+                        timeout = 60.toDuration(DurationUnit.SECONDS),
+                        isolationLevel = TransactionIsolationLevel.READ_COMMITTED
+                    )
+                ) {
                     MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables, withLogs = true)
                     logger.info("Ensured missing tables/columns are created")
                 }
@@ -293,7 +312,7 @@ fun bootstrapKatalystDI(
     // This runs after all DI is complete and database is ready
     try {
         logger.info("Starting application initialization lifecycle...")
-        val registry = io.github.darkryh.katalyst.di.lifecycle.InitializerRegistry(koin)
+        val registry = InitializerRegistry(koin)
 
         // Must block - initialization must complete synchronously
         runBlocking {
