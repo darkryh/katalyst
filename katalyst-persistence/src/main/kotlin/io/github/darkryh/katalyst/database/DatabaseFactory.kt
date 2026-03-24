@@ -1,9 +1,10 @@
 package io.github.darkryh.katalyst.database
 
-import io.github.darkryh.katalyst.config.DatabaseConfig
-import io.github.darkryh.katalyst.database.DatabaseFactory.Companion.create
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.database.DatabaseFactory.Companion.create
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -66,12 +67,11 @@ class DatabaseFactory private constructor(
          * Creates a new DatabaseFactory with the given configuration.
          *
          * @param config The database configuration
-         * @param tables List of table schemas to create (can be empty if tables already exist)
          * @return DatabaseFactory instance
          * @throws IllegalArgumentException if config is invalid
          * @throws Exception if database connection fails
          */
-        fun create(config: DatabaseConfig, tables: List<Table> = emptyList()): DatabaseFactory {
+        fun create(config: DatabaseConfig): DatabaseFactory {
             logger.info("Initializing DatabaseFactory with URL: {}", config.url)
 
             // Configure HikariCP
@@ -109,23 +109,21 @@ class DatabaseFactory private constructor(
             // Create Exposed Database instance
             val database = Database.connect(dataSource)
             logger.info("Exposed Database connected successfully")
-
-            // Create tables if provided
-            if (tables.isNotEmpty()) {
-                transaction(database) {
-                    val schemas = tables.mapNotNull { it.schemaName }.distinct()
-                    if (schemas.isNotEmpty()) {
-                        SchemaUtils.createSchema(*schemas.map(::Schema).toTypedArray())
-                        logger.info("Created {} schema(s)", schemas.size)
-                    }
-
-                    SchemaUtils.create(*tables.toTypedArray())
-                    logger.info("Created {} table(s)", tables.size)
-                }
-            }
-
-            logger.info("DatabaseFactory initialization completed")
             return DatabaseFactory(database, dataSource)
+        }
+    }
+
+    @TestOnly
+    fun createSchema(vararg schema : Schema, inBatch: Boolean = false) {
+        transaction(database) {
+            SchemaUtils.createSchema(*schema, inBatch = inBatch)
+        }
+    }
+
+    @TestOnly
+    fun createTable(vararg table : Table, inBatch: Boolean = false) {
+        transaction(database) {
+            SchemaUtils.create(*table, inBatch = inBatch)
         }
     }
 
