@@ -1,7 +1,5 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import org.koin.core.Koin
-
 /**
  * Lifecycle hook interface for application initialization phases.
  *
@@ -47,7 +45,6 @@ interface ApplicationInitializer {
      * - Transaction adapters registered ✓
      * - Koin DI fully configured ✓
      *
-     * @param koin Fully-configured Koin instance
      */
-    suspend fun onApplicationReady(koin: Koin)
+    suspend fun onApplicationReady()
 }

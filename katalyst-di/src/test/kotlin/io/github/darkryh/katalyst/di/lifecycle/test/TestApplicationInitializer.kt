@@ -1,7 +1,6 @@
 package io.github.darkryh.katalyst.di.lifecycle.test
 
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
-import org.koin.core.Koin
 
 /**
  * Test fixture for ApplicationInitializer.
@@ -18,7 +17,7 @@ class TestApplicationInitializer(
 ) : ApplicationInitializer {
     override val initializerId: String = id
 
-    override suspend fun onApplicationReady(koin: Koin) {
+    override suspend fun onApplicationReady() {
         onReady()
     }
 }

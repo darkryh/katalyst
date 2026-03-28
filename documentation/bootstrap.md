@@ -51,13 +51,13 @@ You can split bootstrap work across multiple `ApplicationInitializer` implementa
 class CacheWarmupInitializer : ApplicationInitializer {
     override val initializerId: String = "cacheWarmup"
     override val order: Int = 50
-    override suspend fun onApplicationReady(koin: Koin) { /* ... */ }
+    override suspend fun onApplicationReady() { /* ... */ }
 }
 
 class MetricsInitializer : ApplicationInitializer {
     override val initializerId: String = "metrics"
     override val order: Int = 60
-    override suspend fun onApplicationReady(koin: Koin) { /* ... */ }
+    override suspend fun onApplicationReady() { /* ... */ }
 }
 ```
 

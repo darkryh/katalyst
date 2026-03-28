@@ -62,11 +62,10 @@ private class SecondFooImpl : FooContract
 
 private class FirstInitializer : ApplicationInitializer {
     override val initializerId: String = "FirstInitializer"
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
 
 private class SecondInitializer : ApplicationInitializer {
     override val initializerId: String = "SecondInitializer"
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
-

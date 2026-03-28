@@ -2,7 +2,6 @@ package io.github.darkryh.katalyst.di.lifecycle
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import org.koin.core.Koin
 
 class InitializerRegistryOrderingTest {
 
@@ -37,30 +36,29 @@ class InitializerRegistryOrderingTest {
 private class OrderMinus10Initializer : ApplicationInitializer {
     override val initializerId: String = "Order-10"
     override val order: Int = -10
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
 
 private class Order0Initializer : ApplicationInitializer {
     override val initializerId: String = "Order0"
     override val order: Int = 0
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
 
 private class Order10Initializer : ApplicationInitializer {
     override val initializerId: String = "Order10"
     override val order: Int = 10
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
 
 private class TieAInitializer : ApplicationInitializer {
     override val initializerId: String = "TieA"
     override val order: Int = 0
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
 
 private class TieBInitializer : ApplicationInitializer {
     override val initializerId: String = "TieB"
     override val order: Int = 0
-    override suspend fun onApplicationReady(koin: Koin) = Unit
+    override suspend fun onApplicationReady() = Unit
 }
-

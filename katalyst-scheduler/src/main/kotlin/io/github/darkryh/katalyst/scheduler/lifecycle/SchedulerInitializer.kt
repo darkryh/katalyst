@@ -5,10 +5,8 @@ import io.github.darkryh.katalyst.di.internal.ServiceRegistry
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerDiscoveryException
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerInvocationException
-import io.github.darkryh.katalyst.scheduler.exception.SchedulerServiceNotAvailableException
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException
 import io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle
-import org.koin.core.Koin
 import org.objectweb.asm.*
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KParameter
@@ -16,6 +14,11 @@ import kotlin.reflect.KVisibility
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.jvmErasure
+
+private data class SchedulerMethodCandidate(
+    val service: Service,
+    val method: kotlin.reflect.KFunction<*>
+)
 
 /**
  * Automatically discovers and invokes scheduler registration methods.
@@ -79,7 +82,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
     override val initializerId: String = "SchedulerInitializer"
     override val order: Int = -50
 
-    override suspend fun onApplicationReady(koin: Koin) {
+    override suspend fun onApplicationReady() {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
         logger.info("║ SCHEDULER DISCOVERY & REGISTRATION                ║")
@@ -88,24 +91,6 @@ internal class SchedulerInitializer : ApplicationInitializer {
         logger.info("")
 
         try {
-            // Check SchedulerService availability
-            logger.info("Checking SchedulerService availability...")
-            val schedulerAvailable = runCatching<Any> {
-                koin.get(getSchedulerServiceClass())
-            }.isSuccess
-
-            if (!schedulerAvailable) {
-                logger.warn("⚠ SchedulerService not available - scheduler disabled")
-                logger.info("")
-                logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ SCHEDULER SKIPPED: Scheduler not enabled        ║")
-                logger.info("╚════════════════════════════════════════════════════╝")
-                logger.info("")
-                // Log as debug, don't throw - scheduler is optional
-                logger.debug("SchedulerService not found in Koin, scheduler will not be initialized")
-                return
-            }
-            logger.info("✓ SchedulerService available")
             logger.info("✓ Database schema ready (validated by StartupValidator)")
 
             // Get all services from ServiceRegistry (populated during component discovery)
@@ -142,10 +127,10 @@ internal class SchedulerInitializer : ApplicationInitializer {
             }
 
             logger.info("Found {} candidate method(s):", candidates.size)
-            candidates.forEach { (service, method) ->
-                logger.info("  [Candidate] {}.{}()",
-                    service::class.simpleName, method.name)
-            }
+            candidates.groupBy { it.service::class.simpleName ?: "UnknownService" }
+                .forEach { (serviceName, methods) ->
+                    logger.info("  [Candidate] {} -> {}", serviceName, methods.map { it.method.name }.sorted())
+                }
             logger.info("")
 
             // Step 2: Validate candidates via bytecode analysis
@@ -163,10 +148,10 @@ internal class SchedulerInitializer : ApplicationInitializer {
             }
 
             logger.info("Validated {} method(s):", validatedMethods.size)
-            validatedMethods.forEach { (service, method) ->
-                logger.info("  [Valid] {}.{}()",
-                    service::class.simpleName, method.name)
-            }
+            validatedMethods.groupBy { it.service::class.simpleName ?: "UnknownService" }
+                .forEach { (serviceName, methods) ->
+                    logger.info("  [Valid] {} -> {}", serviceName, methods.map { it.method.name }.sorted())
+                }
             logger.info("")
 
             // Step 3: Invoke validated methods
@@ -174,7 +159,9 @@ internal class SchedulerInitializer : ApplicationInitializer {
             var successCount = 0
             var failureCount = 0
 
-            validatedMethods.forEach { (service, method) ->
+            validatedMethods.forEach { candidate ->
+                val service = candidate.service
+                val method = candidate.method
                 val signature = "${service::class.simpleName}.${method.name}()"
 
                 try {
@@ -238,8 +225,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
      */
     private fun discoverCandidateMethods(
         services: List<Service>
-    ): Map<Service, kotlin.reflect.KFunction<*>> {
-        val candidates = mutableMapOf<Service, kotlin.reflect.KFunction<*>>()
+    ): List<SchedulerMethodCandidate> {
+        val candidates = mutableListOf<SchedulerMethodCandidate>()
 
         services.forEach { service ->
             val serviceClass = service::class
@@ -271,11 +258,16 @@ internal class SchedulerInitializer : ApplicationInitializer {
                     isNotPrivate
                 }
                 .forEach { function ->
-                    candidates[service] = function
+                    candidates += SchedulerMethodCandidate(service, function)
                 }
         }
 
-        return candidates
+        return candidates.sortedWith(
+            compareBy<SchedulerMethodCandidate>(
+                { it.service::class.qualifiedName ?: it.service::class.simpleName ?: "" },
+                { it.method.name }
+            )
+        )
     }
 
     /**
@@ -290,11 +282,13 @@ internal class SchedulerInitializer : ApplicationInitializer {
      * but doesn't actually register a scheduler task.
      */
     private fun validateCandidatesByBytecode(
-        candidates: Map<Service, kotlin.reflect.KFunction<*>>
-    ): Map<Service, kotlin.reflect.KFunction<*>> {
-        val validated = mutableMapOf<Service, kotlin.reflect.KFunction<*>>()
+        candidates: List<SchedulerMethodCandidate>
+    ): List<SchedulerMethodCandidate> {
+        val validated = mutableListOf<SchedulerMethodCandidate>()
 
-        candidates.forEach { (service, method) ->
+        candidates.forEach { candidate ->
+            val service = candidate.service
+            val method = candidate.method
             val javaMethod = service::class.java.declaredMethods
                 .find { it.name == method.name }
                 ?: return@forEach
@@ -304,7 +298,7 @@ internal class SchedulerInitializer : ApplicationInitializer {
             }.getOrElse { false }
 
             if (isValid) {
-                validated[service] = method
+                validated += candidate
                 logger.debug("Method {}.{} passed bytecode validation",
                     service::class.simpleName, method.name)
             } else {
@@ -325,11 +319,6 @@ internal class SchedulerInitializer : ApplicationInitializer {
         }.getOrElse { false }
     }
 
-    private fun getSchedulerServiceClass(): kotlin.reflect.KClass<*> {
-        return runCatching {
-            Class.forName("io.github.darkryh.katalyst.scheduler.service.SchedulerService").kotlin
-        }.getOrNull() ?: throw IllegalStateException("SchedulerService class not found")
-    }
 }
 
 /**
@@ -346,7 +335,7 @@ internal object SchedulerMethodBytecodeValidator {
     /**
      * Known scheduler method names to look for in bytecode.
      */
-    private val SCHEDULER_METHOD_NAMES = setOf(
+    private val SCHEDULER_METHOD_PREFIXES = setOf(
         "scheduleCron",
         "schedule",
         "scheduleFixedDelay"
@@ -391,7 +380,7 @@ internal object SchedulerMethodBytecodeValidator {
                                 isInterface: Boolean
                             ) {
                                 // Check if calling scheduler method
-                                if (methodName in SCHEDULER_METHOD_NAMES &&
+                                if (SCHEDULER_METHOD_PREFIXES.any { methodName.startsWith(it) } &&
                                     owner.contains("SchedulerService")) {
                                     found = true
                                 }

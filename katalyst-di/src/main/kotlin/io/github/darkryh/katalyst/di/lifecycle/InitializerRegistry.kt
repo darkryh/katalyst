@@ -56,7 +56,7 @@ internal class InitializerRegistry(private val koin: Koin) {
 
             // Built-in initializers (always present)
             val builtInInitializers = mutableListOf<ApplicationInitializer>(
-                StartupValidator()
+                StartupValidator(koin.get())
             )
 
             // Discover feature-provided initializers from Koin
@@ -100,7 +100,7 @@ internal class InitializerRegistry(private val koin: Koin) {
                 logger.info("⏱  Starting: {}", initializer.initializerId)
 
                 runCatching {
-                    initializer.onApplicationReady(koin)
+                    initializer.onApplicationReady()
                 }.onFailure { e ->
                     val duration = System.currentTimeMillis() - startTime
 

@@ -2,7 +2,6 @@ package io.github.darkryh.katalyst.di.lifecycle
 
 import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.internal.TableRegistry
-import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 
 /**
@@ -17,7 +16,7 @@ import org.slf4j.LoggerFactory
  * The InitializerRegistry sorts by order and executes sequentially:
  * ```
  * initializers.sortBy { it.order }  // StartupValidator runs first
- * initializers.forEach { initializer.onApplicationReady(koin) }
+ * initializers.forEach { initializer.onApplicationReady() }
  * ```
  *
  * If StartupValidator throws ANY exception → InitializerRegistry catches it
@@ -41,13 +40,15 @@ import org.slf4j.LoggerFactory
  * - If we throw → subsequent initializers NEVER run
  * - If we return normally → schema is guaranteed valid
  */
-internal class StartupValidator : ApplicationInitializer {
+internal class StartupValidator(
+    private val txManager: DatabaseTransactionManager
+) : ApplicationInitializer {
     private val logger = LoggerFactory.getLogger("StartupValidator")
 
     override val initializerId: String = "StartupValidator"
     override val order: Int = -100
 
-    override suspend fun onApplicationReady(koin: Koin) {
+    override suspend fun onApplicationReady() {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
         logger.info("║ STARTUP VALIDATION (FAIL-FAST)                    ║")
@@ -58,7 +59,6 @@ internal class StartupValidator : ApplicationInitializer {
         try {
             // 1. Verify DatabaseTransactionManager
             logger.info("Step 1: Checking DatabaseTransactionManager...")
-            val txManager = koin.get<DatabaseTransactionManager>()
             logger.info("  ✓ DatabaseTransactionManager available")
 
             // 2. Test database connection (FAIL-FAST on error)
