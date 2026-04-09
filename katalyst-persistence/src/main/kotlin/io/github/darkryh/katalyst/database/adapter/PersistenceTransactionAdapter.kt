@@ -34,38 +34,38 @@ class PersistenceTransactionAdapter : TransactionAdapter {
     override suspend fun onPhase(phase: TransactionPhase, context: TransactionEventContext) {
         when (phase) {
             TransactionPhase.BEFORE_BEGIN -> {
-                logger.debug("Preparing database connection for transaction")
+                logger.trace("Preparing database connection for transaction")
                 // Initialize connection pool, validation, etc.
                 // Connection is already managed by Exposed's newSuspendedTransaction
             }
             TransactionPhase.AFTER_BEGIN -> {
-                logger.debug("Transaction started, validating connection")
+                logger.trace("Transaction started, validating connection")
                 // Log transaction ID, validate isolation level
                 // Connection is now active and within transaction context
             }
             TransactionPhase.BEFORE_COMMIT_VALIDATION -> {
-                logger.debug("Before commit validation phase - persistence no-op")
+                logger.trace("Before commit validation phase - persistence no-op")
                 // No-op for persistence adapter
                 // Other adapters (e.g., Events) handle critical validation
                 // NEW - P0: Event Publishing Validation
             }
             TransactionPhase.BEFORE_COMMIT -> {
-                logger.debug("Preparing to commit transaction")
+                logger.trace("Preparing to commit transaction")
                 // Final validation, flush pending writes
                 // Still within transaction context
             }
             TransactionPhase.AFTER_COMMIT -> {
-                logger.debug("Transaction committed successfully")
+                logger.trace("Transaction committed successfully")
                 // Connection cleanup, state reset
                 // Transaction has been committed
             }
             TransactionPhase.ON_ROLLBACK -> {
-                logger.debug("Rolling back transaction")
+                logger.trace("Rolling back transaction")
                 // Clear pending writes, reset state
                 // Exposed handles rollback automatically
             }
             TransactionPhase.AFTER_ROLLBACK -> {
-                logger.debug("Transaction rolled back, cleaning up connection")
+                logger.trace("Transaction rolled back, cleaning up connection")
                 // Final cleanup
                 // Transaction has been fully rolled back
             }

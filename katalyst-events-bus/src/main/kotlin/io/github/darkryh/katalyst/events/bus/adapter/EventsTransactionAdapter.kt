@@ -93,7 +93,7 @@ class EventsTransactionAdapter(
     private suspend fun validateAllEvents(context: TransactionEventContext) {
         val pendingEvents = context.getPendingEvents()
         if (pendingEvents.isEmpty()) {
-            logger.debug("No pending events to validate")
+            logger.trace("No pending events to validate")
             return
         }
 
@@ -133,7 +133,7 @@ class EventsTransactionAdapter(
     private suspend fun publishSyncBeforeCommitEvents(context: TransactionEventContext) {
         val pendingEvents = context.getPendingEvents()
         if (pendingEvents.isEmpty()) {
-            logger.debug("No pending events to publish before transaction commit")
+            logger.trace("No pending events to publish before transaction commit")
             return
         }
 
@@ -202,7 +202,7 @@ class EventsTransactionAdapter(
      */
     private suspend fun publishAsyncAfterCommitEvents() {
         if (asyncEventsForAfterCommit.isEmpty()) {
-            logger.debug("No async events to publish after transaction commit")
+            logger.trace("No async events to publish after transaction commit")
             return
         }
 
