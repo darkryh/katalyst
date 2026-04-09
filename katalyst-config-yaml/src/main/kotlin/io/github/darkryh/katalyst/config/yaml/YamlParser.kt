@@ -23,8 +23,6 @@ import org.yaml.snakeyaml.Yaml
  * ```
  */
 object YamlParser {
-    private val substitutor = EnvironmentVariableSubstitutor()
-
     /**
      * Parse YAML content and apply environment variable substitution.
      *
@@ -35,11 +33,15 @@ object YamlParser {
      * 4. Return parsed configuration map
      *
      * @param content YAML content as string
+     * @param envProvider Environment lookup provider (defaults to [System.getenv])
      * @return Parsed and substituted configuration map
      * @throws ConfigException if YAML is invalid or root is not a map
      */
     @Suppress("UNCHECKED_CAST")
-    fun parse(content: String): Map<String, Any> {
+    fun parse(
+        content: String,
+        envProvider: (String) -> String? = { name -> System.getenv(name) }
+    ): Map<String, Any> {
         return try {
             val yaml = Yaml()
             val parsed = yaml.load<Any>(content) ?: return emptyMap()
@@ -51,7 +53,7 @@ object YamlParser {
 
             val map = parsed as Map<String, Any>
             // Apply environment variable substitution to all values
-            substitutor.substitute(map)
+            EnvironmentVariableSubstitutor(envProvider).substitute(map)
         } catch (e: ConfigException) {
             throw e
         } catch (e: Exception) {

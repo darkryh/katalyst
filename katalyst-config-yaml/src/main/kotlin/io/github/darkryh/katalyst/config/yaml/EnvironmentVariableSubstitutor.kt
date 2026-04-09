@@ -33,7 +33,8 @@ import org.slf4j.LoggerFactory
  * In production, set environment variables. In development, YAML defaults are used.
  */
 open class EnvironmentVariableSubstitutor(
-    private val envProvider: (String) -> String? = { name -> System.getenv(name) }
+    private val envProvider: (String) -> String? = { name -> System.getenv(name) },
+    private val normalizeEnvironmentValues: Boolean = true
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(EnvironmentVariableSubstitutor::class.java)
@@ -107,7 +108,7 @@ open class EnvironmentVariableSubstitutor(
             when {
                 envValue != null -> {
                     log.debug("Substituted environment variable: $varName")
-                    envValue
+                    sanitizeEnvironmentValue(envValue)
                 }
                 defaultValue.isNotEmpty() -> {
                     log.debug("Using default value for missing environment variable: $varName")
@@ -118,6 +119,70 @@ open class EnvironmentVariableSubstitutor(
                     ""
                 }
             }
+        }
+    }
+
+    private fun sanitizeEnvironmentValue(rawValue: String): String {
+        if (!normalizeEnvironmentValues) {
+            return rawValue
+        }
+
+        val withoutComment = stripInlineShellComment(rawValue)
+        val trimmed = withoutComment.trim()
+        return unwrapBalancedQuotes(trimmed)
+    }
+
+    private fun stripInlineShellComment(value: String): String {
+        var inSingleQuotes = false
+        var inDoubleQuotes = false
+        var escaped = false
+
+        value.forEachIndexed { index, char ->
+            if (escaped) {
+                escaped = false
+                return@forEachIndexed
+            }
+
+            when (char) {
+                '\\' -> {
+                    escaped = true
+                }
+                '\'' -> {
+                    if (!inDoubleQuotes) {
+                        inSingleQuotes = !inSingleQuotes
+                    }
+                }
+                '"' -> {
+                    if (!inSingleQuotes) {
+                        inDoubleQuotes = !inDoubleQuotes
+                    }
+                }
+                '#' -> {
+                    val commentStart = !inSingleQuotes &&
+                        !inDoubleQuotes &&
+                        (index == 0 || value[index - 1].isWhitespace())
+                    if (commentStart) {
+                        return value.substring(0, index)
+                    }
+                }
+            }
+        }
+
+        return value
+    }
+
+    private fun unwrapBalancedQuotes(value: String): String {
+        if (value.length < 2) {
+            return value
+        }
+        val first = value.first()
+        val last = value.last()
+        val isDoubleQuoted = first == '"' && last == '"'
+        val isSingleQuoted = first == '\'' && last == '\''
+        return if (isDoubleQuoted || isSingleQuoted) {
+            value.substring(1, value.length - 1)
+        } else {
+            value
         }
     }
 }

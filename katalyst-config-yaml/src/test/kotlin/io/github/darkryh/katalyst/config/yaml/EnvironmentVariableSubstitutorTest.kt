@@ -21,7 +21,8 @@ import kotlin.test.*
  */
 class EnvironmentVariableSubstitutorTest {
 
-    private val substitutor = EnvironmentVariableSubstitutor()
+    private val substitutor = EnvironmentVariableSubstitutor(envProvider = { _ -> null })
+    private val systemEnvSubstitutor = EnvironmentVariableSubstitutor()
 
     // ========== STRING SUBSTITUTION TESTS ==========
 
@@ -47,7 +48,7 @@ class EnvironmentVariableSubstitutorTest {
         val input = "\${$envVar:default_value}"
 
         // When
-        val result = substitutor.substitute(input)
+        val result = systemEnvSubstitutor.substitute(input)
 
         // Then
         assertEquals(envValue, result)
@@ -220,6 +221,86 @@ class EnvironmentVariableSubstitutorTest {
 
         // Then
         assertEquals("8080", result)
+    }
+
+    @Test
+    fun `substitute should strip shell-style inline comment from environment value`() {
+        val substitutor = EnvironmentVariableSubstitutor(
+            envProvider = { key ->
+                when (key) {
+                    "APP_VERSION" -> "1.1.12 # release hint"
+                    else -> null
+                }
+            }
+        )
+
+        val result = substitutor.substitute("\${APP_VERSION:0.0.0}")
+
+        assertEquals("1.1.12", result)
+    }
+
+    @Test
+    fun `substitute should preserve hash when not a shell comment`() {
+        val substitutor = EnvironmentVariableSubstitutor(
+            envProvider = { key ->
+                when (key) {
+                    "TOKEN_VALUE" -> "abc#def"
+                    else -> null
+                }
+            }
+        )
+
+        val result = substitutor.substitute("\${TOKEN_VALUE:default}")
+
+        assertEquals("abc#def", result)
+    }
+
+    @Test
+    fun `substitute should preserve hash inside quoted value`() {
+        val substitutor = EnvironmentVariableSubstitutor(
+            envProvider = { key ->
+                when (key) {
+                    "DESC" -> "\"data # not a comment\""
+                    else -> null
+                }
+            }
+        )
+
+        val result = substitutor.substitute("\${DESC:default}")
+
+        assertEquals("data # not a comment", result)
+    }
+
+    @Test
+    fun `substitute should strip trailing comment after quoted value`() {
+        val substitutor = EnvironmentVariableSubstitutor(
+            envProvider = { key ->
+                when (key) {
+                    "MODEL" -> "\"gpt-5\" # model hint"
+                    else -> null
+                }
+            }
+        )
+
+        val result = substitutor.substitute("\${MODEL:default}")
+
+        assertEquals("gpt-5", result)
+    }
+
+    @Test
+    fun `substitute should trim whitespace around environment value`() {
+        val substitutor = EnvironmentVariableSubstitutor(
+            envProvider = { key ->
+                when (key) {
+                    "ENABLED" -> "   true   # bool flag "
+                    else -> null
+                }
+            }
+        )
+
+        val result = substitutor.substitute("\${ENABLED:false}")
+
+        assertEquals("true", result)
     }
 
     // ========== MAP SUBSTITUTION TESTS ==========

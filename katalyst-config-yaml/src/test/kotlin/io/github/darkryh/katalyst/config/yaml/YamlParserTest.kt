@@ -17,6 +17,9 @@ import kotlin.test.*
  */
 class YamlParserTest {
 
+    private fun parseWithoutSystemEnv(content: String): Map<String, Any> =
+        YamlParser.parse(content) { _ -> null }
+
     // ========== VALID YAML PARSING TESTS ==========
 
     @Test
@@ -29,7 +32,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         assertEquals("Katalyst", result["name"])
@@ -51,7 +54,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -81,7 +84,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -113,7 +116,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -141,7 +144,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -165,7 +168,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -189,7 +192,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -211,7 +214,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         val description = result["description"] as String
@@ -229,7 +232,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         assertEquals("", result["empty1"])
@@ -250,7 +253,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -274,7 +277,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -302,7 +305,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -325,7 +328,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -336,6 +339,54 @@ class YamlParserTest {
         assertEquals(true, config["flag"])
     }
 
+    @Test
+    fun `parse should normalize commented environment values`() {
+        val yaml = """
+            app:
+              version: ${'$'}{APP_VERSION:0.0.0}
+            database:
+              url: ${'$'}{DATABASE_URL:jdbc:postgresql://localhost:5432/default_db}
+            ai:
+              model: ${'$'}{AI_MODEL:gpt-default}
+        """.trimIndent()
+
+        val env = mapOf(
+            "APP_VERSION" to "1.1.12 # semantic version",
+            "DATABASE_URL" to "jdbc:postgresql://localhost:5432/sampledb # local db",
+            "AI_MODEL" to "\"gpt-5\" # provider hint"
+        )
+
+        val result = YamlParser.parse(yaml) { key -> env[key] }
+
+        @Suppress("UNCHECKED_CAST")
+        val app = result["app"] as Map<String, Any>
+        assertEquals("1.1.12", app["version"])
+
+        @Suppress("UNCHECKED_CAST")
+        val database = result["database"] as Map<String, Any>
+        assertEquals("jdbc:postgresql://localhost:5432/sampledb", database["url"])
+
+        @Suppress("UNCHECKED_CAST")
+        val ai = result["ai"] as Map<String, Any>
+        assertEquals("gpt-5", ai["model"])
+    }
+
+    @Test
+    fun `parse should keep hash for non commented values`() {
+        val yaml = """
+            token:
+              value: ${'$'}{TOKEN_VALUE:default}
+        """.trimIndent()
+
+        val result = YamlParser.parse(yaml) { key ->
+            if (key == "TOKEN_VALUE") "abc#def" else null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        val token = result["token"] as Map<String, Any>
+        assertEquals("abc#def", token["value"])
+    }
+
     // ========== EMPTY AND NULL HANDLING TESTS ==========
 
     @Test
@@ -344,7 +395,7 @@ class YamlParserTest {
         val yaml = ""
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         assertTrue(result.isEmpty())
@@ -356,7 +407,7 @@ class YamlParserTest {
         val yaml = "   \n   \n   "
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         assertTrue(result.isEmpty())
@@ -371,7 +422,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         assertTrue(result.isEmpty())
@@ -390,7 +441,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -410,7 +461,7 @@ class YamlParserTest {
 
         // Then
         assertFailsWith<ConfigException> {
-            YamlParser.parse(yaml)
+            parseWithoutSystemEnv(yaml)
         }
     }
 
@@ -425,7 +476,7 @@ class YamlParserTest {
 
         // Then
         val exception = assertFailsWith<ConfigException> {
-            YamlParser.parse(yaml)
+            parseWithoutSystemEnv(yaml)
         }
         assertTrue(exception.message?.contains("root must be a map") == true)
     }
@@ -437,7 +488,7 @@ class YamlParserTest {
 
         // Then
         val exception = assertFailsWith<ConfigException> {
-            YamlParser.parse(yaml)
+            parseWithoutSystemEnv(yaml)
         }
         assertTrue(exception.message?.contains("root must be a map") == true)
     }
@@ -452,7 +503,7 @@ class YamlParserTest {
 
         // Then
         assertFailsWith<ConfigException> {
-            YamlParser.parse(yaml)
+            parseWithoutSystemEnv(yaml)
         }
     }
 
@@ -477,7 +528,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -533,7 +584,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -587,7 +638,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
@@ -639,7 +690,7 @@ class YamlParserTest {
         """.trimIndent()
 
         // When
-        val result = YamlParser.parse(yaml)
+        val result = parseWithoutSystemEnv(yaml)
 
         // Then
         @Suppress("UNCHECKED_CAST")
