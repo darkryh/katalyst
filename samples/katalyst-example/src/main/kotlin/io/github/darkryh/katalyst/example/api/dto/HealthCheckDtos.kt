@@ -36,6 +36,7 @@ data class HealthStatusResponse(
 data class DetailedHealthResponse(
     val status: String,
     val services: Map<String, String>,
+    val lifecycle: Map<String, String> = emptyMap(),
     val timestamp: Long
 )
 

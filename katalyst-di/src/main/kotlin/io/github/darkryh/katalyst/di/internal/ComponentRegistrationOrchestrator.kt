@@ -57,20 +57,20 @@ class ComponentRegistrationOrchestrator(
         // Phase 1: Discover components (using existing AutoBindingRegistrar)
         val discovered = discoverAllComponents()
 
-        logger.info("✓ Phase 1 (Discovery): Found {} components",
+        logger.info("✓ LIFECYCLE_COMPONENT_DISCOVERY complete: found {} components",
             discovered.values.sumOf { it.size })
 
         // Phase 2: Analyze dependencies
         val graph = analyzeComponentDependencies(discovered)
 
-        logger.info("✓ Phase 2 (Analysis): Built dependency graph with {} nodes, {} edges",
+        logger.info("✓ LIFECYCLE_DEPENDENCY_ANALYSIS complete: graph has {} nodes, {} edges",
             graph.nodeCount(), graph.edgeCount())
 
         // Phase 3: Validate dependencies
         val validationReport = validateDependencies(graph)
 
         if (!validationReport.isValid) {
-            logger.error("✗ Phase 3 (Validation): {} validation errors found",
+            logger.error("✗ LIFECYCLE_DEPENDENCY_VALIDATION failed: {} validation errors found",
                 validationReport.totalErrorCount)
 
             val exception = FatalDependencyValidationException(
@@ -82,7 +82,7 @@ class ComponentRegistrationOrchestrator(
             throw exception
         }
 
-        logger.info("✓ Phase 3 (Validation): Passed ({}ms)",
+        logger.info("✓ LIFECYCLE_DEPENDENCY_VALIDATION passed ({}ms)",
             validationReport.validationDurationMs)
 
         // Phase 4: Compute instantiation order
@@ -90,11 +90,11 @@ class ComponentRegistrationOrchestrator(
         val order = try {
             orderComputer.computeOrder()
         } catch (e: IllegalStateException) {
-            logger.error("✗ Phase 4 (Order Computation): Failed - {}", e.message)
+            logger.error("✗ LIFECYCLE_INSTANTIATION_ORDER_COMPUTATION failed: {}", e.message)
             throw e
         }
 
-        logger.info("✓ Phase 4 (Order Computation): Computed order for {} components",
+        logger.info("✓ LIFECYCLE_INSTANTIATION_ORDER_COMPUTATION complete: order for {} components",
             order.size)
 
         // Debug: Show what's in the order
@@ -106,7 +106,7 @@ class ComponentRegistrationOrchestrator(
         // Phase 5-6: Register components in order (integrated)
         registerComponentsInOrder(order, discovered)
 
-        logger.info("✓ Phase 5-6 (Registration): All components registered and verified")
+        logger.info("✓ LIFECYCLE_COMPONENT_REGISTRATION complete: all components registered and verified")
         logger.info("═".repeat(80))
         logger.info("✓ COMPONENT REGISTRATION COMPLETE")
         logger.info("═".repeat(80))
@@ -118,7 +118,7 @@ class ComponentRegistrationOrchestrator(
      * @return Map of component type to set of discovered classes
      */
     private fun discoverAllComponents(): Map<String, Set<KClass<*>>> {
-        logger.info("Phase 1: Component Discovery")
+        logger.info("LIFECYCLE_COMPONENT_DISCOVERY starting")
 
         val discovered = mutableMapOf<String, Set<KClass<*>>>()
         val registrar = AutoBindingRegistrar(koin, scanPackages)
@@ -147,7 +147,7 @@ class ComponentRegistrationOrchestrator(
      * @return Dependency graph with all nodes and edges
      */
     private fun analyzeComponentDependencies(discovered: Map<String, Set<KClass<*>>>): io.github.darkryh.katalyst.di.analysis.DependencyGraph {
-        logger.info("Phase 2: Dependency Analysis")
+        logger.info("LIFECYCLE_DEPENDENCY_ANALYSIS starting")
 
         val allTypes = mutableMapOf<String, Set<KClass<*>>>()
 
@@ -179,7 +179,7 @@ class ComponentRegistrationOrchestrator(
     private fun validateDependencies(
         graph: io.github.darkryh.katalyst.di.analysis.DependencyGraph
     ): io.github.darkryh.katalyst.di.error.ValidationReport {
-        logger.info("Phase 3: Dependency Validation")
+        logger.info("LIFECYCLE_DEPENDENCY_VALIDATION starting")
 
         val validator = DependencyValidator(graph)
 
@@ -208,7 +208,7 @@ class ComponentRegistrationOrchestrator(
         order: List<KClass<*>>,
         discovered: Map<String, Set<KClass<*>>>
     ) {
-        logger.info("Phase 5a: Automatic Configuration Loading and Registration")
+        logger.info("LIFECYCLE_CONFIG_AUTO_REGISTRATION starting")
 
         // Load and register automatic configurations BEFORE registering components
         // This ensures components can have their config dependencies injected
@@ -220,7 +220,7 @@ class ComponentRegistrationOrchestrator(
             throw e  // Fail-fast for configuration errors
         }
 
-        logger.info("Phase 5b: Instantiation in Safe Order")
+        logger.info("LIFECYCLE_COMPONENT_INSTANTIATION starting")
 
         val registrar = AutoBindingRegistrar(koin, scanPackages)
         val allRegisteredComponents = mutableListOf<KClass<*>>()
@@ -251,7 +251,7 @@ class ComponentRegistrationOrchestrator(
             allRegisteredComponents.addAll(migrations)
         }
 
-        logger.info("Phase 6: Database Table Discovery and Registration")
+        logger.info("LIFECYCLE_DATABASE_TABLE_REGISTRATION starting")
 
         // Register Exposed table implementations for schema creation
         // Tables must be registered before route discovery so they're available during Phase 4
@@ -262,7 +262,7 @@ class ComponentRegistrationOrchestrator(
             // Don't fail - tables are optional
         }
 
-        logger.info("Phase 6b: Post-Registration Verification")
+        logger.info("LIFECYCLE_POST_REGISTRATION_VERIFICATION starting")
 
         // If we got here without exceptions, all components were successfully registered
         // The registerInstanceWithKoin method would have thrown an exception if registration failed
@@ -272,7 +272,7 @@ class ComponentRegistrationOrchestrator(
         // IMPORTANT: Register route functions discovered from packages
         // These are auto-discovered functions like authRoutes(), userRoutes(), etc.
         // They MUST be registered after regular components so services are available for injection
-        logger.info("Phase 7: Route Discovery and Registration")
+        logger.info("LIFECYCLE_ROUTE_DISCOVERY_REGISTRATION starting")
 
         // Register route functions discovered from packages
         try {

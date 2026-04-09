@@ -12,17 +12,19 @@ import io.github.darkryh.katalyst.di.config.ServerConfiguration
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
 import io.github.darkryh.katalyst.di.config.ServerConfigurationResolver
 import io.github.darkryh.katalyst.di.config.initializeKoinStandalone
+import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
 import io.github.darkryh.katalyst.di.config.stopKoinStandalone
 import io.github.darkryh.katalyst.di.config.wrap
 import io.github.darkryh.katalyst.di.internal.KtorModuleRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
+import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStarting
 import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.application.ServerReady
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.runBlocking
@@ -333,7 +335,8 @@ class KatalystApplicationBuilder(
                 scanPackages = scanTargets,
                 features = registeredFeatures()
             ),
-            serverConfiguration = resolvedServerConfig
+            serverConfiguration = resolvedServerConfig,
+            activateRuntimeReadyInitializers = false
         )
 
         logger.info("Katalyst DI initialized successfully")
@@ -365,11 +368,26 @@ class KatalystApplicationBuilder(
         val ktorModules = registryModules + koinModules
 
         logger.info("Discovered {} Ktor module(s) for installation", ktorModules.size)
+        val routeFunctionModuleCount = ktorModules.count { it is io.github.darkryh.katalyst.di.internal.RouteModuleMarker }
+        val frameworkModuleCount = ktorModules.size - routeFunctionModuleCount
+        logger.info(
+            "Ktor module install plan: {} framework module(s), {} route-function module(s)",
+            frameworkModuleCount,
+            routeFunctionModuleCount
+        )
 
         ktorModules
             .sortedBy { it.order }
             .forEach { module ->
-                logger.info("Installing Ktor module {}", module::class.qualifiedName)
+                if (module is io.github.darkryh.katalyst.di.internal.RouteModuleMarker) {
+                    logger.debug(
+                        "Installing route-function module [{}] order={}",
+                        module::class.qualifiedName,
+                        module.order
+                    )
+                } else {
+                    logger.info("Installing Ktor module {}", module::class.qualifiedName)
+                }
                 module.install(application)
             }
 
@@ -438,48 +456,47 @@ fun katalystApplication(
         }
 
         builder.initializeDI()
+        BootstrapProgress.displayProgressSummary(includePending = false)
+        StartupWarnings.display()
         val serverConfig = builder.resolveServerConfiguration()
         val embeddedServer = serverConfig.engine ?: throw IllegalStateException("There is not specified embeddedServer")
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
             // PHASE 6: Ktor Engine Startup
-            BootstrapProgress.startPhase(6)
+            BootstrapProgress.startLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP)
+            logger.info(
+                "LIFECYCLE_RUNTIME_READY_INITIALIZERS pending: will execute on ServerReady"
+            )
 
             runCatching {
                 val wrappedApplication = application.wrap(serverConfig.applicationWrapper)
                 builder.configureApplication(wrappedApplication)
             }.onFailure { error ->
                 logger.error("Failed to configure Ktor application", error)
-                BootstrapProgress.failPhase(6, error)
+                BootstrapProgress.failLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP, error)
                 throw error
             }
         }
 
-        embeddedServer.monitor.subscribe(ApplicationStarted) {
+        embeddedServer.monitor.subscribe(ServerReady) {
             val elapsedSeconds = (System.nanoTime() - bootStart) / 1_000_000_000.0
             logger.info("Katalyst started in {} s (actual)", String.format("%.3f", elapsedSeconds))
 
-            BootstrapProgress.completePhase(6, "Ktor server is listening")
-            BootstrapProgress.displayProgressSummary()
+            BootstrapProgress.completeLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP, "Ktor server is listening")
 
-            // Display any aggregated startup warnings before completion banner
-            StartupWarnings.display()
+            val runtimeReadyResult = runCatching {
+                runRuntimeReadyInitializers(GlobalContext.get())
+            }
+            runtimeReadyResult.onFailure { error ->
+                logger.error("Runtime-ready initialization failed after ServerReady", error)
+                runCatching { embeddedServer.stop(500, 2_000) }
+                    .onFailure { stopError -> logger.warn("Failed to stop server after runtime-ready failure", stopError) }
+                throw error
+            }
 
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ APPLICATION STARTUP COMPLETE                     ║")
-            logger.info("║                                                    ║")
-            logger.info("║ Status: READY FOR TRAFFIC                          ║")
-            logger.info("║                                                    ║")
-            logger.info("║ ✓ Ktor server listening                            ║")
-            logger.info("║ ✓ All components instantiated                      ║")
-            logger.info("║ ✓ Database operational & schema ready              ║")
-            logger.info("║ ✓ Transaction adapters configured                  ║")
-            logger.info("║ ✓ Scheduler tasks registered & running             ║")
-            logger.info("║ ✓ All initializer hooks completed                  ║")
-            logger.info("║                                                    ║")
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
+            logger.info(
+                "Application startup complete: ready for traffic (server + runtime-ready lifecycle initialized)"
+            )
         }
 
         embeddedServer.monitor.subscribe(ApplicationStopping) {

@@ -14,7 +14,7 @@ private val logger = LoggerFactory.getLogger("WebSocketBuilder")
  * `webSocket("/path") {}` extension remains available for testing or manual wiring.
  */
 fun Route.katalystWebSockets(block: Route.() -> Unit) {
-    logger.info("Starting WebSocket configuration on Route: {} ({})", this::class.simpleName, this::class.java.name)
+    logger.debug("Starting WebSocket configuration on Route: {} ({})", this::class.simpleName, this::class.java.name)
     try {
         verifyKoin()
 
@@ -39,7 +39,7 @@ fun Route.katalystWebSockets(block: Route.() -> Unit) {
         }
 
         this.block()
-        logger.info("WebSocket configuration completed for route {}", this::class.simpleName)
+        logger.debug("WebSocket configuration completed for route {}", this::class.simpleName)
     } catch (e: Exception) {
         logger.error("Error during WebSocket configuration", e)
         throw e

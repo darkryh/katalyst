@@ -143,7 +143,8 @@ class DiscoverySummaryLogger {
 
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ PHASE 3: COMPONENT DISCOVERY SUMMARY ({} total)  ║", String.format("%3d", total))
+        logger.info("║ LIFECYCLE: COMPONENT DISCOVERY SUMMARY ({})      ║", String.format("%3d", total))
+        logger.info("║ Reference: LIFECYCLE_COMPONENT_DISCOVERY_SUMMARY  ║")
         logger.info("╚════════════════════════════════════════════════════╝")
         logger.info("")
 

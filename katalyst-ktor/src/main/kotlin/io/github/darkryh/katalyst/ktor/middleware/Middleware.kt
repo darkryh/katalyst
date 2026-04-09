@@ -75,7 +75,12 @@ class MiddlewareBuilder(val application: Application) {
 fun Application.katalystMiddleware(block: MiddlewareBuilder.() -> Unit) {
     val builder = MiddlewareBuilder(this)
     builder.block()
-    logger.info("Middleware configured: ${builder.getMiddlewares().size} middleware components registered")
+    val count = builder.getMiddlewares().size
+    if (count == 0) {
+        logger.debug("Middleware configured: 0 middleware components registered")
+    } else {
+        logger.info("Middleware configured: {} middleware components registered", count)
+    }
 }
 
 

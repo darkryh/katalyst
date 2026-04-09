@@ -31,7 +31,7 @@ class WebSocketPluginModule : KtorModule {
     override val order: Int = -100  // Install FIRST, before all other modules
 
     override fun install(application: Application) {
-        logger.info("WebSocketPluginModule.install() called - order: $order")
+        logger.debug("WebSocketPluginModule.install() called - order={}", order)
 
         try {
             // Check if WebSocket support is enabled
@@ -40,12 +40,12 @@ class WebSocketPluginModule : KtorModule {
                 koin.get<Boolean>(qualifier = named("enableWebSockets"))
             }.getOrDefault(false)
 
-            logger.info("WebSocket plugin: enableWebSockets flag = $isWebSocketsEnabled")
+            logger.debug("WebSocket plugin flag enableWebSockets={}", isWebSocketsEnabled)
 
             if (isWebSocketsEnabled) {
-                logger.info("Installing Ktor WebSocket plugin to application")
+                logger.debug("Installing Ktor WebSocket plugin to application")
                 application.install(WebSockets)
-                logger.info("✓ WebSocket plugin installed successfully - ready for WebSocket routes")
+                logger.info("WebSocket plugin installed successfully")
             } else {
                 logger.warn("⚠ WebSocket plugin NOT installed (enableWebSockets() was not called in application builder)")
             }

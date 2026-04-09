@@ -32,14 +32,14 @@ fun verifyKoin() {
  * It should be called from Application.configureRouting().
  */
 fun Application.katalystRouting(block: Routing.() -> Unit) {
-    logger.info("Starting route configuration")
+    logger.debug("Starting route configuration")
 
     try {
         verifyKoin()
         routing {
             block()
         }
-        logger.info("Route configuration completed successfully")
+        logger.debug("Route configuration completed successfully")
     } catch (e: Exception) {
         logger.error("Error during route configuration", e)
         throw e
@@ -51,12 +51,12 @@ fun Application.katalystRouting(block: Routing.() -> Unit) {
  * with the same logging/guardrails used at the Application level.
  */
 fun Route.katalystRouting(block: Route.() -> Unit) {
-    logger.info("Starting route configuration")
+    logger.debug("Starting route configuration")
 
     try {
         verifyKoin()
         this.apply(block)
-        logger.info("Route configuration completed successfully")
+        logger.debug("Route configuration completed successfully")
     } catch (e: Exception) {
         logger.error("Error during route configuration", e)
         throw e

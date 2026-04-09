@@ -4,17 +4,16 @@ package io.github.darkryh.katalyst.di.lifecycle
  * Lifecycle hook interface for application initialization phases.
  *
  * Implementations are discovered and executed automatically during
- * DI bootstrap AFTER all services are instantiated and database
- * schema is initialized.
+ * DI bootstrap before server bind, after services are instantiated and
+ * database schema is initialized.
  *
  * **Execution Order:**
  * 1. StartupValidator (order=-100) - Validates DB readiness
- * 2. SchedulerMethodInvoker (order=-50) - Discovers and invokes scheduler methods
- * 3. User-defined initializers (order=0+) - Custom post-init logic
+ * 2. User-defined initializers (order=0+) - Custom pre-start validation/setup logic
  *
  * **Component Discovery:**
- * Users do NOT need to implement this interface to use schedulers.
- * The framework automatically discovers scheduler methods via reflection.
+ * Runtime activations (scheduler, background consumers) should use
+ * [ApplicationReadyInitializer], not this interface.
  */
 interface ApplicationInitializer {
     /**
@@ -30,8 +29,7 @@ interface ApplicationInitializer {
      *
      * Standard values:
      * - StartupValidator: -100 (always first)
-     * - SchedulerMethodInvoker: -50 (before custom initializers)
-     * - Custom initializers: 0+ (default, in any order)
+     * - Custom pre-start initializers: 0+ (default, in any order)
      */
     val order: Int
         get() = 0
@@ -44,6 +42,7 @@ interface ApplicationInitializer {
      * - All database tables discovered and schema initialized ✓
      * - Transaction adapters registered ✓
      * - Koin DI fully configured ✓
+     * - Ktor server NOT started yet
      *
      */
     suspend fun onApplicationReady()

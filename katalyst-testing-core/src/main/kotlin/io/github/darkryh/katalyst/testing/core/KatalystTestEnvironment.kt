@@ -6,6 +6,8 @@ import io.github.darkryh.katalyst.di.config.KatalystDIOptions
 import io.github.darkryh.katalyst.di.config.ServerConfiguration
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
 import io.github.darkryh.katalyst.di.config.bootstrapKatalystDI
+import io.github.darkryh.katalyst.di.config.runPreStartInitializers
+import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
 import io.github.darkryh.katalyst.di.config.stopKoinStandalone
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.internal.KtorModuleRegistry
@@ -171,6 +173,8 @@ class KatalystTestEnvironmentBuilder {
             additionalModules = overrideModules.toList(),
             allowOverrides = allowOverrides
         )
+        runPreStartInitializers(koin)
+        runRuntimeReadyInitializers(koin)
 
         val capturedKtorModules = captureKtorModules(koin)
 

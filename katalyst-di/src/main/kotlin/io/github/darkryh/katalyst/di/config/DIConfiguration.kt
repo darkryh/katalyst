@@ -9,8 +9,10 @@ import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationExceptio
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.internal.ComponentRegistrationOrchestrator
 import io.github.darkryh.katalyst.di.internal.TableRegistry
+import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
 import io.github.darkryh.katalyst.di.lifecycle.InitializerRegistry
+import io.github.darkryh.katalyst.di.lifecycle.RuntimeReadyInitializerRunner
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
@@ -146,7 +148,7 @@ fun bootstrapKatalystDI(
 
     modules += additionalModules
 
-    BootstrapProgress.startPhase(1)
+    BootstrapProgress.startLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP)
     val koin = try {
         currentKoinOrNull()?.also {
             logger.info("Loading Katalyst modules into existing Koin context")
@@ -161,27 +163,33 @@ fun bootstrapKatalystDI(
             }.koin
         }
     } catch (e: Exception) {
-        BootstrapProgress.failPhase(1, e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP, e)
         throw e
     }
-    BootstrapProgress.completePhase(1, "Koin context ready with ${modules.size} module(s)")
+    BootstrapProgress.completeLifecycle(
+        BootstrapLifecycle.KOIN_DI_BOOTSTRAP,
+        "Koin context ready with ${modules.size} module(s)"
+    )
 
     // Register components including tables
     // PHASE 2: Component Discovery & Registration with Validation
-    BootstrapProgress.startPhase(2)
+    BootstrapProgress.startLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION)
     try {
         logger.info("Starting ComponentRegistrationOrchestrator with dependency validation...")
         val orchestrator = ComponentRegistrationOrchestrator(koin, scanPackages)
         orchestrator.registerAllWithValidation()
         logger.info("ComponentRegistrationOrchestrator completed with full validation")
-        BootstrapProgress.completePhase(2, "Discovered repositories, services, components, and validators with dependency validation")
+        BootstrapProgress.completeLifecycle(
+            BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION,
+            "Discovered repositories, services, components, and validators with dependency validation"
+        )
     } catch (e: FatalDependencyValidationException) {
         logger.error("✗ FATAL: Dependency validation failed - application cannot start")
-        BootstrapProgress.failPhase(2, e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION, e)
         throw e
     } catch (e: Exception) {
         logger.error("✗ Error during component registration: {}", e.message)
-        BootstrapProgress.failPhase(2, e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION, e)
         throw e
     }
 
@@ -205,7 +213,7 @@ fun bootstrapKatalystDI(
     koin.loadModules(listOf(transactionDefaultsModule), createEagerInstances = true)
 
     // PHASE 3: Database Schema Initialization & Table Creation
-    BootstrapProgress.startPhase(3)
+    BootstrapProgress.startLifecycle(BootstrapLifecycle.DATABASE_SCHEMA_INITIALIZATION)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from TableRegistry...")
         // Use TableRegistry instead of koin.getAll() because:
@@ -277,16 +285,19 @@ fun bootstrapKatalystDI(
         } else {
             logger.info("  ℹ  No tables registered - skipping schema creation")
         }
-        BootstrapProgress.completePhase(3, "Database schema initialized with ${discoveredTables.size} tables")
+        BootstrapProgress.completeLifecycle(
+            BootstrapLifecycle.DATABASE_SCHEMA_INITIALIZATION,
+            "Database schema initialized with ${discoveredTables.size} tables"
+        )
     } catch (e: Exception) {
         logger.warn("Error discovering tables or creating DatabaseFactory: {}", e.message)
         logger.debug("Full error during table discovery", e)
-        BootstrapProgress.failPhase(3, e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.DATABASE_SCHEMA_INITIALIZATION, e)
         throw e
     }
 
     // PHASE 4: Transaction Adapter Registration
-    BootstrapProgress.startPhase(4)
+    BootstrapProgress.startLifecycle(BootstrapLifecycle.TRANSACTION_ADAPTER_REGISTRATION)
     try {
         logger.info("Registering transaction adapters...")
         val transactionManager = koin.get<DatabaseTransactionManager>()
@@ -321,27 +332,13 @@ fun bootstrapKatalystDI(
         }
 
         logger.info("Transaction adapter registration completed with {} adapter(s)", adaptersRegistered)
-        BootstrapProgress.completePhase(4, "Registered $adaptersRegistered transaction adapter(s)")
+        BootstrapProgress.completeLifecycle(
+            BootstrapLifecycle.TRANSACTION_ADAPTER_REGISTRATION,
+            "Registered $adaptersRegistered transaction adapter(s)"
+        )
     } catch (e: Exception) {
         logger.warn("Error registering transaction adapters: {}", e.message)
-        BootstrapProgress.failPhase(4, e)
-        throw e
-    }
-
-    // Execute application initialization lifecycle
-    // This runs after all DI is complete and database is ready
-    try {
-        logger.info("Starting application initialization lifecycle...")
-        val registry = InitializerRegistry(koin)
-
-        // Must block - initialization must complete synchronously
-        runBlocking {
-            registry.invokeAll()
-        }
-
-        logger.info("Application initialization lifecycle completed")
-    } catch (e: Exception) {
-        logger.error("Fatal error during application initialization", e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.TRANSACTION_ADAPTER_REGISTRATION, e)
         throw e
     }
 
@@ -372,21 +369,26 @@ fun initializeKoinStandalone(
     options: KatalystDIOptions,
     serverConfiguration: ServerConfiguration,
     additionalModules: List<Module> = emptyList(),
-    allowOverrides: Boolean = false
+    allowOverrides: Boolean = false,
+    activateRuntimeReadyInitializers: Boolean = true
 ): Koin {
     logger.info("Initializing Koin DI for standalone application")
     logger.debug("Features enabled: {}", options.features.joinToString { it.id })
 
-    return bootstrapKatalystDI(
+    val koin = bootstrapKatalystDI(
         databaseConfig = options.databaseConfig,
         scanPackages = options.scanPackages,
         features = options.features,
         serverConfig = serverConfiguration,
         additionalModules = additionalModules,
         allowOverrides = allowOverrides
-    ).also {
-        logger.info("Koin initialization completed successfully")
+    )
+    runPreStartInitializers(koin)
+    if (activateRuntimeReadyInitializers) {
+        runRuntimeReadyInitializers(koin)
     }
+    logger.info("Koin initialization completed successfully")
+    return koin
 }
 
 /**
@@ -411,6 +413,40 @@ fun stopKoinStandalone() {
     logger.info("Stopping Koin DI")
     stopKoin()
     logger.info("Koin stopped successfully")
+}
+
+fun runPreStartInitializers(koin: Koin) {
+    try {
+        logger.info("Starting pre-start initialization lifecycle")
+        val registry = InitializerRegistry(koin)
+        runBlocking {
+            registry.invokeAll()
+        }
+        logger.info("Pre-start initialization lifecycle completed")
+    } catch (e: Exception) {
+        logger.error("Fatal error during pre-start initialization", e)
+        throw e
+    }
+}
+
+fun runRuntimeReadyInitializers(koin: Koin) {
+    try {
+        BootstrapProgress.startLifecycleCompact(BootstrapLifecycle.RUNTIME_READY_INITIALIZERS)
+        logger.info("Starting runtime-ready initialization lifecycle")
+        val runner = RuntimeReadyInitializerRunner(koin)
+        runBlocking {
+            runner.invokeAll()
+        }
+        logger.info("Runtime-ready initialization lifecycle completed")
+        BootstrapProgress.completeLifecycle(
+            BootstrapLifecycle.RUNTIME_READY_INITIALIZERS,
+            "Runtime-ready initializers executed"
+        )
+    } catch (e: Exception) {
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.RUNTIME_READY_INITIALIZERS, e)
+        logger.error("Fatal error during runtime-ready initialization", e)
+        throw e
+    }
 }
 
 private fun resolveTransactionPhaseLoggingEnabled(koin: Koin): Boolean {

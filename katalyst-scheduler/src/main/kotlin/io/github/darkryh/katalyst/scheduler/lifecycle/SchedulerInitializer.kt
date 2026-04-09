@@ -2,7 +2,7 @@ package io.github.darkryh.katalyst.scheduler.lifecycle
 
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.di.internal.ServiceRegistry
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerDiscoveryException
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerInvocationException
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException
@@ -27,19 +27,18 @@ private data class SchedulerMethodCandidate(
  * scheduler-specific discovery and invocation logic.
  *
  * **Execution Order & Safety Guarantee:**
- * Runs SECOND (order=-50), AFTER StartupValidator (order=-100).
- * StartupValidator ensures database schema is ready, so scheduler methods can
- * safely query tables without crashing.
+ * Runs in runtime-ready phase (default order=0), after Ktor readiness has been
+ * acknowledged and pre-start validation has completed.
  *
  * **Important Contract:**
- * At this point in the initialization sequence:
+ * At this point in the runtime-ready sequence:
  * ✓ Database connection verified and working
  * ✓ ALL registered tables verified to exist in schema
  * ✓ Safe to invoke scheduler methods that query tables
  * ✓ No additional schema validation needed
  *
- * If StartupValidator threw an exception → this initializer NEVER runs.
- * If we reach this point → schema is guaranteed valid.
+ * If pre-start validation failed → runtime-ready initializers never run.
+ * If we reach this point → schema/connectivity guarantees are already established.
  *
  * **Discovery Process (3-Step Validation):**
  *
@@ -76,86 +75,68 @@ private data class SchedulerMethodCandidate(
  *
  * **Module**: katalyst-scheduler
  */
-internal class SchedulerInitializer : ApplicationInitializer {
+internal class SchedulerInitializer : ApplicationReadyInitializer {
     private val logger = LoggerFactory.getLogger("SchedulerInitializer")
 
     override val initializerId: String = "SchedulerInitializer"
     override val order: Int = -50
 
-    override suspend fun onApplicationReady() {
-        logger.info("")
-        logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ SCHEDULER DISCOVERY & REGISTRATION                ║")
-        logger.info("║ (Database schema validated before initialization)  ║")
-        logger.info("╚════════════════════════════════════════════════════╝")
-        logger.info("")
-
+    override suspend fun onRuntimeReady() {
         try {
-            logger.info("✓ Database schema ready (validated by StartupValidator)")
-
             // Get all services from ServiceRegistry (populated during component discovery)
-            logger.info("Retrieving services from ServiceRegistry...")
             val allServices = ServiceRegistry.getAll()
-
-            logger.info("Retrieving services from ${allServices.map { it.javaClass.name }}")
+            logger.info("Scheduler runtime-ready initialization started")
+            logger.debug("Scheduler scanning {} service instance(s)", allServices.size)
 
             if (allServices.isEmpty()) {
-                logger.info("No services found")
-                logger.info("")
-                logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ SCHEDULER PASSED: No scheduler methods          ║")
-                logger.info("╚════════════════════════════════════════════════════╝")
-                logger.info("")
+                logger.info("Scheduler initialization completed: no services available for scanning")
                 return
             }
 
-            logger.info("Found {} service(s) to scan", allServices.size)
-            logger.info("")
-
             // Step 1: Discover candidate methods by reflection
-            logger.info("STEP 1: Discovering candidate methods (reflection)...")
+            logger.debug("Scheduler step 1/3: discovering candidate methods")
             val candidates = discoverCandidateMethods(allServices)
 
             if (candidates.isEmpty()) {
-                logger.info("No candidate scheduler methods found")
-                logger.info("")
-                logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ SCHEDULER PASSED: No scheduler methods          ║")
-                logger.info("╚════════════════════════════════════════════════════╝")
-                logger.info("")
+                logger.info("Scheduler initialization completed: no scheduler methods discovered")
                 return
             }
 
-            logger.info("Found {} candidate method(s):", candidates.size)
-            candidates.groupBy { it.service::class.simpleName ?: "UnknownService" }
-                .forEach { (serviceName, methods) ->
-                    logger.info("  [Candidate] {} -> {}", serviceName, methods.map { it.method.name }.sorted())
-                }
-            logger.info("")
+            logger.debug("Scheduler discovered {} candidate method(s)", candidates.size)
+            if (logger.isDebugEnabled) {
+                candidates.groupBy { it.service::class.simpleName ?: "UnknownService" }
+                    .forEach { (serviceName, methods) ->
+                        logger.debug(
+                            "Scheduler candidates for {}: {}",
+                            serviceName,
+                            methods.map { it.method.name }.sorted()
+                        )
+                    }
+            }
 
             // Step 2: Validate candidates via bytecode analysis
-            logger.info("STEP 2: Validating candidate methods (bytecode analysis)...")
+            logger.debug("Scheduler step 2/3: validating candidates with bytecode analysis")
             val validatedMethods = validateCandidatesByBytecode(candidates)
 
             if (validatedMethods.isEmpty()) {
-                logger.warn("⚠ No candidates passed bytecode validation")
-                logger.info("")
-                logger.info("╔════════════════════════════════════════════════════╗")
-                logger.info("║ ✓ SCHEDULER PASSED: No valid scheduler methods    ║")
-                logger.info("╚════════════════════════════════════════════════════╝")
-                logger.info("")
+                logger.info("Scheduler initialization completed: no valid scheduler methods after validation")
                 return
             }
 
-            logger.info("Validated {} method(s):", validatedMethods.size)
-            validatedMethods.groupBy { it.service::class.simpleName ?: "UnknownService" }
-                .forEach { (serviceName, methods) ->
-                    logger.info("  [Valid] {} -> {}", serviceName, methods.map { it.method.name }.sorted())
-                }
-            logger.info("")
+            logger.debug("Scheduler validated {} method(s)", validatedMethods.size)
+            if (logger.isDebugEnabled) {
+                validatedMethods.groupBy { it.service::class.simpleName ?: "UnknownService" }
+                    .forEach { (serviceName, methods) ->
+                        logger.debug(
+                            "Scheduler validated methods for {}: {}",
+                            serviceName,
+                            methods.map { it.method.name }.sorted()
+                        )
+                    }
+            }
 
             // Step 3: Invoke validated methods
-            logger.info("STEP 3: Invoking validated methods...")
+            logger.debug("Scheduler step 3/3: invoking validated methods")
             var successCount = 0
             var failureCount = 0
 
@@ -165,20 +146,23 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 val signature = "${service::class.simpleName}.${method.name}()"
 
                 try {
-                    logger.info("  → Invoking {}", signature)
+                    logger.debug("Invoking scheduler method {}", signature)
                     method.isAccessible = true
                     val result = method.call(service)
 
                     if (isSchedulerJobHandle(result)) {
-                        logger.info("    ✓ {} registered successfully", signature)
+                        logger.debug("Scheduler method registered successfully: {}", signature)
                         successCount++
                     } else {
-                        logger.error("    ✗ {} returned invalid type: {}",
-                            signature, result?.let { it::class.simpleName } ?: "null")
+                        logger.error(
+                            "Scheduler method returned invalid type: {} -> {}",
+                            signature,
+                            result?.let { it::class.simpleName } ?: "null"
+                        )
                         failureCount++
                     }
                 } catch (e: Exception) {
-                    logger.error("    ✗ {} FAILED: {}", signature, e.message)
+                    logger.error("Scheduler method failed: {} - {}", signature, e.message)
                     failureCount++
                     throw SchedulerInvocationException(
                         message = "Failed to invoke scheduler method $signature: ${e.message}",
@@ -187,9 +171,11 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 }
             }
 
-            logger.info("")
-            logger.info("Invocation Summary: {} success, {} failure",
-                successCount, failureCount)
+            logger.info(
+                "Scheduler initialization completed: {} registration(s), {} failure(s)",
+                successCount,
+                failureCount
+            )
 
             if (failureCount > 0) {
                 throw SchedulerInvocationException(
@@ -197,20 +183,8 @@ internal class SchedulerInitializer : ApplicationInitializer {
                 )
             }
 
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ SCHEDULER PASSED: {} task(s) registered         ║", successCount)
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
-
         } catch (e: Exception) {
-            logger.error("")
-            logger.error("╔════════════════════════════════════════════════════╗")
-            logger.error("║ ✗ SCHEDULER INITIALIZATION FAILED                 ║")
-            logger.error("║ No scheduled tasks will be registered              ║")
-            logger.error("╚════════════════════════════════════════════════════╝")
-            logger.error("Reason: {}", e.message)
-            logger.error("")
+            logger.error("Scheduler runtime-ready initialization failed: {}", e.message)
             throw e
         }
     }

@@ -9,6 +9,8 @@ import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
 import io.github.darkryh.katalyst.di.injection.InjectNamed
 import io.github.darkryh.katalyst.di.injection.Provider
 import io.github.darkryh.katalyst.di.injection.internal.KoinProvider
@@ -713,9 +715,9 @@ class AutoBindingRegistrar(
      * If a secondary type is already bound to a different primary type, this method
      * throws a [DependencyInjectionException] to fail-fast on ambiguous bindings.
      *
-     * Selected lifecycle extension points (such as [ApplicationInitializer]) are treated
-     * as multibinding types and are tracked via dedicated registries instead of Koin
-     * secondary key mappings.
+     * Selected lifecycle extension points (such as [ApplicationInitializer] and
+     * [ApplicationReadyInitializer]) are treated as multibinding types and are
+     * tracked via dedicated registries instead of Koin secondary key mappings.
      *
      * @param instance The component instance to register
      * @param primaryType The primary class type for registration
@@ -764,6 +766,9 @@ class AutoBindingRegistrar(
 
         if (instance is ApplicationInitializer) {
             ApplicationInitializerRegistry.register(instance)
+        }
+        if (instance is ApplicationReadyInitializer) {
+            ApplicationReadyInitializerRegistry.register(instance)
         }
 
         val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
@@ -831,7 +836,8 @@ private val schedulerServiceKClass: KClass<*>? = runCatching {
 }.getOrNull()
 
 private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
-    ApplicationInitializer::class
+    ApplicationInitializer::class,
+    ApplicationReadyInitializer::class
 )
 
 /**

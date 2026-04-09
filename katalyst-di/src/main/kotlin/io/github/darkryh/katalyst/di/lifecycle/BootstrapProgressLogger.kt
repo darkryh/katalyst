@@ -1,19 +1,18 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
 import org.slf4j.LoggerFactory
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Tracks and displays bootstrap phase progress in real-time.
+ * Tracks and displays bootstrap lifecycle progress in real-time.
  *
- * **Purpose**: Show structured progress through each initialization phase
+ * **Purpose**: Show structured progress through each initialization lifecycle
  * with real-time status updates (⏳ running, ✓ completed, ✗ failed).
  *
  * **Display Format**:
  * ```
  * ╔════════════════════════════════════════════════════════════╗
- * ║ PHASE 1: KOIN DI BOOTSTRAP (Component Scanning)            ║
+ * ║ LIFECYCLE: Koin DI Bootstrap                               ║
+ * ║ Reference: LIFECYCLE_KOIN_DI_BOOTSTRAP                     ║
  * ╚════════════════════════════════════════════════════════════╝
  * ⏳ Scanning packages...
  * ✓  Completed in 234ms
@@ -22,10 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
 class BootstrapProgressLogger {
     private val logger = LoggerFactory.getLogger("BootstrapProgressLogger")
 
-    data class PhaseInfo(
-        val phase: Int,
-        val name: String,
-        val description: String,
+    data class LifecycleInfo(
+        val lifecycle: BootstrapLifecycle,
         var startTime: Long = 0L,
         var endTime: Long = 0L,
         var status: PhaseStatus = PhaseStatus.PENDING,
@@ -40,103 +37,107 @@ class BootstrapProgressLogger {
         SKIPPED       // Skipped/not applicable
     }
 
-    private val phases = mutableListOf<PhaseInfo>()
-    private val phaseStartTimes = mutableMapOf<Int, Long>()
+    private val lifecycles = BootstrapLifecycle.entries
+        .map { lifecycle -> LifecycleInfo(lifecycle = lifecycle) }
+        .toMutableList()
+    private val lifecycleStartTimes = mutableMapOf<BootstrapLifecycle, Long>()
 
     init {
-        // Initialize standard phases
-        initializePhases()
-    }
-
-    private fun initializePhases() {
-        phases.add(PhaseInfo(1, "Koin DI Bootstrap", "Loading modules and starting DI context"))
-        phases.add(PhaseInfo(2, "Component Discovery & Registration", "Auto-discovering and validating components"))
-        phases.add(PhaseInfo(3, "Database Schema Initialization", "Creating database schema"))
-        phases.add(PhaseInfo(4, "Transaction Adapter Registration", "Registering transaction adapters"))
-        phases.add(PhaseInfo(5, "Application Initialization Hooks", "Running startup validators and initializers"))
-        phases.add(PhaseInfo(6, "Ktor Engine Startup", "Starting HTTP server"))
+        require(lifecycles.isNotEmpty()) { "Bootstrap lifecycle definitions cannot be empty" }
     }
 
     /**
-     * Mark a phase as started.
+     * Mark a lifecycle as started.
      */
-    fun startPhase(phaseNumber: Int) {
-        val phase = phases.getOrNull(phaseNumber - 1) ?: return
+    fun startLifecycle(lifecycle: BootstrapLifecycle) {
+        startLifecycle(lifecycle, compact = false)
+    }
+
+    fun startLifecycle(lifecycle: BootstrapLifecycle, compact: Boolean = false) {
+        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return
 
         val startTime = System.currentTimeMillis()
-        phaseStartTimes[phaseNumber] = startTime
+        lifecycleStartTimes[lifecycle] = startTime
 
-        phase.startTime = startTime
-        phase.status = PhaseStatus.RUNNING
+        lifecycleInfo.startTime = startTime
+        lifecycleInfo.status = PhaseStatus.RUNNING
 
         logger.info("")
-        logger.info("╔════════════════════════════════════════════════════╗")
-        logger.info("║ PHASE {}: {} ║", phaseNumber, padRight(phase.name, 38))
-        logger.info("║ {}", padRight(phase.description, 50) + "║")
-        logger.info("╚════════════════════════════════════════════════════╝")
-        logger.info("⏳ Running...")
+        if (compact) {
+            logger.info("▶ LIFECYCLE {}: {}", lifecycle.lifecycleRef, lifecycle.displayName)
+            logger.info("⏳ {}", lifecycle.description)
+        } else {
+            logger.info("╔════════════════════════════════════════════════════╗")
+            logger.info("║ LIFECYCLE: {} ║", padRight(lifecycle.displayName, 39))
+            logger.info("║ Reference: {} ║", padRight(lifecycle.lifecycleRef, 39))
+            logger.info("║ {}", padRight(lifecycle.description, 50) + "║")
+            logger.info("╚════════════════════════════════════════════════════╝")
+            logger.info("⏳ Running...")
+        }
     }
 
     /**
-     * Mark a phase as completed.
+     * Mark a lifecycle as completed.
      */
-    fun completePhase(phaseNumber: Int, message: String? = null) {
-        val phase = phases.getOrNull(phaseNumber - 1) ?: return
+    fun completeLifecycle(lifecycle: BootstrapLifecycle, message: String? = null) {
+        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return
 
         val endTime = System.currentTimeMillis()
-        phase.endTime = endTime
-        phase.status = PhaseStatus.COMPLETED
-        phase.message = message
+        lifecycleInfo.endTime = endTime
+        lifecycleInfo.status = PhaseStatus.COMPLETED
+        lifecycleInfo.message = message
 
-        val duration = endTime - phase.startTime
+        val duration = endTime - lifecycleInfo.startTime
         logger.info("✓  Completed in {}ms", duration)
         message?.let { logger.info("   {}", it) }
-        logger.info("")
     }
 
     /**
-     * Mark a phase as failed.
+     * Mark a lifecycle as failed.
      */
-    fun failPhase(phaseNumber: Int, error: Throwable? = null) {
-        val phase = phases.getOrNull(phaseNumber - 1) ?: return
+    fun failLifecycle(lifecycle: BootstrapLifecycle, error: Throwable? = null) {
+        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return
 
         val endTime = System.currentTimeMillis()
-        phase.endTime = endTime
-        phase.status = PhaseStatus.FAILED
-        phase.message = error?.message
+        lifecycleInfo.endTime = endTime
+        lifecycleInfo.status = PhaseStatus.FAILED
+        lifecycleInfo.message = error?.message
 
-        val duration = endTime - phase.startTime
+        val duration = endTime - lifecycleInfo.startTime
         logger.error("✗  Failed after {}ms", duration)
         error?.let { logger.error("   Error: {}", it.message) }
-        logger.error("")
     }
 
     /**
-     * Mark a phase as skipped.
+     * Mark a lifecycle as skipped.
      */
-    fun skipPhase(phaseNumber: Int, reason: String? = null) {
-        val phase = phases.getOrNull(phaseNumber - 1) ?: return
+    fun skipLifecycle(lifecycle: BootstrapLifecycle, reason: String? = null) {
+        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return
 
-        phase.status = PhaseStatus.SKIPPED
-        phase.message = reason
+        lifecycleInfo.status = PhaseStatus.SKIPPED
+        lifecycleInfo.message = reason
 
         logger.info("⊘  Skipped")
         reason?.let { logger.info("   Reason: {}", it) }
-        logger.info("")
     }
 
     /**
      * Display overall progress summary.
      */
-    fun displayProgressSummary() {
+    fun displayProgressSummary(includePending: Boolean = true) {
+        val lifecyclesToDisplay = if (includePending) {
+            lifecycles
+        } else {
+            lifecycles.filter { it.status != PhaseStatus.PENDING }
+        }
+
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
         logger.info("║ BOOTSTRAP PROGRESS SUMMARY                         ║")
         logger.info("╚════════════════════════════════════════════════════╝")
-        logger.info("")
 
-        phases.forEach { phase ->
-            val statusIcon = when (phase.status) {
+        lifecyclesToDisplay.forEach { lifecycle ->
+            val statusIcon = when (lifecycle.status) {
                 PhaseStatus.COMPLETED -> "✓"
                 PhaseStatus.FAILED -> "✗"
                 PhaseStatus.SKIPPED -> "⊘"
@@ -144,56 +145,59 @@ class BootstrapProgressLogger {
                 PhaseStatus.PENDING -> "○"
             }
 
-            val duration = if (phase.endTime > 0 && phase.startTime > 0) {
-                "${phase.endTime - phase.startTime}ms"
+            val duration = if (lifecycle.endTime > 0 && lifecycle.startTime > 0) {
+                "${lifecycle.endTime - lifecycle.startTime}ms"
             } else {
                 "-"
             }
 
-            val statusName = phase.status.name.padEnd(10)
-            logger.info("│ {} Phase {}: {} [{}] │", statusIcon, phase.phase, padRight(phase.name, 30), duration)
+            logger.info(
+                "│ {} {}: {} [{}] │",
+                statusIcon,
+                padRight(lifecycle.lifecycle.lifecycleRef, 34),
+                padRight(lifecycle.lifecycle.displayName, 26),
+                duration
+            )
         }
-
-        logger.info("")
     }
 
     /**
      * Get total bootstrap time in milliseconds.
      */
     fun getTotalBootstrapTime(): Long {
-        val firstStart = phases.filter { it.startTime > 0 }.minOfOrNull { it.startTime } ?: return 0L
-        val lastEnd = phases.filter { it.endTime > 0 }.maxOfOrNull { it.endTime } ?: return 0L
+        val firstStart = lifecycles.filter { it.startTime > 0 }.minOfOrNull { it.startTime } ?: return 0L
+        val lastEnd = lifecycles.filter { it.endTime > 0 }.maxOfOrNull { it.endTime } ?: return 0L
         return if (lastEnd > firstStart) lastEnd - firstStart else 0L
     }
 
     /**
-     * Get phase duration in milliseconds.
+     * Get lifecycle duration in milliseconds.
      */
-    fun getPhaseDuration(phaseNumber: Int): Long {
-        val phase = phases.getOrNull(phaseNumber - 1) ?: return 0L
-        return if (phase.endTime > 0 && phase.startTime > 0) {
-            phase.endTime - phase.startTime
+    fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long {
+        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return 0L
+        return if (lifecycleInfo.endTime > 0 && lifecycleInfo.startTime > 0) {
+            lifecycleInfo.endTime - lifecycleInfo.startTime
         } else {
             0L
         }
     }
 
     /**
-     * Get all phases and their status.
+     * Get all lifecycles and their status.
      */
-    fun getPhases(): List<PhaseInfo> = phases.toList()
+    fun getLifecycles(): List<LifecycleInfo> = lifecycles.toList()
 
     /**
-     * Clear all phase data (for testing).
+     * Clear all lifecycle data (for testing).
      */
     fun clear() {
-        phases.forEach {
+        lifecycles.forEach {
             it.startTime = 0L
             it.endTime = 0L
             it.status = PhaseStatus.PENDING
             it.message = null
         }
-        phaseStartTimes.clear()
+        lifecycleStartTimes.clear()
     }
 
     private fun padRight(text: String, width: Int): String {
@@ -203,6 +207,7 @@ class BootstrapProgressLogger {
             text + " ".repeat(width - text.length)
         }
     }
+
 }
 
 /**
@@ -211,21 +216,68 @@ class BootstrapProgressLogger {
 object BootstrapProgress {
     private val logger = BootstrapProgressLogger()
 
-    fun startPhase(phaseNumber: Int) = logger.startPhase(phaseNumber)
+    fun startLifecycle(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle)
+    fun startLifecycleCompact(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle, compact = true)
 
-    fun completePhase(phaseNumber: Int, message: String? = null) = logger.completePhase(phaseNumber, message)
+    fun completeLifecycle(lifecycle: BootstrapLifecycle, message: String? = null) =
+        logger.completeLifecycle(lifecycle, message)
 
-    fun failPhase(phaseNumber: Int, error: Throwable? = null) = logger.failPhase(phaseNumber, error)
+    fun failLifecycle(lifecycle: BootstrapLifecycle, error: Throwable? = null) =
+        logger.failLifecycle(lifecycle, error)
 
-    fun skipPhase(phaseNumber: Int, reason: String? = null) = logger.skipPhase(phaseNumber, reason)
+    fun skipLifecycle(lifecycle: BootstrapLifecycle, reason: String? = null) =
+        logger.skipLifecycle(lifecycle, reason)
 
-    fun displayProgressSummary() = logger.displayProgressSummary()
+    fun displayProgressSummary(includePending: Boolean = true) =
+        logger.displayProgressSummary(includePending)
 
     fun getTotalBootstrapTime(): Long = logger.getTotalBootstrapTime()
 
-    fun getPhaseDuration(phaseNumber: Int): Long = logger.getPhaseDuration(phaseNumber)
+    fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long = logger.getLifecycleDuration(lifecycle)
 
-    fun getPhases(): List<BootstrapProgressLogger.PhaseInfo> = logger.getPhases()
+    fun getLifecycles(): List<BootstrapProgressLogger.LifecycleInfo> = logger.getLifecycles()
 
     fun clear() = logger.clear()
+}
+
+enum class BootstrapLifecycle(
+    val lifecycleRef: String,
+    val displayName: String,
+    val description: String
+) {
+    KOIN_DI_BOOTSTRAP(
+        lifecycleRef = "LIFECYCLE_KOIN_DI_BOOTSTRAP",
+        displayName = "Koin DI Bootstrap",
+        description = "Loading modules and starting DI context"
+    ),
+    COMPONENT_DISCOVERY_REGISTRATION(
+        lifecycleRef = "LIFECYCLE_COMPONENT_DISCOVERY_REGISTRATION",
+        displayName = "Component Discovery & Registration",
+        description = "Auto-discovering and validating components"
+    ),
+    DATABASE_SCHEMA_INITIALIZATION(
+        lifecycleRef = "LIFECYCLE_DATABASE_SCHEMA_INITIALIZATION",
+        displayName = "Database Schema Initialization",
+        description = "Creating database schema"
+    ),
+    TRANSACTION_ADAPTER_REGISTRATION(
+        lifecycleRef = "LIFECYCLE_TRANSACTION_ADAPTER_REGISTRATION",
+        displayName = "Transaction Adapter Registration",
+        description = "Registering transaction adapters"
+    ),
+    PRE_START_INITIALIZERS(
+        lifecycleRef = "LIFECYCLE_PRE_START_INITIALIZERS",
+        displayName = "Pre-Start Initializers",
+        description = "Running startup validators and pre-start hooks"
+    ),
+    KTOR_ENGINE_STARTUP(
+        lifecycleRef = "LIFECYCLE_KTOR_ENGINE_STARTUP",
+        displayName = "Ktor Engine Startup",
+        description = "Starting HTTP server"
+    ),
+    RUNTIME_READY_INITIALIZERS(
+        lifecycleRef = "LIFECYCLE_RUNTIME_READY_INITIALIZERS",
+        displayName = "Runtime-Ready Initializers",
+        description = "Activating scheduler and background runtime hooks"
+    )
 }

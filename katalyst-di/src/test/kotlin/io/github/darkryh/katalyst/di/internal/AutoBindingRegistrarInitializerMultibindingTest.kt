@@ -3,6 +3,8 @@ package io.github.darkryh.katalyst.di.internal
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
 import io.github.darkryh.katalyst.di.registry.RegistryManager
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -43,6 +45,17 @@ class AutoBindingRegistrarInitializerMultibindingTest {
     }
 
     @Test
+    fun `allows multiple ApplicationReadyInitializer implementations without collision`() {
+        val registrar = AutoBindingRegistrar(koin, emptyArray())
+
+        registrar.registerInstanceWithKoin(FirstRuntimeReadyInitializer(), FirstRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
+        registrar.registerInstanceWithKoin(SecondRuntimeReadyInitializer(), SecondRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
+
+        val discovered = ApplicationReadyInitializerRegistry.getAll().map { it::class }.toSet()
+        assertEquals(setOf(FirstRuntimeReadyInitializer::class, SecondRuntimeReadyInitializer::class), discovered)
+    }
+
+    @Test
     fun `keeps strict collision behavior for non-multibinding secondary interfaces`() {
         val registrar = AutoBindingRegistrar(koin, emptyArray())
 
@@ -68,4 +81,14 @@ private class FirstInitializer : ApplicationInitializer {
 private class SecondInitializer : ApplicationInitializer {
     override val initializerId: String = "SecondInitializer"
     override suspend fun onApplicationReady() = Unit
+}
+
+private class FirstRuntimeReadyInitializer : ApplicationReadyInitializer {
+    override val initializerId: String = "FirstRuntimeReadyInitializer"
+    override suspend fun onRuntimeReady() = Unit
+}
+
+private class SecondRuntimeReadyInitializer : ApplicationReadyInitializer {
+    override val initializerId: String = "SecondRuntimeReadyInitializer"
+    override suspend fun onRuntimeReady() = Unit
 }

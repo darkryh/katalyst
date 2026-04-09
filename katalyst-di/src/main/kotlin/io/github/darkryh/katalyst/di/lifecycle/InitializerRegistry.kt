@@ -11,14 +11,13 @@ import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
  *
  * **Behavior**:
  * 1. Includes built-in initializers (StartupValidator)
- * 2. Discovers feature-provided initializers from Koin (SchedulerInitializer, etc.)
+ * 2. Discovers feature-provided pre-start initializers from Koin
  * 3. Sorts all by order (lower numbers execute first)
  * 4. Executes in sequence with error handling
  *
  * **Standard Execution Order:**
  * 1. StartupValidator (order=-100) - Validate DB is ready
- * 2. SchedulerInitializer (order=-50) - Register scheduler tasks [from scheduler module]
- * 3. Custom initializers (order=0+) - User-defined post-init logic
+ * 2. Custom pre-start initializers (order=0+) - user-defined pre-server logic
  *
  * **Dynamic Discovery**:
  * Feature modules (like scheduler) register their ApplicationInitializer implementations
@@ -39,20 +38,9 @@ internal class InitializerRegistry(private val koin: Koin) {
      */
     suspend fun invokeAll() {
         // PHASE 5: Application Initialization Hooks
-        BootstrapProgress.startPhase(5)
-
+        BootstrapProgress.startLifecycle(BootstrapLifecycle.PRE_START_INITIALIZERS)
         try {
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ APPLICATION INITIALIZATION STARTING               ║")
-            logger.info("║                                                    ║")
-            logger.info("║ Phase 2: Component Discovery & Registration       ║")
-            logger.info("║ Phase 3: Database Schema Initialization           ║")
-            logger.info("║ Phase 4: Transaction Adapter Registration         ║")
-            logger.info("║ Phase 5: Application Initialization Hooks         ║")
-            logger.info("║                                                    ║")
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
+            logger.info("Application initialization lifecycle starting")
 
             // Built-in initializers (always present)
             val builtInInitializers = mutableListOf<ApplicationInitializer>(
@@ -67,31 +55,19 @@ internal class InitializerRegistry(private val koin: Koin) {
             val discoveredInitializers = (registryInitializers + koinInitializers)
                 .distinctBy { it::class }
 
-            logger.debug(
+            logger.info(
                 "Discovered {} ApplicationInitializer(s) (registry={}, koin={})",
                 discoveredInitializers.size,
                 registryInitializers.size,
                 koinInitializers.size
             )
-            discoveredInitializers.forEach { init ->
-                logger.debug("  Found: {} (order={})", init.initializerId, init.order)
-            }
 
             // Combine all initializers
             val initializers = (builtInInitializers + discoveredInitializers).toMutableList()
 
             initializers.sortWith(initializerOrderComparator)
 
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ PHASE 6: INITIALIZATION HOOKS ({} total)          ║", initializers.size)
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
-
-            initializers.forEach { init ->
-                logger.info("  [Order: {}] {}", String.format("%4d", init.order), init.initializerId)
-            }
-            logger.info("")
+            logger.info("Pre-start initializers execution plan: {} initializer(s)", initializers.size)
 
             // Execute each initializer with fail-fast error handling
             initializers.forEach { initializer ->
@@ -104,13 +80,8 @@ internal class InitializerRegistry(private val koin: Koin) {
                 }.onFailure { e ->
                     val duration = System.currentTimeMillis() - startTime
 
-                    logger.error("")
-                    logger.error("╔════════════════════════════════════════════════════╗")
-                    logger.error("║ ✗ INITIALIZATION FAILED                           ║")
-                    logger.error("║ Failed at: {} ({} ms)", initializer.initializerId, duration)
-                    logger.error("║ Reason: {}", e.message)
-                    logger.error("╚════════════════════════════════════════════════════╝")
-                    logger.error("")
+                    logger.error("✗ Initializer failed: {} ({} ms)", initializer.initializerId, duration)
+                    logger.error("  Reason: {}", e.message ?: "Unknown error")
 
                     // Wrap in InitializerFailedException for better error context
                     val initException = // Already a lifecycle exception, re-throw as-is
@@ -126,27 +97,14 @@ internal class InitializerRegistry(private val koin: Koin) {
                 val duration = System.currentTimeMillis() - startTime
                 logger.info("✓  Completed: {} ({} ms)", initializer.initializerId, duration)
             }
-
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ INITIALIZATION HOOKS COMPLETE                   ║")
-            logger.info("║                                                    ║")
-            logger.info("║ Status: Waiting for Ktor server start...           ║")
-            logger.info("║                                                    ║")
-            logger.info("║ ✓ All components instantiated                     ║")
-            logger.info("║ ✓ Database operational & schema ready             ║")
-            logger.info("║ ✓ Transaction adapters configured                 ║")
-            logger.info("║ ✓ Scheduler tasks registered & running            ║")
-            logger.info("║ ✓ All initializer hooks completed                 ║")
-            logger.info("║                                                    ║")
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
-
-            BootstrapProgress.completePhase(5, "All application initialization hooks completed")
+            BootstrapProgress.completeLifecycle(
+                BootstrapLifecycle.PRE_START_INITIALIZERS,
+                "All application initialization hooks completed"
+            )
 
         } catch (e: Exception) {
             logger.error("Fatal error during initialization", e)
-            BootstrapProgress.failPhase(5, e)
+            BootstrapProgress.failLifecycle(BootstrapLifecycle.PRE_START_INITIALIZERS, e)
             throw e
         }
     }

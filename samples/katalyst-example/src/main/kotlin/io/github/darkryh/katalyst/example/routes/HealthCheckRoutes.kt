@@ -2,6 +2,8 @@ package io.github.darkryh.katalyst.example.routes
 
 import io.github.darkryh.katalyst.example.api.dto.DetailedHealthResponse
 import io.github.darkryh.katalyst.example.api.dto.HealthStatusResponse
+import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
+import io.github.darkryh.katalyst.di.lifecycle.LifecycleStatusReport
 import io.github.darkryh.katalyst.ktor.builder.katalystRouting
 import io.ktor.http.*
 import io.ktor.server.response.*
@@ -74,6 +76,7 @@ fun Route.healthCheckRoutes() = katalystRouting {
          * Real implementation would check database, cache, external services, etc.
          */
         get("/detailed") {
+            val lifecycle = LifecycleStatusReport.snapshot()
             call.respond(
                 HttpStatusCode.OK,
                 DetailedHealthResponse(
@@ -81,6 +84,20 @@ fun Route.healthCheckRoutes() = katalystRouting {
                     services = mapOf(
                         "database" to "CONNECTED",
                         "scheduler" to "RUNNING"
+                    ),
+                    lifecycle = mapOf(
+                        "bootstrap.totalMs" to lifecycle.totalBootstrapTimeMs.toString(),
+                        "lifecycle.ktorStartup" to lifecycle.lifecycles
+                            .firstOrNull { it.lifecycleRef == BootstrapLifecycle.KTOR_ENGINE_STARTUP.lifecycleRef }
+                            ?.status
+                            .orEmpty(),
+                        "lifecycle.runtimeReady" to lifecycle.lifecycles
+                            .firstOrNull { it.lifecycleRef == BootstrapLifecycle.RUNTIME_READY_INITIALIZERS.lifecycleRef }
+                            ?.status
+                            .orEmpty(),
+                        "warnings.critical" to lifecycle.warningCounts.critical.toString(),
+                        "warnings.warning" to lifecycle.warningCounts.warning.toString(),
+                        "warnings.info" to lifecycle.warningCounts.info.toString()
                     ),
                     timestamp = System.currentTimeMillis()
                 )

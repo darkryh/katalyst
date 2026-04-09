@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
  *
  * **Critical Safety Mechanism:**
  * This initializer runs FIRST and MUST validate everything before ANY other
- * initializer (especially SchedulerInitializer) gets to run.
+ * pre-start initializer gets to run.
  *
  * The InitializerRegistry sorts by order and executes sequentially:
  * ```
@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory
  * (line 97: onFailure) → Application stops immediately.
  *
  * **Why This Matters:**
- * SchedulerInitializer (order=-50) invokes scheduler methods that may query
- * the database. If tables don't exist, those queries crash the application.
- * StartupValidator must detect and prevent this BEFORE SchedulerInitializer runs.
+ * Runtime-ready hooks (such as scheduler registration) may query the database.
+ * StartupValidator must detect and prevent schema/connectivity issues before
+ * runtime-ready activation begins.
  *
  * **Validation Checks (Fail-Fast):**
  * 1. DatabaseTransactionManager is available
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory
  *
  * **Order Guarantee:**
  * The order=-100 parameter ensures:
- * - StartupValidator always runs before SchedulerInitializer (order=-50)
+ * - StartupValidator always runs before any custom pre-start initializer
  * - StartupValidator always runs before any user initializers (order=0+)
  * - If we throw → subsequent initializers NEVER run
  * - If we return normally → schema is guaranteed valid
@@ -52,9 +52,8 @@ internal class StartupValidator(
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
         logger.info("║ STARTUP VALIDATION (FAIL-FAST)                    ║")
-        logger.info("║ Validates database schema BEFORE scheduler init   ║")
+        logger.info("║ Validates database schema before runtime hooks    ║")
         logger.info("╚════════════════════════════════════════════════════╝")
-        logger.info("")
 
         try {
             // 1. Verify DatabaseTransactionManager
@@ -82,34 +81,14 @@ internal class StartupValidator(
             if (discoveredTables.isEmpty()) {
                 logger.info("  ℹ  No tables registered - nothing to verify")
             } else {
-                logger.info("  Found {} registered table(s):", discoveredTables.size)
-                discoveredTables.forEach { table ->
-                    logger.info("    • {}", table.tableName)
-                }
-                logger.info("  ✓ Database schema verified (created during Phase 3)")
+                logger.info("  Found {} registered table(s)", discoveredTables.size)
+                logger.info("  ✓ Database schema verified (created during bootstrap)")
             }
-
-            logger.info("")
-            logger.info("╔════════════════════════════════════════════════════╗")
-            logger.info("║ ✓ STARTUP VALIDATION PASSED                       ║")
-            logger.info("║ ✓ Database ready for scheduler initialization     ║")
-            logger.info("║ ✓ Safe to proceed to next phases                  ║")
-            logger.info("╚════════════════════════════════════════════════════╝")
-            logger.info("")
+            logger.info("✓ Startup validation passed")
 
         } catch (e: Exception) {
-            logger.error("")
-            logger.error("╔════════════════════════════════════════════════════╗")
-            logger.error("║ ✗ STARTUP VALIDATION FAILED - FATAL ERROR         ║")
-            logger.error("║ Application cannot proceed                         ║")
-            logger.error("╚════════════════════════════════════════════════════╝")
-            logger.error("Error: {}", e.message)
-            logger.error("")
-            logger.error("This error PREVENTS all further initialization:")
-            logger.error("  → SchedulerInitializer will NOT run")
-            logger.error("  → Application will NOT start")
-            logger.error("  → Ktor server will NOT bind")
-            logger.error("")
+            logger.error("✗ Startup validation failed: {}", e.message ?: "Unknown startup validation error")
+            logger.error("  Runtime-ready initializers will not run; server will not start")
 
             // Re-throw to stop application startup
             throw e
