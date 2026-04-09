@@ -1,6 +1,17 @@
 package io.github.darkryh.katalyst.scanner.core
 
 /**
+ * Severity used when a discovery scan returns zero implementations.
+ */
+enum class EmptyDiscoverySeverity {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+    NONE
+}
+
+/**
  * Configuration for type discovery.
  *
  * Encapsulates all settings needed to perform type discovery including:
@@ -25,6 +36,7 @@ package io.github.darkryh.katalyst.scanner.core
  * @param excludePackages Packages to exclude from scanning
  * @param onDiscover Callback invoked when a type is discovered
  * @param onError Callback invoked when an error occurs during discovery
+ * @param emptyResultSeverity Log severity when no implementations are discovered
  */
 data class DiscoveryConfig<T>(
     val scanPackages: List<String> = emptyList(),
@@ -32,7 +44,8 @@ data class DiscoveryConfig<T>(
     val includeSubPackages: Boolean = true,
     val excludePackages: List<String> = emptyList(),
     val onDiscover: (Class<out T>) -> Unit = {},
-    val onError: (Exception) -> Unit = {}
+    val onError: (Exception) -> Unit = {},
+    val emptyResultSeverity: EmptyDiscoverySeverity = EmptyDiscoverySeverity.WARN
 ) {
     /**
      * Builder for fluent configuration creation.
@@ -44,6 +57,7 @@ data class DiscoveryConfig<T>(
         private var excludePackages: List<String> = emptyList()
         private var onDiscover: (Class<out T>) -> Unit = {}
         private var onError: (Exception) -> Unit = {}
+        private var emptyResultSeverity: EmptyDiscoverySeverity = EmptyDiscoverySeverity.WARN
 
         fun scanPackages(vararg packages: String) = apply {
             this.scanPackages = packages.toList()
@@ -73,6 +87,10 @@ data class DiscoveryConfig<T>(
             this.onError = callback
         }
 
+        fun emptyResultSeverity(severity: EmptyDiscoverySeverity) = apply {
+            this.emptyResultSeverity = severity
+        }
+
         fun build(): DiscoveryConfig<T> {
             return DiscoveryConfig(
                 scanPackages = scanPackages,
@@ -80,7 +98,8 @@ data class DiscoveryConfig<T>(
                 includeSubPackages = includeSubPackages,
                 excludePackages = excludePackages,
                 onDiscover = onDiscover,
-                onError = onError
+                onError = onError,
+                emptyResultSeverity = emptyResultSeverity
             )
         }
     }

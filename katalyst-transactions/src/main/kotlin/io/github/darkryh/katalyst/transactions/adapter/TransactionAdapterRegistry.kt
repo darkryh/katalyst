@@ -82,20 +82,27 @@ class TransactionAdapterRegistry {
     suspend fun executeAdapters(
         phase: TransactionPhase,
         context: TransactionEventContext,
-        failFast: Boolean = false
+        failFast: Boolean = false,
+        phaseLoggingEnabled: Boolean = true
     ): PhaseExecutionResults {
         if (adapters.isEmpty()) {
-            logger.debug("No adapters registered for phase: {}", phase)
+            if (phaseLoggingEnabled) {
+                logger.debug("No adapters registered for phase: {}", phase)
+            }
             return PhaseExecutionResults(phase, emptyList())
         }
 
-        logger.debug("Executing {} adapter(s) for phase: {}", adapters.size, phase)
+        if (phaseLoggingEnabled) {
+            logger.debug("Executing {} adapter(s) for phase: {}", adapters.size, phase)
+        }
         val results = mutableListOf<AdapterExecutionResult>()
 
         for (adapter in adapters) {
             val startTime = System.currentTimeMillis()
             try {
-                logger.debug("Executing adapter {} for phase {}", adapter.name(), phase)
+                if (phaseLoggingEnabled) {
+                    logger.trace("Executing adapter {} for phase {}", adapter.name(), phase)
+                }
                 adapter.onPhase(phase, context)
 
                 val duration = System.currentTimeMillis() - startTime
@@ -108,11 +115,13 @@ class TransactionAdapterRegistry {
                         duration = duration
                     )
                 )
-                logger.debug(
-                    "Adapter {} executed successfully in {}ms",
-                    adapter.name(),
-                    duration
-                )
+                if (phaseLoggingEnabled) {
+                    logger.trace(
+                        "Adapter {} executed successfully in {}ms",
+                        adapter.name(),
+                        duration
+                    )
+                }
             } catch (e: Exception) {
                 val duration = System.currentTimeMillis() - startTime
                 logger.error(
@@ -148,9 +157,10 @@ class TransactionAdapterRegistry {
             }
         }
 
-        logger.debug("Finished executing adapters for phase: {}", phase)
         val executionResults = PhaseExecutionResults(phase, results)
-        logger.debug("Phase execution summary: {}", executionResults.getSummary())
+        if (phaseLoggingEnabled) {
+            logger.debug("Phase execution summary: {}", executionResults.getSummary())
+        }
         return executionResults
     }
 

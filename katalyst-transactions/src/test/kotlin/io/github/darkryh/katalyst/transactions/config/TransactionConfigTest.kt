@@ -29,6 +29,7 @@ class TransactionConfigTest {
         assertEquals(30.toDuration(DurationUnit.SECONDS), config.timeout)
         assertNotNull(config.retryPolicy)
         assertEquals(TransactionIsolationLevel.READ_COMMITTED, config.isolationLevel)
+        assertTrue(config.phaseLoggingEnabled)
     }
 
     @Test
@@ -42,13 +43,15 @@ class TransactionConfigTest {
         val config = TransactionConfig(
             timeout = timeout,
             retryPolicy = retryPolicy,
-            isolationLevel = isolationLevel
+            isolationLevel = isolationLevel,
+            phaseLoggingEnabled = false
         )
 
         // Then
         assertEquals(timeout, config.timeout)
         assertEquals(retryPolicy, config.retryPolicy)
         assertEquals(isolationLevel, config.isolationLevel)
+        assertFalse(config.phaseLoggingEnabled)
     }
 
     @Test

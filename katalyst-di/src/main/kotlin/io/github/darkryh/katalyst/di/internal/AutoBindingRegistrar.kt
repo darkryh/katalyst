@@ -17,6 +17,7 @@ import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
 import io.github.darkryh.katalyst.scanner.core.DiscoveryPredicate
+import io.github.darkryh.katalyst.scanner.core.EmptyDiscoverySeverity
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -120,11 +121,21 @@ class AutoBindingRegistrar(
 
         val config = DiscoveryConfig(
             scanPackages = packages.ifEmpty { emptyList() },
-            predicate = predicate
+            predicate = predicate,
+            emptyResultSeverity = emptyDiscoverySeverity(baseType)
         )
 
         val scanner = ReflectionsTypeScanner(baseType, config)
         return scanner.discover()
+    }
+
+    private fun <T : Any> emptyDiscoverySeverity(baseType: Class<T>): EmptyDiscoverySeverity {
+        return when (baseType) {
+            KtorModule::class.java,
+            KatalystMigration::class.java -> EmptyDiscoverySeverity.INFO
+
+            else -> EmptyDiscoverySeverity.WARN
+        }
     }
 
     /**

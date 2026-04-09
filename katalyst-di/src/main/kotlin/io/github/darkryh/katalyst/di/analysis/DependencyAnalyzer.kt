@@ -40,19 +40,15 @@ class DependencyAnalyzer(
     private val scanPackages: Array<String>,
     private val additionalAvailableTypes: Set<KClass<*>> = emptySet()
 ) {
+    private val optionalPlatformTypes: Set<KClass<*>> by lazy {
+        KnownPlatformTypes.loadOptionalFeatureContracts(logger)
+    }
 
     /**
      * Class type for SchedulerService if available (lazy loaded).
      * This is used for well-known property injection detection.
      */
-    private val schedulerServiceKClass: KClass<*>? by lazy {
-        try {
-            Class.forName("io.github.darkryh.katalyst.scheduler.SchedulerService")
-                .kotlin
-        } catch (_: ClassNotFoundException) {
-            null
-        }
-    }
+    private val schedulerServiceKClass: KClass<*>? by lazy { KnownPlatformTypes.schedulerServiceKClassOrNull() }
 
     /**
      * Builds the complete dependency graph from all discovered types.
@@ -264,19 +260,8 @@ class DependencyAnalyzer(
         koinTypes: Set<KClass<*>>
     ): Boolean {
         // Special handling for known framework and feature types that will be registered
-        // but might not be eager-loaded yet during validation
-        val knownAvailableTypes = setOf(
-            // Core framework types
-            "io.github.darkryh.katalyst.database.DatabaseFactory",
-            "io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager",
-
-            // Feature types
-            "io.github.darkryh.katalyst.core.config.ConfigProvider",      // From enableConfigProvider()
-            "io.github.darkryh.katalyst.events.bus.EventBus",             // From enableEvents()
-            "io.github.darkryh.katalyst.scheduler.SchedulerService"       // From enableScheduler()
-        )
-
-        if (type.qualifiedName in knownAvailableTypes) {
+        // but might not be eager-loaded yet during validation.
+        if (KnownPlatformTypes.isKnownPlatformType(type, optionalPlatformTypes)) {
             logger.debug("Type {} is a known framework/feature type, assuming it will be available", type.simpleName)
             return true
         }
@@ -369,34 +354,13 @@ class DependencyAnalyzer(
     private fun getKoinProvidedTypes(): Set<KClass<*>> {
         val types = mutableSetOf<KClass<*>>()
 
-        // DatabaseTransactionManager is always provided by CoreDIModule
-        try {
-            koin.get<DatabaseTransactionManager>()
-            types.add(DatabaseTransactionManager::class)
-        } catch (_: Exception) {
-            logger.debug("DatabaseTransactionManager not available in Koin")
-        }
+        // Known platform contracts should be considered resolvable by analyzer design.
+        types += KnownPlatformTypes.alwaysAvailableContracts
+        types += optionalPlatformTypes
 
-        // Check for feature-provided types by verifying they're available on classpath
-        val featureTypes = listOf(
-            "io.github.darkryh.katalyst.events.bus.EventBus",
-            "io.github.darkryh.katalyst.scheduler.SchedulerService",
-            "io.github.darkryh.katalyst.config.ConfigProvider"
-        )
-
-        featureTypes.forEach { className ->
-            try {
-                val clazz = Class.forName(className).kotlin
-                types.add(clazz)
-                logger.debug("Found feature type available: {}", className)
-            } catch (_: ClassNotFoundException) {
-                // Feature not available on classpath - that's OK
-                logger.debug("Feature type not available on classpath: {}", className)
-            }
-        }
-
-        // Koin itself is always available
-        types.add(Koin::class)
+        // Keep this probe to detect catastrophic bootstrap ordering issues.
+        runCatching { koin.get<DatabaseTransactionManager>() }
+            .onFailure { logger.debug("DatabaseTransactionManager not available in Koin yet: {}", it.message) }
 
         logger.debug("Koin provides {} types: {}", types.size, types.map { it.simpleName })
 

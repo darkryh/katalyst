@@ -73,7 +73,8 @@ interface TransactionManager {
      * 6. Re-throw exception if not retried
      *
      * @param workflowId Optional workflow ID for operation tracking
-     * @param config Transaction configuration with timeout, retry policy, isolation level
+     * @param config Transaction configuration with timeout, retry policy, isolation level.
+     * If null, implementation uses its configured default transaction settings.
      * @param T The return type of the block
      * @param block The suspend function to execute within transaction
      * @return The result of the block
@@ -83,7 +84,7 @@ interface TransactionManager {
      */
     suspend fun <T> transaction(
         workflowId: String? = null,
-        config: TransactionConfig = TransactionConfig(),
+        config: TransactionConfig? = null,
         block: suspend Transaction.() -> T
     ): T
 

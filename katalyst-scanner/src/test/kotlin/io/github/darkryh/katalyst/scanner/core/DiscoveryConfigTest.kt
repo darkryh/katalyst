@@ -52,6 +52,12 @@ class DiscoveryConfigTest {
     }
 
     @Test
+    fun `DiscoveryConfig should use WARN for empty results by default`() {
+        val config = DiscoveryConfig<TestService>()
+        assertEquals(EmptyDiscoverySeverity.WARN, config.emptyResultSeverity)
+    }
+
+    @Test
     fun `DiscoveryConfig should support explicit scan packages`() {
         val config = DiscoveryConfig<TestService>(
             scanPackages = listOf("com.example", "com.test")
@@ -182,12 +188,14 @@ class DiscoveryConfigTest {
             .excludePackages("com.example.test")
             .onDiscover { discoveredClasses.add(it) }
             .onError { errors.add(it) }
+            .emptyResultSeverity(EmptyDiscoverySeverity.INFO)
             .build()
 
         assertEquals(2, config.scanPackages.size)
         assertNotNull(config.predicate)
         assertFalse(config.includeSubPackages)
         assertEquals(1, config.excludePackages.size)
+        assertEquals(EmptyDiscoverySeverity.INFO, config.emptyResultSeverity)
 
         config.onDiscover(TestService::class.java)
         config.onError(RuntimeException())

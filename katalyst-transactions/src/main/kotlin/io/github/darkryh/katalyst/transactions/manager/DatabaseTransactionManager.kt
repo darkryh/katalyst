@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapter
 import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapterRegistry
 import io.github.darkryh.katalyst.transactions.config.BackoffStrategy
 import io.github.darkryh.katalyst.transactions.config.RetryPolicy
+import io.github.darkryh.katalyst.transactions.config.TransactionExceptionSeverity
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.context.TransactionScopeContext
@@ -129,7 +130,8 @@ import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager as ExposedT
  */
 class DatabaseTransactionManager(
     private val database: Database,
-    private val adapterRegistry: TransactionAdapterRegistry = TransactionAdapterRegistry()
+    private val adapterRegistry: TransactionAdapterRegistry = TransactionAdapterRegistry(),
+    private val defaultTransactionConfig: TransactionConfig = TransactionConfig()
 ) : TransactionManager {
 
     companion object {
@@ -164,9 +166,10 @@ class DatabaseTransactionManager(
      */
     override suspend fun <T> transaction(
         workflowId: String?,
-        config: TransactionConfig,
+        config: TransactionConfig?,
         block: suspend Transaction.() -> T
     ): T {
+        val activeConfig = config ?: defaultTransactionConfig
         val currentScope = currentCoroutineContext()[TransactionScopeContext]
 
         // Join only when both scope and connection are still active/valid.
@@ -217,7 +220,7 @@ class DatabaseTransactionManager(
         try {
             // Retry loop with backoff
             var lastException: Exception? = null
-            val maxAttempts = config.retryPolicy.maxRetries + 1
+            val maxAttempts = activeConfig.retryPolicy.maxRetries + 1
 
             repeat(maxAttempts) { attempt ->
                 try {
@@ -230,9 +233,10 @@ class DatabaseTransactionManager(
 
                     // Use exception-based timeout detection so nullable transaction results
                     // are not misclassified as timeouts.
-                    return withTimeout(config.timeout) {
+                    return withTimeout(activeConfig.timeout) {
                         executeTransactionBlock(
                             txId = resolvedWorkflowId,
+                            config = activeConfig,
                             transactionEventContext = transactionEventContext,
                             transactionScopeContext = transactionScopeContext,
                             block = block
@@ -240,14 +244,14 @@ class DatabaseTransactionManager(
                     }
                 } catch (e: TimeoutCancellationException) {
                     val timeoutException = TransactionTimeoutException(
-                        message = "Transaction timeout after ${config.timeout}",
+                        message = "Transaction timeout after ${activeConfig.timeout}",
                         transactionId = resolvedWorkflowId,
                         attemptNumber = attempt,
-                        timeout = config.timeout,
+                        timeout = activeConfig.timeout,
                         cause = e
                     )
                     lastException = timeoutException
-                    val isRetryable = shouldRetry(timeoutException, config, attempt, maxAttempts)
+                    val isRetryable = shouldRetry(timeoutException, activeConfig, attempt, maxAttempts)
 
                     if (isRetryable) {
                         logger.warn(
@@ -259,22 +263,21 @@ class DatabaseTransactionManager(
                         )
 
                         if (attempt < maxAttempts - 1) {
-                            val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
+                            val delayMs = calculateBackoffDelay(attempt, activeConfig.retryPolicy)
                             logger.debug("Waiting {}ms before retry", delayMs)
                             delay(delayMs)
                         }
                     } else {
-                        logger.error(
-                            "Non-retryable exception in transaction {} - {}: {}",
-                            resolvedWorkflowId,
-                            timeoutException::class.simpleName,
-                            timeoutException.message
+                        logNonRetryableException(
+                            transactionId = resolvedWorkflowId,
+                            exception = timeoutException,
+                            config = activeConfig
                         )
                         throw timeoutException
                     }
                 } catch (e: Exception) {
                     lastException = e
-                    val isRetryable = shouldRetry(e, config, attempt, maxAttempts)
+                    val isRetryable = shouldRetry(e, activeConfig, attempt, maxAttempts)
 
                     if (isRetryable) {
                         logger.warn(
@@ -286,16 +289,15 @@ class DatabaseTransactionManager(
                         )
 
                         if (attempt < maxAttempts - 1) {
-                            val delayMs = calculateBackoffDelay(attempt, config.retryPolicy)
+                            val delayMs = calculateBackoffDelay(attempt, activeConfig.retryPolicy)
                             logger.debug("Waiting {}ms before retry", delayMs)
                             delay(delayMs)
                         }
                     } else {
-                        logger.error(
-                            "Non-retryable exception in transaction {} - {}: {}",
-                            resolvedWorkflowId,
-                            e::class.simpleName,
-                            e.message
+                        logNonRetryableException(
+                            transactionId = resolvedWorkflowId,
+                            exception = e,
+                            config = activeConfig
                         )
                         throw e
                     }
@@ -309,7 +311,7 @@ class DatabaseTransactionManager(
                     message = "Transaction failed after $maxAttempts attempts",
                     transactionId = resolvedWorkflowId,
                     finalAttemptNumber = maxAttempts,
-                    totalRetries = config.retryPolicy.maxRetries,
+                    totalRetries = activeConfig.retryPolicy.maxRetries,
                     cause = lastException
                 )
             }
@@ -341,47 +343,68 @@ class DatabaseTransactionManager(
      */
     private suspend fun <T> executeTransactionBlock(
         txId: String,
+        config: TransactionConfig,
         transactionEventContext: TransactionEventContext,
         transactionScopeContext: TransactionScopeContext,
         block: suspend Transaction.() -> T
     ): T {
         return try {
             // Phase 1: BEFORE_BEGIN adapters
-            logger.debug("Executing BEFORE_BEGIN adapters for workflow: {}", txId)
-            adapterRegistry.executeAdapters(TransactionPhase.BEFORE_BEGIN, transactionEventContext)
+            if (config.phaseLoggingEnabled) {
+                logger.debug("Executing BEFORE_BEGIN adapters for workflow: {}", txId)
+            }
+            adapterRegistry.executeAdapters(
+                TransactionPhase.BEFORE_BEGIN,
+                transactionEventContext,
+                phaseLoggingEnabled = config.phaseLoggingEnabled
+            )
 
             // Phase 2-6: Execute the transaction with contexts
             val result = withContext(transactionEventContext + transactionScopeContext) {
                 // Phase 2: AFTER_BEGIN adapters (within context)
-                logger.debug("Executing AFTER_BEGIN adapters")
-                adapterRegistry.executeAdapters(TransactionPhase.AFTER_BEGIN, transactionEventContext)
+                if (config.phaseLoggingEnabled) {
+                    logger.debug("Executing AFTER_BEGIN adapters")
+                }
+                adapterRegistry.executeAdapters(
+                    TransactionPhase.AFTER_BEGIN,
+                    transactionEventContext,
+                    phaseLoggingEnabled = config.phaseLoggingEnabled
+                )
 
                 // DON'T pass dispatcher to preserve coroutine context inheritance
                 // The context elements must be inherited by the transaction block
                 suspendTransaction(database) {
-                    logger.debug(
-                        "Transaction context established, executing block (workflowId={}, txScopeId={})",
-                        txId,
-                        transactionScopeContext.transactionId
-                    )
+                    if (config.phaseLoggingEnabled) {
+                        logger.debug(
+                            "Transaction context established, executing block (workflowId={}, txScopeId={})",
+                            txId,
+                            transactionScopeContext.transactionId
+                        )
+                    }
                     val outcome = block()
 
                     // Phase 3: BEFORE_COMMIT_VALIDATION adapters (P0 Critical)
                     // NEW: Validate critical aspects (e.g., all pending events have handlers)
                     // This phase MUST succeed or transaction rolls back
-                    logger.debug("Executing BEFORE_COMMIT_VALIDATION adapters inside transaction")
+                    if (config.phaseLoggingEnabled) {
+                        logger.debug("Executing BEFORE_COMMIT_VALIDATION adapters inside transaction")
+                    }
                     adapterRegistry.executeAdapters(
                         TransactionPhase.BEFORE_COMMIT_VALIDATION,
                         transactionEventContext,
-                        failFast = true
+                        failFast = true,
+                        phaseLoggingEnabled = config.phaseLoggingEnabled
                     )
 
                     // Phase 4: BEFORE_COMMIT adapters (still in TX)
-                    logger.debug("Executing BEFORE_COMMIT adapters inside transaction")
+                    if (config.phaseLoggingEnabled) {
+                        logger.debug("Executing BEFORE_COMMIT adapters inside transaction")
+                    }
                     adapterRegistry.executeAdapters(
                         TransactionPhase.BEFORE_COMMIT,
                         transactionEventContext,
-                        failFast = true
+                        failFast = true,
+                        phaseLoggingEnabled = config.phaseLoggingEnabled
                     )
 
                     outcome
@@ -389,30 +412,55 @@ class DatabaseTransactionManager(
             }
 
             // Phase 5: AFTER_COMMIT adapters (after transaction commits)
-            logger.debug("Executing AFTER_COMMIT adapters")
-            adapterRegistry.executeAdapters(TransactionPhase.AFTER_COMMIT, transactionEventContext)
+            if (config.phaseLoggingEnabled) {
+                logger.debug("Executing AFTER_COMMIT adapters")
+            }
+            adapterRegistry.executeAdapters(
+                TransactionPhase.AFTER_COMMIT,
+                transactionEventContext,
+                phaseLoggingEnabled = config.phaseLoggingEnabled
+            )
             transactionScopeContext.state = TransactionScopeState.COMPLETED
 
             logger.info("Transaction succeeded for workflow: {}", txId)
             result
         } catch (e: Exception) {
-            logger.error("Transaction failed for workflow: {} - {}", txId, e.message, e)
+            // Avoid duplicate ERROR logs. Final severity is logged by retry/finalization flow.
+            logger.debug(
+                "Transaction attempt failed for workflow: {} - {}: {}",
+                txId,
+                e::class.simpleName,
+                e.message,
+                e
+            )
             transactionScopeContext.state = TransactionScopeState.ROLLED_BACK
 
             // Phase 5: ON_ROLLBACK adapters
-            logger.debug("Executing ON_ROLLBACK adapters")
+            if (config.phaseLoggingEnabled) {
+                logger.debug("Executing ON_ROLLBACK adapters")
+            }
             try {
                 withContext(transactionEventContext) {
-                    adapterRegistry.executeAdapters(TransactionPhase.ON_ROLLBACK, transactionEventContext)
+                    adapterRegistry.executeAdapters(
+                        TransactionPhase.ON_ROLLBACK,
+                        transactionEventContext,
+                        phaseLoggingEnabled = config.phaseLoggingEnabled
+                    )
                 }
             } catch (adapterError: Exception) {
                 logger.warn("Error in ON_ROLLBACK adapter, continuing rollback", adapterError)
             }
 
             // Phase 6: AFTER_ROLLBACK adapters
-            logger.debug("Executing AFTER_ROLLBACK adapters")
+            if (config.phaseLoggingEnabled) {
+                logger.debug("Executing AFTER_ROLLBACK adapters")
+            }
             try {
-                adapterRegistry.executeAdapters(TransactionPhase.AFTER_ROLLBACK, transactionEventContext)
+                adapterRegistry.executeAdapters(
+                    TransactionPhase.AFTER_ROLLBACK,
+                    transactionEventContext,
+                    phaseLoggingEnabled = config.phaseLoggingEnabled
+                )
             } catch (adapterError: Exception) {
                 logger.warn("Error in AFTER_ROLLBACK adapter, continuing", adapterError)
             }
@@ -460,6 +508,42 @@ class DatabaseTransactionManager(
             logger.debug("Exception ${exception::class.simpleName} detected as transient error, retrying")
         }
         return isRetryable
+    }
+
+    private fun logNonRetryableException(
+        transactionId: String,
+        exception: Exception,
+        config: TransactionConfig
+    ) {
+        when (config.exceptionSeverityClassifier.classify(exception, config)) {
+            TransactionExceptionSeverity.INFO -> {
+                logger.info(
+                    "Non-retryable exception in transaction {} - {}: {}",
+                    transactionId,
+                    exception::class.simpleName,
+                    exception.message
+                )
+            }
+
+            TransactionExceptionSeverity.WARN -> {
+                logger.warn(
+                    "Non-retryable exception in transaction {} - {}: {}",
+                    transactionId,
+                    exception::class.simpleName,
+                    exception.message
+                )
+            }
+
+            TransactionExceptionSeverity.ERROR -> {
+                logger.error(
+                    "Non-retryable exception in transaction {} - {}: {}",
+                    transactionId,
+                    exception::class.simpleName,
+                    exception.message,
+                    exception
+                )
+            }
+        }
     }
 
     /**

@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.transactions.config
 
+import io.github.darkryh.katalyst.transactions.exception.isTransient
+import java.sql.SQLException
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -142,6 +144,111 @@ data class RetryPolicy(
 )
 
 /**
+ * Severity used for transaction exception logging.
+ */
+enum class TransactionExceptionSeverity {
+    INFO,
+    WARN,
+    ERROR
+}
+
+/**
+ * Classifies non-retryable transaction exceptions into log severity levels.
+ *
+ * The classifier is used only when a transaction attempt is not retried.
+ */
+fun interface TransactionExceptionSeverityClassifier {
+    /**
+     * @param exception The failure thrown by the transaction.
+     * @param config Active transaction config.
+     */
+    fun classify(
+        exception: Exception,
+        config: TransactionConfig
+    ): TransactionExceptionSeverity
+}
+
+/**
+ * Default severity classifier for transaction failures.
+ *
+ * Classification policy:
+ * - Retryable/transient/infrastructure failures -> ERROR
+ * - Explicit non-retryable policy exceptions -> WARN
+ * - Built-in known Katalyst expected/business exceptions -> WARN
+ * - Configured expected business exception types -> WARN
+ * - Unknown exceptions -> ERROR
+ */
+object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSeverityClassifier {
+    /**
+     * Explicit built-in allowlist for Katalyst exceptions considered expected/business failures.
+     *
+     * Kept as FQCN strings to avoid cross-module compile/runtime coupling from transactions module.
+     */
+    private val knownKatalystExpectedExceptionNames = setOf(
+        "io.github.darkryh.katalyst.events.bus.validation.EventValidationException",
+        "io.github.darkryh.katalyst.events.exception.EventValidationException",
+        "io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException",
+        "io.github.darkryh.katalyst.di.exception.PostRegistrationValidationException",
+        "io.github.darkryh.katalyst.di.exception.ValidationLogicException"
+    )
+
+    override fun classify(
+        exception: Exception,
+        config: TransactionConfig
+    ): TransactionExceptionSeverity {
+        val retryPolicy = config.retryPolicy
+
+        if (matchesAny(exception, retryPolicy.retryableExceptions) ||
+            exception.isTransient() ||
+            hasTransientSqlState(exception)
+        ) {
+            return TransactionExceptionSeverity.ERROR
+        }
+
+        if (matchesAny(exception, retryPolicy.nonRetryableExceptions)) {
+            return TransactionExceptionSeverity.WARN
+        }
+
+        if (isKnownKatalystExpectedException(exception) ||
+            matchesAny(exception, config.expectedBusinessExceptions)
+        ) {
+            return TransactionExceptionSeverity.WARN
+        }
+
+        return TransactionExceptionSeverity.ERROR
+    }
+
+    private fun isKnownKatalystExpectedException(exception: Exception): Boolean =
+        exception.causeChain().any { throwable ->
+            throwable.classHierarchyNames().any { it in knownKatalystExpectedExceptionNames }
+        }
+
+    private fun hasTransientSqlState(exception: Exception): Boolean =
+        exception.causeChain().filterIsInstance<SQLException>().any { sqlException ->
+            val state = sqlException.sqlState ?: return@any false
+            state == "08003" || state.startsWith("08") || state.startsWith("40")
+        }
+
+    private fun matchesAny(
+        throwable: Throwable,
+        types: Set<KClass<out Exception>>
+    ): Boolean =
+        throwable.causeChain().any { cause -> cause is Exception && types.any { it.isInstance(cause) } }
+
+    private fun Throwable.causeChain(): Sequence<Throwable> =
+        generateSequence(this) { it.cause }
+
+    private fun Throwable.classHierarchyNames(): Sequence<String> = sequence {
+        var cursor: Class<*>? = this@classHierarchyNames::class.java
+        while (cursor != null) {
+            yield(cursor.name)
+            cursor.interfaces.forEach { yield(it.name) }
+            cursor = cursor.superclass
+        }
+    }
+}
+
+/**
  * Isolation level for transaction execution.
  *
  * Determines how concurrent transactions interact:
@@ -229,5 +336,32 @@ data class TransactionConfig(
      *
      * Default: READ_COMMITTED
      */
-    val isolationLevel: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED
+    val isolationLevel: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
+
+    /**
+     * Exception types that represent expected business failures for this application.
+     *
+     * This is used only for log severity classification and does not alter retry behavior.
+     */
+    val expectedBusinessExceptions: Set<KClass<out Exception>> = emptySet(),
+
+    /**
+     * Enables verbose transaction phase logging (phase transitions, per-adapter execution details).
+     *
+     * This flag only affects transaction internals and does not change global application logging.
+     * Disable this in high-throughput environments to reduce log overhead.
+     *
+     * Default: true
+     */
+    val phaseLoggingEnabled: Boolean = true,
+
+    /**
+     * Classifier that determines log severity for non-retryable transaction failures.
+     *
+     * Default behavior:
+     * - expected business failures -> WARN
+     * - infrastructure/unexpected failures -> ERROR
+     */
+    val exceptionSeverityClassifier: TransactionExceptionSeverityClassifier =
+        DefaultTransactionExceptionSeverityClassifier
 )

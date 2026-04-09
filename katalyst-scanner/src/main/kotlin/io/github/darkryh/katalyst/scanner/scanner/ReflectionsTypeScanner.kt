@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.scanner.scanner
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
 import io.github.darkryh.katalyst.scanner.core.DiscoveryMetadata
 import io.github.darkryh.katalyst.scanner.core.DiscoveryPredicate
+import io.github.darkryh.katalyst.scanner.core.EmptyDiscoverySeverity
 import io.github.darkryh.katalyst.scanner.core.TypeDiscovery
 import org.reflections.Reflections
 import org.reflections.util.ClasspathHelper
@@ -120,7 +121,14 @@ class ReflectionsTypeScanner<T>(
             }
 
             if (implementations.isEmpty()) {
-                logger.warn("No {} implementations matched the discovery criteria", baseType.simpleName)
+                val message = "No ${baseType.simpleName} implementations matched the discovery criteria"
+                when (config.emptyResultSeverity) {
+                    EmptyDiscoverySeverity.DEBUG -> logger.debug(message)
+                    EmptyDiscoverySeverity.INFO -> logger.info(message)
+                    EmptyDiscoverySeverity.WARN -> logger.warn(message)
+                    EmptyDiscoverySeverity.ERROR -> logger.error(message)
+                    EmptyDiscoverySeverity.NONE -> Unit
+                }
             }
 
             implementations

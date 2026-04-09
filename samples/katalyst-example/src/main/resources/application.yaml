@@ -84,3 +84,10 @@ jwt:
 app:
   environment: ${APP_ENVIRONMENT:development}
   debug: ${APP_DEBUG:true}
+
+# Transaction logging controls (transaction-internal only)
+transaction:
+  logging:
+    # Controls verbose phase/adapters logs inside DatabaseTransactionManager and TransactionAdapterRegistry.
+    # Set false in high-throughput environments to reduce log overhead.
+    enabled: ${TRANSACTION_LOGGING_ENABLED:true}

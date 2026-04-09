@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.di.config
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.database.adapter.PersistenceTransactionAdapter
@@ -189,6 +190,20 @@ fun bootstrapKatalystDI(
         feature.onKoinReady(koin)
     }
 
+    val phaseLoggingEnabled = resolveTransactionPhaseLoggingEnabled(koin)
+    val transactionDefaultsModule = module {
+        single<DatabaseTransactionManager> {
+            val databaseFactory = get<DatabaseFactory>()
+            DatabaseTransactionManager(
+                database = databaseFactory.database,
+                defaultTransactionConfig = TransactionConfig(
+                    phaseLoggingEnabled = phaseLoggingEnabled
+                )
+            )
+        }
+    }
+    koin.loadModules(listOf(transactionDefaultsModule), createEagerInstances = true)
+
     // PHASE 3: Database Schema Initialization & Table Creation
     BootstrapProgress.startPhase(3)
     try {
@@ -213,7 +228,12 @@ fun bootstrapKatalystDI(
                 single<DatabaseFactory> { databaseFactory }
                 single<DatabaseTransactionManager> {
                     logger.debug("Creating DatabaseTransactionManager with discovered tables")
-                    DatabaseTransactionManager(databaseFactory.database)
+                    DatabaseTransactionManager(
+                        database = databaseFactory.database,
+                        defaultTransactionConfig = TransactionConfig(
+                            phaseLoggingEnabled = phaseLoggingEnabled
+                        )
+                    )
                 }
             }
             koin.loadModules(listOf(databaseModule), createEagerInstances = true)
@@ -391,6 +411,18 @@ fun stopKoinStandalone() {
     logger.info("Stopping Koin DI")
     stopKoin()
     logger.info("Koin stopped successfully")
+}
+
+private fun resolveTransactionPhaseLoggingEnabled(koin: Koin): Boolean {
+    return runCatching {
+        val configProvider = koin.get<ConfigProvider>()
+        configProvider.getBoolean("transaction.logging.enabled", true)
+    }.getOrElse {
+        logger.debug(
+            "ConfigProvider unavailable for transaction phase logging toggle; using default enabled=true"
+        )
+        true
+    }
 }
 
 
