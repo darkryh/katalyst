@@ -93,10 +93,10 @@ class ComponentOrderComputer(private val graph: DependencyGraph) {
         // Check: each component appears before its dependents
         val positions = order.mapIndexed { index, type -> type to index }.toMap()
 
-        for ((componentType, dependencies) in graph.edges) {
+        for (componentType in graph.edges.keys) {
             val componentPosition = positions[componentType] ?: continue
 
-            for (dependency in dependencies) {
+            for (dependency in graph.getDependencyNodes(componentType)) {
                 val dependencyPosition = positions[dependency] ?: continue
 
                 if (dependencyPosition >= componentPosition) {
@@ -148,7 +148,7 @@ class ComponentOrderComputer(private val graph: DependencyGraph) {
 
         visited.add(type)
 
-        val dependencies = graph.getDependencies(type)
+        val dependencies = graph.getDependencyNodes(type)
         if (dependencies.isEmpty()) {
             return 0  // No dependencies = group 0
         }

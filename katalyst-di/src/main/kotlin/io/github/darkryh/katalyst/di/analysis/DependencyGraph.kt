@@ -35,6 +35,21 @@ data class DependencyGraph(
         edges[type] ?: emptySet()
 
     /**
+     * Get dependency nodes that participate in component lifecycle ordering.
+     *
+     * Constructor dependencies may target secondary types such as interfaces.
+     * Those interfaces are not graph nodes themselves, so lifecycle algorithms
+     * must normalize them to the discovered concrete provider nodes.
+     */
+    fun getDependencyNodes(type: KClass<*>): Set<KClass<*>> =
+        getDependencies(type).flatMap { dependency ->
+            when {
+                dependency in nodes -> listOf(dependency)
+                else -> getProvidersOfSecondaryType(dependency).toList()
+            }
+        }.toSet()
+
+    /**
      * Get all transitive dependencies of a component (including indirect).
      *
      * @param type The component type
@@ -49,7 +64,7 @@ data class DependencyGraph(
             if (current in visited) continue
 
             visited.add(current)
-            queue.addAll(getDependencies(current))
+            queue.addAll(getDependencyNodes(current))
         }
 
         visited.remove(type)
@@ -166,9 +181,9 @@ data class DependencyGraph(
         // For Kahn's algorithm:
         // - inDegree[A] = number of things A depends on
         // - adjList[B] should contain A (because A depends on B, so B comes before A)
-        edges.forEach { (from, tos) ->
+        edges.forEach { (from, _) ->
             if (from in componentsToSort) {
-                tos.filter { it in componentsToSort }.forEach { to ->
+                getDependencyNodes(from).filter { it in componentsToSort }.forEach { to ->
                     // from depends on to, so:
                     adjList.getOrPut(to) { mutableSetOf() }.add(from)  // to comes before from
                     inDegree[from] = (inDegree[from] ?: 0) + 1  // from depends on something

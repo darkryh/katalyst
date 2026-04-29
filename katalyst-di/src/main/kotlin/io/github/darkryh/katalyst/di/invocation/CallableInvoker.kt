@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.di.invocation
 
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.jvm.isAccessible
@@ -19,12 +20,14 @@ object CallableInvoker {
         ownerDescription: String
     ): T {
         constructor.isAccessible = true
-        return constructor.callBy(
-            resolver.resolveParameters(
-                function = constructor,
-                ownerDescription = ownerDescription
+        return unwrapInvocationTarget {
+            constructor.callBy(
+                resolver.resolveParameters(
+                    function = constructor,
+                    ownerDescription = ownerDescription
+                )
             )
-        )
+        }
     }
 
     fun callMemberWithDefaults(
@@ -47,7 +50,7 @@ object CallableInvoker {
             ownerDescription = ownerDescription
         ) ?: supplied
 
-        return function.callBy(args)
+        return unwrapInvocationTarget { function.callBy(args) }
     }
 
     fun callFunction(
@@ -57,12 +60,21 @@ object CallableInvoker {
         ownerDescription: String
     ): Any? {
         function.isAccessible = true
-        return function.callBy(
-            resolver.resolveParameters(
-                function = function,
-                suppliedParameters = suppliedParameters,
-                ownerDescription = ownerDescription
+        return unwrapInvocationTarget {
+            function.callBy(
+                resolver.resolveParameters(
+                    function = function,
+                    suppliedParameters = suppliedParameters,
+                    ownerDescription = ownerDescription
+                )
             )
-        )
+        }
     }
+
+    private inline fun <T> unwrapInvocationTarget(block: () -> T): T =
+        try {
+            block()
+        } catch (error: InvocationTargetException) {
+            throw error.targetException ?: error
+        }
 }

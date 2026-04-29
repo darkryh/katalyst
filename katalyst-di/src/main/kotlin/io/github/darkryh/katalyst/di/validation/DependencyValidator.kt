@@ -113,7 +113,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
         recursionStack.add(current)
         path.add(current)
 
-        val dependencies = graph.getDependencies(current)
+        val dependencies = graph.getDependencyNodes(current)
 
         for (dependency in dependencies) {
             // Skip optional dependencies in cycle detection
