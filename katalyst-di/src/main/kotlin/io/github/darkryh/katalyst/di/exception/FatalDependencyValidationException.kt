@@ -241,15 +241,34 @@ class FatalDependencyValidationException(
     }
 
     /**
+     * Renders the detailed error report and returns it without writing to logs or stdout.
+     *
+     * The bootstrap boundary owns diagnostic output. Keeping rendering side-effect free
+     * prevents duplicate reports when exceptions are rethrown through multiple startup layers.
+     */
+    fun renderDetailedReport(): String = generateDetailedReport()
+
+    /**
+     * Renders a concise or detailed report depending on verbosity settings.
+     *
+     * @param maxErrors Maximum number of errors to include in the summary.
+     * @param verbose When true, renders the full detailed report.
+     */
+    fun renderReport(maxErrors: Int = 5, verbose: Boolean = isVerboseEnabled()): String =
+        if (verbose) generateDetailedReport() else generateSummaryReport(maxErrors)
+
+    /**
      * Logs the detailed error report to the logger and returns it.
      *
-     * This is useful for ensuring the detailed report appears in application logs
-     * even if the exception message itself is truncated.
+     * @deprecated Use [renderDetailedReport] and let the bootstrap boundary log once.
      */
+    @Deprecated(
+        message = "Use renderDetailedReport() and log once at the bootstrap boundary.",
+        replaceWith = ReplaceWith("renderDetailedReport()")
+    )
     fun printDetailedReport(): String {
-        val report = generateDetailedReport()
+        val report = renderDetailedReport()
         logger.error(report)
-        println(report)  // Also print to stdout for visibility
         return report
     }
 
@@ -258,11 +277,16 @@ class FatalDependencyValidationException(
      *
      * @param maxErrors Maximum number of errors to include in the summary.
      * @param verbose When true, prints the full detailed report.
+     *
+     * @deprecated Use [renderReport] and let the bootstrap boundary log once.
      */
+    @Deprecated(
+        message = "Use renderReport() and log once at the bootstrap boundary.",
+        replaceWith = ReplaceWith("renderReport(maxErrors, verbose)")
+    )
     fun printReport(maxErrors: Int = 5, verbose: Boolean = isVerboseEnabled()): String {
-        val report = if (verbose) generateDetailedReport() else generateSummaryReport(maxErrors)
+        val report = renderReport(maxErrors, verbose)
         logger.error(report)
-        println(report)
         return report
     }
 

@@ -175,6 +175,7 @@ fun interface TransactionExceptionSeverityClassifier {
  * - Retryable/transient/infrastructure failures -> ERROR
  * - Explicit non-retryable policy exceptions -> WARN
  * - Built-in known Katalyst expected/business exceptions -> WARN
+ * - Conventional application business exceptions -> WARN
  * - Configured expected business exception types -> WARN
  * - Unknown exceptions -> ERROR
  */
@@ -187,9 +188,18 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
     private val knownKatalystExpectedExceptionNames = setOf(
         "io.github.darkryh.katalyst.events.bus.validation.EventValidationException",
         "io.github.darkryh.katalyst.events.exception.EventValidationException",
-        "io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException",
-        "io.github.darkryh.katalyst.di.exception.PostRegistrationValidationException",
-        "io.github.darkryh.katalyst.di.exception.ValidationLogicException"
+        "io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException"
+    )
+
+    private val expectedBusinessNameSuffixes = listOf(
+        "BadRequestException",
+        "BusinessException",
+        "ConflictException",
+        "DomainException",
+        "ForbiddenException",
+        "NotFoundException",
+        "UnauthorizedException",
+        "ValidationException"
     )
 
     override fun classify(
@@ -210,6 +220,7 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
         }
 
         if (isKnownKatalystExpectedException(exception) ||
+            hasExpectedBusinessExceptionName(exception) ||
             matchesAny(exception, config.expectedBusinessExceptions)
         ) {
             return TransactionExceptionSeverity.WARN
@@ -221,6 +232,13 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
     private fun isKnownKatalystExpectedException(exception: Exception): Boolean =
         exception.causeChain().any { throwable ->
             throwable.classHierarchyNames().any { it in knownKatalystExpectedExceptionNames }
+        }
+
+    private fun hasExpectedBusinessExceptionName(exception: Exception): Boolean =
+        exception.causeChain().any { throwable ->
+            throwable.classHierarchyNames().any { className ->
+                expectedBusinessNameSuffixes.any(className::endsWith)
+            }
         }
 
     private fun hasTransientSqlState(exception: Exception): Boolean =

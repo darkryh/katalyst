@@ -80,34 +80,31 @@ class AuthenticationService(
 }
 ```
 
-## Deferred Injection Patterns
-
-Katalyst supports deferred dependency resolution without leaving constructor-injection style.
+## Parameter Injection Rules
 
 ```kotlin
 import io.github.darkryh.katalyst.core.component.Service
-import io.github.darkryh.katalyst.di.injection.Provider
 
 class NotificationOrchestrator(
-    private val realtimeGateway: Provider<RealtimeGateway>, // resolve when needed
-    private val auditClient: Lazy<AuditClient>,             // resolve once, then cache
-    private val clock: () -> ClockService                   // function-provider style
+    private val realtimeGateway: RealtimeGateway,
+    private val auditClient: AuditClient,
+    private val optionalAuditTrail: AuditTrail?,
+    private val retryLimit: Int = 3
 ) : Service {
     suspend fun notifyNow() {
-        realtimeGateway.get().broadcast()
-        auditClient.value.record("notify")
-        clock().mark()
+        realtimeGateway.broadcast()
+        auditClient.record("notify")
+        optionalAuditTrail?.record("optional")
     }
 }
 ```
 
-When to use each:
-- `T` (direct): default for normal dependencies.
-- `Provider<T>`: runtime resolution, no caching.
-- `Lazy<T>`: defer and cache first resolution.
-- `() -> T`: lightweight provider syntax.
-
-Deferred dependencies are validated by DI, but they are not treated as hard startup-order edges.
+Rules:
+- Normal object/config parameters are resolved from Koin.
+- Kotlin default parameters are honored when Katalyst invokes constructors, route functions, and scheduler functions.
+- Nullable missing parameters receive `null`.
+- Required scalar parameters such as `Int`, `Long`, `Boolean`, and `String` need a default value or an explicit registered config object.
+- Constructor-injection deferral wrappers (`Provider<T>`, `Lazy<T>`, `() -> T`) are no longer part of Katalyst auto-wiring.
 
 ## Qualifiers (Optional)
 

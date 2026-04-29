@@ -33,16 +33,19 @@ production. For HTTP tests, `katalystTestApplication { ... }` installs all
 auto-discovered Ktor modules before executing requests so the pipeline mirrors
 runtime behavior.
 
-## New DI/Persistence Patterns
+## DI/Persistence Patterns
 
-Latest Katalyst alpha adds two useful patterns you can adopt in the sample:
+Latest Katalyst alpha keeps dependency declarations direct. Constructor and framework-invoked
+function parameters should use the dependency type itself; Katalyst resolves services/config
+objects automatically and applies Kotlin defaults when a parameter is optional.
 
-1. Deferred DI resolution (DSL-first style):
+1. Direct route/function parameter injection:
 ```kotlin
-class ExampleService(
-    private val mailerProvider: Provider<MailerService>,
-    private val auditClient: Lazy<AuditClient>
-) : Service
+fun Route.authRoutes(service: AuthenticationService) = katalystRouting {
+    post("/login") {
+        call.respond(service.login(call.receive()))
+    }
+}
 ```
 
 2. Managed JDBC bootstrap/custom SQL:

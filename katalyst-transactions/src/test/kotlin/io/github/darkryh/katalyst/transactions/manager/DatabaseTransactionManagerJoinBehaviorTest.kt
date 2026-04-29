@@ -178,7 +178,7 @@ class DatabaseTransactionManagerJoinBehaviorTest {
 
         val result: String? = manager.transaction(
             config = TransactionConfig(
-                timeout = 20.toDuration(DurationUnit.MILLISECONDS),
+                timeout = 150.toDuration(DurationUnit.MILLISECONDS),
                 retryPolicy = RetryPolicy(
                     maxRetries = 1,
                     backoffStrategy = io.github.darkryh.katalyst.transactions.config.BackoffStrategy.IMMEDIATE
@@ -187,7 +187,7 @@ class DatabaseTransactionManagerJoinBehaviorTest {
         ) {
             attempts++
             if (attempts == 1) {
-                delay(40)
+                delay(300)
                 "never"
             } else {
                 null

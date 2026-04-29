@@ -4,9 +4,12 @@ import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.di.analysis.ComponentOrderComputer
-import io.github.darkryh.katalyst.di.analysis.DependencyAnalyzer
+import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshot
+import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshotBuilder
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
 import io.github.darkryh.katalyst.di.exception.KatalystDIException
+import io.github.darkryh.katalyst.di.planning.BindingPlan
+import io.github.darkryh.katalyst.di.planning.BindingPlanBuilder
 import io.github.darkryh.katalyst.di.validation.DependencyValidator
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
@@ -58,10 +61,11 @@ class ComponentRegistrationOrchestrator(
         val discovered = discoverAllComponents()
 
         logger.info("✓ LIFECYCLE_COMPONENT_DISCOVERY complete: found {} components",
-            discovered.values.sumOf { it.size })
+            discovered.allTypes.size)
 
         // Phase 2: Analyze dependencies
-        val graph = analyzeComponentDependencies(discovered)
+        val plan = buildBindingPlan(discovered)
+        val graph = plan.graph
 
         logger.info("✓ LIFECYCLE_DEPENDENCY_ANALYSIS complete: graph has {} nodes, {} edges",
             graph.nodeCount(), graph.edgeCount())
@@ -75,10 +79,9 @@ class ComponentRegistrationOrchestrator(
 
             val exception = FatalDependencyValidationException(
                 validationErrors = validationReport.errors,
-                discoveredTypes = discovered,
+                discoveredTypes = discovered.asValidationMap(),
                 koin = koin
             )
-            exception.printReport()
             throw exception
         }
 
@@ -104,7 +107,7 @@ class ComponentRegistrationOrchestrator(
         }
 
         // Phase 5-6: Register components in order (integrated)
-        registerComponentsInOrder(order, discovered)
+        registerComponentsInOrder(order, plan.discovery)
 
         logger.info("✓ LIFECYCLE_COMPONENT_REGISTRATION complete: all components registered and verified")
         logger.info("═".repeat(80))
@@ -117,10 +120,10 @@ class ComponentRegistrationOrchestrator(
      *
      * @return Map of component type to set of discovered classes
      */
-    private fun discoverAllComponents(): Map<String, Set<KClass<*>>> {
+    private fun discoverAllComponents(): DiscoverySnapshot {
         logger.info("LIFECYCLE_COMPONENT_DISCOVERY starting")
 
-        val discovered = mutableMapOf<String, Set<KClass<*>>>()
+        val builder = DiscoverySnapshotBuilder()
         val registrar = AutoBindingRegistrar(koin, scanPackages)
 
         // Discover each component type (methods are now internal - no reflection needed)
@@ -133,11 +136,11 @@ class ComponentRegistrationOrchestrator(
             "migrations" to KatalystMigration::class.java
         ).forEach { (label, baseClass) ->
             val types = registrar.discoverConcreteTypes(baseClass)
-            discovered[label] = types.map { it.kotlin }.toSet()
+            builder.category(label, types.map { it.kotlin }.toSet())
             logger.debug("Discovered {} {}", types.size, label)
         }
 
-        return discovered
+        return builder.build()
     }
 
     /**
@@ -146,28 +149,20 @@ class ComponentRegistrationOrchestrator(
      * @param discovered Map of discovered component types
      * @return Dependency graph with all nodes and edges
      */
-    private fun analyzeComponentDependencies(discovered: Map<String, Set<KClass<*>>>): io.github.darkryh.katalyst.di.analysis.DependencyGraph {
+    private fun buildBindingPlan(discovered: DiscoverySnapshot): BindingPlan {
         logger.info("LIFECYCLE_DEPENDENCY_ANALYSIS starting")
-
-        val allTypes = mutableMapOf<String, Set<KClass<*>>>()
-
-        // Merge all types into single map
-        discovered.forEach { (key, types) ->
-            allTypes[key] = types
-        }
 
         // Pre-discover automatic config types so they can be included in dependency analysis
         // This ensures the validator knows these types will be available
         val automaticConfigTypes = discoverAutomaticConfigTypes()
 
-        val analyzer = DependencyAnalyzer(allTypes, koin, scanPackages, automaticConfigTypes)
-
-        val graph = analyzer.buildGraph()
+        val plan = BindingPlanBuilder(koin, scanPackages)
+            .build(discovered, automaticConfigTypes)
 
         logger.debug("Graph nodes: {}, edges: {}, secondary bindings: {}",
-            graph.nodeCount(), graph.edgeCount(), graph.secondaryTypeBindings.size)
+            plan.graph.nodeCount(), plan.graph.edgeCount(), plan.graph.secondaryTypeBindings.size)
 
-        return graph
+        return plan
     }
 
     /**
@@ -186,9 +181,9 @@ class ComponentRegistrationOrchestrator(
         val report = validator.validateAll()
 
         if (!report.isValid) {
-            logger.error("Validation found {} errors:", report.totalErrorCount)
+            logger.debug("Validation found {} errors:", report.totalErrorCount)
             report.errors.forEachIndexed { index, error ->
-                logger.error("[{}] {} - {}", index + 1, error::class.simpleName, error.message)
+                logger.debug("[{}] {} - {}", index + 1, error::class.simpleName, error.message)
             }
         }
 
@@ -206,7 +201,7 @@ class ComponentRegistrationOrchestrator(
      */
     private fun registerComponentsInOrder(
         order: List<KClass<*>>,
-        discovered: Map<String, Set<KClass<*>>>
+        discovered: DiscoverySnapshot
     ) {
         logger.info("LIFECYCLE_CONFIG_AUTO_REGISTRATION starting")
 
@@ -238,7 +233,7 @@ class ComponentRegistrationOrchestrator(
 
         // Register migrations AFTER non-migration components
         // Migrations were excluded from topological sort but still need to be registered
-        val migrations = (discovered["migrations"] ?: emptySet()).toList()
+        val migrations = discovered.types("migrations").toList()
         if (migrations.isNotEmpty()) {
             logger.info("Registering {} migrations after service components", migrations.size)
             registerComponentsInLoop(
@@ -434,16 +429,16 @@ class ComponentRegistrationOrchestrator(
     private fun registerComponentOfType(
         registrar: AutoBindingRegistrar,
         componentType: KClass<*>,
-        discovered: Map<String, Set<KClass<*>>>
+        discovered: DiscoverySnapshot
     ) {
         // Determine which base class this component implements
         val baseClass = when (componentType) {
-            in (discovered["services"] ?: emptySet()) -> Service::class
-            in (discovered["components"] ?: emptySet()) -> Component::class
-            in (discovered["repositories"] ?: emptySet()) -> CrudRepository::class
-            in (discovered["event handlers"] ?: emptySet()) -> EventHandler::class
-            in (discovered["ktor modules"] ?: emptySet()) -> KtorModule::class
-            in (discovered["migrations"] ?: emptySet()) -> KatalystMigration::class
+            in discovered.types("services") -> Service::class
+            in discovered.types("components") -> Component::class
+            in discovered.types("repositories") -> CrudRepository::class
+            in discovered.types("event handlers") -> EventHandler::class
+            in discovered.types("ktor modules") -> KtorModule::class
+            in discovered.types("migrations") -> KatalystMigration::class
             else -> {
                 logger.warn("Unknown component type: {}", componentType.simpleName)
                 return
@@ -481,7 +476,7 @@ class ComponentRegistrationOrchestrator(
     private fun registerComponentsInLoop(
         components: List<KClass<*>>,
         registrar: AutoBindingRegistrar,
-        discovered: Map<String, Set<KClass<*>>>,
+        discovered: DiscoverySnapshot,
         label: String = "",
         useDebugLogging: Boolean = false
     ) {

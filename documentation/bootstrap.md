@@ -31,7 +31,7 @@ Key points:
 - `database(...)` accepts any `DatabaseConfig` (HikariCP + Exposed 1.1.1). Load it with `ServiceConfigLoader` before DI starts.
 - `scanPackages` is the discovery hook; everything else is interface-driven (no annotations).
 - Feature toggles (`enable*`) opt your app into migrations, scheduler, events, websockets, and YAML-backed ConfigProvider.
-- Deferred constructor injection is supported (`Provider<T>`, `Lazy<T>`, `() -> T`) with optional `@InjectNamed`.
+- Constructor and framework-function parameters are injected directly; use Kotlin defaults or nullable types for optional values, and `@InjectNamed` only for intentional qualifier disambiguation.
 
 ## Discovery Signals (no annotations)
 

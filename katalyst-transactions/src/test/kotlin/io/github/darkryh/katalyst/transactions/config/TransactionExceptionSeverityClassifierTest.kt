@@ -57,6 +57,19 @@ class TransactionExceptionSeverityClassifierTest {
     }
 
     @Test
+    fun `conventional validation exception is classified as warn`() {
+        class UserExampleValidationException(message: String) : RuntimeException(message)
+
+        val config = TransactionConfig()
+        val severity = DefaultTransactionExceptionSeverityClassifier.classify(
+            UserExampleValidationException("invalid user input"),
+            config
+        )
+
+        assertEquals(TransactionExceptionSeverity.WARN, severity)
+    }
+
+    @Test
     fun `unexpected runtime exception remains error`() {
         val config = TransactionConfig()
         val severity = DefaultTransactionExceptionSeverityClassifier.classify(

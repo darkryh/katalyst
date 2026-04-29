@@ -9,11 +9,12 @@ Katalyst gives you a ready-to-use Ktor backend stack: automatic DI, YAML configu
 
 ## What's New (Latest Alpha)
 
-- Deferred DI injection primitives in `katalyst-di`:
-  - `Provider<T>` for runtime resolution
-  - `Lazy<T>` constructor injection
-  - `() -> T` function-provider injection
-  - Optional `@InjectNamed("...")` for qualifier disambiguation
+- Simpler automatic injection in `katalyst-di`:
+  - Use normal constructor parameters for services, repositories, components, configs, and framework contracts.
+  - Kotlin default parameters are honored during reflective framework invocation.
+  - Nullable missing dependencies resolve to `null`; required missing dependencies fail with clear diagnostics.
+  - Route and scheduler functions can receive injectable object/config parameters.
+  - Optional `@InjectNamed("...")` remains available for qualifier disambiguation.
 - `ApplicationInitializer` supports multi-binding with deterministic execution order.
 - Managed low-level SQL API in `katalyst-persistence` via `SqlExecutor` (`executeUpdate`, `query`, `queryOne`, `executeBatch`), reusing active transaction connections when present.
 
@@ -37,7 +38,7 @@ dependencies {
     val katalystVersion = "<katalyst-version>"
     // Pin your app stack as needed
     val ktorVersion = "3.3.3"
-    val exposedVersion = "1.1.1"
+    val exposedVersion = "1.2.0"
     val hikariVersion = "5.1.0"
     val postgresVersion = "42.7.8"
 

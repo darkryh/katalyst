@@ -16,7 +16,6 @@ import io.github.darkryh.katalyst.di.lifecycle.RuntimeReadyInitializerRunner
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
-import io.github.darkryh.katalyst.di.module.scannerDIModule
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
 import io.github.darkryh.katalyst.events.bus.adapter.EventsTransactionAdapter
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
@@ -127,8 +126,7 @@ fun bootstrapKatalystDI(
     val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
 
     val modules = mutableListOf(
-        coreDIModule(databaseConfig),
-        scannerDIModule()
+        coreDIModule(databaseConfig)
     )
 
 
@@ -184,7 +182,7 @@ fun bootstrapKatalystDI(
             "Discovered repositories, services, components, and validators with dependency validation"
         )
     } catch (e: FatalDependencyValidationException) {
-        logger.error("✗ FATAL: Dependency validation failed - application cannot start")
+        logger.error(e.renderReport())
         BootstrapProgress.failLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION, e)
         throw e
     } catch (e: Exception) {

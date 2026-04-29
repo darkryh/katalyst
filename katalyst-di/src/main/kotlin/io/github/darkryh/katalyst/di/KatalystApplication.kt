@@ -15,6 +15,7 @@ import io.github.darkryh.katalyst.di.config.initializeKoinStandalone
 import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
 import io.github.darkryh.katalyst.di.config.stopKoinStandalone
 import io.github.darkryh.katalyst.di.config.wrap
+import io.github.darkryh.katalyst.di.exception.KatalystDIException
 import io.github.darkryh.katalyst.di.internal.KtorModuleRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
@@ -514,6 +515,9 @@ fun katalystApplication(
 
         embeddedServer.start(wait = true)
 
+    } catch (e: KatalystDIException) {
+        logger.debug("Katalyst DI startup failed", e)
+        throw e
     } catch (e: Exception) {
         logger.error("Failed to start Katalyst application", e)
         throw e

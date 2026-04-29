@@ -62,7 +62,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
         if (isValid) {
             logger.info("✓ Validation passed: {}", report.getSummary())
         } else {
-            logger.error("✗ Validation failed: {}", report.getSummary())
+            logger.debug("Validation failed: {}", report.getSummary())
         }
 
         return report
@@ -132,7 +132,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                     val cycleStart = path.indexOf(dependency)
                     val cycle = path.subList(cycleStart, path.size) + dependency
                     errors.add(CircularDependencyError(cycle))
-                    logger.error("Detected cycle: {}", cycle.map { it.simpleName })
+                    logger.debug("Detected cycle: {}", cycle.map { it.simpleName })
                 }
             }
         }
@@ -210,10 +210,6 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         appendLine("       single { ${dependency.type.simpleName}() }")
                         appendLine("   }")
                         appendLine("   enableCustomModule(myModule)")
-                        if (dependency.isDeferred) {
-                            appendLine()
-                            appendLine("5. For runtime/deferred dependencies, inject Provider<T> or Lazy<T>.")
-                        }
                     }
 
                     val error = MissingDependencyError(
@@ -229,7 +225,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                     )
 
                     errors.add(error)
-                    logger.error(
+                    logger.debug(
                         "Missing dependency: {} requires {}{} (from {}, deferred={})",
                         componentType.simpleName,
                         dependency.type.simpleName,
@@ -273,7 +269,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                     reason = reason
                 ))
 
-                logger.error("Uninstantiable type: {}", reason)
+                logger.debug("Uninstantiable type: {}", reason)
             }
         }
 
@@ -307,7 +303,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                             isAvailable = false
                         ))
 
-                        logger.error(
+                        logger.debug(
                             "Missing DatabaseTransactionManager in {}",
                             componentType.simpleName
                         )
@@ -352,7 +348,7 @@ class DependencyValidator(private val graph: DependencyGraph) {
                             providingComponents = emptyList()
                         ))
 
-                        logger.error(
+                        logger.debug(
                             "Secondary type {} not provided by any component",
                             dependency.type.simpleName
                         )

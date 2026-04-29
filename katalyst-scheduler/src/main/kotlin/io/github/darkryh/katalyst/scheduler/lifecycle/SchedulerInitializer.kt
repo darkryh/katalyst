@@ -1,6 +1,8 @@
 package io.github.darkryh.katalyst.scheduler.lifecycle
 
 import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.di.invocation.CallableInvoker
+import io.github.darkryh.katalyst.di.invocation.ParameterResolver
 import io.github.darkryh.katalyst.di.internal.ServiceRegistry
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerDiscoveryException
@@ -8,11 +10,11 @@ import io.github.darkryh.katalyst.scheduler.exception.SchedulerInvocationExcepti
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException
 import io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle
 import org.objectweb.asm.*
+import org.koin.core.context.GlobalContext
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KParameter
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.functions
-import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.jvmErasure
 
 private data class SchedulerMethodCandidate(
@@ -147,8 +149,17 @@ internal class SchedulerInitializer : ApplicationReadyInitializer {
 
                 try {
                     logger.debug("Invoking scheduler method {}", signature)
-                    method.isAccessible = true
-                    val result = method.call(service)
+                    val koin = GlobalContext.getOrNull()
+                    val result = if (koin != null) {
+                        CallableInvoker.callMemberWithDefaults(
+                            instance = service,
+                            function = method,
+                            resolver = ParameterResolver(koin),
+                            ownerDescription = "scheduler method $signature"
+                        )
+                    } else {
+                        CallableInvoker.callMemberWithDefaults(service, method)
+                    }
 
                     if (isSchedulerJobHandle(result)) {
                         logger.debug("Scheduler method registered successfully: {}", signature)
@@ -218,13 +229,6 @@ internal class SchedulerInitializer : ApplicationReadyInitializer {
                     }.getOrElse { false }
 
                     if (!isSchedulerJobHandle) return@filter false
-
-                    // No required parameters
-                    val hasNoRequiredParams = function.parameters
-                        .filter { it.kind == KParameter.Kind.VALUE }
-                        .all { it.isOptional }
-
-                    if (!hasNoRequiredParams) return@filter false
 
                     // Not private
                     val isNotPrivate = function.visibility != KVisibility.PRIVATE

@@ -526,8 +526,8 @@ class DatabaseTransactionManager(
             }
 
             TransactionExceptionSeverity.WARN -> {
-                logger.warn(
-                    "Non-retryable exception in transaction {} - {}: {}",
+                logger.debug(
+                    "Expected non-retryable exception in transaction {} - {}: {}",
                     transactionId,
                     exception::class.simpleName,
                     exception.message
@@ -539,7 +539,11 @@ class DatabaseTransactionManager(
                     "Non-retryable exception in transaction {} - {}: {}",
                     transactionId,
                     exception::class.simpleName,
-                    exception.message,
+                    exception.message
+                )
+                logger.debug(
+                    "Non-retryable exception stack trace for transaction {}",
+                    transactionId,
                     exception
                 )
             }

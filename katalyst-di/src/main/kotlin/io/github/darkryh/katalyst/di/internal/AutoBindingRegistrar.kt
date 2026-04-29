@@ -11,10 +11,9 @@ import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
-import io.github.darkryh.katalyst.di.injection.InjectNamed
-import io.github.darkryh.katalyst.di.injection.Provider
-import io.github.darkryh.katalyst.di.injection.internal.KoinProvider
-import io.github.darkryh.katalyst.di.injection.internal.parseDependencyRequest
+import io.github.darkryh.katalyst.di.invocation.CallableInvoker
+import io.github.darkryh.katalyst.di.invocation.ParameterResolver
+import io.github.darkryh.katalyst.di.invocation.getFromKoinOrNull
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
@@ -43,11 +42,10 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KParameter
-import kotlin.reflect.KType
-import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.kotlinFunction
 import kotlin.reflect.jvm.jvmErasure
 
 private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
@@ -71,7 +69,7 @@ private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
  * - Components are instantiated with constructor dependency injection
  * - Dependencies are resolved from the Koin container
  * - Well-known properties (DatabaseTransactionManager, SchedulerService) are auto-injected
- * - Registration handles circular dependencies through deferred registration
+ * - Unresolvable constructor cycles fail during validation with explicit diagnostics
  *
  * **Thread Safety:**
  * Not thread-safe. Should only be called once during application startup.
@@ -141,15 +139,6 @@ class AutoBindingRegistrar(
     }
 
     /**
-     * Checks if a component class is already registered in Koin.
-     *
-     * @param clazz The class to check
-     * @return true if already registered, false otherwise
-     */
-    private fun isAlreadyRegistered(clazz: Class<*>): Boolean =
-        koin.getFromKoinOrNull(clazz.kotlin) != null
-
-    /**
      * Creates an instance of a component using constructor injection.
      *
      * Selects the primary constructor or the constructor with the fewest
@@ -167,135 +156,11 @@ class AutoBindingRegistrar(
             .minByOrNull { ctor -> ctor.parameters.count { !it.isOptional && it.kind == KParameter.Kind.VALUE } }
             ?: throw IllegalStateException("No usable constructor found for ${target.qualifiedName}")
 
-        val args = mutableMapOf<KParameter, Any?>()
-
-        constructor.parameters.forEach { parameter ->
-            if (parameter.kind != KParameter.Kind.VALUE) return@forEach
-            if (parameter.isOptional) return@forEach
-
-            val qualifierName = parameter.findAnnotation<InjectNamed>()?.value
-            val resolved = resolveDependency(
-                kType = parameter.type,
-                owner = target,
-                parameterName = parameter.name,
-                qualifierName = qualifierName
-            )
-            args[parameter] = resolved
-        }
-
-        constructor.isAccessible = true
-        return if (args.isEmpty()) {
-            constructor.call()
-        } else {
-            constructor.callBy(args)
-        }
-    }
-
-    /**
-     * Resolves a single constructor dependency from the Koin container.
-     *
-     * Special handling for:
-     * - [Koin] instances (returns the active Koin container)
-     * - Nullable types (returns null if not found)
-     *
-     * @param type The Kotlin class of the dependency
-     * @param kType The full Kotlin type including nullability
-     * @param owner The class that requires this dependency (for error messages)
-     * @return The resolved dependency instance, or null for nullable types
-     * @throws DependencyInjectionException if a required dependency cannot be resolved
-     */
-    private fun resolveDependency(
-        kType: KType,
-        owner: KClass<*>,
-        parameterName: String?,
-        qualifierName: String?
-    ): Any? {
-        val request = parseDependencyRequest(kType)
-
-        return when (request.mode) {
-            io.github.darkryh.katalyst.di.analysis.InjectionMode.DIRECT -> {
-                when (request.targetType) {
-                    Koin::class -> koin
-                    else -> resolveImmediateDependency(
-                        type = request.targetType,
-                        owner = owner,
-                        nullable = request.targetNullable,
-                        qualifierName = qualifierName
-                    )
-                }
-            }
-
-            io.github.darkryh.katalyst.di.analysis.InjectionMode.PROVIDER -> {
-                @Suppress("UNCHECKED_CAST")
-                KoinProvider {
-                    resolveRuntimeDependency(
-                        type = request.targetType,
-                        owner = owner,
-                        parameterName = parameterName,
-                        nullable = request.targetNullable,
-                        qualifierName = qualifierName
-                    ) as Any
-                } as Provider<*>
-            }
-
-            io.github.darkryh.katalyst.di.analysis.InjectionMode.LAZY -> {
-                lazy {
-                    resolveRuntimeDependency(
-                        type = request.targetType,
-                        owner = owner,
-                        parameterName = parameterName,
-                        nullable = request.targetNullable,
-                        qualifierName = qualifierName
-                    )
-                }
-            }
-
-            io.github.darkryh.katalyst.di.analysis.InjectionMode.FUNCTION -> {
-                {
-                    resolveRuntimeDependency(
-                        type = request.targetType,
-                        owner = owner,
-                        parameterName = parameterName,
-                        nullable = request.targetNullable,
-                        qualifierName = qualifierName
-                    )
-                }
-            }
-        }
-    }
-
-    private fun resolveImmediateDependency(
-        type: KClass<*>,
-        owner: KClass<*>,
-        nullable: Boolean,
-        qualifierName: String?
-    ): Any? {
-        return koin.getFromKoinOrNull(type, qualifierName) ?: if (nullable) {
-            null
-        } else {
-            val qualifierHint = qualifierName?.let { " with qualifier '$it'" } ?: ""
-            throw DependencyInjectionException(
-                "Cannot resolve dependency ${type.qualifiedName}$qualifierHint for ${owner.qualifiedName}"
-            )
-        }
-    }
-
-    private fun resolveRuntimeDependency(
-        type: KClass<*>,
-        owner: KClass<*>,
-        parameterName: String?,
-        nullable: Boolean,
-        qualifierName: String?
-    ): Any? {
-        return koin.getFromKoinOrNull(type, qualifierName) ?: if (nullable) {
-            null
-        } else {
-            val param = parameterName?.let { " for parameter '$it'" } ?: ""
-            val qualifierHint = qualifierName?.let { " with qualifier '$it'" } ?: ""
-            throw DependencyInjectionException(
-                "Cannot resolve deferred dependency ${type.qualifiedName}$qualifierHint$param in ${owner.qualifiedName}"
-            )
-        }
+        return CallableInvoker.callConstructor(
+            constructor = constructor,
+            resolver = ParameterResolver(koin),
+            ownerDescription = target.qualifiedName ?: target.simpleName ?: "component"
+        )
     }
 
     /**
@@ -428,7 +293,7 @@ class AutoBindingRegistrar(
         }
 
         methods.forEach { method ->
-            val module = RouteFunctionModule(method)
+            val module = RouteFunctionModule(method, koin)
             KtorModuleRegistry.register(module)
             logger.info(
                 "Registered route function {}.{} as Ktor module",
@@ -820,17 +685,6 @@ class AutoBindingRegistrar(
  * @param kClass The class type to retrieve
  * @return The instance if found, null otherwise
  */
-private fun Koin.getFromKoinOrNull(kClass: KClass<*>, qualifierName: String? = null): Any? =
-    try {
-        @Suppress("UNCHECKED_CAST")
-        get(
-            kClass as KClass<Any>,
-            qualifier = qualifierName?.let { org.koin.core.qualifier.named(it) }
-        ) as Any
-    } catch (_: Exception) {
-        null
-    }
-
 private val schedulerServiceKClass: KClass<*>? = runCatching {
     Class.forName("io.github.darkryh.katalyst.services.service.SchedulerService").kotlin
 }.getOrNull()
@@ -854,7 +708,8 @@ private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
  * @property method The Java reflection method to invoke
  */
 private class RouteFunctionModule(
-    private val method: Method
+    private val method: Method,
+    private val koin: Koin
 ) : KtorModule, RouteModuleMarker {
 
     // Exception handlers and middleware should be installed FIRST (negative order)
@@ -884,36 +739,47 @@ private class RouteFunctionModule(
             method.isAccessible = true
             val parameterTypes = method.parameterTypes
             if (parameterTypes.isEmpty()) {
-                logger.warn("Skipping route function {} – no parameters found", method)
-                return
+                throw DependencyInjectionException("Route function $method has no receiver parameter")
             }
 
             val firstParam = parameterTypes.first()
             when {
                 Application::class.java.isAssignableFrom(firstParam) -> {
-                    method.invoke(null, application)
+                    invokeWithInjectedParameters(application)
                 }
 
                 Route::class.java.isAssignableFrom(firstParam) -> {
                     application.routing {
-                        method.invoke(null, this)
+                        invokeWithInjectedParameters(this)
                     }
                 }
 
-                else -> logger.warn(
-                    "Skipping route function {} – unsupported parameter type {}",
-                    method,
-                    firstParam.name
+                else -> throw DependencyInjectionException(
+                    "Route function $method has unsupported receiver parameter ${firstParam.name}"
                 )
             }
         } catch (e: Exception) {
-            logger.error(
-                "Failed to invoke route function {}: {}",
-                method,
-                e.message,
-                e
-            )
+            logger.debug("Failed to invoke route function {}", method, e)
+            throw DependencyInjectionException("Failed to invoke route function $method: ${e.message}", e)
         }
+    }
+
+    private fun invokeWithInjectedParameters(receiver: Any) {
+        val function = method.kotlinFunction
+        if (function == null) {
+            method.invoke(null, receiver)
+            return
+        }
+
+        val receiverParameter = function.parameters.firstOrNull()
+            ?: throw DependencyInjectionException("Route function $method has no Kotlin receiver parameter")
+
+        CallableInvoker.callFunction(
+            function = function,
+            suppliedParameters = mapOf(receiverParameter to receiver),
+            resolver = ParameterResolver(koin),
+            ownerDescription = "route function ${method.declaringClass.name}.${method.name}"
+        )
     }
 
     companion object {

@@ -13,17 +13,17 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 
 @Suppress("unused")
-fun Route.authRoutes() = katalystRouting {
+fun Route.authRoutes(
+    service: AuthenticationService,
+) = katalystRouting {
     route("/api/auth") {
         post("/register") {
-            val service by call.ktInject<AuthenticationService>()
             val request = call.receive<RegisterRequest>()
             val response = service.register(request)
             call.respond(HttpStatusCode.Created, response)
         }
 
         post("/login") {
-            val service by call.ktInject<AuthenticationService>()
             val request = call.receive<LoginRequest>()
             val response = service.login(request)
             call.respond(response)
