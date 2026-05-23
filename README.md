@@ -38,7 +38,7 @@ dependencies {
     val katalystVersion = "<katalyst-version>"
     // Pin your app stack as needed
     val ktorVersion = "3.3.3"
-    val exposedVersion = "1.2.0"
+    val exposedVersion = "1.3.0"
     val hikariVersion = "5.1.0"
     val postgresVersion = "42.7.8"
 

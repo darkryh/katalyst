@@ -19,7 +19,7 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 
 ### Persistence & Database
 
-4. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 1.2.0 JDBC integration, imports, transaction patterns, DSL reference.
+4. **[exposed-database-setup.md](exposed-database-setup.md)** – Exposed 1.3.0 JDBC integration, imports, transaction patterns, DSL reference.
 
 5. **[persistence.md](persistence.md)** – Defining tables, repositories, and custom queries with Exposed/Hikari.
    - Includes managed JDBC access with `SqlExecutor` for bootstrap DDL and custom SQL.
