@@ -10,7 +10,7 @@ Katalyst’s scanner wires components any time you implement the right interface
 | Persistence layer | `katalyst-persistence` | `CrudRepository`, `Table` |
 | Scheduler | `katalyst-scheduler` | `SchedulerService`, `ScheduleConfig`, `SchedulerJobHandle` |
 | Events | `katalyst-events-*` | `EventBus`, `EventHandler`, Flow observers |
-| HTTP & WebSockets | `katalyst-ktor`, `katalyst-websockets` | `katalystRouting`, `katalystMiddleware`, `katalystWebSockets`, `ktInject` |
+| HTTP & WebSockets | `katalyst-ktor` | `katalystRouting`, `katalystMiddleware`, `katalystWebSockets`, `ktInject` |
 | Events (local only) | `katalyst-events`, `katalyst-events-bus` | `EventBus`, `EventHandler`, Flow observers |
 
 ## Components
@@ -138,7 +138,7 @@ Use the provided DSLs; the scanner installs them automatically once DI is ready.
 import io.github.darkryh.katalyst.ktor.builder.katalystRouting
 import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
 import io.github.darkryh.katalyst.ktor.extension.ktInject
-import io.github.darkryh.katalyst.websockets.builder.katalystWebSockets
+import io.github.darkryh.katalyst.ktor.websocket.katalystWebSockets
 
 @Suppress("unused") // automatically injected
 fun Route.authRoutes() = katalystRouting {
@@ -166,6 +166,7 @@ fun Route.notificationWebSocketRoutes() = katalystWebSockets {
 
 - `call.ktInject<T>()` resolves request-scoped dependencies.
 - Middleware/websocket builders can also use `inject<T>()` from the DSL to resolve dependencies.
+- Existing imports from `io.github.darkryh.katalyst.websockets.*` still compile through the deprecated compatibility module, but new code should import WebSocket APIs from `io.github.darkryh.katalyst.ktor.websocket`.
 
 ## Configuration Auto-Wiring
 

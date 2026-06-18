@@ -17,17 +17,13 @@ When defining tables that implement `Table<Id, Entity>`, use these imports:
 
 ```kotlin
 import io.github.darkryh.katalyst.core.persistence.Table
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 ```
 
 **Key Classes:**
 - `LongIdTable` - Base table class for auto-incremented Long IDs
-- `ResultRow` - Represents a single database row result
-- `EntityID` - Wraps entity IDs with table context (required for INSERT/UPDATE)
-- `UpdateBuilder<*>` - Statement builder for INSERT/UPDATE operations
+- `mapping { ... }` - Katalyst DSL for row construction and insert/update bindings
 
 ### Repository Query Imports
 
@@ -77,11 +73,9 @@ import org.jetbrains.exposed.v1.core.eq
 
 ```kotlin
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.ReferenceOption
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfileEntity> {
     val accountId = reference(
@@ -93,26 +87,22 @@ object UserProfilesTable : LongIdTable("user_profiles"), Table<Long, UserProfile
     val bio = text("bio").nullable()
     val createdAtMillis = long("created_at_millis")
 
-    override fun mapRow(row: ResultRow) = UserProfileEntity(
-        id = row[id].value,
-        accountId = row[accountId].value,
-        displayName = row[displayName],
-        bio = row[bio],
-        createdAtMillis = row[createdAtMillis]
-    )
+    override val mapping = mapping<Long, UserProfileEntity> {
+        generatedId(id, UserProfileEntity::id)
+        reference(accountId, UserProfileEntity::accountId)
+        field(displayName, UserProfileEntity::displayName)
+        field(bio, UserProfileEntity::bio)
+        field(createdAtMillis, UserProfileEntity::createdAtMillis)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: UserProfileEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id, this)
+        construct {
+            UserProfileEntity(
+                id = this[id],
+                accountId = this[accountId],
+                displayName = this[displayName],
+                bio = this[bio],
+                createdAtMillis = this[createdAtMillis]
+            )
         }
-        statement[accountId] = EntityID(entity.accountId, AuthAccountsTable)
-        statement[displayName] = entity.displayName
-        statement[bio] = entity.bio
-        statement[createdAtMillis] = entity.createdAtMillis
     }
 }
 ```
@@ -249,21 +239,24 @@ exec("SELECT * FROM user_profiles WHERE status = 'active'")
 | `and` | AND condition | `(status eq "active") and (age greater 18)` |
 | `or` | OR condition | `(status eq "active") or (status eq "pending")` |
 
-## Important Notes on EntityID
+## Important Notes on Entity IDs
 
-**EntityID is required for INSERT/UPDATE operations:**
+Katalyst table mappings use raw ID values. The mapping layer delegates to Exposed's typed setters internally, so application table definitions do not create `EntityID` wrappers for inserts or updates.
 
 ```kotlin
-// ✅ CORRECT - EntityID wraps the ID
-statement[id] = EntityID(entity.id, this)
-statement[accountId] = EntityID(entity.accountId, AuthAccountsTable)
+generatedId(id, UserProfileEntity::id)
+reference(accountId, UserProfileEntity::accountId)
 
-// ❌ WRONG - Direct Long value causes type mismatch
-statement[id] = entity.id  // Compilation error
-statement[accountId] = entity.accountId  // Compilation error
+construct {
+    UserProfileEntity(
+        id = this[id],
+        accountId = this[accountId],
+        displayName = this[displayName]
+    )
+}
 ```
 
-The `EntityID` wrapper associates the ID value with its table context, required for Exposed's JDBC driver to generate correct SQL.
+Custom Exposed query predicates may still use `EntityID` when comparing a reference column directly.
 
 ## Database Factory Integration
 
@@ -283,8 +276,8 @@ class MyMigration(private val databaseFactory: DatabaseFactory) {
 
 The factory is automatically injected during DI initialization and manages:
 - HikariCP connection pool
-- Schema creation via `SchemaUtils.createMissingTablesAndColumns`
 - Lifecycle management (startup/shutdown)
+- Schema lifecycle according to the selected `schema { ... }` policy
 
 ## Troubleshooting*
 *
@@ -317,13 +310,13 @@ transaction(databaseFactory.database) {
 }
 ```
 
-**Problem**: `Type mismatch for table column`
+**Problem**: `Type mismatch for reference query column`
 ```kotlin
-// ❌ Wrong - missing EntityID
-statement[accountId] = 123L
+// ❌ Wrong for a custom Exposed query predicate
+UserProfilesTable.accountId eq 123L
 
-// ✅ Correct - wrapped in EntityID
-statement[accountId] = EntityID(123L, AuthAccountsTable)
+// ✅ Correct for a custom Exposed query predicate
+UserProfilesTable.accountId eq EntityID(123L, AuthAccountsTable)
 ```
 
 ## Summary
@@ -331,5 +324,6 @@ statement[accountId] = EntityID(123L, AuthAccountsTable)
 - **Always use `org.jetbrains.exposed.v1.*` imports** (v1 JDBC API)
 - **Use `transactionManager.transaction { }` in services** (event consistency)
 - **Use direct `transaction(database) { }` in migrations** (one-time operations)
-- **Always wrap IDs in `EntityID`** when building INSERT/UPDATE statements
+- **Use Katalyst `mapping { ... }` for table row/write mappings**
+- **Wrap IDs in `EntityID` only for custom Exposed query predicates that compare reference columns directly**
 - **Reference Exposed 1.3.0 documentation** for advanced DSL patterns not covered here

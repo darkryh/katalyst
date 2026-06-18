@@ -10,7 +10,7 @@ Katalyst ships a consistent configuration story so you can describe settings in 
 | Config loader SPI (format-agnostic) | `katalyst-config-spi` | `ConfigLoader`, `ProfileAwareConfigLoader`, `ConfigLoaderResolver` |
 | YAML loader with profile support | `katalyst-config-yaml` | `YamlApplicationConfigLoader` (SPI), `${ENV:default}` interpolation |
 | Bootstrapping + discovery | `katalyst-di`, `katalyst-scanner` | `katalystApplication`, `initializeKoinStandalone`, auto-binding registrar |
-| Service-specific config loaders (manual) | Your module (e.g., `katalyst-example`) | `ServiceConfigLoader<T>` implementations such as `DatabaseConfigLoader` |
+| Infrastructure config DSL | `katalyst-di` | `database { fromConfiguration() }`, `database(DatabaseConfig(...))` |
 | Service-specific config loaders (automatic) | Your module (e.g., `katalyst-example`, feature modules) | `AutomaticServiceConfigLoader<T>` implementations such as `NotificationApiConfigLoader` |
 | Force flag behavior | CLI | `force`/`--force` loads server config from CLI/defaults only; other configs (DB, services) still load via loaders/YAML |
 
@@ -28,68 +28,64 @@ Katalyst ships a consistent configuration story so you can describe settings in 
      issuer: ${JWT_ISSUER:katalyst-example}
    ```
 
-2. **Load the configuration provider** before DI boot:
+2. **Install the configuration source once and declare database in the application DSL**:
    ```kotlin
-   import io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper
-
-   object DbConfigImpl {
-       fun loadDatabaseConfig(): DatabaseConfig {
-           val provider = ConfigBootstrapHelper.loadConfig() // discovers provider via SPI
-           return ConfigBootstrapHelper.loadServiceConfig(provider, DatabaseConfigLoader)
-       }
-   }
-   ```
-   - `ConfigBootstrapHelper` comes from `katalyst-config-provider`.
-   - Provider is discovered via SPI (`ConfigProviderFactory`) and will use YAML by default if `katalyst-config-yaml` is on the classpath.
-
-3. **Register the config with the application builder**:
-   ```kotlin
-   import io.github.darkryh.katalyst.di.katalystApplication
+   import io.github.darkryh.katalyst.config.yaml.enableYamlConfiguration
    import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
-   import io.github.darkryh.katalyst.config.yaml.enableConfigProvider
-   import io.github.darkryh.katalyst.ktor.engine.netty.NettyEngine
+   import io.github.darkryh.katalyst.di.katalystApplication
+   import io.github.darkryh.katalyst.koin.KoinBeanEngine
+   import io.github.darkryh.katalyst.ktor.engine.netty.NettyServer
 
    fun main(args: Array<String>) = katalystApplication(args) {
-       engine(NettyEngine)
-       database(DbConfigImpl.loadDatabaseConfig())
+       engine(NettyServer)
+       beanEngine(KoinBeanEngine)
+       enableYamlConfiguration()
+       database {
+           fromConfiguration()
+           // maxPoolSize = 20
+           // minIdleConnections = 4
+       }
        scanPackages("io.github.darkryh.katalyst.example")
-       enableServerConfiguration()
-       enableConfigProvider()
+       schema {
+           validateOnStartup() // default when schema { ... } is omitted
+       }
+       features {
+           enableServerConfiguration()
+       }
        // …
    }
    ```
-   The builder lives in `katalyst-di`; calling `database(...)` ensures the persistence layer receives a fully validated `DatabaseConfig` before component discovery begins.
+   `enableYamlConfiguration()` is the single YAML source for database bootstrap, server deployment, and runtime `ConfigProvider` injection. `database { fromConfiguration() }` reads `database.*` keys before DI starts and applies Hikari-oriented defaults for omitted pool values. If you prefer full code configuration, call `database(DatabaseConfig(...))`.
 
-## Writing a ServiceConfigLoader
+## Database DSL
 
-Service-specific configuration objects should implement `ServiceConfigLoader<T>` so they can be discovered/validated automatically.
+Database configuration is infrastructure, so keep it visible in `Application.kt`:
 
 ```kotlin
-import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
-import io.github.darkryh.katalyst.core.config.ConfigProvider
-
-object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
-    override fun loadConfig(provider: ConfigProvider): DatabaseConfig {
-        val url = ConfigLoaders.loadRequiredString(provider, "database.url")
-        val driver = ConfigLoaders.loadRequiredString(provider, "database.driver")
-        val username = ConfigLoaders.loadRequiredString(provider, "database.username")
-        val password = ConfigLoaders.loadOptionalString(provider, "database.password")
-        return DatabaseConfig(url = url, driver = driver, username = username, password = password)
-    }
-
-    override fun validate(config: DatabaseConfig) {
-        Class.forName(config.driver) // fail fast if JDBC driver missing
-    }
+database {
+    fromConfiguration()
+    maxPoolSize = 20
+    minIdleConnections = 4
+    connectionTimeout = 30_000L
 }
 ```
 
-- `ConfigLoaders` (katalyst-config-provider) supply helpers for required/optional primitives, durations, lists, enums, etc.
+Required YAML keys are `database.url`, `database.driver`, and `database.username`. Optional keys include `database.password`, `database.pool.maxSize`, `database.pool.minIdle`, `database.pool.connectionTimeout`, `database.pool.idleTimeout`, `database.pool.maxLifetime`, `database.autoCommit`, and `database.transactionIsolation`.
+
+## Writing Service Config Loaders
+
+Service-specific configuration objects should implement `AutomaticServiceConfigLoader<T>` so they can be discovered, validated, and injected automatically.
+
+- `katalyst-config-provider` supplies Kotlin extension helpers such as `requiredString`, `requiredInt`, `requiredLong`, and `requiredBoolean` for mandatory values.
+- Prefer nullable helpers for optional non-Boolean values: `stringOrNull`, `intOrNull`, and `longOrNull`. Missing values return `null`; malformed present values fail fast.
+- Prefer `boolean("feature.enabled")` for optional Boolean flags. Missing values return `false`; malformed present values fail fast.
+- The older `optional*` helpers remain available as compatibility wrappers when you intentionally want a non-null default fallback.
+- `ConfigLoaders` remains available for Java/object-style usage and advanced helpers such as durations, lists, ranges, and enums.
 - `validate` should throw `ConfigException` when values are invalid; Katalyst surfaces the error during bootstrap.
 
 ## Injecting Config at Runtime
 
-Any constructor parameter typed as `ConfigProvider` (or a config object loaded via `ServiceConfigLoader`) is injected automatically—no manual `GlobalContext` lookups required. Example:
+Any constructor parameter typed as `ConfigProvider` (or a config object loaded via `AutomaticServiceConfigLoader`) is injected automatically. Example:
 
 ```kotlin
 import io.github.darkryh.katalyst.core.component.Service
@@ -106,9 +102,9 @@ class JwtSettingsService(config: ConfigProvider) : Service {
 
 - **Profiles**: Set `KATALYST_PROFILE=prod` (or `dev`, `staging`); the YAML provider (if on the classpath) automatically loads `application-prod.yaml` after `application.yaml`, overriding matching keys.
 - **External overrides**: Environment variables always win thanks to SnakeYAML interpolation.
-- **Custom providers**: Implement `ConfigProvider` (e.g., to read from Consul/Secrets Manager) and register it via a feature in `katalystApplication { feature(ConfigProviderFeature(myProvider)) }`.
+- **Custom providers**: Implement `ConfigProvider` (e.g., to read from Consul/Secrets Manager) and register it via a feature in `katalystApplication { feature(YamlConfigurationFeature(myProvider)) }`.
 
-Keep secrets out of source control, rely on `${ENV:default}` interpolation, and use `ConfigLoaders.loadRequired*` helpers so misconfigurations fail fast during bootstrap.
+Keep secrets out of source control, rely on `${ENV:default}` interpolation, and use `required*` helpers so misconfigurations fail fast during bootstrap.
 
 ## DI Parameter Validation
 
@@ -364,19 +360,19 @@ class NotificationClient(
 - Automatic discovery during Phase 5a
 - Fail-fast validation at startup
 
-### ServiceConfigLoader Is Still Essential
+### Database DSL Is Still Essential
 
-ServiceConfigLoader remains the **correct choice** for infrastructure configuration:
+The application DSL remains the **correct choice** for database infrastructure configuration:
 
 ```kotlin
-// ServiceConfigLoader MUST be used for database config
-object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
-    override fun loadConfig(provider: ConfigProvider): DatabaseConfig { ... }
-}
-
 // Used in bootstrap (Phase 0, before DI starts)
 fun main(args: Array<String>) = katalystApplication(args) {
-    database(DbConfigImpl.loadDatabaseConfig())  // ← Bootstrap phase
+    enableYamlConfiguration()                    // source installed once
+    database {
+        fromConfiguration()                      // reads database.* before DI starts
+        maxPoolSize = 20                         // optional code override
+    }
+    scanPackages("com.example")
     // ... rest of setup
 }
 ```
@@ -388,12 +384,12 @@ You cannot use AutomaticServiceConfigLoader for database config because:
 
 ### Pattern Comparison: Not Migration, Just Right Tool for Job
 
-Both patterns serve different purposes and are both essential. Choose ServiceConfigLoader for infrastructure config (database, ports, TLS) needed before DI bootstrap (Phase 0). Choose AutomaticServiceConfigLoader for service config (SMTP, APIs, feature toggles) injected during DI Phase 5a. See "Choosing the Right Pattern for Your Configuration" section for the decision framework.
+Both patterns serve different purposes and are both essential. Choose the database DSL for database infrastructure needed before DI bootstrap (Phase 0). Choose AutomaticServiceConfigLoader for service config (SMTP, APIs, feature toggles) injected during DI Phase 5a. See "Choosing the Right Pattern for Your Configuration" section for the decision framework.
 
 ### Startup controls
 
-- **Default features enabled**: ConfigProvider and server configuration features are enabled automatically by the Katalyst builder (no need to call `enableConfigProvider()` / `enableServerConfiguration()`).
-- **Force flag**: Use `force`/`--force` to bypass ConfigProvider for server deployment (ktor.deployment.*) and rely on CLI/defaults. Other configs (database, service configs) still load from loaders/YAML.
+- **Explicit source required**: Katalyst does not install a configuration source from the classpath. Call `enableYamlConfiguration()` or `configuration(customSource)` before startup.
+- **Force flag**: Use `force`/`--force` to bypass the configured source for server deployment (ktor.deployment.*) and rely on CLI config. Other configs still load from the explicit source you pass.
 
 ---
 
@@ -406,8 +402,12 @@ Both patterns use `ConfigLoaders` for consistent, type-safe configuration extrac
 val baseUrl = ConfigLoaders.loadRequiredString(provider, "notification.baseUrl")
 val apiKey = ConfigLoaders.loadRequiredString(provider, "notification.apiKey")
 
-// Optional values (return default if missing)
-val timeout = ConfigLoaders.loadOptionalLong(provider, "notification.timeoutMillis", 30_000L)
+// Optional non-Boolean values (return null if missing, throw if malformed)
+val timeout = ConfigLoaders.loadLongOrNull(provider, "notification.timeoutMillis")
+val retryCount = ConfigLoaders.loadIntOrNull(provider, "notification.retryCount")
+
+// Optional Boolean flags (false if missing, throw if malformed)
+val enabled = ConfigLoaders.loadBoolean(provider, "notification.enabled")
 
 // Special types
 val duration = ConfigLoaders.loadOptionalDuration(provider, "request.timeout", Duration.ofSeconds(30))
@@ -415,4 +415,4 @@ val list = ConfigLoaders.loadOptionalList(provider, "allowed.hosts", emptyList()
 val enum = ConfigLoaders.loadOptionalEnum(provider, "log.level", LogLevel.INFO)
 ```
 
-Always prefer `ConfigLoaders` helpers over direct `ConfigProvider.getString()` calls for consistency and better error messages.
+Always prefer `ConfigLoaders` helpers or the Kotlin extensions over direct `ConfigProvider.getString()` calls for consistency and better error messages. Use `optional*` only when a concrete fallback is part of the domain, not just to avoid nullable properties.

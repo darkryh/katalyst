@@ -4,14 +4,12 @@ Katalyst builds on Exposed + HikariCP + JDBC to offer strongly typed repositorie
 
 ## Tables
 
-Extend Exposed's `IdTable` and implement Katalyst's `Table<Id, Entity>` interface so the scanner knows how to map rows and assign entities.
+Extend Exposed's `IdTable` and implement Katalyst's `Table<Id, Entity>` interface. The table declares a Katalyst mapping DSL that reads rows and writes insert/update statements without exposing Exposed's `UpdateBuilder`.
 
 ```kotlin
 import io.github.darkryh.katalyst.core.persistence.Table
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccountEntity> {
     val email = varchar("email", 150).uniqueIndex()
@@ -20,24 +18,24 @@ object AuthAccountsTable : LongIdTable("auth_accounts"), Table<Long, AuthAccount
     val lastLoginAtMillis = long("last_login_at_millis").nullable()
     val status = varchar("status", 32).default("active")
 
-    override fun mapRow(row: ResultRow) = AuthAccountEntity(
-        id = row[id].value,
-        email = row[email],
-        passwordHash = row[passwordHash],
-        createdAtMillis = row[createdAtMillis],
-        lastLoginAtMillis = row[lastLoginAtMillis],
-        status = row[status]
-    )
+    override val mapping = mapping<Long, AuthAccountEntity> {
+        generatedId(id, AuthAccountEntity::id)
+        field(email, AuthAccountEntity::email)
+        field(passwordHash, AuthAccountEntity::passwordHash)
+        field(createdAtMillis, AuthAccountEntity::createdAtMillis)
+        field(lastLoginAtMillis, AuthAccountEntity::lastLoginAtMillis)
+        field(status, AuthAccountEntity::status)
 
-    override fun assignEntity(statement: UpdateBuilder<*>, entity: AuthAccountEntity, skipIdColumn: Boolean) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id, this) // REQUIRED - this must be implemented  so the CRUD operations in the repository works as expected
+        construct {
+            AuthAccountEntity(
+                id = this[id],
+                email = this[email],
+                passwordHash = this[passwordHash],
+                createdAtMillis = this[createdAtMillis],
+                lastLoginAtMillis = this[lastLoginAtMillis],
+                status = this[status]
+            )
         }
-        statement[email] = entity.email
-        statement[passwordHash] = entity.passwordHash
-        statement[createdAtMillis] = entity.createdAtMillis
-        statement[lastLoginAtMillis] = entity.lastLoginAtMillis
-        statement[status] = entity.status
     }
 }
 ```
@@ -168,5 +166,5 @@ private suspend fun seedAccount(env: KatalystTestEnvironment): Long {
 
 - **JDBC driver + HikariCP** (`katalyst-persistence`, `katalyst-database`) manage the connection pool.
 - **Exposed** handles SQL generation/mapping.
-- **Schema creation** is automatic via `SchemaUtils.createMissingTablesAndColumns` during bootstrap.
+- **Schema management** defaults to `validateOnStartup()` during bootstrap. Use `schema { createMissing() }` only for local/test compatibility or throwaway databases.
 - **Repositories** are injected automatically—no manual modules required.

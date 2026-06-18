@@ -2,6 +2,31 @@
 
 Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotlin applications. The documentation is organized by feature and use case.
 
+## Alpha Contract
+
+The current release line is `1.0.0-alpha`. The public application DSL is the supported entry point:
+
+```kotlin
+katalystApplication(args) {
+    engine(NettyServer)
+    beanEngine(KoinBeanEngine)
+    enableYamlConfiguration()
+    database {
+        fromConfiguration()
+    }
+    scanPackages("com.example")
+    schema {
+        validateOnStartup()
+    }
+}
+```
+
+Koin is the only supported DI adapter in this alpha. Katalyst still owns the reflection-based discovery workflow, and a small container SPI is planned so future adapters can be evaluated without making Koin the long-term public contract. Low-level Koin bootstrap functions remain for framework internals, tests, and compatibility, but new applications should prefer `katalystApplication` and the testing DSL.
+
+Applications using Koin must add `io.github.darkryh.katalyst:katalyst-koin-bean` and call `beanEngine(KoinBeanEngine)`. Katalyst fails startup when no bean engine is selected, so missing adapter wiring is visible immediately instead of surfacing later as a lazy injection failure.
+
+Schema management defaults to startup validation. Omitting `schema { ... }` is equivalent to `schema { validateOnStartup() }`. Use `createMissing()` for local/test compatibility, and `none()` when migrations or operations own the schema lifecycle outside Katalyst.
+
 ## Recommended Reading Order
 
 ### Core Concepts (Start Here)
@@ -12,7 +37,7 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
    - Covers normal constructor/function parameters, Kotlin defaults, nullable dependencies, and optional qualifier annotation (`@InjectNamed`).
 
 3. **[configuration.md](configuration.md)** – Complete guide to Katalyst's configuration system:
-   - **`ServiceConfigLoader`** – Manual pattern for infrastructure config (database, ports, TLS)
+   - **`ServiceConfigLoader`** – Infrastructure config loaded from the installed configuration source before DI starts
    - **`AutomaticServiceConfigLoader`** – Modern pattern for service config (SMTP, APIs, feature flags)
    - YAML structure, environment variables, profiles, validation, type-safety
    - Real working example: Notification API config loader; the Boshi SMTP module offers an email-focused variant if you want a production-size sample.
@@ -24,9 +49,11 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 5. **[persistence.md](persistence.md)** – Defining tables, repositories, and custom queries with Exposed/Hikari.
    - Includes managed JDBC access with `SqlExecutor` for bootstrap DDL and custom SQL.
 
+6. **[migrations.md](migrations.md)** – Runtime migration execution plus operational status, validation, and dry-run APIs.
+
 ### Testing
 
-6. **[testing.md](testing.md)** – Using `katalystTestEnvironment`/`katalystTestApplication`, overrides, Postgres/Testcontainers, coverage.
+7. **[testing.md](testing.md)** – Using `katalystTestEnvironment`/`katalystTestApplication`, overrides, Postgres/Testcontainers, coverage.
 
 ## Quick Navigation
 
@@ -40,6 +67,7 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 | Inject defaults, nullable values, routes, and scheduler params | [auto-wiring.md](auto-wiring.md) |
 | Use qualifier disambiguation for multiple impls | [auto-wiring.md](auto-wiring.md) → **Qualifiers (Optional)** |
 | Work with databases and repositories | [persistence.md](persistence.md) |
+| Check migration status, validation, and dry-runs | [migrations.md](migrations.md) |
 | Run managed bootstrap/custom JDBC SQL | [persistence.md](persistence.md) → **Managed SQL Executor** |
 | Write tests and integration tests | [testing.md](testing.md) |
 | Understand full JDBC integration | [exposed-database-setup.md](exposed-database-setup.md) |
@@ -48,19 +76,17 @@ Katalyst provides a comprehensive stack for building type-safe, auto-wired Kotli
 
 Katalyst supports **two configuration patterns**. They are **not alternatives**—each solves a different problem and both are essential:
 
-### Pattern 1: ServiceConfigLoader (Essential for Infrastructure)
+### Pattern 1: Database DSL (Essential for Infrastructure)
 
 For configuration needed **before DI bootstrap begins** (Phase 0):
 
 ```kotlin
-// ServiceConfigLoader for infrastructure config
-object DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
-    override fun loadConfig(provider: ConfigProvider): DatabaseConfig { ... }
-}
-
-// Used in bootstrap phase, before DI starts
 fun main() = katalystApplication {
-    database(DbConfigImpl.loadDatabaseConfig())  // ← Phase 0
+    enableYamlConfiguration()                    // installs the source once
+    database {
+        fromConfiguration()                      // reads database.* before DI starts
+        maxPoolSize = 20                         // optional code override
+    }
     scanPackages("...")
     // ... DI bootstrap happens next
 }

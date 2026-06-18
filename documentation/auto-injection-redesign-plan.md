@@ -923,8 +923,8 @@ Remove or shrink:
 
 Acceptance:
 
-- Dependency on `SchedulerService` fails if `enableScheduler()` is missing.
-- Dependency on `EventBus` fails if `enableEvents()` is missing.
+- Dependency on `SchedulerService` fails if `features { enableScheduler() }` is missing.
+- Dependency on `EventBus` fails if `features { enableEvents() }` is missing.
 - Dependency on `ConfigProvider` fails if config provider is missing.
 - Error messages include the correct `enableX()` suggestion.
 
