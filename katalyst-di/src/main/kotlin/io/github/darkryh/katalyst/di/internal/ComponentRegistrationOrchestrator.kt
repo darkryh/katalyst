@@ -3,11 +3,14 @@ package io.github.darkryh.katalyst.di.internal
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.getOrNull
 import io.github.darkryh.katalyst.di.analysis.ComponentOrderComputer
 import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshot
 import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshotBuilder
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
 import io.github.darkryh.katalyst.di.exception.KatalystDIException
+import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.di.planning.BindingPlan
 import io.github.darkryh.katalyst.di.planning.BindingPlanBuilder
 import io.github.darkryh.katalyst.di.validation.DependencyValidator
@@ -16,7 +19,6 @@ import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
-import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -33,11 +35,13 @@ private val logger = LoggerFactory.getLogger("ComponentRegistrationOrchestrator"
  * 5. Instantiation in deterministic order (modified)
  * 6. Post-registration validation (NEW)
  *
- * @param koin The Koin DI container
+ * @param container The active Katalyst container
+ * @param beanEngine The installed bean engine that owns native registration
  * @param scanPackages Packages to scan for components
  */
 class ComponentRegistrationOrchestrator(
-    private val koin: Koin,
+    private val container: KatalystContainer,
+    private val beanEngine: KatalystBeanEngine,
     private val scanPackages: Array<String>
 ) {
 
@@ -79,8 +83,7 @@ class ComponentRegistrationOrchestrator(
 
             val exception = FatalDependencyValidationException(
                 validationErrors = validationReport.errors,
-                discoveredTypes = discovered.asValidationMap(),
-                koin = koin
+                discoveredTypes = discovered.asValidationMap()
             )
             throw exception
         }
@@ -124,7 +127,7 @@ class ComponentRegistrationOrchestrator(
         logger.info("LIFECYCLE_COMPONENT_DISCOVERY starting")
 
         val builder = DiscoverySnapshotBuilder()
-        val registrar = AutoBindingRegistrar(koin, scanPackages)
+        val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
 
         // Discover each component type (methods are now internal - no reflection needed)
         listOf(
@@ -156,7 +159,7 @@ class ComponentRegistrationOrchestrator(
         // This ensures the validator knows these types will be available
         val automaticConfigTypes = discoverAutomaticConfigTypes()
 
-        val plan = BindingPlanBuilder(koin, scanPackages)
+        val plan = BindingPlanBuilder(container, scanPackages)
             .build(discovered, automaticConfigTypes)
 
         logger.debug("Graph nodes: {}, edges: {}, secondary bindings: {}",
@@ -217,7 +220,7 @@ class ComponentRegistrationOrchestrator(
 
         logger.info("LIFECYCLE_COMPONENT_INSTANTIATION starting")
 
-        val registrar = AutoBindingRegistrar(koin, scanPackages)
+        val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
         val allRegisteredComponents = mutableListOf<KClass<*>>()
 
         // Register non-migration components in order
@@ -260,7 +263,7 @@ class ComponentRegistrationOrchestrator(
         logger.info("LIFECYCLE_POST_REGISTRATION_VERIFICATION starting")
 
         // If we got here without exceptions, all components were successfully registered
-        // The registerInstanceWithKoin method would have thrown an exception if registration failed
+        // The registerInstance method would have thrown an exception if registration failed
         logger.info("✓ All {} components registered successfully (including {} migrations)",
             allRegisteredComponents.size, migrations.size)
 
@@ -286,7 +289,7 @@ class ComponentRegistrationOrchestrator(
      * 1. Discovers all [io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader] implementations in scan packages
      * 2. Loads each configuration using the discovered loader
      * 3. Validates each loaded configuration
-     * 4. Registers each configuration as a singleton in Koin
+     * 4. Registers each configuration as a singleton in the active container
      * 5. Logs all registered configurations
      *
      * This phase runs after ConfigProvider is available (from DI modules) but before
@@ -318,7 +321,7 @@ class ComponentRegistrationOrchestrator(
             logger.info("Discovered {} automatic config loader(s)", loaders.size)
 
             // Now check if ConfigProvider is available - FAIL FAST if not
-            val configProvider = runCatching { koin.get<ConfigProvider>() }.getOrNull()
+            val configProvider = container.getOrNull<ConfigProvider>()
             if (configProvider == null) {
                 throw KatalystDIException(
                     buildString {
@@ -329,10 +332,10 @@ class ComponentRegistrationOrchestrator(
                             appendLine("  - ${configType.simpleName}")
                         }
                         appendLine()
-                        appendLine("Add enableConfigProvider() to your katalystApplication block:")
+                        appendLine("Add enableYamlConfiguration() to your katalystApplication block:")
                         appendLine()
                         appendLine("  katalystApplication(args) {")
-                        appendLine("      enableConfigProvider()  // Required for automatic config loading")
+                        appendLine("      enableYamlConfiguration()  // Required for automatic config loading")
                         appendLine("      scanPackages(\"your.app.package\")")
                         appendLine("      // ... other configuration")
                         appendLine("  }")
@@ -371,16 +374,14 @@ class ComponentRegistrationOrchestrator(
                         logger.debug("Configuration validated: {}", configType.simpleName)
                     }
 
-                    // Register the configuration in Koin using AutoBindingRegistrar's method
+                    // Register the configuration in the active container.
                     try {
-                        // Create an AutoBindingRegistrar to use its registration logic
-                        val registrar = AutoBindingRegistrar(koin, scanPackages)
-                        // Call registerInstanceWithKoin directly (method is now internal)
-                        registrar.registerInstanceWithKoin(config, configType, emptyList())
+                        val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
+                        registrar.registerInstance(config, configType, emptyList())
 
                         logger.info("✓ Registered {} configuration", configType.simpleName)
                     } catch (e: Exception) {
-                        logger.error("Failed to register {} in Koin: {}", configType.simpleName, e.message)
+                        logger.error("Failed to register {} in container: {}", configType.simpleName, e.message)
                         throw e
                     }
                 } catch (e: Exception) {
@@ -450,7 +451,7 @@ class ComponentRegistrationOrchestrator(
             val instance = registrar.instantiate(componentType)
             registrar.injectWellKnownProperties(instance)
             val secondaryTypes = registrar.computeSecondaryTypes(componentType, baseClass)
-            registrar.registerInstanceWithKoin(instance, componentType, secondaryTypes)
+            registrar.registerInstance(instance, componentType, secondaryTypes)
 
             // Register in feature-specific registries
             when (instance) {

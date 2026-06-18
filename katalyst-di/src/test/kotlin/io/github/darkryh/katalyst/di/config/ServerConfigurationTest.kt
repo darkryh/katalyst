@@ -36,10 +36,10 @@ class ServerConfigurationTest {
         )
 
         assertTrue(config.engine != null)
-        assertEquals("0.0.0.0", config.host)
-        assertEquals(8080, config.port)
-        assertEquals(8, config.workerThreads)
-        assertEquals(180000L, config.connectionIdleTimeoutMs)
+        assertEquals("0.0.0.0", config.deployment.host)
+        assertEquals(8080, config.deployment.port)
+        assertEquals(8, config.deployment.workerGroupSize)
+        assertEquals(180000L, config.deployment.connectionIdleTimeoutMs)
         assertNull(config.serverWrapper)
         assertNull(config.applicationWrapper)
     }
@@ -74,7 +74,7 @@ class ServerConfigurationTest {
         val copied = original.copy(deployment = deployment(port = 9090))
 
         assertEquals(engine, copied.engine)
-        assertEquals(9090, copied.port)
-        assertEquals(8080, original.port)
+        assertEquals(9090, copied.deployment.port)
+        assertEquals(8080, original.deployment.port)
     }
 }

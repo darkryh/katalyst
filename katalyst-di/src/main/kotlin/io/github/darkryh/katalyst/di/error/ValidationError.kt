@@ -190,7 +190,7 @@ data class WellKnownPropertyError(
             "DatabaseTransactionManager" ->
                 "This should come from CoreDIModule. Verify core modules are loaded."
             "SchedulerService" ->
-                "Enable scheduler feature: enableScheduler() in katalystApplication { }"
+                "Enable scheduler feature: features { enableScheduler() } in katalystApplication { }"
             else -> "Ensure ${propertyType.simpleName} is registered in a Koin module"
         }
 }
@@ -260,15 +260,15 @@ data class FeatureProvidedTypeError(
 
     override val suggestion: String
         get() = buildString {
-            appendLine("Enable the feature in katalystApplication { }:")
+            appendLine("Enable the feature in katalystApplication { features { ... } }:")
             append("    ")
             append(when (featureName) {
-                "events" -> "enableEvents()"
-                "scheduler" -> "enableScheduler()"
-                "migrations" -> "enableMigrations()"
-                "websockets" -> "enableWebSockets()"
-                "configProvider" -> "enableConfigProvider()"
-                else -> "feature($featureName)  // Verify feature name"
+                "events" -> "features { enableEvents() }"
+                "scheduler" -> "features { enableScheduler() }"
+                "migrations" -> "features { enableMigrations() }"
+                "websockets" -> "features { enableWebSockets() }"
+                "configProvider" -> "enableYamlConfiguration()"
+                else -> "features { feature($featureName) }  // Verify feature name"
             })
         }
 }

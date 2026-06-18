@@ -7,10 +7,7 @@ import ch.qos.logback.core.read.ListAppender
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import org.slf4j.LoggerFactory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -19,14 +16,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AutoBindingRegistrarEmptyOptionalSeverityTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
     private lateinit var scannerLogger: Logger
     private lateinit var appender: ListAppender<ILoggingEvent>
 
     @BeforeTest
     fun setUp() {
-        startKoin { }
-        koin = GlobalContext.get()
+        engine = TestBeanEngine()
 
         scannerLogger = LoggerFactory.getLogger(ReflectionsTypeScanner::class.java) as Logger
         appender = ListAppender<ILoggingEvent>().apply { start() }
@@ -36,12 +32,12 @@ class AutoBindingRegistrarEmptyOptionalSeverityTest {
     @AfterTest
     fun tearDown() {
         scannerLogger.detachAppender(appender)
-        stopKoin()
+        engine.stop()
     }
 
     @Test
     fun `optional KtorModule empty discovery logs INFO not WARN`() {
-        val registrar = AutoBindingRegistrar(koin, arrayOf("io.github.darkryh.katalyst.no_such_package"))
+        val registrar = AutoBindingRegistrar(engine.container, engine, arrayOf("io.github.darkryh.katalyst.no_such_package"))
         registrar.discoverConcreteTypes(KtorModule::class.java)
 
         assertTrue(
@@ -54,7 +50,7 @@ class AutoBindingRegistrarEmptyOptionalSeverityTest {
 
     @Test
     fun `optional KatalystMigration empty discovery logs INFO not WARN`() {
-        val registrar = AutoBindingRegistrar(koin, arrayOf("io.github.darkryh.katalyst.no_such_package"))
+        val registrar = AutoBindingRegistrar(engine.container, engine, arrayOf("io.github.darkryh.katalyst.no_such_package"))
         registrar.discoverConcreteTypes(KatalystMigration::class.java)
 
         assertTrue(

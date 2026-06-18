@@ -5,6 +5,83 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
 import java.time.Duration
 
 /**
+ * Read a required string and fail fast when the key is missing or blank.
+ */
+fun ConfigProvider.requiredString(key: String): String =
+    ConfigLoaders.loadRequiredString(this, key)
+
+/**
+ * Read a string when present, returning null when the key is missing.
+ */
+fun ConfigProvider.stringOrNull(key: String): String? =
+    ConfigLoaders.loadStringOrNull(this, key)
+
+/**
+ * Read an optional string, returning [default] only when the key is missing.
+ */
+fun ConfigProvider.optionalString(key: String, default: String = ""): String =
+    ConfigLoaders.loadOptionalString(this, key, default)
+
+/**
+ * Read a required integer and fail fast when the key is missing or malformed.
+ */
+fun ConfigProvider.requiredInt(key: String): Int =
+    ConfigLoaders.loadRequiredInt(this, key)
+
+/**
+ * Read an integer when present, returning null when the key is missing and
+ * failing fast when the present value is malformed.
+ */
+fun ConfigProvider.intOrNull(key: String): Int? =
+    ConfigLoaders.loadIntOrNull(this, key)
+
+/**
+ * Read an optional integer using the provider's compatibility fallback behavior.
+ */
+fun ConfigProvider.optionalInt(key: String, default: Int = 0): Int =
+    ConfigLoaders.loadOptionalInt(this, key, default)
+
+/**
+ * Read a required long and fail fast when the key is missing or malformed.
+ */
+fun ConfigProvider.requiredLong(key: String): Long =
+    ConfigLoaders.loadRequiredLong(this, key)
+
+/**
+ * Read a long when present, returning null when the key is missing and
+ * failing fast when the present value is malformed.
+ */
+fun ConfigProvider.longOrNull(key: String): Long? =
+    ConfigLoaders.loadLongOrNull(this, key)
+
+/**
+ * Read an optional long using the provider's compatibility fallback behavior.
+ */
+fun ConfigProvider.optionalLong(key: String, default: Long = 0L): Long =
+    ConfigLoaders.loadOptionalLong(this, key, default)
+
+/**
+ * Read a required boolean and fail fast when the key is missing or malformed.
+ */
+fun ConfigProvider.requiredBoolean(key: String): Boolean =
+    ConfigLoaders.loadRequiredBoolean(this, key)
+
+/**
+ * Read a boolean with false as the default for missing keys.
+ *
+ * Unlike [optionalBoolean], malformed present values fail fast instead of
+ * silently falling back to the default.
+ */
+fun ConfigProvider.boolean(key: String, default: Boolean = false): Boolean =
+    ConfigLoaders.loadBoolean(this, key, default)
+
+/**
+ * Read an optional boolean using the provider's compatibility fallback behavior.
+ */
+fun ConfigProvider.optionalBoolean(key: String, default: Boolean = false): Boolean =
+    ConfigLoaders.loadOptionalBoolean(this, key, default)
+
+/**
  * Utility functions for common configuration loading patterns.
  *
  * **Purpose:**
@@ -17,8 +94,8 @@ import java.time.Duration
  *     override fun loadConfig(provider: ConfigProvider): MyConfig {
  *         return MyConfig(
  *             requiredString = ConfigLoaders.loadRequiredString(provider, "key"),
- *             optionalInt = ConfigLoaders.loadOptionalInt(provider, "port", 8080),
- *             duration = ConfigLoaders.loadDuration(provider, "timeout", Duration.ofSeconds(30))
+ *             optionalPort = ConfigLoaders.loadIntOrNull(provider, "port"),
+ *             enabled = ConfigLoaders.loadBoolean(provider, "enabled")
  *         )
  *     }
  * }
@@ -35,11 +112,26 @@ object ConfigLoaders {
      * @throws ConfigException if key is missing or blank
      */
     fun loadRequiredString(provider: ConfigProvider, key: String): String {
+        ensurePresent(provider, key)
         val value = provider.getString(key)
         if (value.isBlank()) {
             throw ConfigException("Required configuration key '$key' is missing or blank")
         }
         return value
+    }
+
+    /**
+     * Load a string value when present, otherwise null.
+     *
+     * This is the preferred optional string API for Kotlin config objects with
+     * nullable properties.
+     */
+    fun loadStringOrNull(provider: ConfigProvider, key: String): String? {
+        val value = rawValueOrNull(provider, key) ?: return null
+        return when (value) {
+            is String -> value
+            else -> value.toString()
+        }
     }
 
     /**
@@ -63,9 +155,24 @@ object ConfigLoaders {
      * @throws ConfigException if key is missing or not a valid integer
      */
     fun loadRequiredInt(provider: ConfigProvider, key: String): Int {
-        val value = provider.getString(key)
-        return value.toIntOrNull()
-            ?: throw ConfigException("Configuration key '$key' must be a valid integer, got: $value")
+        val value = requiredRawValue(provider, key)
+        return when (value) {
+            is Int -> value
+            is Number -> value.toInt()
+            is String -> value.trim().toIntOrNull()
+                ?: throw invalidValue(key, "integer", value)
+            else -> throw invalidValue(key, "integer", value)
+        }
+    }
+
+    /**
+     * Load an integer value when present, otherwise null.
+     *
+     * Missing values are nullable; malformed present values fail fast.
+     */
+    fun loadIntOrNull(provider: ConfigProvider, key: String): Int? {
+        val value = rawValueOrNull(provider, key) ?: return null
+        return parseInt(key, value)
     }
 
     /**
@@ -94,6 +201,19 @@ object ConfigLoaders {
     }
 
     /**
+     * Load a required boolean value.
+     *
+     * @param provider ConfigProvider to load from
+     * @param key Configuration key in dot notation
+     * @return Boolean value
+     * @throws ConfigException if key is missing or not a valid boolean
+     */
+    fun loadRequiredBoolean(provider: ConfigProvider, key: String): Boolean {
+        val value = requiredRawValue(provider, key)
+        return parseBooleanValue(key, value)
+    }
+
+    /**
      * Load a required long value.
      *
      * @param provider ConfigProvider to load from
@@ -102,9 +222,18 @@ object ConfigLoaders {
      * @throws ConfigException if key is missing or not a valid long
      */
     fun loadRequiredLong(provider: ConfigProvider, key: String): Long {
-        val value = provider.getString(key)
-        return value.toLongOrNull()
-            ?: throw ConfigException("Configuration key '$key' must be a valid long, got: $value")
+        val value = requiredRawValue(provider, key)
+        return parseLong(key, value)
+    }
+
+    /**
+     * Load a long value when present, otherwise null.
+     *
+     * Missing values are nullable; malformed present values fail fast.
+     */
+    fun loadLongOrNull(provider: ConfigProvider, key: String): Long? {
+        val value = rawValueOrNull(provider, key) ?: return null
+        return parseLong(key, value)
     }
 
     /**
@@ -216,7 +345,8 @@ object ConfigLoaders {
      * @return Boolean value
      */
     fun loadBoolean(provider: ConfigProvider, key: String, default: Boolean = false): Boolean {
-        return provider.getBoolean(key, default)
+        val value = rawValueOrNull(provider, key) ?: return default
+        return parseBooleanValue(key, value)
     }
 
     /**
@@ -231,5 +361,67 @@ object ConfigLoaders {
         if (missingKeys.isNotEmpty()) {
             throw ConfigException("Missing required configuration keys: ${missingKeys.joinToString()}")
         }
+    }
+
+    private fun ensurePresent(provider: ConfigProvider, key: String) {
+        if (!provider.hasKey(key)) {
+            throw ConfigException("Required configuration key '$key' is missing")
+        }
+    }
+
+    private fun requiredRawValue(provider: ConfigProvider, key: String): Any {
+        ensurePresent(provider, key)
+        return provider.get<Any>(key)
+            ?: throw ConfigException("Required configuration key '$key' is missing")
+    }
+
+    private fun rawValueOrNull(provider: ConfigProvider, key: String): Any? {
+        if (!provider.hasKey(key)) {
+            return null
+        }
+        return provider.get<Any>(key)
+    }
+
+    private fun parseInt(key: String, value: Any): Int {
+        return when (value) {
+            is Int -> value
+            is Number -> value.toInt()
+            is String -> value.trim().toIntOrNull()
+                ?: throw invalidValue(key, "integer", value)
+            else -> throw invalidValue(key, "integer", value)
+        }
+    }
+
+    private fun parseLong(key: String, value: Any): Long {
+        return when (value) {
+            is Long -> value
+            is Number -> value.toLong()
+            is String -> value.trim().toLongOrNull()
+                ?: throw invalidValue(key, "long", value)
+            else -> throw invalidValue(key, "long", value)
+        }
+    }
+
+    private fun parseBooleanValue(key: String, value: Any): Boolean {
+        return when (value) {
+            is Boolean -> value
+            is String -> parseBoolean(key, value)
+            is Number -> value.toInt() != 0
+            else -> throw invalidValue(key, "boolean", value)
+        }
+    }
+
+    private fun parseBoolean(key: String, value: String): Boolean {
+        return when (value.trim().lowercase()) {
+            "true", "yes", "on", "1", "enabled" -> true
+            "false", "no", "off", "0", "disabled" -> false
+            else -> throw invalidValue(key, "boolean", value)
+        }
+    }
+
+    private fun invalidValue(key: String, expectedType: String, value: Any): ConfigException {
+        return ConfigException(
+            "Configuration key '$key' must be a valid $expectedType, got: $value"
+        )
     }
 }

@@ -4,11 +4,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class YamlConfigProviderIntegrationTest {
+class YamlConfigurationSourceIntegrationTest {
 
     @Test
     fun `provider applies profile loader and environment substitution`() {
-        val provider = YamlConfigProvider(
+        val provider = YamlConfigurationSource(
             profileLoader = YamlProfileLoader(
                 profileEnvVar = "KTL_PROFILE_TEST",
                 baseConfigFile = "application.yaml",
@@ -24,7 +24,7 @@ class YamlConfigProviderIntegrationTest {
     @Test
     fun `provider fails fast when required keys are missing`() {
         kotlin.test.assertFailsWith<io.github.darkryh.katalyst.core.config.ConfigException> {
-            YamlConfigProvider(
+            YamlConfigurationSource(
                 profileLoader = YamlProfileLoader(
                     baseConfigFile = "application-missing-required.yaml",
                     environmentReader = { null }

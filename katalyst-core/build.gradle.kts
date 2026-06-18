@@ -6,7 +6,6 @@ dependencies {
     // Kotlin runtime & DI infrastructure
     implementation(projects.katalystEvents)
     implementation(projects.katalystTransactions)
-    implementation(libs.koin.core)
 
     // Persistence (Exposed)
     implementation(libs.exposed.core)

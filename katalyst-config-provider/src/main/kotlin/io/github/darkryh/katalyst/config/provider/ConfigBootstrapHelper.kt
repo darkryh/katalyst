@@ -3,7 +3,9 @@ package io.github.darkryh.katalyst.config.provider
 import io.github.darkryh.katalyst.core.config.ConfigException
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.core.config.ConfigValidator
-import org.koin.core.context.GlobalContext
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
+import io.github.darkryh.katalyst.core.di.getAll
+import io.github.darkryh.katalyst.core.di.getOrNull
 import org.slf4j.LoggerFactory
 
 /**
@@ -11,19 +13,18 @@ import org.slf4j.LoggerFactory
  *
  * **Purpose:**
  * Provides utility functions for loading and validating configuration
- * before Koin DI context is fully initialized.
+ * before the DI context is fully initialized.
  *
  * **Why Separate?**
- * ConfigProvider is auto-discovered during DI initialization, but database
- * configuration must be provided BEFORE DI can initialize. This helper
- * creates a standalone ConfigProvider instance for bootstrap, which is then
- * registered as a singleton in Koin.
+ * Database configuration must be provided BEFORE DI can initialize. This
+ * helper works with an explicitly selected [ConfigProvider] implementation,
+ * such as `YamlConfigurationSource` from `katalyst-config-yaml`.
  *
  * **Typical Usage:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
  *     // 1. Load config before DI
- *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+ *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigurationSource::class.java)
  *
  *     // 2. Extract database config
  *     val dbConfig = ConfigBootstrapHelper.loadDatabaseConfig(config)
@@ -38,7 +39,7 @@ object ConfigBootstrapHelper {
     private val log = LoggerFactory.getLogger(ConfigBootstrapHelper::class.java)
 
     /**
-     * Load and initialize ConfigProvider before Koin DI context.
+     * Load and initialize ConfigProvider before the DI context.
      *
      * **Flow:**
      * 1. Instantiate provided ConfigProvider class
@@ -46,7 +47,7 @@ object ConfigBootstrapHelper {
      * 3. Return ready-to-use provider
      *
      * @param T Type of ConfigProvider implementation
-     * @param providerClass Class to instantiate (e.g., YamlConfigProvider::class.java)
+     * @param providerClass Class to instantiate (e.g., YamlConfigurationSource::class.java)
      * @return Initialized ConfigProvider instance
      * @throws ConfigException if configuration loading or validation fails
      */
@@ -59,18 +60,6 @@ object ConfigBootstrapHelper {
             provider
         } catch (e: Exception) {
             throw ConfigException("Failed to load configuration with ${providerClass.simpleName}: ${e.message}", e)
-        }
-    }
-
-    /**
-     * Load configuration using the first available ConfigProvider on the classpath.
-     * Falls back to known providers (e.g., YAML) if no service-registered provider is found.
-     */
-    fun loadConfig(): ConfigProvider {
-        return runCatching {
-            ConfigProviderFactory.create()
-        }.getOrElse { error ->
-            throw ConfigException("Failed to load configuration: ${error.message}", error)
         }
     }
 
@@ -124,7 +113,7 @@ object ConfigBootstrapHelper {
      * Validate configuration using all discovered ConfigValidator implementations.
      *
      * **How It Works:**
-     * 1. Discovers all ConfigValidator implementations in the Koin context
+     * 1. Discovers all ConfigValidator implementations in the active Katalyst container
      * 2. Calls validate() on each validator
      * 3. Collects all errors
      * 4. Throws if any validator failed
@@ -140,8 +129,9 @@ object ConfigBootstrapHelper {
         log.info("Validating configuration...")
 
         try {
-            val koin = GlobalContext.get()
-            val validators = koin.getAll<ConfigValidator>()
+            val validators = KatalystContainerProvider.currentOrNull()
+                ?.getAll<ConfigValidator>()
+                .orEmpty()
 
             if (validators.isEmpty()) {
                 log.debug("No ConfigValidator implementations found")
@@ -170,7 +160,7 @@ object ConfigBootstrapHelper {
         } catch (e: ConfigException) {
             throw e
         } catch (e: Exception) {
-            log.warn("Could not run configuration validators (Koin may not be initialized yet): ${e.message}")
+            log.warn("Could not run configuration validators (container may not be initialized yet): ${e.message}")
         }
     }
 
@@ -203,11 +193,11 @@ object ConfigBootstrapHelper {
     }
 
     /**
-     * Get ConfigProvider from Koin after DI initialization.
+     * Get ConfigProvider from the active Katalyst container after DI initialization.
      *
      * **Purpose:**
      * For non-Service classes that need ConfigProvider outside of constructor injection.
-     * Should only be called AFTER Koin DI context is initialized (Phase 1 or later).
+     * Should only be called AFTER the DI context is initialized (Phase 1 or later).
      *
      * **When to Use:**
      * - Static utility functions that need configuration
@@ -217,24 +207,24 @@ object ConfigBootstrapHelper {
      * **When NOT to Use:**
      * - In Service constructors (use constructor injection instead)
      * - In Components discovered during Phase 3 (use constructor injection)
-     * - During bootstrap before Koin is initialized
+     * - During bootstrap before the DI container is initialized
      *
      * **Example:**
      * ```kotlin
      * fun someFunction() {
-     *     val config = ConfigBootstrapHelper.getConfigProviderFromKoin()
-     *         ?: throw IllegalStateException("Koin not initialized")
+     *     val config = ConfigBootstrapHelper.getConfigProviderFromContainer()
+     *         ?: throw IllegalStateException("DI container not initialized")
      *     val value = config.getString("some.key")
      * }
      * ```
      *
-     * @return ConfigProvider if Koin context is initialized, null otherwise
+     * @return ConfigProvider if the Katalyst container is initialized, null otherwise
      */
-    fun getConfigProviderFromKoin(): ConfigProvider? {
+    fun getConfigProviderFromContainer(): ConfigProvider? {
         return try {
-            GlobalContext.getOrNull()?.get<ConfigProvider>()
+            KatalystContainerProvider.currentOrNull()?.getOrNull<ConfigProvider>()
         } catch (e: Exception) {
-            log.debug("ConfigProvider not found in Koin (may not be initialized yet): ${e.message}")
+            log.debug("ConfigProvider not found in Katalyst container (may not be initialized yet): ${e.message}")
             null
         }
     }

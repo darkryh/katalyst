@@ -1,21 +1,22 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import org.koin.core.Koin
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.getAll
 import org.slf4j.LoggerFactory
 
 /**
  * Executes runtime-ready initializers after application readiness.
  */
-internal class RuntimeReadyInitializerRunner(private val koin: Koin) {
+internal class RuntimeReadyInitializerRunner(private val container: KatalystContainer) {
     private val logger = LoggerFactory.getLogger("RuntimeReadyInitializerRunner")
 
     suspend fun invokeAll() {
         val lifecycleStart = System.currentTimeMillis()
-        val koinInitializers = runCatching {
-            koin.getAll<ApplicationReadyInitializer>()
+        val containerInitializers = runCatching {
+            container.getAll<ApplicationReadyInitializer>()
         }.getOrElse { emptyList() }
         val registryInitializers = ApplicationReadyInitializerRegistry.getAll()
-        val initializers = (registryInitializers + koinInitializers)
+        val initializers = (registryInitializers + containerInitializers)
             .distinctBy { it::class }
             .sortedWith(runtimeReadyInitializerOrderComparator)
 

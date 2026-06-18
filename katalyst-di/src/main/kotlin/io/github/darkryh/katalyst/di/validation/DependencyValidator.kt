@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.di.validation
 
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.analysis.ComponentNode
 import io.github.darkryh.katalyst.di.analysis.Dependency
 import io.github.darkryh.katalyst.di.analysis.DependencyGraph
@@ -191,9 +191,11 @@ class DependencyValidator(private val graph: DependencyGraph) {
                         appendLine("   Add the feature enabler to Application.kt:")
                         appendLine("   fun main(args: Array<String>) = katalystApplication(args) {")
                         appendLine("       // Check for features like:")
-                        appendLine("       enableConfigProvider()     // For ConfigProvider")
-                        appendLine("       enableScheduler()           // For SchedulerService")
-                        appendLine("       enableEvents()                   // For EventBus")
+                        appendLine("       enableYamlConfiguration()     // For ConfigProvider")
+                        appendLine("       features {")
+                        appendLine("           enableScheduler()        // For SchedulerService")
+                        appendLine("           enableEvents()           // For EventBus")
+                        appendLine("       }")
                         appendLine("   }")
                         appendLine()
                         appendLine("2. If '$requiredLabel' is a custom service/repository:")

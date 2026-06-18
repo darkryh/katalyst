@@ -1,21 +1,18 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlinx.coroutines.runBlocking
-import org.koin.core.Koin
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class InitializerRegistryConstructorInjectionIntegrationTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
     private lateinit var databaseFactory: DatabaseFactory
     private val probe = InitializerProbe()
 
@@ -25,28 +22,22 @@ class InitializerRegistryConstructorInjectionIntegrationTest {
         databaseFactory = DatabaseFactory.create(inMemoryDatabaseConfig())
         val txManager = DatabaseTransactionManager(databaseFactory.database)
 
-        val app = startKoin {
-            modules(
-                module {
-                    single { probe }
-                    single<DatabaseTransactionManager> { txManager }
-                    single<ApplicationInitializer> { ProbeInitializer(get()) }
-                }
-            )
-        }
-        koin = app.koin
+        engine = TestBeanEngine()
+        engine.registerInstance(probe, InitializerProbe::class)
+        engine.registerInstance(txManager, DatabaseTransactionManager::class)
+        engine.registerInstance(ProbeInitializer(probe), ApplicationInitializer::class)
     }
 
     @AfterTest
     fun tearDown() {
         RegistryManager.resetAll()
-        stopKoin()
+        engine.stop()
         databaseFactory.close()
     }
 
     @Test
     fun `initializer registry invokes custom initializer with constructor-injected dependency`() = runBlocking {
-        InitializerRegistry(koin).invokeAll()
+        InitializerRegistry(engine.container).invokeAll()
         assertTrue(probe.executed)
     }
 }

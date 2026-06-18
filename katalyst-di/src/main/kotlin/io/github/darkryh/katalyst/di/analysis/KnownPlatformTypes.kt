@@ -1,10 +1,10 @@
 package io.github.darkryh.katalyst.di.analysis
 
 import io.github.darkryh.katalyst.core.config.ConfigProvider
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.events.bus.EventBus
-import org.koin.core.Koin
 import org.slf4j.Logger
 import kotlin.reflect.KClass
 
@@ -19,7 +19,7 @@ internal object KnownPlatformTypes {
         DatabaseTransactionManager::class,
         ConfigProvider::class,
         EventBus::class,
-        Koin::class
+        KatalystContainer::class
     )
 
     // The scheduler module may or may not be on the classpath of katalyst-di.

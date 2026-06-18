@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
  * YAML-based configuration provider for Katalyst applications using SnakeYAML.
  *
  * **Implements Component Interface:**
- * This class implements `Component` so it's automatically discovered and registered
- * in Koin DI container during application startup. Services can depend on ConfigProvider
- * and will receive this implementation automatically.
+ * This class implements `Component`, but Katalyst does not install it from the
+ * classpath automatically. Applications must explicitly pass it to
+ * `enableYamlConfiguration()` or `configuration(source)`.
  *
  * **Load Order (highest to lowest priority):**
  * 1. `application-{KATALYST_PROFILE}.yaml` (if KATALYST_PROFILE env var set)
@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory
  *     // Load before DI scans components
  *     database(ConfigurationImplementation.loadDatabaseConfig())
  *
- *     // YamlConfigProvider is auto-discovered during scanPackages()
- *     // and injected into services that depend on ConfigProvider
+ *     enableYamlConfiguration(YamlConfigurationSource())
+ *
  *     scanPackages("io.github.darkryh.katalyst.example")
  * }
  * ```
@@ -58,12 +58,12 @@ import org.slf4j.LoggerFactory
  * Uses YamlProfileLoader for profile-based loading and YamlParser for parsing.
  * This separation allows reusing these components independently.
  */
-class YamlConfigProvider(
+class YamlConfigurationSource(
     profileLoader: YamlProfileLoader = YamlProfileLoader(),
     substitutor: EnvironmentVariableSubstitutor = EnvironmentVariableSubstitutor()
 ) : ConfigProvider, Component {
     companion object {
-        private val log = LoggerFactory.getLogger(YamlConfigProvider::class.java)
+        private val log = LoggerFactory.getLogger(YamlConfigurationSource::class.java)
     }
 
     private val data: Map<String, Any>

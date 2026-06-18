@@ -1,19 +1,16 @@
 package io.github.darkryh.katalyst.di.feature
 
-import io.github.darkryh.katalyst.di.KatalystApplicationBuilder
+import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
-import org.koin.core.Koin
-import org.koin.core.module.Module
-import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
 /**
  * Katalyst feature for loading Ktor server deployment configuration from application.yaml.
  *
  * **Purpose:**
- * Provides optional automatic configuration loading from ConfigProvider during application bootstrap.
- * When enabled, reads all ktor.deployment.* and ktor.security.ssl.* properties from application.yaml
- * and makes ServerDeploymentConfiguration available in the Koin container for engine modules to use.
+ * Provides server deployment configuration support during application bootstrap.
+ * When enabled with an explicit configuration source, reads all ktor.deployment.* and ktor.security.ssl.* properties
+ * and makes ServerDeploymentConfiguration available in the active container for engine modules to use.
  *
  * **Configuration Structure (application.yaml):**
  * ```yaml
@@ -35,8 +32,10 @@ import org.slf4j.LoggerFactory
  * **Usage in Application:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     database(databaseConfig)
- *     enableServerConfiguration()  // Enable YAML-based config loading
+ *     enableYamlConfiguration()
+ *     features {
+ *         enableServerConfiguration()  // Enable server deployment loading from installed config
+ *     }
  *     scanPackages("com.example.app")
  * }
  * ```
@@ -45,12 +44,12 @@ import org.slf4j.LoggerFactory
  * Applications use default ServerDeploymentConfiguration values.
  *
  * **With This Feature:**
- * Applications automatically load configuration from application.yaml via ConfigProvider.
+ * Applications load configuration from the explicitly installed ConfigProvider.
  * The loaded configuration is validated and made available to engine modules.
  *
  * **Auto-Discovery of Loader:**
- * The ServerDeploymentConfigurationLoader is auto-discovered by ConfigMetadata and can be
- * loaded via ConfigBootstrapHelper.loadServiceConfig() if needed for manual configuration.
+ * The ServerDeploymentConfigurationLoader uses the explicit ConfigProvider installed during
+ * bootstrap. Katalyst does not create a YAML source implicitly.
  *
  * **Note:**
  * This feature is optional. Engine modules have built-in defaults that work without it.
@@ -59,29 +58,27 @@ object ServerConfigurationFeature : KatalystFeature {
     private val logger = LoggerFactory.getLogger("ServerConfigurationFeature")
     override val id: String = "server-configuration"
 
-    override fun provideModules(): List<Module> {
+    override fun provideBeanModules(): List<KatalystBeanModule> {
         logger.info("Loading server configuration feature modules")
         return listOf(serverConfigurationModule())
     }
 
-    override fun onKoinReady(koin: Koin) {
+    override fun onReady(context: KatalystBeanContext) {
         logger.info("Server configuration feature ready (ServerDeploymentConfiguration available)")
     }
 }
 
 /**
- * Koin module for server configuration.
+ * Bean module for server configuration.
  *
  * Registers ServerDeploymentConfiguration in the container for use by engine modules.
  * The configuration is initialized with defaults - actual YAML loading would be done
  * by the ServerDeploymentConfigurationLoader and passed here.
  */
-private fun serverConfigurationModule(): Module = module {
+private fun serverConfigurationModule(): KatalystBeanModule = katalystBeanModule {
     // Register default ServerDeploymentConfiguration
     // Actual YAML loading should be done via ServerDeploymentConfigurationLoader
-    single {
-        ServerDeploymentConfiguration.createDefault()
-    }
+    single { ServerDeploymentConfiguration.createDefault() }
 }
 
 /**
@@ -90,15 +87,17 @@ private fun serverConfigurationModule(): Module = module {
  * **Usage:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     database(databaseConfig)
- *     enableServerConfiguration()  // Loads from ktor.deployment.* in application.yaml
+ *     enableYamlConfiguration()
+ *     features {
+ *         enableServerConfiguration()  // Loads from ktor.deployment.* in application.yaml
+ *     }
  *     scanPackages("com.example.app")
  * }
  * ```
  *
  * **What it does:**
  * 1. Registers ServerConfigurationFeature with the application builder
- * 2. Makes ServerDeploymentConfiguration available in Koin container
+ * 2. Makes ServerDeploymentConfiguration available in the active container
  * 3. Engine modules can now inject and use the loaded configuration
  *
  * **Configuration Path:**
@@ -115,7 +114,7 @@ private fun serverConfigurationModule(): Module = module {
  *
  * @return This builder for method chaining
  */
-fun KatalystApplicationBuilder.enableServerConfiguration(): KatalystApplicationBuilder =
+fun KatalystFeaturesBuilder.enableServerConfiguration(): KatalystFeaturesBuilder =
     feature(ServerConfigurationFeature).also {
         logger.debug("Server configuration feature enabled - will load from application.yaml")
     }

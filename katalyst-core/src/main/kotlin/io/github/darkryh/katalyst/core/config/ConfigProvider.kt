@@ -19,7 +19,7 @@ import io.github.darkryh.katalyst.core.component.Component
  *
  * **Example Implementation:**
  * ```kotlin
- * class YamlConfigProvider : ConfigProvider {
+ * class YamlConfigurationSource : ConfigProvider {
  *     private val data = loadYamlFile("application.yaml")
  *
  *     override fun getString(key: String, default: String): String =

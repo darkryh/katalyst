@@ -1,10 +1,9 @@
 package io.github.darkryh.katalyst.di.invocation
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.di.injection.InjectNamed
 import io.github.darkryh.katalyst.di.injection.internal.parseDependencyRequest
-import org.koin.core.Koin
-import org.koin.core.qualifier.named
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -14,12 +13,12 @@ import kotlin.reflect.full.findAnnotation
  * Resolves Kotlin callable parameters for Katalyst-owned reflective invocation.
  *
  * The resolver intentionally supports normal dependency parameters first:
- * supplied framework receivers, direct Koin bindings, Kotlin defaults, and nullable
+ * supplied framework receivers, direct container bindings, Kotlin defaults, and nullable
  * missing values. Framework call sites should add new behavior here rather than
  * implementing their own parameter rules.
  */
 class ParameterResolver(
-    private val koin: Koin
+    private val container: KatalystContainer
 ) {
     fun resolveParameters(
         function: KFunction<*>,
@@ -48,11 +47,7 @@ class ParameterResolver(
         val request = parseDependencyRequest(parameter.type)
         val qualifierName = parameter.findAnnotation<InjectNamed>()?.value
 
-        if (request.targetType == Koin::class) {
-            return ResolvedParameter.supply(koin)
-        }
-
-        val resolved = koin.getFromKoinOrNull(request.targetType, qualifierName)
+        val resolved = container.getFromContainerOrNull(request.targetType, qualifierName)
         if (resolved != null) return ResolvedParameter.supply(resolved)
 
         if (parameter.isOptional) {
@@ -71,12 +66,12 @@ class ParameterResolver(
     }
 }
 
-internal fun Koin.getFromKoinOrNull(kClass: KClass<*>, qualifierName: String? = null): Any? =
+internal fun KatalystContainer.getFromContainerOrNull(kClass: KClass<*>, qualifierName: String? = null): Any? =
     try {
         @Suppress("UNCHECKED_CAST")
         get(
             kClass as KClass<Any>,
-            qualifier = qualifierName?.let { named(it) }
+            qualifier = qualifierName
         )
     } catch (_: Exception) {
         null

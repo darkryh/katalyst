@@ -22,10 +22,6 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.migration.jdbc)
 
-    // Dependency injection
-    api(libs.koin.core)
-    api(libs.koin.ktor)
-
     // Ktor integration
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.host.common)
@@ -39,7 +35,6 @@ dependencies {
     implementation(libs.asm)
 
     // Testing
-    testImplementation(libs.koin.test)
     testImplementation(libs.exposed.core)
     testImplementation(libs.exposed.dao)
     testImplementation(libs.exposed.jdbc)
@@ -49,4 +44,5 @@ dependencies {
     testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.junit.platform.launcher)
     testImplementation(testFixtures(projects.katalystTestingCore))
+    testRuntimeOnly(projects.katalystKoinBean)
 }

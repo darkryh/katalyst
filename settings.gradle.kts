@@ -11,7 +11,9 @@ dependencyResolutionManagement {
 }
 
 includeBuild("build-logic")
-includeBuild("samples")
+if (providers.gradleProperty("includeSamplesComposite").orNull == "true") {
+    includeBuild("samples")
+}
 if (providers.gradleProperty("includeBoshiComposite").orNull == "true") {
     includeBuild("projects/boshi")
 }
@@ -24,6 +26,7 @@ include(":katalyst-ktor")
 
 // Dependency Injection and Orchestration
 include(":katalyst-di")
+include(":katalyst-koin-bean")
 
 // Domain modules
 include(":katalyst-core")

@@ -52,6 +52,28 @@ class KatalystDIOptionsTest {
     }
 
     @Test
+    fun `KatalystDIOptions should validate schema by default`() {
+        val options = KatalystDIOptions(databaseConfig = createTestDatabaseConfig())
+
+        assertEquals(SchemaPolicy.VALIDATE, options.schemaManagement.policy)
+        assertTrue(options.schemaManagement.failOnPendingStatements)
+    }
+
+    @Test
+    fun `KatalystDIOptions should support explicit schema management`() {
+        val options = KatalystDIOptions(
+            databaseConfig = createTestDatabaseConfig(),
+            schemaManagement = SchemaManagementOptions(
+                policy = SchemaPolicy.VALIDATE,
+                failOnPendingStatements = false,
+            ),
+        )
+
+        assertEquals(SchemaPolicy.VALIDATE, options.schemaManagement.policy)
+        assertFalse(options.schemaManagement.failOnPendingStatements)
+    }
+
+    @Test
     fun `KatalystDIOptions should support custom scanPackages`() {
         val packages = arrayOf("com.example.app", "com.example.domain")
         val options = KatalystDIOptions(

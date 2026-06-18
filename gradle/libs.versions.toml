@@ -1,10 +1,10 @@
 [versions]
 # Core toolchain shared across all modules
-kotlin = "2.2.21"
+kotlin = "2.4.0"
 kotlinx-coroutines = "1.10.2"
-kover = "0.8.3"
-ktor = "3.3.3"
-koin = "4.1.1"
+kover = "0.9.8"
+ktor = "3.5.0"
+koin = "4.2.2"
 exposed = "1.3.0"
 logback = "1.5.13"
 jansi = "2.4.0"
@@ -55,6 +55,7 @@ exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = 
 exposed-migration-core = { module = "org.jetbrains.exposed:exposed-migration-core", version.ref = "exposed" }
 exposed-migration-jdbc = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
 exposed-migration-r2dbc = { module = "org.jetbrains.exposed:exposed-migration-r2dbc", version.ref = "exposed" }
+exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }

@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
  *
  * Unlike [ServiceConfigLoader] which requires explicit manual loading via [ConfigBootstrapHelper],
  * `AutomaticServiceConfigLoader` implementations are discovered, loaded, validated, and registered
- * as singletons in Koin automatically during the component registration orchestration phase.
+ * as singletons automatically during the component registration orchestration phase.
  *
  * **Usage Pattern:**
  *
@@ -18,8 +18,9 @@ import kotlin.reflect.KClass
  * data class SmtpConfig(
  *     val host: String,
  *     val port: Int = 25,
- *     val username: String = "",
- *     val password: String = ""
+ *     val username: String?,
+ *     val password: String?,
+ *     val tlsEnabled: Boolean = false
  * )
  *
  * object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
@@ -29,8 +30,9 @@ import kotlin.reflect.KClass
  *         return SmtpConfig(
  *             host = ConfigLoaders.loadRequiredString(provider, "smtp.host"),
  *             port = ConfigLoaders.loadOptionalInt(provider, "smtp.port", 25),
- *             username = ConfigLoaders.loadOptionalString(provider, "smtp.username"),
- *             password = ConfigLoaders.loadOptionalString(provider, "smtp.password")
+ *             username = ConfigLoaders.loadStringOrNull(provider, "smtp.username"),
+ *             password = ConfigLoaders.loadStringOrNull(provider, "smtp.password"),
+ *             tlsEnabled = ConfigLoaders.loadBoolean(provider, "smtp.tls.enabled")
  *         )
  *     }
  *
@@ -54,7 +56,7 @@ import kotlin.reflect.KClass
  *    - Discovers all `AutomaticServiceConfigLoader<T>` implementations during component scanning
  *    - Loads each configuration during DI initialization (Phase 6a)
  *    - Validates each configuration (fail-fast on errors)
- *    - Registers each configuration as a singleton in Koin
+ *    - Registers each configuration as a singleton in the active bean container
  *    - Logs all loaded and registered configurations
  *
  * **Benefits:**
@@ -86,7 +88,7 @@ interface AutomaticServiceConfigLoader<T : Any> {
     /**
      * The type of configuration this loader produces.
      *
-     * Used by the framework to register the loaded configuration in Koin with proper type information.
+     * Used by the framework to register the loaded configuration with proper type information.
      * This ensures that components can receive the configuration via constructor injection:
      *
      * ```kotlin
@@ -106,7 +108,8 @@ interface AutomaticServiceConfigLoader<T : Any> {
      *
      * **Responsibilities:**
      * - Load all required configuration keys (throw exception if missing)
-     * - Load optional configuration keys with sensible defaults
+     * - Load optional non-Boolean configuration keys as nullable values where possible
+     * - Load optional Boolean flags with false defaults
      * - Perform any necessary transformations (e.g., URL parsing, enum conversion)
      * - Return a fully-initialized configuration object
      *
@@ -127,7 +130,7 @@ interface AutomaticServiceConfigLoader<T : Any> {
      * Validate the loaded configuration object.
      *
      * This method is called automatically after [loadConfig] completes and before the configuration
-     * is registered in Koin. Use this method to validate constraints that couldn't be checked during
+     * is registered. Use this method to validate constraints that couldn't be checked during
      * loading (e.g., cross-field validation, complex business rules).
      *
      * **Default Behavior:** Does nothing (no validation). Override to add custom validation.

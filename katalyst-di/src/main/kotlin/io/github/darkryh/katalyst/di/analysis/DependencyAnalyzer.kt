@@ -2,12 +2,13 @@ package io.github.darkryh.katalyst.di.analysis
 
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.contains
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.injection.InjectNamed
 import io.github.darkryh.katalyst.di.injection.internal.parseDependencyRequest
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import kotlinx.serialization.Serializable
-import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
@@ -25,18 +26,18 @@ private val logger = LoggerFactory.getLogger("DependencyAnalyzer")
  * 1. Extracts constructor dependencies from discovered components
  * 2. Extracts well-known property dependencies (DatabaseTransactionManager, SchedulerService)
  * 3. Computes secondary type bindings (interfaces implemented by components)
- * 4. Checks Koin for available types (from features)
+ * 4. Checks the active container for available types (from features)
  * 5. Includes additional types that will be available (like automatic configs)
  * 6. Builds a complete dependency graph with resolvability information
  *
  * @param discoveredTypes All discovered component types organized by base type
- * @param koin The Koin DI container (to check what types are available)
+ * @param container The active Katalyst container
  * @param scanPackages Array of packages that were scanned
  * @param additionalAvailableTypes Additional types that will be available (e.g., automatic configs)
  */
 class DependencyAnalyzer(
     private val discoveredTypes: Map<String, Set<KClass<*>>>,
-    private val koin: Koin,
+    private val container: KatalystContainer,
     private val scanPackages: Array<String>,
     private val additionalAvailableTypes: Set<KClass<*>> = emptySet()
 ) {
@@ -63,12 +64,12 @@ class DependencyAnalyzer(
         val edges = mutableMapOf<KClass<*>, Set<KClass<*>>>()
         val secondaryTypeBindings = mutableMapOf<KClass<*>, MutableSet<KClass<*>>>()
 
-        // Get types already in Koin (from features) and include additional available types
+        // Get types already in the container (from features) and include additional available types
         // (e.g., configurations that will be registered in Phase 6a)
-        val koinProvidedTypes = getKoinProvidedTypes() + additionalAvailableTypes
+        val containerProvidedTypes = getContainerProvidedTypes() + additionalAvailableTypes
 
-        logger.debug("Koin provides {} types (including {} additional available types)",
-            koinProvidedTypes.size, additionalAvailableTypes.size)
+        logger.debug("Container provides {} types (including {} additional available types)",
+            containerProvidedTypes.size, additionalAvailableTypes.size)
 
         // Build nodes and extract dependencies for each component
         for (componentType in allDiscoveredTypes) {
@@ -123,7 +124,7 @@ class DependencyAnalyzer(
         val finalNodes = mutableMapOf<KClass<*>, ComponentNode>()
         for ((type, node) in nodes) {
             val updatedDependencies = node.dependencies.map { dep ->
-                val isResolvable = canResolveDependency(dep.type, nodes, secondaryTypeBindings, koinProvidedTypes)
+                val isResolvable = canResolveDependency(dep.type, nodes, secondaryTypeBindings, containerProvidedTypes)
                 if (isResolvable) {
                     logger.debug("    Dependency {} is resolvable", dep.type.simpleName)
                 } else {
@@ -139,7 +140,7 @@ class DependencyAnalyzer(
             nodes = finalNodes,
             edges = edges,
             secondaryTypeBindings = secondaryTypeBindings,
-            koinProvidedTypes = koinProvidedTypes
+            koinProvidedTypes = containerProvidedTypes
         )
 
         logger.info("Dependency graph built: {} nodes, {} edges, {} secondary bindings",
@@ -242,7 +243,7 @@ class DependencyAnalyzer(
      * Checks if a type can be resolved from available sources.
      *
      * Resolution sources (in order):
-     * 1. Try to get from Koin directly (for framework and feature-provided types)
+     * 1. Try to get from the container directly (for framework and feature-provided types)
      * 2. Discovered component type
      * 3. Secondary type binding from another component
      * 4. Known feature types
@@ -250,14 +251,14 @@ class DependencyAnalyzer(
      * @param type The required type
      * @param discoveredComponents Map of discovered component types
      * @param secondaryBindings Secondary type binding registry
-     * @param koinTypes Types known to be available from Koin
+     * @param containerTypes Types known to be available from the container
      * @return true if type can be resolved
      */
     private fun canResolveDependency(
         type: KClass<*>,
         discoveredComponents: Map<KClass<*>, ComponentNode>,
         secondaryBindings: Map<KClass<*>, Set<KClass<*>>>,
-        koinTypes: Set<KClass<*>>
+        containerTypes: Set<KClass<*>>
     ): Boolean {
         // Special handling for known framework and feature types that will be registered
         // but might not be eager-loaded yet during validation.
@@ -266,28 +267,28 @@ class DependencyAnalyzer(
             return true
         }
 
-        // Try to actually get it from Koin - this catches feature and other types
+        // Try to actually get it from the container - this catches feature and other types.
         try {
-            @Suppress("UNCHECKED_CAST")
-            val instance: Any = koin.get(type as KClass<Any>)
-            logger.debug("Type {} is available in Koin", type.simpleName)
-            return true
+            if (container.contains(type)) {
+                logger.debug("Type {} is available in the container", type.simpleName)
+                return true
+            }
         } catch (e: Exception) {
-            // Not in Koin yet - continue checking other sources
-            logger.debug("Type {} not directly available in Koin: {}", type.simpleName, e.message)
+            logger.debug("Type {} not directly available in container: {}", type.simpleName, e.message)
         }
 
-        // Check if in the hardcoded Koin types list
-        if (type in koinTypes) return true
+        if (type == KatalystContainer::class) {
+            return true
+        }
+
+        // Check if in the hardcoded container types list
+        if (type in containerTypes) return true
 
         // Check if it's a discovered component
         if (type in discoveredComponents) return true
 
         // Check if it's provided as secondary type binding
         if (type in secondaryBindings) return true
-
-        // Special case: Koin itself can always be injected
-        if (type == Koin::class) return true
 
         return false
     }
@@ -339,30 +340,31 @@ class DependencyAnalyzer(
     }
 
     /**
-     * Gets all types currently available in Koin.
+     * Gets all types currently available in the active container.
      *
      * These are types provided by feature modules and the core DI module.
      *
      * This method checks both:
-     * 1. What's actually registered in Koin
+     * 1. What's actually registered in the container
      * 2. What feature classes are available on the classpath
      *
      * The validation phase will definitively check if dependencies can be resolved.
      *
-     * @return Set of types available in Koin (best effort)
+     * @return Set of types available in the container (best effort)
      */
-    private fun getKoinProvidedTypes(): Set<KClass<*>> {
+    private fun getContainerProvidedTypes(): Set<KClass<*>> {
         val types = mutableSetOf<KClass<*>>()
 
         // Known platform contracts should be considered resolvable by analyzer design.
         types += KnownPlatformTypes.alwaysAvailableContracts
         types += optionalPlatformTypes
+        types += KatalystContainer::class
 
         // Keep this probe to detect catastrophic bootstrap ordering issues.
-        runCatching { koin.get<DatabaseTransactionManager>() }
-            .onFailure { logger.debug("DatabaseTransactionManager not available in Koin yet: {}", it.message) }
+        runCatching { container.contains<DatabaseTransactionManager>() }
+            .onFailure { logger.debug("DatabaseTransactionManager not available in container yet: {}", it.message) }
 
-        logger.debug("Koin provides {} types: {}", types.size, types.map { it.simpleName })
+        logger.debug("Container provides {} types: {}", types.size, types.map { it.simpleName })
 
         return types
     }

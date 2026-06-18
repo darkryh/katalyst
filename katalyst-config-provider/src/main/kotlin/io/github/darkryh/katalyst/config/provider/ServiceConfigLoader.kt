@@ -22,17 +22,17 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
  * data class DatabaseConfig(
  *     val url: String,
  *     val username: String,
- *     val password: String,
- *     val maxPoolSize: Int
+ *     val password: String?,
+ *     val maxPoolSize: Int?
  * )
  *
  * class DatabaseConfigLoader : ServiceConfigLoader<DatabaseConfig> {
  *     override fun loadConfig(provider: ConfigProvider): DatabaseConfig {
  *         return DatabaseConfig(
- *             url = provider.getString("database.url"),
- *             username = provider.getString("database.username"),
- *             password = provider.getString("database.password"),
- *             maxPoolSize = provider.getInt("database.pool.maxSize", 10)
+ *             url = provider.requiredString("database.url"),
+ *             username = provider.requiredString("database.username"),
+ *             password = provider.stringOrNull("database.password"),
+ *             maxPoolSize = provider.intOrNull("database.pool.maxSize")
  *         )
  *     }
  *
@@ -47,7 +47,7 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
  * **Usage in Application:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+ *     val config = ConfigBootstrapHelper.loadConfig(YamlConfigurationSource::class.java)
  *     val databaseConfig = DatabaseConfigLoader().loadConfig(config)
  *     database(ConfigBootstrapHelper.convertToDatabaseConfig(databaseConfig))
  * }

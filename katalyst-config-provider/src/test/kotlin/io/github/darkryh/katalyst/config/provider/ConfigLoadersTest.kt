@@ -168,6 +168,33 @@ class ConfigLoadersTest {
         assertEquals("", result)
     }
 
+    @Test
+    fun `stringOrNull should return value when key exists`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("name" to "katalyst"))
+
+        // Then
+        assertEquals("katalyst", provider.stringOrNull("name"))
+    }
+
+    @Test
+    fun `stringOrNull should return null when key is missing`() {
+        // Given
+        val provider = TestConfigProvider()
+
+        // Then
+        assertNull(provider.stringOrNull("missing"))
+    }
+
+    @Test
+    fun `stringOrNull should convert non-string values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("port" to 8080))
+
+        // Then
+        assertEquals("8080", provider.stringOrNull("port"))
+    }
+
     // ========== loadRequiredInt() TESTS ==========
 
     @Test
@@ -191,7 +218,8 @@ class ConfigLoadersTest {
         val exception = assertFailsWith<ConfigException> {
             ConfigLoaders.loadRequiredInt(provider, "missing")
         }
-        assertTrue(exception.message?.contains("must be a valid integer") == true)
+        assertTrue(exception.message?.contains("Required configuration key") == true)
+        assertTrue(exception.message?.contains("missing") == true)
     }
 
     @Test
@@ -205,6 +233,19 @@ class ConfigLoadersTest {
         }
         assertTrue(exception.message?.contains("must be a valid integer") == true)
         assertTrue(exception.message?.contains("not-a-number") == true)
+    }
+
+    @Test
+    fun `requiredInt extension should fail fast for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "8080ms"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredInt("invalid")
+        }
+        assertTrue(exception.message?.contains("must be a valid integer") == true)
+        assertTrue(exception.message?.contains("8080ms") == true)
     }
 
     @Test
@@ -269,6 +310,49 @@ class ConfigLoadersTest {
         assertEquals(0, result)
     }
 
+    @Test
+    fun `optionalInt extension should return default for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "not-a-number"))
+
+        // When
+        val result = provider.optionalInt("invalid", 9090)
+
+        // Then
+        assertEquals(9090, result)
+    }
+
+    @Test
+    fun `intOrNull should return null when key is missing`() {
+        // Given
+        val provider = TestConfigProvider()
+
+        // Then
+        assertNull(provider.intOrNull("missing"))
+    }
+
+    @Test
+    fun `intOrNull should parse present integer values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("port" to "8080"))
+
+        // Then
+        assertEquals(8080, provider.intOrNull("port"))
+    }
+
+    @Test
+    fun `intOrNull should fail fast for malformed present values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("port" to "8080ms"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.intOrNull("port")
+        }
+        assertTrue(exception.message?.contains("must be a valid integer") == true)
+        assertTrue(exception.message?.contains("8080ms") == true)
+    }
+
     // ========== loadRequiredLong() TESTS ==========
 
     @Test
@@ -292,7 +376,8 @@ class ConfigLoadersTest {
         val exception = assertFailsWith<ConfigException> {
             ConfigLoaders.loadRequiredLong(provider, "missing")
         }
-        assertTrue(exception.message?.contains("must be a valid long") == true)
+        assertTrue(exception.message?.contains("Required configuration key") == true)
+        assertTrue(exception.message?.contains("missing") == true)
     }
 
     @Test
@@ -305,6 +390,19 @@ class ConfigLoadersTest {
             ConfigLoaders.loadRequiredLong(provider, "invalid")
         }
         assertTrue(exception.message?.contains("must be a valid long") == true)
+    }
+
+    @Test
+    fun `requiredLong extension should fail fast for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "10 seconds"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredLong("invalid")
+        }
+        assertTrue(exception.message?.contains("must be a valid long") == true)
+        assertTrue(exception.message?.contains("10 seconds") == true)
     }
 
     // ========== loadOptionalLong() TESTS ==========
@@ -343,6 +441,49 @@ class ConfigLoadersTest {
 
         // Then
         assertEquals(0L, result)
+    }
+
+    @Test
+    fun `optionalLong extension should return default for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "not-a-number"))
+
+        // When
+        val result = provider.optionalLong("invalid", 123L)
+
+        // Then
+        assertEquals(123L, result)
+    }
+
+    @Test
+    fun `longOrNull should return null when key is missing`() {
+        // Given
+        val provider = TestConfigProvider()
+
+        // Then
+        assertNull(provider.longOrNull("missing"))
+    }
+
+    @Test
+    fun `longOrNull should parse present long values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("timeout" to "30000"))
+
+        // Then
+        assertEquals(30000L, provider.longOrNull("timeout"))
+    }
+
+    @Test
+    fun `longOrNull should fail fast for malformed present values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("timeout" to "30s"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.longOrNull("timeout")
+        }
+        assertTrue(exception.message?.contains("must be a valid long") == true)
+        assertTrue(exception.message?.contains("30s") == true)
     }
 
     // ========== loadDuration() TESTS ==========
@@ -651,6 +792,94 @@ class ConfigLoadersTest {
 
         // Then
         assertFalse(result)
+    }
+
+    @Test
+    fun `boolean extension should return false when key is missing`() {
+        // Given
+        val provider = TestConfigProvider()
+
+        // Then
+        assertFalse(provider.boolean("missing"))
+    }
+
+    @Test
+    fun `boolean extension should parse common boolean values`() {
+        // Given
+        val provider = TestConfigProvider(
+            mapOf(
+                "enabled" to "enabled",
+                "disabled" to "off"
+            )
+        )
+
+        // Then
+        assertTrue(provider.boolean("enabled"))
+        assertFalse(provider.boolean("disabled"))
+    }
+
+    @Test
+    fun `boolean extension should fail fast for malformed present values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("enabled" to "sometimes"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.boolean("enabled")
+        }
+        assertTrue(exception.message?.contains("must be a valid boolean") == true)
+        assertTrue(exception.message?.contains("sometimes") == true)
+    }
+
+    @Test
+    fun `loadRequiredBoolean should parse common true and false values`() {
+        // Given
+        val provider = TestConfigProvider(
+            mapOf(
+                "trueValue" to "enabled",
+                "falseValue" to "disabled"
+            )
+        )
+
+        // Then
+        assertTrue(ConfigLoaders.loadRequiredBoolean(provider, "trueValue"))
+        assertFalse(ConfigLoaders.loadRequiredBoolean(provider, "falseValue"))
+    }
+
+    @Test
+    fun `loadRequiredBoolean should throw when key is missing`() {
+        // Given
+        val provider = TestConfigProvider()
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            ConfigLoaders.loadRequiredBoolean(provider, "missing")
+        }
+        assertTrue(exception.message?.contains("Required configuration key") == true)
+        assertTrue(exception.message?.contains("missing") == true)
+    }
+
+    @Test
+    fun `requiredBoolean extension should fail fast for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "maybe"))
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredBoolean("invalid")
+        }
+        assertTrue(exception.message?.contains("must be a valid boolean") == true)
+        assertTrue(exception.message?.contains("maybe") == true)
+    }
+
+    @Test
+    fun `optionalBoolean extension should return default for malformed values`() {
+        // Given
+        val provider = TestConfigProvider(mapOf("invalid" to "maybe"))
+
+        // Then
+        assertTrue(provider.optionalBoolean("invalid", true))
+        assertFalse(provider.optionalBoolean("invalid", false))
     }
 
     // ========== validateRequiredKeys() TESTS ==========

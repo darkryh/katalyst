@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.config.provider
 
-import org.reflections.Reflections
+import  org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import org.reflections.util.ClasspathHelper
 import org.reflections.util.ConfigurationBuilder
@@ -31,7 +31,7 @@ private val logger = LoggerFactory.getLogger("AutomaticConfigLoaderDiscovery")
  * loaders.forEach { (configType, loader) ->
  *     val config = loader.loadConfig(configProvider)
  *     loader.validate(config)
- *     // Register config in Koin...
+ *     // Register config in the active bean container...
  * }
  * ```
  *

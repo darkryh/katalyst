@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.internal.TableRegistry
 import org.slf4j.LoggerFactory
 

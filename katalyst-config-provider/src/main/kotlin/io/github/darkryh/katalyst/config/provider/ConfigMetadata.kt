@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
  * val loaders = ConfigMetadata.discoverLoaders(arrayOf("com.example.app"))
  *
  * // Validate all loaders have required configuration
- * val config = ConfigBootstrapHelper.loadConfig(YamlConfigProvider::class.java)
+ * val config = ConfigBootstrapHelper.loadConfig(YamlConfigurationSource::class.java)
  * ConfigMetadata.validateLoaders(config, loaders)
  * ```
  */

@@ -1,33 +1,14 @@
 package io.github.darkryh.katalyst.di.exception
 
 import io.github.darkryh.katalyst.di.error.MissingDependencyError
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FatalDependencyValidationExceptionTest {
-    private lateinit var koin: Koin
-
-    @BeforeTest
-    fun setUp() {
-        startKoin { }
-        koin = GlobalContext.get()
-    }
-
-    @AfterTest
-    fun tearDown() {
-        stopKoin()
-    }
-
     @Test
     fun `render report returns summary without writing to stdout`() {
         val exception = FatalDependencyValidationException(
@@ -40,8 +21,7 @@ class FatalDependencyValidationExceptionTest {
                     isDiscoverable = false
                 )
             ),
-            discoveredTypes = mapOf("services" to setOf(NeedsMissingDependency::class)),
-            koin = koin
+            discoveredTypes = mapOf("services" to setOf(NeedsMissingDependency::class))
         )
 
         val capturedStdout = ByteArrayOutputStream()
@@ -70,8 +50,7 @@ class FatalDependencyValidationExceptionTest {
                     isDiscoverable = false
                 )
             ),
-            discoveredTypes = emptyMap(),
-            koin = koin
+            discoveredTypes = emptyMap()
         )
 
         val report = exception.renderReport(verbose = false)

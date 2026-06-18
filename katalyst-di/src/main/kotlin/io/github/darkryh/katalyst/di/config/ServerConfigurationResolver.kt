@@ -1,26 +1,33 @@
 package io.github.darkryh.katalyst.di.config
 
-import io.github.darkryh.katalyst.config.provider.ConfigProviderFactory
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.ktor.server.engine.*
 import org.slf4j.Logger
 
 /**
  * Resolves [ServerDeploymentConfiguration] by merging CLI args (Ktor-compatible)
- * with the default ConfigProvider-backed configuration when available.
+ * with the explicitly configured [ConfigProvider] source.
  */
 internal class ServerConfigurationResolver(
     private val bootstrapArgs: BootstrapArgs,
-    private val logger: Logger
+    private val logger: Logger,
+    private val configurationSource: () -> ConfigProvider?
 ) {
 
     fun resolveDeployment(): ServerDeploymentConfiguration {
         val providers = buildProviders()
 
-        val compositeProvider = CompositeConfigProvider(providers)
-        val loaderInstance = resolveLoaderInstance() ?: return ServerDeploymentConfiguration.createDefault()
+        if (providers.isEmpty()) {
+            throw IllegalStateException(
+                "No configuration source configured. Call enableYamlConfiguration() " +
+                    "or configuration(customSource) in the katalystApplication block."
+            )
+        }
 
-        return runCatching {
+        val compositeProvider = CompositeConfigProvider(providers)
+        val loaderInstance = resolveLoaderInstance()
+
+        return try {
             val deployment = invokeLoad(loaderInstance, compositeProvider)
             validate(loaderInstance, deployment)
             logger.info(
@@ -30,10 +37,11 @@ internal class ServerConfigurationResolver(
                 describeSources(providers)
             )
             deployment
-        }.onFailure { error ->
-            logger.error("Error loading server deployment configuration, using defaults: {}", error.message)
+        } catch (error: Exception) {
+            logger.error("Error loading server deployment configuration: {}", error.message)
             logger.debug("Full error while loading server deployment configuration", error)
-        }.getOrElse { ServerDeploymentConfiguration.createDefault() }
+            throw IllegalStateException("Failed to load server deployment configuration: ${error.message}", error)
+        }
     }
 
     private fun buildProviders(): List<ConfigProvider> {
@@ -69,19 +77,12 @@ internal class ServerConfigurationResolver(
             logger.info("Force mode enabled; skipping ConfigProvider bootstrap for server deployment")
             return null
         }
-        return runCatching {
-            ConfigProviderFactory.create()
-        }.onFailure { error ->
-            when (error) {
-                is ClassNotFoundException -> logger.debug("No ConfigProvider implementation found on classpath; skipping ConfigProvider fallback")
-                else -> logger.warn("Failed to instantiate ConfigProvider for server configuration: {}", error.message)
-            }
-        }.getOrNull()
+        return configurationSource()
     }
 
     fun bootstrapConfigProvider(): ConfigProvider? = resolveBootstrapProvider()
 
-    private fun resolveLoaderInstance(): Any? {
+    private fun resolveLoaderInstance(): Any {
         return runCatching {
             val loaderClass = Class.forName("io.github.darkryh.katalyst.di.config.ServerDeploymentConfigurationLoader")
             runCatching { loaderClass.getField("INSTANCE").get(null) }
@@ -93,7 +94,13 @@ internal class ServerConfigurationResolver(
                 )
                 else -> logger.warn("Failed to load ServerDeploymentConfigurationLoader: {}", error.message)
             }
-        }.getOrNull()
+        }.getOrElse { error ->
+            throw IllegalStateException(
+                "ServerDeploymentConfigurationLoader is unavailable. Include katalyst-config-provider " +
+                    "and configure an explicit source with enableYamlConfiguration() or configuration(customSource).",
+                error
+            )
+        }
     }
 
     private fun invokeLoad(loader: Any, provider: ConfigProvider): ServerDeploymentConfiguration {

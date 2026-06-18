@@ -7,11 +7,7 @@ import io.github.darkryh.katalyst.di.error.SecondaryTypeBindingError
 import io.github.darkryh.katalyst.di.error.UninstantiableTypeError
 import io.github.darkryh.katalyst.di.error.ValidationError
 import io.github.darkryh.katalyst.di.error.WellKnownPropertyError
-import org.koin.core.Koin
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
-
-private val logger = LoggerFactory.getLogger("FatalDependencyValidationException")
 
 /**
  * Fatal validation errors that prevent server startup.
@@ -24,12 +20,10 @@ private val logger = LoggerFactory.getLogger("FatalDependencyValidationException
  *
  * @param validationErrors List of all validation errors found
  * @param discoveredTypes Map of all discovered component types
- * @param koin The Koin DI container (for context)
  */
 class FatalDependencyValidationException(
     val validationErrors: List<ValidationError>,
-    val discoveredTypes: Map<String, Set<KClass<*>>>,
-    val koin: Koin
+    val discoveredTypes: Map<String, Set<KClass<*>>>
 ) : KatalystDIException(
     message = buildErrorMessage(validationErrors),
     cause = null
@@ -256,39 +250,6 @@ class FatalDependencyValidationException(
      */
     fun renderReport(maxErrors: Int = 5, verbose: Boolean = isVerboseEnabled()): String =
         if (verbose) generateDetailedReport() else generateSummaryReport(maxErrors)
-
-    /**
-     * Logs the detailed error report to the logger and returns it.
-     *
-     * @deprecated Use [renderDetailedReport] and let the bootstrap boundary log once.
-     */
-    @Deprecated(
-        message = "Use renderDetailedReport() and log once at the bootstrap boundary.",
-        replaceWith = ReplaceWith("renderDetailedReport()")
-    )
-    fun printDetailedReport(): String {
-        val report = renderDetailedReport()
-        logger.error(report)
-        return report
-    }
-
-    /**
-     * Logs a concise or detailed report depending on verbosity settings.
-     *
-     * @param maxErrors Maximum number of errors to include in the summary.
-     * @param verbose When true, prints the full detailed report.
-     *
-     * @deprecated Use [renderReport] and let the bootstrap boundary log once.
-     */
-    @Deprecated(
-        message = "Use renderReport() and log once at the bootstrap boundary.",
-        replaceWith = ReplaceWith("renderReport(maxErrors, verbose)")
-    )
-    fun printReport(maxErrors: Int = 5, verbose: Boolean = isVerboseEnabled()): String {
-        val report = renderReport(maxErrors, verbose)
-        logger.error(report)
-        return report
-    }
 
     private fun formatSummaryLine(error: ValidationError): String =
         when (error) {

@@ -1,9 +1,10 @@
 package io.github.darkryh.katalyst.di.module
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
-import io.github.darkryh.katalyst.database.databaseModule
-import org.koin.core.module.Module
-import org.koin.dsl.module
+import io.github.darkryh.katalyst.database.DatabaseFactory
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
+import io.github.darkryh.katalyst.di.feature.katalystBeanModule
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,10 +38,16 @@ import org.slf4j.LoggerFactory
  *
  * See the examples module for reference implementations.
  */
-fun coreDIModule(config: DatabaseConfig): Module = module {
+internal fun coreDIModule(config: DatabaseConfig): KatalystBeanModule = katalystBeanModule {
     val logger = LoggerFactory.getLogger("CoreDIModule")
     logger.info("Initializing Core DI Module with database and transaction management")
-    includes(databaseModule(config))
+    single<DatabaseConfig> { config }
+    single<DatabaseFactory> { DatabaseFactory.create(config) }
+    single<DatabaseTransactionManager> {
+        DatabaseTransactionManager(
+            database = get<DatabaseFactory>().database,
+        )
+    }
 
     logger.info("Core DI Module initialized successfully")
 }

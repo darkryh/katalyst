@@ -1,8 +1,9 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import org.koin.core.Koin
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.get
+import io.github.darkryh.katalyst.core.di.getAll
 import org.slf4j.LoggerFactory
-import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
 
 /**
  * Registry for managing application initialization lifecycle.
@@ -11,7 +12,7 @@ import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
  *
  * **Behavior**:
  * 1. Includes built-in initializers (StartupValidator)
- * 2. Discovers feature-provided pre-start initializers from Koin
+ * 2. Discovers feature-provided pre-start initializers from the active container
  * 3. Sorts all by order (lower numbers execute first)
  * 4. Executes in sequence with error handling
  *
@@ -20,11 +21,10 @@ import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
  * 2. Custom pre-start initializers (order=0+) - user-defined pre-server logic
  *
  * **Dynamic Discovery**:
- * Feature modules (like scheduler) register their ApplicationInitializer implementations
- * in their Koin modules. InitializerRegistry automatically discovers these via
- * `koin.getAll<ApplicationInitializer>()` and includes them in execution order.
+ * Feature modules register their ApplicationInitializer implementations in bean modules.
+ * InitializerRegistry automatically discovers these from the active container and includes them in execution order.
  */
-internal class InitializerRegistry(private val koin: Koin) {
+internal class InitializerRegistry(private val container: KatalystContainer) {
     private val logger = LoggerFactory.getLogger("InitializerRegistry")
 
     /**
@@ -44,22 +44,22 @@ internal class InitializerRegistry(private val koin: Koin) {
 
             // Built-in initializers (always present)
             val builtInInitializers = mutableListOf<ApplicationInitializer>(
-                StartupValidator(koin.get())
+                StartupValidator(container.get())
             )
 
-            // Discover feature-provided initializers from Koin
-            val koinInitializers = runCatching {
-                koin.getAll<ApplicationInitializer>()
+            // Discover feature-provided initializers from the container.
+            val containerInitializers = runCatching {
+                container.getAll<ApplicationInitializer>()
             }.getOrElse { emptyList() }
             val registryInitializers = ApplicationInitializerRegistry.getAll()
-            val discoveredInitializers = (registryInitializers + koinInitializers)
+            val discoveredInitializers = (registryInitializers + containerInitializers)
                 .distinctBy { it::class }
 
             logger.info(
-                "Discovered {} ApplicationInitializer(s) (registry={}, koin={})",
+                "Discovered {} ApplicationInitializer(s) (registry={}, container={})",
                 discoveredInitializers.size,
                 registryInitializers.size,
-                koinInitializers.size
+                containerInitializers.size
             )
 
             // Combine all initializers

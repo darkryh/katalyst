@@ -1,23 +1,30 @@
-@file:Suppress("deprecation")
-
 package io.github.darkryh.katalyst.di
 
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.config.provider.ConfigMetadata
+import io.github.darkryh.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
+import io.github.darkryh.katalyst.core.di.getAll
 import io.github.darkryh.katalyst.core.dsl.KatalystDslMarker
 import io.github.darkryh.katalyst.di.config.BootstrapArgs
 import io.github.darkryh.katalyst.di.config.BootstrapArgsHolder
+import io.github.darkryh.katalyst.di.config.DatabaseConfigurationBuilder
 import io.github.darkryh.katalyst.di.config.KatalystDIOptions
+import io.github.darkryh.katalyst.di.config.KatalystServerEngine
 import io.github.darkryh.katalyst.di.config.ServerConfiguration
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
 import io.github.darkryh.katalyst.di.config.ServerConfigurationResolver
-import io.github.darkryh.katalyst.di.config.initializeKoinStandalone
+import io.github.darkryh.katalyst.di.config.SchemaManagementBuilder
+import io.github.darkryh.katalyst.di.config.SchemaManagementOptions
+import io.github.darkryh.katalyst.di.config.initializeKatalystStandalone
 import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
-import io.github.darkryh.katalyst.di.config.stopKoinStandalone
+import io.github.darkryh.katalyst.di.config.stopKatalystStandalone
 import io.github.darkryh.katalyst.di.config.wrap
 import io.github.darkryh.katalyst.di.exception.KatalystDIException
 import io.github.darkryh.katalyst.di.internal.KtorModuleRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
+import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
@@ -29,7 +36,6 @@ import io.ktor.server.application.ServerReady
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.runBlocking
-import org.koin.core.context.GlobalContext
 import org.slf4j.LoggerFactory
 
 /**
@@ -41,13 +47,13 @@ import org.slf4j.LoggerFactory
  * **Usage:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     database(DatabaseConfig(...))
+ *     enableYamlConfiguration()
  *     scanPackages("com.example.app")
  * }
  * ```
  *
  * The `katalystApplication` block automatically:
- * 1. Initializes Koin DI with all Katalyst modules
+ * 1. Initializes the installed bean container with all Katalyst modules
  * 2. Configures the Ktor application through Application.module()
  * 3. Ensures all services, repositories, and validators are available
  * 4. Starts the server engine
@@ -63,25 +69,32 @@ import org.slf4j.LoggerFactory
  * ```
  *
  * Optional Katalyst modules (scheduler, events, websockets, etc.) contribute their own
- * `enableX()` extension functions to this builder. Simply add the dependency for the
- * feature you need and call the extension inside the [katalystApplication] block.
+ * `enableX()` extension functions to the `features { ... }` scope. Simply add the
+ * dependency for the feature you need and call the extension inside that block.
  */
+@KatalystDslMarker
 class KatalystApplicationBuilder(
     bootstrapArgs: BootstrapArgs = BootstrapArgs.EMPTY
 ) {
     private val logger = LoggerFactory.getLogger("KatalystApplication")
-    private val serverConfigurationResolver = ServerConfigurationResolver(bootstrapArgs, logger)
+    private val serverConfigurationResolver = ServerConfigurationResolver(
+        bootstrapArgs = bootstrapArgs,
+        logger = logger,
+        configurationSource = { configurationSource },
+    )
 
     private var databaseConfig: DatabaseConfig? = null
+    private var beanEngine: KatalystBeanEngine? = null
+    private var configurationSource: ConfigProvider? = null
     private val features: MutableList<KatalystFeature> = mutableListOf()
     private var componentScanPackages: Array<String> = emptyArray()
     private var selectedEngine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>? = null
     private var cachedDeploymentConfiguration: ServerDeploymentConfiguration? = null
+    private var schemaManagement: SchemaManagementOptions = SchemaManagementOptions()
 
     /**
      * Provide the database configuration used to bootstrap core persistence infrastructure.
      */
-    @KatalystDslMarker
     fun database(config: DatabaseConfig): KatalystApplicationBuilder {
         logger.debug("Database configuration supplied for Katalyst DI")
 
@@ -91,9 +104,51 @@ class KatalystApplicationBuilder(
     }
 
     /**
+     * Configure the database through the application DSL.
+     *
+     * Call `fromConfiguration()` inside this block to read standard `database.*`
+     * keys from the installed [ConfigProvider], then override any Hikari/Exposed
+     * values explicitly in code.
+     */
+    fun database(configure: DatabaseConfigurationBuilder.() -> Unit): KatalystApplicationBuilder {
+        databaseConfig = DatabaseConfigurationBuilder(configurationSource)
+            .apply(configure)
+            .build()
+            .also { config ->
+                logger.debug("Database configuration supplied through DSL: url={}, driver={}", config.url, config.driver)
+            }
+        return this
+    }
+
+    /**
+     * Provide the configuration source used during bootstrap and by configuration-backed features.
+     *
+     * Katalyst does not auto-select a YAML/properties implementation from the classpath. Applications
+     * must explicitly choose one, for example through `enableYamlConfiguration()` from
+     * `katalyst-config-yaml`, or by passing a custom source here.
+     */
+    fun configuration(source: ConfigProvider): KatalystApplicationBuilder {
+        logger.debug("Configuration source supplied: {}", source::class.qualifiedName)
+        this.configurationSource = source
+        return this
+    }
+
+    /**
+     * Select the bean/injection engine used by Katalyst bootstrap.
+     *
+     * Katalyst does not auto-select an adapter from the classpath. Applications must
+     * explicitly install one so the selected dependency injection backend is obvious
+     * and future adapters can coexist safely.
+     */
+    fun beanEngine(engine: KatalystBeanEngine): KatalystApplicationBuilder {
+        logger.debug("Bean engine selected: {}", engine.id)
+        this.beanEngine = engine
+        return this
+    }
+
+    /**
      * Configure packages that should be scanned for services, repositories, and validators.
      */
-    @KatalystDslMarker
     fun scanPackages(vararg packages: String): KatalystApplicationBuilder {
         logger.debug("Setting component scan packages: {}", packages.joinToString(", "))
 
@@ -105,11 +160,28 @@ class KatalystApplicationBuilder(
         return this
     }
 
-    init {
-        // Load config-provider feature if available on classpath (Yaml or other providers)
-        loadOptionalFeature("io.github.darkryh.katalyst.config.yaml.ConfigProviderFeature")
-            ?.also { features += it; logger.debug("Registered optional feature: {}", it.id) }
+    /**
+     * Configure how Katalyst handles discovered database tables during boot.
+     *
+     * Reflection-based table discovery still happens through [scanPackages].
+     * This block controls whether boot creates missing tables, validates the
+     * schema, or leaves schema management entirely to migrations/operations.
+     */
+    fun schema(configure: SchemaManagementBuilder.() -> Unit): KatalystApplicationBuilder {
+        schemaManagement = SchemaManagementBuilder().apply(configure).build()
+        return this
+    }
 
+    /**
+     * Configure optional Katalyst features such as scheduler, events, migrations,
+     * WebSockets, and server deployment configuration.
+     */
+    fun features(configure: KatalystFeaturesBuilder.() -> Unit): KatalystApplicationBuilder {
+        KatalystFeaturesBuilder(this).apply(configure)
+        return this
+    }
+
+    init {
         // Always include server configuration feature (part of DI module)
         loadOptionalFeature("io.github.darkryh.katalyst.di.feature.ServerConfigurationFeature")
             ?.also { features += it; logger.debug("Registered feature: {}", it.id) }
@@ -134,7 +206,7 @@ class KatalystApplicationBuilder(
      * **Usage:**
      * ```kotlin
      * fun main(args: Array<String>) = katalystApplication(args) {
-     *     database(DbConfigImpl.loadDatabaseConfig())
+     *     enableYamlConfiguration()
      *     scanPackages("com.example.app")
      *     engine(NettyEngine)  // Explicit engine selection - REQUIRED
      * }
@@ -149,11 +221,16 @@ class KatalystApplicationBuilder(
      * @return This builder for method chaining
      * @throws IllegalStateException if initializeDI() is called without setting an engine
      */
-    @KatalystDslMarker
     fun engine(engine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>): KatalystApplicationBuilder {
         this.selectedEngine = engine
         return this
     }
+
+    /**
+     * Explicitly select the Ktor engine provider for this application.
+     */
+    fun engine(engine: KatalystServerEngine): KatalystApplicationBuilder =
+        engine(engine.build())
 
     /**
      * Registers an optional feature (scheduler, events, websockets, etc.).
@@ -181,13 +258,15 @@ class KatalystApplicationBuilder(
      * 1. Attempts to load from application.yaml via ServerDeploymentConfigurationLoader
      * 2. Falls back to sensible defaults if YAML loading is unavailable or fails
      *
-     * For custom YAML loading behavior, call enableServerConfiguration() feature:
+     * For custom YAML loading behavior, call enableServerConfiguration() in the feature scope:
      * ```kotlin
      * fun main() = katalystApplication {
      *     engine(NettyEngine)
      *     database(...)
      *     scanPackages(...)
-     *     enableServerConfiguration()  // Customize YAML loading
+     *     features {
+     *         enableServerConfiguration()  // Customize YAML loading
+     *     }
      * }
      * ```
      *
@@ -211,89 +290,32 @@ class KatalystApplicationBuilder(
             engine = engine,
             deployment = deployment
         ).also {
-            logger.debug("Server bound to {}:{}", it.host, it.port)
+            logger.debug("Server bound to {}:{}", it.deployment.host, it.deployment.port)
         }
     }
 
     private fun resolveDatabaseConfigOrThrow(): DatabaseConfig {
         databaseConfig?.let { return it }
 
-        tryAutoLoadDatabaseConfig()?.let { config ->
-            databaseConfig = config
-            return config
-        }
-
-        throw IllegalStateException("Database configuration must be supplied before starting Katalyst.")
+        throw IllegalStateException(
+            "Database configuration must be supplied before starting Katalyst. " +
+                "Use database { fromConfiguration() } after enableYamlConfiguration()/configuration(...), " +
+                "or use database(DatabaseConfig(...)) for fully programmatic configuration."
+        )
     }
 
-    private fun tryAutoLoadDatabaseConfig(): DatabaseConfig? {
-        if (componentScanPackages.isEmpty()) {
-            logger.debug("Skipping automatic database config loading (no scan packages configured)")
-            return null
-        }
-
-        val provider = serverConfigurationResolver.bootstrapConfigProvider()
-        if (provider == null) {
-            logger.debug("ConfigProvider not available for automatic database loading")
-            return null
-        }
-
-        return runCatching {
-            val metadataClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigMetadata")
-            val metadataInstance = metadataClass.kotlin.objectInstance
-                ?: runCatching { metadataClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null) }
-                    .getOrNull()
-                ?: throw IllegalStateException("ConfigMetadata INSTANCE not available for discovery")
-            val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
-            @Suppress("UNCHECKED_CAST")
-            val loaders = discoverMethod.invoke(metadataInstance, componentScanPackages) as List<*>
-
-            if (loaders.isEmpty()) {
-                logger.debug("No ServiceConfigLoader implementations discovered for automatic database loading")
-                return null
-            }
-
-            val helperClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper")
-            val helperInstance = helperClass.kotlin.objectInstance ?: helperClass.getDeclaredConstructor().newInstance()
-            val loadMethod = helperClass.getMethod(
-                "loadServiceConfig",
-                io.github.darkryh.katalyst.core.config.ConfigProvider::class.java,
-                Class.forName("io.github.darkryh.katalyst.config.provider.ServiceConfigLoader")
-            )
-
-            loaders.forEach { loader ->
-                val loaded = loadMethod.invoke(helperInstance, provider, loader)
-                if (loaded is DatabaseConfig) {
-                    logger.info("Automatically loaded DatabaseConfig via {}", loader!!::class.java.simpleName)
-                    return loaded
-                }
-            }
-
-            null
-        }.onFailure { error ->
-            logger.debug("Automatic database configuration loading failed: {}", error.message)
-            logger.trace("Full error while auto-loading database configuration", error)
-        }.getOrNull()
-    }
+    private fun resolveBeanEngineOrThrow(): KatalystBeanEngine =
+        beanEngine ?: throw IllegalStateException(
+            "Bean engine must be explicitly selected before starting Katalyst. " +
+                "Call beanEngine(...) in the katalystApplication block. " +
+                "For Koin, add `io.github.darkryh.katalyst:katalyst-koin-bean` and call `beanEngine(KoinBeanEngine)`."
+        )
 
     private fun validateServiceConfigs() {
         val provider = serverConfigurationResolver.bootstrapConfigProvider() ?: return
         if (componentScanPackages.isEmpty()) return
 
-        val metadataClass = Class.forName("io.github.darkryh.katalyst.config.provider.ConfigMetadata")
-        val metadataInstance = metadataClass.kotlin.objectInstance
-            ?: runCatching { metadataClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null) }
-                .getOrNull()
-            ?: throw IllegalStateException("ConfigMetadata INSTANCE not available for validation")
-        val discoverMethod = metadataClass.getMethod("discoverLoaders", Array<String>::class.java)
-        val validateMethod = metadataClass.getMethod(
-            "validateLoaders",
-            io.github.darkryh.katalyst.core.config.ConfigProvider::class.java,
-            List::class.java
-        )
-
-        @Suppress("UNCHECKED_CAST")
-        val loaders = discoverMethod.invoke(metadataInstance, componentScanPackages) as List<*>
+        val loaders = ConfigMetadata.discoverLoaders(componentScanPackages)
         if (loaders.isEmpty()) {
             logger.debug("No ServiceConfigLoader implementations discovered for validation")
             return
@@ -301,11 +323,7 @@ class KatalystApplicationBuilder(
 
         logger.info("Validating {} ServiceConfigLoader implementation(s)", loaders.size)
         try {
-            validateMethod.invoke(metadataInstance, provider, loaders)
-        } catch (e: java.lang.reflect.InvocationTargetException) {
-            val cause = e.cause ?: e
-            logger.error("Service config validation failed: {}", cause.message)
-            throw cause
+            ConfigMetadata.validateLoaders(provider, loaders)
         } catch (e: Exception) {
             logger.error("Service config validation failed: {}", e.message)
             throw e
@@ -325,16 +343,19 @@ class KatalystApplicationBuilder(
 
         // Resolve server configuration (auto-detect if not explicitly set)
         val resolvedServerConfig = resolveServerConfiguration()
+        val selectedBeanEngine = resolveBeanEngineOrThrow()
 
         val featureSummary = if (features.isEmpty()) "none" else features.joinToString { it.id }
 
         logger.info("Initializing Katalyst DI (features={})", featureSummary)
 
-        initializeKoinStandalone(
+        initializeKatalystStandalone(
             KatalystDIOptions(
                 databaseConfig = config,
+                beanEngine = selectedBeanEngine,
                 scanPackages = scanTargets,
-                features = registeredFeatures()
+                features = registeredFeatures(),
+                schemaManagement = schemaManagement,
             ),
             serverConfiguration = resolvedServerConfig,
             activateRuntimeReadyInitializers = false
@@ -349,24 +370,18 @@ class KatalystApplicationBuilder(
     internal fun configureApplication(application: Application) {
         logger.info("Configuring Ktor application with Katalyst modules")
 
-        // NOTE: We do NOT install the Koin plugin here because it creates a separate Koin context.
-        // Instead, routes will use GlobalContext.get() directly, which has all registered components
-        // from initializeKoinStandalone().
-        // This is more reliable than trying to link plugin contexts.
+        val container = KatalystContainerProvider.current()
 
-        // Get the Koin instance from the global context that was initialized in initializeDI()
-        val koin = GlobalContext.get()
-
-        runCatching { koin.getAll<Component>().size }
+        runCatching { container.getAll<Component>().size }
             .onSuccess { size -> logger.debug("Auto-discovered components registered: {}", size) }
             .onFailure { error -> logger.warn("Unable to inspect auto-discovered components", error) }
 
         // IMPORTANT: Keep all discovered route functions (RouteFunctionModule instances are unique by identity)
         // Only deduplicate actual KtorModule implementations to avoid installing the same class twice
         val registryModules = KtorModuleRegistry.consume()
-        val koinModules = koin.getAll<KtorModule>()
+        val containerModules = container.getAll<KtorModule>()
             .distinctBy { it::class }  // Deduplicate KtorModule implementations only
-        val ktorModules = registryModules + koinModules
+        val ktorModules = registryModules + containerModules
 
         logger.info("Discovered {} Ktor module(s) for installation", ktorModules.size)
         val routeFunctionModuleCount = ktorModules.count { it is io.github.darkryh.katalyst.di.internal.RouteModuleMarker }
@@ -397,6 +412,22 @@ class KatalystApplicationBuilder(
 }
 
 /**
+ * DSL receiver for optional Katalyst feature toggles.
+ */
+@KatalystDslMarker
+class KatalystFeaturesBuilder internal constructor(
+    private val application: KatalystApplicationBuilder,
+) {
+    /**
+     * Register an optional feature with the enclosing application builder.
+     */
+    fun feature(feature: KatalystFeature): KatalystFeaturesBuilder {
+        application.feature(feature)
+        return this
+    }
+}
+
+/**
  * Entry point DSL for Katalyst Ktor applications.
  *
  * Initializes all Katalyst library modules and dependency injection,
@@ -405,7 +436,7 @@ class KatalystApplicationBuilder(
  * **Usage:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     database(DatabaseConfig(...))
+ *     enableYamlConfiguration()
  *     scanPackages("com.example.app")
  * }
  * ```
@@ -413,10 +444,12 @@ class KatalystApplicationBuilder(
  * **With explicit engine selection:**
  * ```kotlin
  * fun main(args: Array<String>) = katalystApplication(args) {
- *     database(DatabaseConfig(...))
+ *     enableYamlConfiguration()
  *     scanPackages("com.example.app")
  *     engine(JettyEngine)  // Explicitly select Jetty engine
- *     enableScheduler()
+ *     features {
+ *         enableScheduler()
+ *     }
  * }
  * ```
  *
@@ -435,7 +468,6 @@ class KatalystApplicationBuilder(
  *
  * @param block Configuration builder executed before the Ktor engine starts
  */
-@KatalystDslMarker
 fun katalystApplication(
     args: Array<String> = emptyArray(),
     block: suspend KatalystApplicationBuilder.() -> Unit
@@ -486,7 +518,7 @@ fun katalystApplication(
             BootstrapProgress.completeLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP, "Ktor server is listening")
 
             val runtimeReadyResult = runCatching {
-                runRuntimeReadyInitializers(GlobalContext.get())
+                runRuntimeReadyInitializers()
             }
             runtimeReadyResult.onFailure { error ->
                 logger.error("Runtime-ready initialization failed after ServerReady", error)
@@ -501,8 +533,8 @@ fun katalystApplication(
         }
 
         embeddedServer.monitor.subscribe(ApplicationStopping) {
-            runCatching { stopKoinStandalone() }
-                .onFailure { error -> logger.warn("Error while stopping Koin", error) }
+            runCatching { stopKatalystStandalone() }
+                .onFailure { error -> logger.warn("Error while stopping Katalyst DI", error) }
         }
 
         serverConfig.serverWrapper?.let { wrapper ->
@@ -522,7 +554,7 @@ fun katalystApplication(
         logger.error("Failed to start Katalyst application", e)
         throw e
     } finally {
-        stopKoinStandalone()
+        stopKatalystStandalone()
         BootstrapArgsHolder.clear()
     }
 }

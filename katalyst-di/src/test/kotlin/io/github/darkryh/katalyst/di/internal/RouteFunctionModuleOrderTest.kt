@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.di.internal
 
 import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import io.github.darkryh.katalyst.ktor.builder.katalystRouting
 import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
 import io.ktor.client.request.get as clientGet
@@ -14,34 +15,27 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class RouteFunctionModuleOrderTest {
+    private lateinit var engine: TestBeanEngine
 
     @BeforeTest
     fun setUp() {
-        startKoin {
-            modules(
-                module {
-                    single { RouteInjectedService("resolved-route-dependency") }
-                }
-            )
-        }
+        engine = TestBeanEngine()
+        engine.registerInstance(RouteInjectedService("resolved-route-dependency"), RouteInjectedService::class)
     }
 
     @AfterTest
     fun tearDown() {
         RegistryManager.resetAll()
-        stopKoin()
+        engine.stop()
     }
 
     @Test
     fun `middleware installs before routing regardless of naming`() {
         val registrar = AutoBindingRegistrar(
-            koin = GlobalContext.get(),
+            container = engine.container,
+            beanEngine = engine,
             scanPackages = arrayOf("io.github.darkryh.katalyst.di.internal")
         )
 
@@ -56,7 +50,8 @@ class RouteFunctionModuleOrderTest {
     @Test
     fun `route function installation injects service parameters`() = testApplication {
         val registrar = AutoBindingRegistrar(
-            koin = GlobalContext.get(),
+            container = engine.container,
+            beanEngine = engine,
             scanPackages = arrayOf("io.github.darkryh.katalyst.di.internal")
         )
 

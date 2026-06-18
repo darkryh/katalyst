@@ -1,12 +1,22 @@
 package io.github.darkryh.katalyst.config.yaml
 
+import io.github.darkryh.katalyst.config.provider.optionalBoolean
+import io.github.darkryh.katalyst.config.provider.optionalInt
+import io.github.darkryh.katalyst.config.provider.optionalLong
+import io.github.darkryh.katalyst.config.provider.boolean
+import io.github.darkryh.katalyst.config.provider.intOrNull
+import io.github.darkryh.katalyst.config.provider.longOrNull
+import io.github.darkryh.katalyst.config.provider.requiredBoolean
+import io.github.darkryh.katalyst.config.provider.requiredInt
+import io.github.darkryh.katalyst.config.provider.requiredLong
+import io.github.darkryh.katalyst.config.provider.stringOrNull
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.config.ConfigException
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.test.*
 
 /**
- * Comprehensive tests for YamlConfigProvider.
+ * Comprehensive tests for YamlConfigurationSource.
  *
  * Tests cover:
  * - Component interface implementation
@@ -19,16 +29,16 @@ import kotlin.test.*
  * - Edge cases and error scenarios
  *
  * **Testing Approach:**
- * Uses TestYamlConfigProvider that bypasses file loading to focus on
+ * Uses TestYamlConfigurationSource that bypasses file loading to focus on
  * testing the ConfigProvider interface implementation and path navigation logic.
  */
-class YamlConfigProviderTest {
+class YamlConfigurationSourceTest {
 
     /**
      * Test implementation that bypasses file loading.
      * Allows testing ConfigProvider logic with controlled test data.
      */
-    class TestYamlConfigProvider(testData: Map<String, Any>) : ConfigProvider, Component {
+    class TestYamlConfigurationSource(testData: Map<String, Any>) : ConfigProvider, Component {
         private val data: Map<String, Any> = testData
 
         override fun <T> get(key: String, defaultValue: T?): T? {
@@ -134,18 +144,18 @@ class YamlConfigProviderTest {
     // ========== COMPONENT INTERFACE TESTS ==========
 
     @Test
-    fun `YamlConfigProvider should implement Component interface`() {
+    fun `YamlConfigurationSource should implement Component interface`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertTrue(provider is Component)
     }
 
     @Test
-    fun `YamlConfigProvider should implement ConfigProvider interface`() {
+    fun `YamlConfigurationSource should implement ConfigProvider interface`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertTrue(provider is ConfigProvider)
@@ -156,7 +166,7 @@ class YamlConfigProviderTest {
     @Test
     fun `navigatePath should handle simple keys`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "name" to "Katalyst",
                 "version" to "1.0.0",
@@ -173,7 +183,7 @@ class YamlConfigProviderTest {
     @Test
     fun `navigatePath should handle nested paths with dot notation`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "database" to mapOf(
                     "url" to "jdbc:postgresql://localhost:5432/db",
@@ -192,7 +202,7 @@ class YamlConfigProviderTest {
     @Test
     fun `navigatePath should handle deeply nested paths`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "app" to mapOf(
                     "modules" to mapOf(
@@ -217,7 +227,7 @@ class YamlConfigProviderTest {
     @Test
     fun `navigatePath should return null for non-existent keys`() {
         // Given
-        val provider = TestYamlConfigProvider(mapOf("existing" to "value"))
+        val provider = TestYamlConfigurationSource(mapOf("existing" to "value"))
 
         // Then
         assertNull(provider.get<String>("non.existent"))
@@ -227,7 +237,7 @@ class YamlConfigProviderTest {
     @Test
     fun `navigatePath should return null for partial paths`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "database" to mapOf(
                     "url" to "value"
@@ -245,7 +255,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getString should return string values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("name" to "Katalyst")
         )
 
@@ -256,7 +266,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getString should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertEquals("default", provider.getString("missing", "default"))
@@ -265,7 +275,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getString should convert non-string values to strings`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "port" to 8080,
                 "enabled" to true,
@@ -279,12 +289,26 @@ class YamlConfigProviderTest {
         assertEquals("1.5", provider.getString("version"))
     }
 
+    @Test
+    fun `stringOrNull should return nested YAML value or null`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf(
+                "database" to mapOf("password" to "secret")
+            )
+        )
+
+        // Then
+        assertEquals("secret", provider.stringOrNull("database.password"))
+        assertNull(provider.stringOrNull("database.missing"))
+    }
+
     // ========== getInt() TESTS ==========
 
     @Test
     fun `getInt should return integer values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("port" to 8080)
         )
 
@@ -295,7 +319,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getInt should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertEquals(9999, provider.getInt("missing", 9999))
@@ -304,7 +328,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getInt should parse string to int`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("timeout" to "5000")
         )
 
@@ -315,7 +339,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getInt should return default for unparseable strings`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("invalid" to "not-a-number")
         )
 
@@ -324,9 +348,55 @@ class YamlConfigProviderTest {
     }
 
     @Test
+    fun `intOrNull should return null for missing YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(emptyMap())
+
+        // Then
+        assertNull(provider.intOrNull("missing"))
+    }
+
+    @Test
+    fun `intOrNull should fail fast for malformed YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(mapOf("port" to "8080ms"))
+
+        // Then
+        assertFailsWith<ConfigException> {
+            provider.intOrNull("port")
+        }
+    }
+
+    @Test
+    fun `requiredInt should throw for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("server" to mapOf("port" to "eighty"))
+        )
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredInt("server.port")
+        }
+        assertTrue(exception.message?.contains("must be a valid integer") == true)
+        assertTrue(exception.message?.contains("eighty") == true)
+    }
+
+    @Test
+    fun `optionalInt should keep default fallback for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("server" to mapOf("port" to "eighty"))
+        )
+
+        // Then
+        assertEquals(8080, provider.optionalInt("server.port", 8080))
+    }
+
+    @Test
     fun `getInt should convert other number types`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "double" to 42.7,
                 "long" to 123L
@@ -343,7 +413,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getLong should return long values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("timestamp" to 1234567890123L)
         )
 
@@ -354,7 +424,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getLong should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertEquals(999L, provider.getLong("missing", 999L))
@@ -363,7 +433,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getLong should parse string to long`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("value" to "9876543210")
         )
 
@@ -374,7 +444,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getLong should convert int to long`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("count" to 42)
         )
 
@@ -382,12 +452,60 @@ class YamlConfigProviderTest {
         assertEquals(42L, provider.getLong("count"))
     }
 
+    @Test
+    fun `requiredLong should throw for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("timeouts" to mapOf("shutdown" to "30s"))
+        )
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredLong("timeouts.shutdown")
+        }
+        assertTrue(exception.message?.contains("must be a valid long") == true)
+        assertTrue(exception.message?.contains("30s") == true)
+    }
+
+    @Test
+    fun `optionalLong should keep default fallback for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("timeouts" to mapOf("shutdown" to "30s"))
+        )
+
+        // Then
+        assertEquals(30_000L, provider.optionalLong("timeouts.shutdown", 30_000L))
+    }
+
+    @Test
+    fun `longOrNull should return null for missing YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(emptyMap())
+
+        // Then
+        assertNull(provider.longOrNull("missing"))
+    }
+
+    @Test
+    fun `longOrNull should fail fast for malformed YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("timeouts" to mapOf("shutdown" to "30s"))
+        )
+
+        // Then
+        assertFailsWith<ConfigException> {
+            provider.longOrNull("timeouts.shutdown")
+        }
+    }
+
     // ========== getBoolean() TESTS ==========
 
     @Test
     fun `getBoolean should return boolean values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "enabled" to true,
                 "disabled" to false
@@ -402,7 +520,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getBoolean should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertTrue(provider.getBoolean("missing", true))
@@ -412,7 +530,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getBoolean should parse true variations case-insensitively`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "true" to "true",
                 "yes" to "YES",
@@ -431,7 +549,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getBoolean should parse false variations case-insensitively`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "false" to "false",
                 "no" to "NO",
@@ -450,7 +568,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getBoolean should return default for unparseable values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("invalid" to "maybe")
         )
 
@@ -460,9 +578,58 @@ class YamlConfigProviderTest {
     }
 
     @Test
+    fun `requiredBoolean should throw for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("features" to mapOf("analytics" to "sometimes"))
+        )
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            provider.requiredBoolean("features.analytics")
+        }
+        assertTrue(exception.message?.contains("must be a valid boolean") == true)
+        assertTrue(exception.message?.contains("sometimes") == true)
+    }
+
+    @Test
+    fun `optionalBoolean should keep default fallback for malformed yaml values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("features" to mapOf("analytics" to "sometimes"))
+        )
+
+        // Then
+        assertTrue(provider.optionalBoolean("features.analytics", true))
+        assertFalse(provider.optionalBoolean("features.analytics", false))
+    }
+
+    @Test
+    fun `boolean should return false for missing YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(emptyMap())
+
+        // Then
+        assertFalse(provider.boolean("features.analytics"))
+    }
+
+    @Test
+    fun `boolean should fail fast for malformed YAML values`() {
+        // Given
+        val provider = TestYamlConfigurationSource(
+            mapOf("features" to mapOf("analytics" to "sometimes"))
+        )
+
+        // Then
+        assertFailsWith<ConfigException> {
+            provider.boolean("features.analytics")
+        }
+    }
+
+    @Test
     fun `getBoolean should convert numbers to boolean`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "zero" to 0,
                 "one" to 1,
@@ -481,7 +648,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should return list of strings`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("servers" to listOf("server1", "server2", "server3"))
         )
 
@@ -494,7 +661,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         val default = listOf("default1", "default2")
@@ -504,7 +671,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should parse comma-separated string`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("tags" to "tag1,tag2,tag3")
         )
 
@@ -515,7 +682,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should trim whitespace from comma-separated values`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("items" to "item1 , item2 , item3")
         )
 
@@ -526,7 +693,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should convert non-string list items to strings`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("mixed" to listOf(1, 2, 3))
         )
 
@@ -537,7 +704,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getList should handle null values in lists`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("nullable" to listOf("value1", null, "value2"))
         )
 
@@ -554,7 +721,7 @@ class YamlConfigProviderTest {
     @Test
     fun `hasKey should return true for existing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("existing" to "value")
         )
 
@@ -565,7 +732,7 @@ class YamlConfigProviderTest {
     @Test
     fun `hasKey should return false for missing keys`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
         assertFalse(provider.hasKey("missing"))
@@ -574,7 +741,7 @@ class YamlConfigProviderTest {
     @Test
     fun `hasKey should work with nested paths`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "database" to mapOf(
                     "url" to "value"
@@ -592,7 +759,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getAllKeys should return all configuration keys`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "name" to "Katalyst",
                 "version" to "1.0.0",
@@ -613,7 +780,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getAllKeys should return nested keys with dot notation`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "database" to mapOf(
                     "url" to "jdbc:postgresql://localhost",
@@ -641,7 +808,7 @@ class YamlConfigProviderTest {
     @Test
     fun `getAllKeys should return empty set for empty configuration`() {
         // Given
-        val provider = TestYamlConfigProvider(emptyMap())
+        val provider = TestYamlConfigurationSource(emptyMap())
 
         // When
         val keys = provider.getAllKeys()
@@ -655,7 +822,7 @@ class YamlConfigProviderTest {
     @Test
     fun `get should throw ConfigException for type mismatch`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf("value" to "string")
         )
 
@@ -670,7 +837,7 @@ class YamlConfigProviderTest {
     @Test
     fun `typical database configuration scenario`() {
         // Given - Real-world database config
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "database" to mapOf(
                     "url" to "jdbc:postgresql://localhost:5432/katalyst",
@@ -703,7 +870,7 @@ class YamlConfigProviderTest {
     @Test
     fun `typical application configuration scenario`() {
         // Given
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "app" to mapOf(
                     "name" to "Katalyst",
@@ -756,7 +923,7 @@ class YamlConfigProviderTest {
     @Test
     fun `configuration with defaults for missing values`() {
         // Given - Sparse configuration
-        val provider = TestYamlConfigProvider(
+        val provider = TestYamlConfigurationSource(
             mapOf(
                 "app" to mapOf(
                     "name" to "Katalyst"

@@ -1,11 +1,8 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
 import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlinx.coroutines.runBlocking
-import org.koin.core.Koin
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -13,41 +10,35 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class RuntimeReadyInitializerRunnerTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
     private lateinit var probe: RuntimeReadyProbe
 
     @BeforeTest
     fun setUp() {
         RegistryManager.resetAll()
         probe = RuntimeReadyProbe()
-        val app = startKoin {
-            modules(
-                module {
-                    single { probe }
-                    single<ApplicationReadyInitializer> { RuntimeReadyInitializerA(get()) }
-                }
-            )
-        }
-        koin = app.koin
+        engine = TestBeanEngine()
+        engine.registerInstance(probe, RuntimeReadyProbe::class)
+        engine.registerInstance(RuntimeReadyInitializerA(probe), ApplicationReadyInitializer::class)
     }
 
     @AfterTest
     fun tearDown() {
         RegistryManager.resetAll()
-        stopKoin()
+        engine.stop()
     }
 
     @Test
     fun `runtime-ready initializers execute in deterministic order`() = runBlocking {
         ApplicationReadyInitializerRegistry.register(RuntimeReadyInitializerB(probe))
         ApplicationReadyInitializerRegistry.register(RuntimeReadyInitializerA(probe))
-        RuntimeReadyInitializerRunner(koin).invokeAll()
+        RuntimeReadyInitializerRunner(engine.container).invokeAll()
         assertEquals(listOf("A", "B"), probe.executionOrder)
     }
 
     @Test
     fun `runtime-ready initializers support constructor injection`() = runBlocking {
-        RuntimeReadyInitializerRunner(koin).invokeAll()
+        RuntimeReadyInitializerRunner(engine.container).invokeAll()
         assertTrue(probe.executed)
     }
 }

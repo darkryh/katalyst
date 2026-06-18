@@ -1,12 +1,12 @@
 package io.github.darkryh.katalyst.di.planning
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.di.analysis.DependencyAnalyzer
 import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshot
-import org.koin.core.Koin
 import kotlin.reflect.KClass
 
 class BindingPlanBuilder(
-    private val koin: Koin,
+    private val container: KatalystContainer,
     private val scanPackages: Array<String>
 ) {
     fun build(
@@ -15,7 +15,7 @@ class BindingPlanBuilder(
     ): BindingPlan {
         val analyzer = DependencyAnalyzer(
             discoveredTypes = discovery.asValidationMap(),
-            koin = koin,
+            container = container,
             scanPackages = scanPackages,
             additionalAvailableTypes = additionalAvailableTypes
         )

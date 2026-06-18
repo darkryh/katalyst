@@ -1,12 +1,14 @@
 package io.github.darkryh.katalyst.di.feature
 
-import io.github.darkryh.katalyst.di.KatalystApplicationBuilder
+import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
 import io.github.darkryh.katalyst.events.EventHandler
+import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
+import io.github.darkryh.katalyst.events.bus.EventBus
+import io.github.darkryh.katalyst.events.bus.EventHandlerRegistry
 import io.github.darkryh.katalyst.events.bus.EventTopology
 import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
-import io.github.darkryh.katalyst.events.bus.eventBusModule
-import org.koin.core.Koin
-import org.koin.core.module.Module
+import io.github.darkryh.katalyst.events.bus.InMemoryEventHandlerRegistry
+import io.github.darkryh.katalyst.events.bus.TransactionAwareEventBus
 import org.slf4j.LoggerFactory
 
 /**
@@ -18,16 +20,23 @@ class EventSystemFeature : KatalystFeature {
     private val logger = LoggerFactory.getLogger("EventSystemFeature")
     override val id: String = "events"
 
-    override fun provideModules(): List<Module> {
+    override fun provideBeanModules(): List<KatalystBeanModule> {
         logger.info("Loading local event system feature")
-        return listOf(eventBusModule())
+        return listOf(
+            katalystBeanModule {
+                single<ApplicationEventBus> { ApplicationEventBus() }
+                single<EventBus> { TransactionAwareEventBus(get()) }
+                single<EventHandlerRegistry> { InMemoryEventHandlerRegistry() }
+                single<EventTopology> { EventTopology(get(), get()) }
+            }
+        )
     }
 
-    override fun onKoinReady(koin: Koin) {
+    override fun onReady(context: KatalystBeanContext) {
         runCatching {
-            val topology = koin.get<EventTopology>()
+            val topology = context.get<EventTopology>()
             val registryHandlers = GlobalEventHandlerRegistry.consumeAll()
-            val koinHandlers = runCatching { koin.getAll<EventHandler<*>>() }
+            val koinHandlers = runCatching { context.getAll<EventHandler<*>>() }
                 .getOrElse { emptyList() }
 
             topology.registerHandlers(registryHandlers + koinHandlers)
@@ -45,7 +54,7 @@ class EventSystemFeature : KatalystFeature {
 /**
  * Enables local EventBus support.
  */
-fun KatalystApplicationBuilder.enableEvents(): KatalystApplicationBuilder =
+fun KatalystFeaturesBuilder.enableEvents(): KatalystFeaturesBuilder =
     feature(EventSystemFeature())
 
 /**

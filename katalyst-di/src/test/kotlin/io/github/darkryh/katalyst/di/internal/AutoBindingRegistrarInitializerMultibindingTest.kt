@@ -6,23 +6,19 @@ import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
 import io.github.darkryh.katalyst.di.registry.RegistryManager
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.core.Koin
 
 class AutoBindingRegistrarInitializerMultibindingTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
 
     @BeforeTest
     fun setUp() {
-        startKoin { }
-        koin = GlobalContext.get()
+        engine = TestBeanEngine()
         AutoBindingRegistrar.resetSecondaryTypeTracking()
         RegistryManager.resetAll()
     }
@@ -30,15 +26,15 @@ class AutoBindingRegistrarInitializerMultibindingTest {
     @AfterTest
     fun tearDown() {
         RegistryManager.resetAll()
-        stopKoin()
+        engine.stop()
     }
 
     @Test
     fun `allows multiple ApplicationInitializer implementations without collision`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
-        registrar.registerInstanceWithKoin(FirstInitializer(), FirstInitializer::class, listOf(ApplicationInitializer::class))
-        registrar.registerInstanceWithKoin(SecondInitializer(), SecondInitializer::class, listOf(ApplicationInitializer::class))
+        registrar.registerInstance(FirstInitializer(), FirstInitializer::class, listOf(ApplicationInitializer::class))
+        registrar.registerInstance(SecondInitializer(), SecondInitializer::class, listOf(ApplicationInitializer::class))
 
         val discovered = ApplicationInitializerRegistry.getAll().map { it::class }.toSet()
         assertEquals(setOf(FirstInitializer::class, SecondInitializer::class), discovered)
@@ -46,10 +42,10 @@ class AutoBindingRegistrarInitializerMultibindingTest {
 
     @Test
     fun `allows multiple ApplicationReadyInitializer implementations without collision`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
-        registrar.registerInstanceWithKoin(FirstRuntimeReadyInitializer(), FirstRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
-        registrar.registerInstanceWithKoin(SecondRuntimeReadyInitializer(), SecondRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
+        registrar.registerInstance(FirstRuntimeReadyInitializer(), FirstRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
+        registrar.registerInstance(SecondRuntimeReadyInitializer(), SecondRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
 
         val discovered = ApplicationReadyInitializerRegistry.getAll().map { it::class }.toSet()
         assertEquals(setOf(FirstRuntimeReadyInitializer::class, SecondRuntimeReadyInitializer::class), discovered)
@@ -57,12 +53,12 @@ class AutoBindingRegistrarInitializerMultibindingTest {
 
     @Test
     fun `keeps strict collision behavior for non-multibinding secondary interfaces`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
-        registrar.registerInstanceWithKoin(FirstFooImpl(), FirstFooImpl::class, listOf(FooContract::class))
+        registrar.registerInstance(FirstFooImpl(), FirstFooImpl::class, listOf(FooContract::class))
 
         assertFailsWith<DependencyInjectionException> {
-            registrar.registerInstanceWithKoin(SecondFooImpl(), SecondFooImpl::class, listOf(FooContract::class))
+            registrar.registerInstance(SecondFooImpl(), SecondFooImpl::class, listOf(FooContract::class))
         }
     }
 }

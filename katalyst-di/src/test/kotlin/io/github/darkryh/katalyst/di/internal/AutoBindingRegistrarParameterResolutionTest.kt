@@ -1,11 +1,7 @@
 package io.github.darkryh.katalyst.di.internal
 
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -14,28 +10,22 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class AutoBindingRegistrarParameterResolutionTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
 
     @BeforeTest
     fun setUp() {
-        startKoin {
-            modules(
-                module {
-                    single { ConstructorInjectedDependency("resolved") }
-                }
-            )
-        }
-        koin = GlobalContext.get()
+        engine = TestBeanEngine()
+        engine.registerInstance(ConstructorInjectedDependency("resolved"), ConstructorInjectedDependency::class)
     }
 
     @AfterTest
     fun tearDown() {
-        stopKoin()
+        engine.stop()
     }
 
     @Test
     fun `instantiate uses kotlin defaults for unresolved optional constructor parameters`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
         val instance = registrar.instantiate(ConstructorWithDefaultScalar::class)
 
@@ -44,7 +34,7 @@ class AutoBindingRegistrarParameterResolutionTest {
 
     @Test
     fun `instantiate supplies null for unresolved nullable constructor parameters`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
         val instance = registrar.instantiate(ConstructorWithNullableDependency::class)
 
@@ -53,7 +43,7 @@ class AutoBindingRegistrarParameterResolutionTest {
 
     @Test
     fun `instantiate injects direct dependencies through shared resolver`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
         val instance = registrar.instantiate(ConstructorWithDependency::class)
 
@@ -62,7 +52,7 @@ class AutoBindingRegistrarParameterResolutionTest {
 
     @Test
     fun `instantiate fails clearly for required scalar constructor parameters`() {
-        val registrar = AutoBindingRegistrar(koin, emptyArray())
+        val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
         val error = assertFailsWith<DependencyInjectionException> {
             registrar.instantiate(ConstructorWithRequiredScalar::class)

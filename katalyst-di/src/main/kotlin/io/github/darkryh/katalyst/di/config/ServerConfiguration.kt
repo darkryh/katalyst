@@ -62,6 +62,13 @@ typealias ServerWrapper = (ServerEngine) -> ServerEngine
 typealias ApplicationWrapper = (Application) -> Application
 
 /**
+ * Object-style server engine provider used by the application DSL.
+ */
+interface KatalystServerEngine {
+    fun build(): EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>
+}
+
+/**
  * Server configuration container (Bridge Class).
  *
  * Acts as a bridge between the DI system and deployment configuration.
@@ -73,7 +80,6 @@ typealias ApplicationWrapper = (Application) -> Application
  *
  * **Architecture:**
  * - Embeds ServerDeploymentConfiguration for all Ktor deployment properties
- * - Provides convenience accessors for backward compatibility (host, port, workerThreads, connectionIdleTimeoutMs)
  * - Validates all deployment configuration on instantiation
  *
  * @param engine The engine instance to use (NettyEngine, JettyEngine, or CioEngine)
@@ -86,14 +92,7 @@ data class ServerConfiguration(
     val deployment: ServerDeploymentConfiguration,
     val serverWrapper: ServerWrapper? = null,
     val applicationWrapper: ApplicationWrapper? = null
-) {
-    // Convenience accessors for backward compatibility with existing code
-    val host: String get() = deployment.host
-    val port: Int get() = deployment.port
-    val workerThreads: Int get() = deployment.workerGroupSize
-    val connectionIdleTimeoutMs: Long get() = deployment.connectionIdleTimeoutMs
-
-}
+)
 
 /**
  * Extension function to apply application wrapper to the Application.

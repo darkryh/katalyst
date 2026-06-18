@@ -2,11 +2,20 @@ package io.github.darkryh.katalyst.di.config
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.core.config.ConfigProvider
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
+import io.github.darkryh.katalyst.core.di.get
+import io.github.darkryh.katalyst.core.di.getOrNull
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.database.adapter.PersistenceTransactionAdapter
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
+import io.github.darkryh.katalyst.di.feature.KatalystBeanContext
+import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
+import io.github.darkryh.katalyst.di.feature.KatalystBeanEngines
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
+import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.di.internal.ComponentRegistrationOrchestrator
 import io.github.darkryh.katalyst.di.internal.TableRegistry
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
@@ -24,12 +33,6 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.core.module.Module
-import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -46,6 +49,7 @@ import kotlin.time.toDuration
  * Logger for DI configuration logging.
  */
 private val logger = LoggerFactory.getLogger("DIConfiguration")
+private val shutdownLock = Any()
 
 /**
  * Configuration options for Katalyst dependency injection.
@@ -58,13 +62,16 @@ private val logger = LoggerFactory.getLogger("DIConfiguration")
  * - [features]: Optional Katalyst feature set (scheduler, events, websockets, etc.)
  *
  * @property databaseConfig Database connection settings (required)
+ * @property beanEngine Bean/injection engine selected explicitly by the application (required at bootstrap)
  * @property scanPackages Array of package names to scan for components (default: empty)
  * @property features Optional feature set applied during bootstrap
  */
 data class KatalystDIOptions(
     val databaseConfig: DatabaseConfig,
+    val beanEngine: KatalystBeanEngine? = null,
     val scanPackages: Array<String> = emptyArray(),
-    val features: List<KatalystFeature> = emptyList()
+    val features: List<KatalystFeature> = emptyList(),
+    val schemaManagement: SchemaManagementOptions = SchemaManagementOptions(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -73,16 +80,20 @@ data class KatalystDIOptions(
         other as KatalystDIOptions
 
         if (databaseConfig != other.databaseConfig) return false
+        if (beanEngine != other.beanEngine) return false
         if (!scanPackages.contentEquals(other.scanPackages)) return false
         if (features != other.features) return false
+        if (schemaManagement != other.schemaManagement) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = databaseConfig.hashCode()
+        result = 31 * result + (beanEngine?.hashCode() ?: 0)
         result = 31 * result + scanPackages.contentHashCode()
         result = 31 * result + features.hashCode()
+        result = 31 * result + schemaManagement.hashCode()
         return result
     }
 }
@@ -92,7 +103,7 @@ data class KatalystDIOptions(
  *
  * This is the core initialization function that:
  * 1. Loads all Katalyst modules (core, scanner, scheduler if enabled)
- * 2. Starts or augments the global Koin context
+ * 2. Starts or augments the installed bean container
  * 3. Performs automatic discovery and registration of components
  * 4. Discovers and registers database tables
  * 5. Initializes the database schema with discovered tables
@@ -107,23 +118,33 @@ data class KatalystDIOptions(
  * - Route functions (extension functions using Katalyst DSL)
  *
  * **Usage Note:**
- * This function can be called multiple times safely. If Koin is already initialized,
- * it augments the existing context instead of creating a new one.
+ * This function can be called multiple times safely. If the installed bean
+ * engine is already initialized, it augments the existing context instead of
+ * creating a new one.
  *
  * @param databaseConfig Database connection configuration
  * @param scanPackages Package names to scan for components
  * @param features Optional feature set (scheduler, events, websockets, etc.)
- * @return The active Koin instance with all modules loaded
+ * @return The active Katalyst container facade with all modules loaded
  */
-fun bootstrapKatalystDI(
+fun bootstrapKatalystContainer(
     databaseConfig: DatabaseConfig,
     scanPackages: Array<String> = emptyArray(),
     features: List<KatalystFeature> = emptyList(),
     serverConfig: ServerConfiguration,
-    additionalModules: List<Module> = emptyList(),
-    allowOverrides: Boolean = false
-): Koin {
-    val logger = LoggerFactory.getLogger("bootstrapKatalystDI")
+    additionalModules: List<KatalystBeanModule> = emptyList(),
+    allowOverrides: Boolean = false,
+    schemaManagement: SchemaManagementOptions = SchemaManagementOptions(),
+    beanEngine: KatalystBeanEngine? = null,
+): KatalystContainer {
+    val logger = LoggerFactory.getLogger("bootstrapKatalystContainer")
+    val selectedBeanEngine = KatalystBeanEngines.activate(
+        beanEngine ?: error(
+            "No Katalyst bean engine was selected. Call beanEngine(...) in katalystApplication { } " +
+                "before starting the server. For Koin, add `io.github.darkryh.katalyst:katalyst-koin-bean` " +
+                "and call `beanEngine(KoinBeanEngine)`."
+        )
+    )
 
     val modules = mutableListOf(
         coreDIModule(databaseConfig)
@@ -132,33 +153,26 @@ fun bootstrapKatalystDI(
 
     // Register ServerConfiguration and engine as singletons for DI injection
     modules.add(
-        module {
-            single {
-                serverConfig
-            }
+        katalystBeanModule {
+            single { serverConfig }
         }
     )
 
     features.forEach { feature ->
         logger.debug("Including feature '{}' modules", feature.id)
-        modules += feature.provideModules()
+        modules += feature.provideBeanModules()
     }
 
     modules += additionalModules
 
     BootstrapProgress.startLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP)
-    val koin = try {
-        currentKoinOrNull()?.also {
-            logger.info("Loading Katalyst modules into existing Koin context")
-            it.loadModules(modules, createEagerInstances = true)
+    val container = try {
+        selectedBeanEngine.currentOrNull()?.also {
+            logger.info("Loading Katalyst modules into existing bean container")
+            selectedBeanEngine.loadModules(modules, allowOverrides = allowOverrides)
         } ?: run {
-            logger.info("Starting new Koin context for Katalyst modules")
-            startKoin {
-                if (allowOverrides) {
-                    allowOverride(true)
-                }
-                modules(modules)
-            }.koin
+            logger.info("Starting new {} bean container for Katalyst modules", selectedBeanEngine.id)
+            selectedBeanEngine.start(modules, allowOverrides = allowOverrides)
         }
     } catch (e: Exception) {
         BootstrapProgress.failLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP, e)
@@ -166,15 +180,16 @@ fun bootstrapKatalystDI(
     }
     BootstrapProgress.completeLifecycle(
         BootstrapLifecycle.KOIN_DI_BOOTSTRAP,
-        "Koin context ready with ${modules.size} module(s)"
+        "Bean container ready with ${modules.size} module(s)"
     )
+    KatalystContainerProvider.set(container)
 
     // Register components including tables
     // PHASE 2: Component Discovery & Registration with Validation
     BootstrapProgress.startLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION)
     try {
         logger.info("Starting ComponentRegistrationOrchestrator with dependency validation...")
-        val orchestrator = ComponentRegistrationOrchestrator(koin, scanPackages)
+        val orchestrator = ComponentRegistrationOrchestrator(container, selectedBeanEngine, scanPackages)
         orchestrator.registerAllWithValidation()
         logger.info("ComponentRegistrationOrchestrator completed with full validation")
         BootstrapProgress.completeLifecycle(
@@ -191,13 +206,14 @@ fun bootstrapKatalystDI(
         throw e
     }
 
+    val beanContext = KatalystBeanContext(KatalystContainerProvider.current())
     features.forEach { feature ->
-        logger.debug("Executing onKoinReady hook for feature '{}'", feature.id)
-        feature.onKoinReady(koin)
+        logger.debug("Executing onReady hook for feature '{}'", feature.id)
+        feature.onReady(beanContext)
     }
 
-    val phaseLoggingEnabled = resolveTransactionPhaseLoggingEnabled(koin)
-    val transactionDefaultsModule = module {
+    val phaseLoggingEnabled = resolveTransactionPhaseLoggingEnabled(container)
+    val transactionDefaultsModule = katalystBeanModule {
         single<DatabaseTransactionManager> {
             val databaseFactory = get<DatabaseFactory>()
             DatabaseTransactionManager(
@@ -208,20 +224,26 @@ fun bootstrapKatalystDI(
             )
         }
     }
-    koin.loadModules(listOf(transactionDefaultsModule), createEagerInstances = true)
+    selectedBeanEngine.loadModules(listOf(transactionDefaultsModule), allowOverrides = allowOverrides)
 
-    // PHASE 3: Database Schema Initialization & Table Creation
+    // PHASE 3: Database Schema Initialization & Validation
     BootstrapProgress.startLifecycle(BootstrapLifecycle.DATABASE_SCHEMA_INITIALIZATION)
     try {
         logger.debug("Attempting to retrieve discovered Table instances from TableRegistry...")
-        // Use TableRegistry instead of koin.getAll() because:
-        // - Koin's getAll<Any>() doesn't reliably return dynamically registered singletons
+        // Use TableRegistry instead of broad container lookup because:
+        // - some container implementations do not reliably return dynamically registered singletons
         // - TableRegistry provides guaranteed access to all discovered tables from Phase 3
         val discoveredTables = TableRegistry.getAll()
         logger.info("Discovered {} table(s) for initialization", discoveredTables.size)
 
-        if (discoveredTables.isNotEmpty()) {
-            logger.info("Found {} table(s) for schema creation", discoveredTables.size)
+        if (schemaManagement.policy == SchemaPolicy.NONE) {
+            logger.info("Schema management disabled - skipping {} discovered table(s)", discoveredTables.size)
+        } else if (discoveredTables.isNotEmpty()) {
+            logger.info(
+                "Found {} table(s) for schema policy {}",
+                discoveredTables.size,
+                schemaManagement.policy,
+            )
 
             // Tables from TableRegistry are already org.jetbrains.exposed.sql.Table instances
             val exposedTables = discoveredTables.toTypedArray()
@@ -229,8 +251,8 @@ fun bootstrapKatalystDI(
             // Create new DatabaseFactory with discovered tables
             val databaseFactory = DatabaseFactory.create(databaseConfig)
 
-            // Register it in Koin, replacing the one created by coreDIModule
-            val databaseModule = module {
+            // Register it in the active container, replacing the one created by coreDIModule
+            val databaseModule = katalystBeanModule {
                 single<DatabaseFactory> { databaseFactory }
                 single<DatabaseTransactionManager> {
                     logger.debug("Creating DatabaseTransactionManager with discovered tables")
@@ -242,50 +264,78 @@ fun bootstrapKatalystDI(
                     )
                 }
             }
-            koin.loadModules(listOf(databaseModule), createEagerInstances = true)
+            selectedBeanEngine.loadModules(listOf(databaseModule), allowOverrides = true)
             logger.info("Registered DatabaseFactory with {} Exposed table(s)", exposedTables.size)
 
-            // Auto-create missing tables in schema using Exposed's SchemaUtils
-            logger.info("Ensuring database schema...")
-            val transactionManager = koin.get<DatabaseTransactionManager>()
+            logger.info("Applying schema policy {}", schemaManagement.policy)
+            val transactionManager = container.get<DatabaseTransactionManager>()
 
             runBlocking {
-                transactionManager.transaction {
-                    val schemas = exposedTables
-                        .mapNotNull { table -> table.schemaName?.let { Schema(it) } }
-                        .distinct()
-                        .toTypedArray()
+                when (schemaManagement.policy) {
+                    SchemaPolicy.NONE -> Unit
+                    SchemaPolicy.CREATE_MISSING,
+                    SchemaPolicy.CREATE_MISSING_AND_VALIDATE -> {
+                        transactionManager.transaction {
+                            val schemas = exposedTables
+                                .mapNotNull { table -> table.schemaName?.let { Schema(it) } }
+                                .distinct()
+                                .toTypedArray()
 
-                    if (schemas.isNotEmpty()) {
-                        databaseFactory.createSchema(*schemas, inBatch = schemas.size > 1)
-                        SchemaUtils.createSchema()
-                        logger.info("Created {} schema(s) for discovered tables", schemas.size)
-                    }
+                            if (schemas.isNotEmpty()) {
+                                databaseFactory.createSchema(*schemas, inBatch = schemas.size > 1)
+                                SchemaUtils.createSchema()
+                                logger.info("Created {} schema(s) for discovered tables", schemas.size)
+                            }
 
-                    if (exposedTables.isNotEmpty()) {
-                        databaseFactory.createTable(*exposedTables, inBatch = exposedTables.size > 1)
-                        logger.info("Created {} table(s)", exposedTables.size)
+                            if (exposedTables.isNotEmpty()) {
+                                databaseFactory.createTable(*exposedTables, inBatch = exposedTables.size > 1)
+                                logger.info("Created {} table(s)", exposedTables.size)
+                            }
+                        }
                     }
+                    SchemaPolicy.VALIDATE -> Unit
                 }
 
-                transactionManager.transaction(
-                    config = TransactionConfig(
-                        timeout = 60.toDuration(DurationUnit.SECONDS),
-                        isolationLevel = TransactionIsolationLevel.READ_COMMITTED
-                    )
+                if (
+                    schemaManagement.policy == SchemaPolicy.VALIDATE ||
+                    schemaManagement.policy == SchemaPolicy.CREATE_MISSING_AND_VALIDATE
                 ) {
-                    MigrationUtils.statementsRequiredForDatabaseMigration(*exposedTables, withLogs = true)
-                    logger.info("Ensured missing tables/columns are created")
+                    transactionManager.transaction(
+                        config = TransactionConfig(
+                            timeout = 60.toDuration(DurationUnit.SECONDS),
+                            isolationLevel = TransactionIsolationLevel.READ_COMMITTED
+                        )
+                    ) {
+                        val pendingStatements = MigrationUtils.statementsRequiredForDatabaseMigration(
+                            *exposedTables,
+                            withLogs = true,
+                        )
+                        if (pendingStatements.isNotEmpty()) {
+                            val message = buildString {
+                                append("Database schema has ")
+                                append(pendingStatements.size)
+                                append(" pending migration statement(s). ")
+                                append("Run migrations or use schema { createMissing() } for local/test boot.")
+                            }
+                            if (schemaManagement.failOnPendingStatements) {
+                                error(message)
+                            } else {
+                                logger.warn(message)
+                            }
+                        } else {
+                            logger.info("Database schema validated - no pending migration statements")
+                        }
+                    }
                 }
             }
 
-            logger.info("  ✓ Database schema ensured - all tables created if needed")
+            logger.info("  ✓ Database schema policy {} completed", schemaManagement.policy)
         } else {
-            logger.info("  ℹ  No tables registered - skipping schema creation")
+            logger.info("  ℹ  No tables registered - skipping schema management")
         }
         BootstrapProgress.completeLifecycle(
             BootstrapLifecycle.DATABASE_SCHEMA_INITIALIZATION,
-            "Database schema initialized with ${discoveredTables.size} tables"
+            "Database schema policy ${schemaManagement.policy} applied to ${discoveredTables.size} tables"
         )
     } catch (e: Exception) {
         logger.warn("Error discovering tables or creating DatabaseFactory: {}", e.message)
@@ -298,7 +348,7 @@ fun bootstrapKatalystDI(
     BootstrapProgress.startLifecycle(BootstrapLifecycle.TRANSACTION_ADAPTER_REGISTRATION)
     try {
         logger.info("Registering transaction adapters...")
-        val transactionManager = koin.get<DatabaseTransactionManager>()
+        val transactionManager = container.get<DatabaseTransactionManager>()
 
         var adaptersRegistered = 0
 
@@ -314,7 +364,7 @@ fun bootstrapKatalystDI(
 
         // Register Events adapter if ApplicationEventBus is available
         try {
-            val eventBus = koin.get<ApplicationEventBus>()
+            val eventBus = container.get<ApplicationEventBus>()
             val eventsAdapter = EventsTransactionAdapter(eventBus)
             transactionManager.addAdapter(eventsAdapter)
             logger.info("Registered Events transaction adapter")
@@ -340,13 +390,19 @@ fun bootstrapKatalystDI(
         throw e
     }
 
-    return koin
+    return container
 }
 
 /**
- * Initializes Koin DI for a standalone application (non-Ktor).
+ * Returns the active framework-owned container facade.
+ */
+fun currentKatalystContainer(): KatalystContainer =
+    KatalystContainerProvider.current()
+
+/**
+ * Initializes Katalyst DI for a standalone application (non-Ktor).
  *
- * This starts Koin with all modules and should be called during application startup.
+ * This starts the active DI engine with all modules and should be called during application startup.
  *
  * **Usage:**
  * ```kotlin
@@ -357,40 +413,42 @@ fun bootstrapKatalystDI(
  *         features = listOf(MyCustomFeature)
  *     )
  *     val serverConfig = ServerConfiguration(engineType = "netty", port = 9090)
- *     initializeKoinStandalone(options, serverConfig)
+ *     initializeKatalystStandalone(options, serverConfig)
  *     // ... rest of application code
- *     stopKoinStandalone()
+ *     stopKatalystStandalone()
  * }
  * ```
  */
-fun initializeKoinStandalone(
+fun initializeKatalystStandalone(
     options: KatalystDIOptions,
     serverConfiguration: ServerConfiguration,
-    additionalModules: List<Module> = emptyList(),
+    additionalModules: List<KatalystBeanModule> = emptyList(),
     allowOverrides: Boolean = false,
     activateRuntimeReadyInitializers: Boolean = true
-): Koin {
-    logger.info("Initializing Koin DI for standalone application")
+): KatalystContainer {
+    logger.info("Initializing Katalyst DI for standalone application")
     logger.debug("Features enabled: {}", options.features.joinToString { it.id })
 
-    val koin = bootstrapKatalystDI(
+    val container = bootstrapKatalystContainer(
         databaseConfig = options.databaseConfig,
         scanPackages = options.scanPackages,
         features = options.features,
         serverConfig = serverConfiguration,
         additionalModules = additionalModules,
-        allowOverrides = allowOverrides
+        allowOverrides = allowOverrides,
+        schemaManagement = options.schemaManagement,
+        beanEngine = options.beanEngine,
     )
-    runPreStartInitializers(koin)
+    runPreStartInitializers(container)
     if (activateRuntimeReadyInitializers) {
-        runRuntimeReadyInitializers(koin)
+        runRuntimeReadyInitializers(container)
     }
-    logger.info("Koin initialization completed successfully")
-    return koin
+    logger.info("Katalyst DI initialization completed successfully")
+    return container
 }
 
 /**
- * Stops Koin for standalone applications.
+ * Stops the active Katalyst DI engine for standalone applications.
  *
  * Should be called during application shutdown.
  *
@@ -399,24 +457,38 @@ fun initializeKoinStandalone(
  * fun main() {
  *     try {
  *         val options = KatalystDIOptions(DatabaseConfig(...))
- *         initializeKoinStandalone(options)
+ *         initializeKatalystStandalone(options)
  *         // ... application code
  *     } finally {
- *         stopKoinStandalone()
+ *         stopKatalystStandalone()
  *     }
  * }
  * ```
  */
-fun stopKoinStandalone() {
-    logger.info("Stopping Koin DI")
-    stopKoin()
-    logger.info("Koin stopped successfully")
+fun stopKatalystStandalone() {
+    synchronized(shutdownLock) {
+        logger.info("Stopping Katalyst DI")
+        val engine = KatalystBeanEngines.activeOrNull()
+        if (engine == null) {
+            KatalystContainerProvider.reset()
+            logger.info("Katalyst DI already stopped")
+            return
+        }
+
+        try {
+            engine.stop()
+        } finally {
+            KatalystBeanEngines.clearActive()
+            KatalystContainerProvider.reset()
+        }
+        logger.info("Katalyst DI stopped successfully")
+    }
 }
 
-fun runPreStartInitializers(koin: Koin) {
+fun runPreStartInitializers(container: KatalystContainer = KatalystContainerProvider.current()) {
     try {
         logger.info("Starting pre-start initialization lifecycle")
-        val registry = InitializerRegistry(koin)
+        val registry = InitializerRegistry(container)
         runBlocking {
             registry.invokeAll()
         }
@@ -427,11 +499,11 @@ fun runPreStartInitializers(koin: Koin) {
     }
 }
 
-fun runRuntimeReadyInitializers(koin: Koin) {
+fun runRuntimeReadyInitializers(container: KatalystContainer = KatalystContainerProvider.current()) {
     try {
         BootstrapProgress.startLifecycleCompact(BootstrapLifecycle.RUNTIME_READY_INITIALIZERS)
         logger.info("Starting runtime-ready initialization lifecycle")
-        val runner = RuntimeReadyInitializerRunner(koin)
+        val runner = RuntimeReadyInitializerRunner(container)
         runBlocking {
             runner.invokeAll()
         }
@@ -447,9 +519,9 @@ fun runRuntimeReadyInitializers(koin: Koin) {
     }
 }
 
-private fun resolveTransactionPhaseLoggingEnabled(koin: Koin): Boolean {
+private fun resolveTransactionPhaseLoggingEnabled(container: KatalystContainer): Boolean {
     return runCatching {
-        val configProvider = koin.get<ConfigProvider>()
+        val configProvider = container.get<ConfigProvider>()
         configProvider.getBoolean("transaction.logging.enabled", true)
     }.getOrElse {
         logger.debug(
@@ -458,100 +530,3 @@ private fun resolveTransactionPhaseLoggingEnabled(koin: Koin): Boolean {
         true
     }
 }
-
-
-/**
- * Builder for custom DI configurations.
- *
- * Provides a fluent API for composing Koin modules with granular control.
- * This is useful when you need to customize which Katalyst modules are loaded
- * or when you want to add custom modules alongside Katalyst.
- *
- * **Usage Example:**
- * ```kotlin
- * val modules = DIConfigurationBuilder()
- *     .database(DatabaseConfig(...))
- *     .coreModules()
- *     .scannerModules()
- *     .customModules(myCustomModule)
- *     .build()
- * ```
- */
-class DIConfigurationBuilder {
-    private val modules = mutableListOf<Module>()
-    private var databaseConfig: DatabaseConfig? = null
-
-    /**
-     * Sets the database configuration.
-     *
-     * This must be called before [coreModules] as it's required for database initialization.
-     *
-     * @param config Database connection settings
-     * @return This builder for method chaining
-     */
-    fun database(config: DatabaseConfig): DIConfigurationBuilder {
-        this.databaseConfig = config
-        return this
-    }
-
-    /**
-     * Includes core Katalyst modules.
-     *
-     * Adds the core DI module which provides:
-     * - Database connection pooling (HikariCP)
-     * - Transaction management (DatabaseTransactionManager)
-     * - Foundation for service/repository registration
-     *
-     * **Prerequisites:** [database] must be called first
-     *
-     * @return This builder for method chaining
-     * @throws IllegalStateException if database config is not set
-     */
-    fun coreModules(): DIConfigurationBuilder {
-        val config = databaseConfig
-            ?: throw IllegalStateException("Call database(...) before coreModules() to provide DatabaseConfig")
-        logger.debug("Adding core modules")
-        modules.add(coreDIModule(config))
-        return this
-    }
-
-
-    /**
-     * Adds custom Koin modules to the configuration.
-     *
-     * Use this to include your own application-specific modules alongside
-     * Katalyst framework modules.
-     *
-     * **Example:**
-     * ```kotlin
-     * val myModule = module {
-     *     single { MyCustomService() }
-     * }
-     * builder.customModules(myModule)
-     * ```
-     *
-     * @param customModules One or more custom Koin modules to include
-     * @return This builder for method chaining
-     */
-    fun customModules(vararg customModules: Module): DIConfigurationBuilder {
-        logger.debug("Adding {} custom module(s)", customModules.size)
-        modules.addAll(customModules)
-        return this
-    }
-
-    /**
-     * Builds and returns the final list of modules.
-     *
-     * @return Immutable list of all configured Koin modules
-     */
-    fun build(): List<Module> = modules.toList()
-}
-
-
-/**
- * Safely retrieves the current Koin instance if one exists.
- *
- * @return The active Koin instance, or null if Koin is not initialized
- */
-private fun currentKoinOrNull(): Koin? =
-    runCatching { GlobalContext.get() }.getOrNull()

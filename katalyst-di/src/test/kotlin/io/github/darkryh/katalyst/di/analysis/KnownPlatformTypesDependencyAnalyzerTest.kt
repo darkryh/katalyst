@@ -1,11 +1,8 @@
 package io.github.darkryh.katalyst.di.analysis
 
 import io.github.darkryh.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import io.github.darkryh.katalyst.events.bus.EventBus
-import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -14,17 +11,16 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 
 class KnownPlatformTypesDependencyAnalyzerTest {
-    private lateinit var koin: Koin
+    private lateinit var engine: TestBeanEngine
 
     @BeforeTest
     fun setUp() {
-        startKoin { }
-        koin = GlobalContext.get()
+        engine = TestBeanEngine()
     }
 
     @AfterTest
     fun tearDown() {
-        stopKoin()
+        engine.stop()
     }
 
     @Test
@@ -33,7 +29,7 @@ class KnownPlatformTypesDependencyAnalyzerTest {
             discoveredTypes = mapOf(
                 "services" to setOf(NeedsConfigProvider::class, NeedsEventBus::class)
             ),
-            koin = koin,
+            container = engine.container,
             scanPackages = emptyArray()
         )
 
@@ -51,7 +47,7 @@ class KnownPlatformTypesDependencyAnalyzerTest {
     fun `unknown dependency remains unresolved`() {
         val analyzer = DependencyAnalyzer(
             discoveredTypes = mapOf("services" to setOf(NeedsUnknownContract::class)),
-            koin = koin,
+            container = engine.container,
             scanPackages = emptyArray()
         )
 

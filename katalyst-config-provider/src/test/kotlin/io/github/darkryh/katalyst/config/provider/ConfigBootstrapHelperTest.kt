@@ -1,22 +1,21 @@
 package io.github.darkryh.katalyst.config.provider
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.core.config.ConfigException
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.core.config.ConfigValidator
+import kotlin.reflect.KClass
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.core.qualifier.named
-import org.koin.dsl.module
 
 class ConfigBootstrapHelperTest {
 
     @AfterTest
     fun tearDown() {
-        stopKoin()
+        KatalystContainerProvider.reset()
     }
 
     @Test
@@ -56,30 +55,36 @@ class ConfigBootstrapHelperTest {
     @Test
     fun `validateConfiguration aggregates validator failures`() {
         val config = mapConfigProvider(emptyMap())
-        startKoin {
-            modules(
-                module {
-                    single<ConfigValidator>(named("invalid")) {
-                        object : ConfigValidator {
-                            override fun validate() {
-                                throw ConfigException("invalid settings")
-                            }
-                        }
-                    }
-                    single<ConfigValidator>(named("valid")) {
-                        object : ConfigValidator {
-                            override fun validate() {
-                                // pass
-                            }
-                        }
-                    }
+        val validators = listOf(
+            object : ConfigValidator {
+                override fun validate() {
+                    throw ConfigException("invalid settings")
                 }
-            )
-        }
+            },
+            object : ConfigValidator {
+                override fun validate() {
+                    // pass
+                }
+            },
+        )
+        KatalystContainerProvider.set(testContainer(validators))
 
         assertFailsWith<ConfigException> {
             ConfigBootstrapHelper.validateConfiguration(config)
         }
+    }
+
+    private fun testContainer(validators: List<ConfigValidator>): KatalystContainer = object : KatalystContainer {
+        override fun <T : Any> get(type: KClass<T>, qualifier: String?): T =
+            getOrNull(type, qualifier) ?: error("No bean registered for ${type.simpleName}")
+
+        override fun <T : Any> getOrNull(type: KClass<T>, qualifier: String?): T? = null
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : Any> getAll(type: KClass<T>): List<T> =
+            if (type == ConfigValidator::class) validators as List<T> else emptyList()
+
+        override fun contains(type: KClass<*>, qualifier: String?): Boolean = false
     }
 
     private fun mapConfigProvider(entries: Map<String, Any>): ConfigProvider = object : ConfigProvider {

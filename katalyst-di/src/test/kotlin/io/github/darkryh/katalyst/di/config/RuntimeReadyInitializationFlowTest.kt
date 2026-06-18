@@ -1,11 +1,12 @@
 package io.github.darkryh.katalyst.di.config
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
+import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.di.registry.RegistryManager
-import org.koin.core.module.Module
-import org.koin.dsl.module
+import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +18,7 @@ class RuntimeReadyInitializationFlowTest {
     @AfterTest
     fun tearDown() {
         RegistryManager.resetAll()
-        stopKoinStandalone()
+        stopKatalystStandalone()
     }
 
     @Test
@@ -25,11 +26,12 @@ class RuntimeReadyInitializationFlowTest {
         val probe = RuntimeReadyProbe()
         val options = KatalystDIOptions(
             databaseConfig = inMemoryDb(),
+            beanEngine = TestBeanEngine(),
             scanPackages = emptyArray(),
             features = listOf(RuntimeReadyTestFeature(probe))
         )
 
-        val koin = initializeKoinStandalone(
+        val koin = initializeKatalystStandalone(
             options = options,
             serverConfiguration = ServerConfiguration(
                 engine = null,
@@ -44,6 +46,28 @@ class RuntimeReadyInitializationFlowTest {
 
         assertTrue(probe.executed)
         assertEquals(1, probe.executions)
+    }
+
+    @Test
+    fun `standalone shutdown is idempotent`() {
+        val options = KatalystDIOptions(
+            databaseConfig = inMemoryDb(),
+            beanEngine = TestBeanEngine(),
+            scanPackages = emptyArray(),
+            features = emptyList()
+        )
+
+        initializeKatalystStandalone(
+            options = options,
+            serverConfiguration = ServerConfiguration(
+                engine = null,
+                deployment = ServerDeploymentConfiguration.createDefault()
+            ),
+            activateRuntimeReadyInitializers = false
+        )
+
+        stopKatalystStandalone()
+        stopKatalystStandalone()
     }
 
     private fun inMemoryDb() = DatabaseConfig(
@@ -71,8 +95,8 @@ private class RuntimeReadyTestFeature(
 ) : KatalystFeature {
     override val id: String = "runtime-ready-test-feature"
 
-    override fun provideModules(): List<Module> = listOf(
-        module {
+    override fun provideBeanModules(): List<KatalystBeanModule> = listOf(
+        katalystBeanModule {
             single<ApplicationReadyInitializer> { RuntimeReadyProbeInitializer(probe) }
         }
     )

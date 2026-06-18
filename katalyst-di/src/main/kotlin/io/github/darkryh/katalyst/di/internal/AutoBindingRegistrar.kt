@@ -2,9 +2,11 @@ package io.github.darkryh.katalyst.di.internal
 
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.core.persistence.Table
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
+import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
@@ -13,7 +15,7 @@ import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
 import io.github.darkryh.katalyst.di.invocation.CallableInvoker
 import io.github.darkryh.katalyst.di.invocation.ParameterResolver
-import io.github.darkryh.katalyst.di.invocation.getFromKoinOrNull
+import io.github.darkryh.katalyst.di.invocation.getFromContainerOrNull
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
@@ -22,13 +24,6 @@ import io.github.darkryh.katalyst.scanner.core.EmptyDiscoverySeverity
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
-import org.koin.core.Koin
-import org.koin.core.annotation.KoinInternalApi
-import org.koin.core.definition.BeanDefinition
-import org.koin.core.definition.Kind
-import org.koin.core.definition.indexKey
-import org.koin.core.error.DefinitionOverrideException
-import org.koin.core.instance.SingleInstanceFactory
 import org.objectweb.asm.*
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
@@ -55,7 +50,7 @@ private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
  *
  * This class orchestrates automatic component discovery and dependency injection registration
  * during application bootstrap. It scans specified packages for framework components and
- * registers them in the Koin DI container.
+ * registers them in the active Katalyst bean container.
  *
  * **Discovered Component Types:**
  * - [CrudRepository] implementations (data access layer)
@@ -67,19 +62,20 @@ private val logger = LoggerFactory.getLogger("AutoBindingRegistrar")
  *
  * **Registration Strategy:**
  * - Components are instantiated with constructor dependency injection
- * - Dependencies are resolved from the Koin container
+ * - Dependencies are resolved from the active container
  * - Well-known properties (DatabaseTransactionManager, SchedulerService) are auto-injected
  * - Unresolvable constructor cycles fail during validation with explicit diagnostics
  *
  * **Thread Safety:**
  * Not thread-safe. Should only be called once during application startup.
  *
- * @param koin The active Koin container to register components into
+ * @param container The active Katalyst container to resolve components from
+ * @param beanEngine The installed bean engine that owns native registration
  * @param scanPackages Array of package names to scan for components
  */
-@OptIn(KoinInternalApi::class)
 class AutoBindingRegistrar(
-    private val koin: Koin,
+    private val container: KatalystContainer,
+    private val beanEngine: KatalystBeanEngine,
     scanPackages: Array<String>
 ) {
 
@@ -158,7 +154,7 @@ class AutoBindingRegistrar(
 
         return CallableInvoker.callConstructor(
             constructor = constructor,
-            resolver = ParameterResolver(koin),
+            resolver = ParameterResolver(container),
             ownerDescription = target.qualifiedName ?: target.simpleName ?: "component"
         )
     }
@@ -173,7 +169,7 @@ class AutoBindingRegistrar(
      * Only injects if:
      * 1. The property is mutable (var)
      * 2. The property is not already initialized
-     * 3. The service is available in Koin
+     * 3. The service is available in the active container
      *
      * @param instance The component instance to inject properties into
      */
@@ -187,9 +183,9 @@ class AutoBindingRegistrar(
 
             val value = when {
                 classifier == DatabaseTransactionManager::class ->
-                    koin.getFromKoinOrNull(DatabaseTransactionManager::class)
+                    container.getFromContainerOrNull(DatabaseTransactionManager::class)
                 schedulerServiceKClass != null && classifier == schedulerServiceKClass ->
-                    koin.getFromKoinOrNull(schedulerServiceKClass)
+                    container.getFromContainerOrNull(schedulerServiceKClass)
                 else -> null
             } ?: return@forEach
 
@@ -293,7 +289,7 @@ class AutoBindingRegistrar(
         }
 
         methods.forEach { method ->
-            val module = RouteFunctionModule(method, koin)
+            val module = RouteFunctionModule(method, container)
             KtorModuleRegistry.register(module)
             logger.info(
                 "Registered route function {}.{} as Ktor module",
@@ -310,7 +306,7 @@ class AutoBindingRegistrar(
      * - [org.jetbrains.exposed.v1.core.Table] (Exposed framework)
      * - [Table] (Katalyst marker interface)
      *
-     * Tables are registered in Koin and later used to initialize the database schema.
+     * Tables are registered in the active container and later used to initialize the database schema.
      */
     internal fun registerTables() {
         if (packages.isEmpty()) {
@@ -330,7 +326,7 @@ class AutoBindingRegistrar(
                 // Tables are registered only under their primary type (concrete class)
                 // Secondary types (Table, org.jetbrains.exposed.Table) are NOT registered
                 // because multiple tables implementing these interfaces is expected
-                registerInstanceWithKoin(
+                registerInstance(
                     instance = instance,
                     primaryType = tableClass,
                     secondaryTypes = emptyList()
@@ -566,7 +562,7 @@ class AutoBindingRegistrar(
     }
 
     /**
-     * Registers a component instance in Koin with multi-type binding.
+     * Registers a component instance with multi-type binding.
      *
      * Creates a singleton definition with:
      * - Primary type: the main component type
@@ -589,7 +585,7 @@ class AutoBindingRegistrar(
      * @param secondaryTypes Additional interface types for polymorphic binding
      * @throws DependencyInjectionException if a secondary type collision is detected
      */
-    internal fun registerInstanceWithKoin(
+    internal fun registerInstance(
         instance: Any,
         primaryType: KClass<*>,
         secondaryTypes: List<KClass<*>>
@@ -636,51 +632,19 @@ class AutoBindingRegistrar(
             ApplicationReadyInitializerRegistry.register(instance)
         }
 
-        val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
-
-        val definition = BeanDefinition(
-            scopeQualifier = scopeQualifier,
-            primaryType = primaryType,
-            qualifier = null,
-            definition = { instance },
-            kind = Kind.Singleton,
-            secondaryTypes = singleBindingTypes
-        )
-
-        val factory = SingleInstanceFactory(definition)
-        val primaryKey = indexKey(primaryType, definition.qualifier, scopeQualifier)
-
-        runCatching {
-            koin.instanceRegistry.saveMapping(true, primaryKey, factory, logWarning = false)
-            singleBindingTypes.forEach { type ->
-                val key = indexKey(type, definition.qualifier, scopeQualifier)
-                koin.instanceRegistry.saveMapping(true, key, factory, logWarning = false)
-            }
-            if (multiBindingTypes.isNotEmpty()) {
-                logger.debug(
-                    "Skipping Koin secondary mapping for multibinding types on {}: {}",
-                    primaryType.simpleName,
-                    multiBindingTypes.joinToString { it.simpleName.orEmpty() }
-                )
-            }
-            logger.debug("Registered {} as {} in Koin", primaryType.qualifiedName, primaryKey)
-            logger.trace(
-                "Koin registry keys after {}: {}",
+        beanEngine.registerInstance(instance, primaryType, singleBindingTypes)
+        if (multiBindingTypes.isNotEmpty()) {
+            logger.debug(
+                "Skipping container secondary mapping for multibinding types on {}: {}",
                 primaryType.simpleName,
-                koin.instanceRegistry.instances.keys.joinToString()
+                multiBindingTypes.joinToString { it.simpleName.orEmpty() }
             )
-        }.onFailure { error ->
-            if (error is DefinitionOverrideException) {
-                logger.debug("Skipping duplicate registration for {}", primaryType.qualifiedName)
-            } else {
-                throw error
-            }
         }
     }
 }
 
 /**
- * Safely retrieves an instance from Koin, returning null if not found.
+ * Safely retrieves an instance from the active container, returning null if not found.
  *
  * @param kClass The class type to retrieve
  * @return The instance if found, null otherwise
@@ -709,7 +673,7 @@ private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
  */
 private class RouteFunctionModule(
     private val method: Method,
-    private val koin: Koin
+    private val container: KatalystContainer
 ) : KtorModule, RouteModuleMarker {
 
     // Exception handlers and middleware should be installed FIRST (negative order)
@@ -777,7 +741,7 @@ private class RouteFunctionModule(
         CallableInvoker.callFunction(
             function = function,
             suppliedParameters = mapOf(receiverParameter to receiver),
-            resolver = ParameterResolver(koin),
+            resolver = ParameterResolver(container),
             ownerDescription = "route function ${method.declaringClass.name}.${method.name}"
         )
     }
@@ -794,6 +758,7 @@ private class RouteFunctionModule(
  */
 private val katalystDslOwners = setOf(
     "io/github/darkryh/katalyst/ktor/builder/RoutingBuilderKt",
+    "io/github/darkryh/katalyst/ktor/websocket/WebSocketBuilderKt",
     "io/github/darkryh/katalyst/websockets/builder/WebSocketBuilderKt",
     "io/github/darkryh/katalyst/ktor/builder/ExceptionHandlerBuilderKt",
     "io/github/darkryh/katalyst/ktor/middleware/MiddlewareKt"

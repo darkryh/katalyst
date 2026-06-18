@@ -15,9 +15,6 @@ dependencies {
     // Katalyst DI - provides KatalystFeature interface for auto-discovery
     implementation(projects.katalystDi)
 
-    // Koin for DI
-    implementation(libs.koin.core)
-
     // YAML parsing
     implementation(libs.snakeyaml)
     implementation(libs.ktor.server.config.yaml)
