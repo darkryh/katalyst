@@ -1,40 +1,43 @@
-package io.github.darkryh.katalyst.websockets.builder
+package io.github.darkryh.katalyst.ktor.websocket
 
-import io.github.darkryh.katalyst.ktor.builder.verifyKoin
-import io.ktor.server.routing.*
-import org.koin.core.context.GlobalContext
-import org.koin.core.qualifier.named
+import io.github.darkryh.katalyst.ktor.builder.verifyKatalystContainer
+import io.github.darkryh.katalyst.ktor.extension.getKatalystContainer
+import io.ktor.server.routing.Route
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WebSocketBuilder")
+
 /**
- * DSL function to configure WebSocket routes using the real Ktor [Route] context.
+ * Configures WebSocket routes using the real Ktor [Route] context.
  *
  * The provided [block] executes within the original [Route], so the standard
- * `webSocket("/path") {}` extension remains available for testing or manual wiring.
+ * `webSocket("/path") {}` extension remains available.
  */
 fun Route.katalystWebSockets(block: Route.() -> Unit) {
     logger.debug("Starting WebSocket configuration on Route: {} ({})", this::class.simpleName, this::class.java.name)
     try {
-        verifyKoin()
+        verifyKatalystContainer()
 
-        val koin = GlobalContext.get()
+        val container = getKatalystContainer()
         val isWebSocketsEnabled = runCatching {
-            koin.get<Boolean>(qualifier = named("enableWebSockets"))
+            container.get(Boolean::class, qualifier = "enableWebSockets")
         }.getOrDefault(false)
 
         if (!isWebSocketsEnabled) {
             throw IllegalStateException(
                 """
                 WebSocket support is not enabled.
-                Please call enableWebSockets() in your katalystApplication block:
+                Please call features { enableWebSockets() } in your katalystApplication block:
 
                 fun main(args: Array<String>) = katalystApplication(args) {
-                    database(DatabaseConfigFactory.config())
+                    enableYamlConfiguration()
+                    database { fromConfiguration() }
                     scanPackages("com.example.app")
-                    enableWebSockets()  // <- Add this
+                    features {
+                        enableWebSockets()
+                    }
                 }
-                """.trimIndent()
+                """.trimIndent(),
             )
         }
 

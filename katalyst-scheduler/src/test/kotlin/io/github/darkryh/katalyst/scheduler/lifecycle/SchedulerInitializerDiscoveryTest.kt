@@ -1,16 +1,14 @@
 package io.github.darkryh.katalyst.scheduler.lifecycle
 
 import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.di.internal.ServiceRegistry
-import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
-import io.github.darkryh.katalyst.scheduler.cron.CronExpression
+import io.github.darkryh.katalyst.scheduler.TestSchedulerContainer
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerInvocationException
+import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle
 import io.github.darkryh.katalyst.scheduler.service.SchedulerService
 import kotlinx.coroutines.test.runTest
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.reflect.KFunction
@@ -23,21 +21,21 @@ class SchedulerInitializerDiscoveryTest {
 
     @BeforeTest
     fun setUp() {
-        runCatching { stopKoin() }
-        startKoin {
-            modules(
-                module {
-                    single { SchedulerInjectedConfig("config-value") }
-                }
+        KatalystContainerProvider.set(
+            TestSchedulerContainer(
+                mapOf(
+                    SchedulerInjectedConfig::class to SchedulerInjectedConfig("config-value"),
+                    SchedulerService::class to SchedulerService(),
+                )
             )
-        }
+        )
         ServiceRegistry.clear()
     }
 
     @AfterTest
     fun tearDown() {
         ServiceRegistry.clear()
-        stopKoin()
+        KatalystContainerProvider.reset()
     }
 
     @Test
@@ -83,7 +81,7 @@ class SchedulerInitializerDiscoveryTest {
         assertEquals(
             setOf("fixedDelayJob"),
             methodNames,
-            "Bytecode validation should accept scheduleFixedDelay JVM-mangled method calls"
+            "Bytecode validation should accept scheduler DSL calls"
         )
     }
 
@@ -166,70 +164,58 @@ class SchedulerInitializerDiscoveryTest {
 }
 
 private class MultiJobService : Service {
-    private val scheduler = SchedulerService()
+    private val scheduler = requireScheduler()
 
-    fun firstJob(): SchedulerJobHandle = scheduler.scheduleCron(
-        config = ScheduleConfig("scheduler.test.first-job"),
-        task = {},
-        cronExpression = CronExpression("0 0 * * * ?")
-    )
+    fun firstJob(): SchedulerJobHandle = scheduler.jobs {
+        cron("scheduler.test.first-job", "0 0 * * * ?") {}
+    }
 
-    fun secondJob(): SchedulerJobHandle = scheduler.scheduleCron(
-        config = ScheduleConfig("scheduler.test.second-job"),
-        task = {},
-        cronExpression = CronExpression("0 0 * * * ?")
-    )
+    fun secondJob(): SchedulerJobHandle = scheduler.jobs {
+        cron("scheduler.test.second-job", "0 0 * * * ?") {}
+    }
 }
 
 private class MangledMethodService : Service {
-    private val scheduler = SchedulerService()
+    private val scheduler = requireScheduler()
 
-    fun fixedDelayJob(): SchedulerJobHandle = scheduler.scheduleFixedDelay(
-        config = ScheduleConfig("scheduler.test.fixed-delay-job"),
-        task = {},
-        fixedDelay = 1.minutes
-    )
+    fun fixedDelayJob(): SchedulerJobHandle = scheduler.jobs {
+        fixedDelay("scheduler.test.fixed-delay-job", 1.minutes) {}
+    }
 }
 
 private class DefaultParameterJobService : Service {
-    private val scheduler = SchedulerService()
+    private val scheduler = requireScheduler()
     val scheduledTaskNames = mutableListOf<String>()
 
     fun defaultParameterJob(intervalSeconds: Int = 60): SchedulerJobHandle {
         val taskName = "scheduler.test.default-parameter.$intervalSeconds"
         scheduledTaskNames += taskName
-        return scheduler.scheduleCron(
-            config = ScheduleConfig(taskName),
-            task = {},
-            cronExpression = CronExpression("0 0 * * * ?")
-        )
+        return scheduler.jobs {
+            cron(taskName, "0 0 * * * ?") {}
+        }
     }
 }
 
 private class ConfigParameterJobService : Service {
-    private val scheduler = SchedulerService()
+    private val scheduler = requireScheduler()
     val scheduledTaskNames = mutableListOf<String>()
 
     fun configParameterJob(config: SchedulerInjectedConfig): SchedulerJobHandle {
         val taskName = "scheduler.test.config-parameter.${config.value}"
         scheduledTaskNames += taskName
-        return scheduler.scheduleCron(
-            config = ScheduleConfig(taskName),
-            task = {},
-            cronExpression = CronExpression("0 0 * * * ?")
-        )
+        return scheduler.jobs {
+            cron(taskName, "0 0 * * * ?") {}
+        }
     }
 }
 
 private class RequiredPrimitiveJobService : Service {
-    private val scheduler = SchedulerService()
+    private val scheduler = requireScheduler()
 
     fun requiredPrimitiveJob(intervalSeconds: Int): SchedulerJobHandle {
-        return scheduler.scheduleCron(
-            config = ScheduleConfig("scheduler.test.required-primitive.$intervalSeconds"),
-            task = {},
-            cronExpression = CronExpression("0 0 * * * ?")
-        )
+        return scheduler.jobs {
+            cron("scheduler.test.required-primitive.$intervalSeconds", "0 0 * * * ?") {}
+        }
     }
 }
 

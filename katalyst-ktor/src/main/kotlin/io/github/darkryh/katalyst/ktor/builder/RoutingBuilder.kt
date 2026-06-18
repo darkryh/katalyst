@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.ktor.builder
 
-import io.github.darkryh.katalyst.ktor.extension.getKoinInstance
+import io.github.darkryh.katalyst.ktor.extension.getKatalystContainer
 import io.ktor.server.application.Application
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.Routing
@@ -10,16 +10,16 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("RoutingBuilder")
 
 /**
- * Verify that Koin DI container is initialized and available.
+ * Verify that the Katalyst container is initialized and available.
  *
- * Used by DSL functions to ensure Koin is ready before processing.
+ * Used by DSL functions to ensure dependency resolution is ready before processing.
  */
-fun verifyKoin() {
-    runCatching { getKoinInstance() }
-        .onSuccess { logger.debug("Koin DI container is initialized and available") }
+fun verifyKatalystContainer() {
+    runCatching { getKatalystContainer() }
+        .onSuccess { logger.debug("Katalyst container is initialized and available") }
         .onFailure {
             logger.warn(
-                "Koin DI container not initialized. Routes may fail when resolving dependencies via katalystRouting.",
+                "Katalyst container not initialized. Routes may fail when resolving dependencies via katalystRouting.",
                 it
             )
         }
@@ -35,7 +35,7 @@ fun Application.katalystRouting(block: Routing.() -> Unit) {
     logger.debug("Starting route configuration")
 
     try {
-        verifyKoin()
+        verifyKatalystContainer()
         routing {
             block()
         }
@@ -54,7 +54,7 @@ fun Route.katalystRouting(block: Route.() -> Unit) {
     logger.debug("Starting route configuration")
 
     try {
-        verifyKoin()
+        verifyKatalystContainer()
         this.apply(block)
         logger.debug("Route configuration completed successfully")
     } catch (e: Exception) {

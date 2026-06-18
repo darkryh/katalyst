@@ -7,111 +7,64 @@ import io.github.darkryh.katalyst.scanner.core.TypeDiscovery
 import io.github.darkryh.katalyst.scanner.scanner.InMemoryDiscoveryRegistry
 import io.github.darkryh.katalyst.scanner.scanner.KotlinMethodScanner
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
-import org.koin.core.module.Module
-import org.koin.dsl.module
 
 /**
- * Koin module factory for scanner framework.
+ * Framework-neutral scanner components.
+ */
+data class ScannerComponents<T>(
+    val config: DiscoveryConfig<T>,
+    val discovery: TypeDiscovery<T>,
+    val registry: DiscoveryRegistry<T>,
+)
+
+/**
+ * Creates scanner components without binding them to a concrete DI container.
  *
- * **Usage:**
- * ```kotlin
- * install(Koin) {
- *     modules(
- *         scannerModule<Service>(
- *             baseType = Service::class.java,
- *             scanPackages = listOf("com.ead.xtory")
- *         ),
- *         // ... other modules
- *     )
- * }
- * ```
+ * Applications can register these objects in their selected container adapter
+ * or use them directly.
  *
  * @param T The base type or marker interface
  * @param baseType The Class object for the base type
  * @param scanPackages Packages to scan (empty = scan entire classpath)
  * @param predicate Optional predicate for filtering
- * @return Koin module providing TypeDiscovery and DiscoveryRegistry
+ * @return Scanner components providing TypeDiscovery and DiscoveryRegistry
  */
-fun <T> scannerModule(
+fun <T> scannerComponents(
     baseType: Class<T>,
     scanPackages: List<String> = emptyList(),
     predicate: DiscoveryPredicate<T>? = null
-): Module = module {
+): ScannerComponents<T> {
+    val config = DiscoveryConfig(
+        scanPackages = scanPackages,
+        predicate = predicate
+    )
+    val discovery = ReflectionsTypeScanner(baseType, config)
+    val registry = InMemoryDiscoveryRegistry(baseType)
 
-    // Provide the configuration
-    single {
-        DiscoveryConfig(
-            scanPackages = scanPackages,
-            predicate = predicate
-        )
-    }
-
-    // Provide the scanner
-    single<TypeDiscovery<T>> {
-        ReflectionsTypeScanner(baseType, get<DiscoveryConfig<T>>())
-    }
-
-    // Provide the registry
-    single<DiscoveryRegistry<T>> {
-        InMemoryDiscoveryRegistry(baseType)
-    }
-
-    // Provide Koin-aware registry
-    single<KoinDiscoveryRegistry<T>> {
-        KoinDiscoveryRegistry(baseType, getKoin())
-    }
-
-    // Provide auto-discovery engine
-    single<AutoDiscoveryEngine<T>> {
-        AutoDiscoveryEngine(get<TypeDiscovery<T>>(), getKoin())
-    }
+    return ScannerComponents(
+        config = config,
+        discovery = discovery,
+        registry = registry,
+    )
 }
 
 /**
- * Simplified version for common use cases.
- *
- * **Usage:**
- * ```kotlin
- * install(Koin) {
- *     modules(
- *         simpleScannerModule<Service>(
- *             baseType = Service::class.java,
- *             scanPackages = arrayOf("com.ead.xtory")
- *         ),
- *         // ... other modules
- *     )
- * }
- * ```
+ * Simplified component factory for common use cases.
  *
  * @param T The base type or marker interface
  * @param baseType The Class object for the base type
  * @param scanPackages Packages to scan
- * @return Koin module
+ * @return Scanner components
  */
-fun <T> simpleScannerModule(
+fun <T> simpleScannerComponents(
     baseType: Class<T>,
     vararg scanPackages: String
-): Module = scannerModule(baseType, scanPackages.toList())
+): ScannerComponents<T> = scannerComponents(baseType, scanPackages.toList())
 
 /**
- * Koin module for method scanning capabilities.
- *
- * Provides KotlinMethodScanner for discovering methods in classes.
- * Can be used independently or as a complement to the main scanner module.
- *
- * **Usage:**
- * ```kotlin
- * install(Koin) {
- *     modules(
- *         methodScannerModule<RouteController>(),
- *         // ... other modules
- *     )
- * }
- * ```
+ * Creates a method scanner.
  *
  * @param T The base type or marker interface
- * @return Koin module providing KotlinMethodScanner<T>
+ * @return KotlinMethodScanner<T>
  */
-fun <T> methodScannerModule(): Module = module {
-    single { KotlinMethodScanner<T>() }
-}
+fun <T> methodScanner(): KotlinMethodScanner<T> = KotlinMethodScanner()

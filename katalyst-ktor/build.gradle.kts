@@ -7,9 +7,12 @@ dependencies {
     implementation(projects.katalystCore)
     implementation(projects.katalystScanner)
 
+    // Ktor WebSocket stack
+    api(libs.ktor.server.web.sockets)
+
     // Kotlin
     implementation(kotlin("reflect"))
 
     // Testing
-    testImplementation(libs.koin.test)
+    testImplementation(libs.ktor.client.websockets)
 }

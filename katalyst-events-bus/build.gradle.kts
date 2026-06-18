@@ -9,8 +9,5 @@ dependencies {
     // Transaction module for event deferral
     implementation(projects.katalystTransactions)
 
-    // Dependency injection
-    implementation(libs.koin.core)
-
     testImplementation(libs.kotlinx.coroutines.test)
 }

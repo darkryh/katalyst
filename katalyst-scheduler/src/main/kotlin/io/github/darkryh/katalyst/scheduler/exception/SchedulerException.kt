@@ -32,12 +32,13 @@ sealed class SchedulerException(
 /**
  * Thrown when SchedulerService is not available in the DI container.
  *
- * This typically happens when the scheduler module is not properly registered
- * in the Koin DI container, or the SchedulerService bean is not instantiated.
+ * This typically happens when the scheduler feature is not properly registered
+ * in the active Katalyst container, or the SchedulerService bean is not instantiated.
  *
  * **Example scenario**:
  * ```
- * val scheduler = koin.get<SchedulerService>()  // throws NoSuchElementException
+ * val scheduler = KatalystContainerProvider.current().get<SchedulerService>()
+ * // throws if SchedulerService is not registered
  * // Wrapped as SchedulerServiceNotAvailableException
  * ```
  *

@@ -1,32 +1,35 @@
 package io.github.darkryh.katalyst.testing.core
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.core.config.ConfigProvider
+import io.github.darkryh.katalyst.core.di.KatalystContainer
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.di.config.KatalystDIOptions
+import io.github.darkryh.katalyst.di.config.SchemaManagementOptions
+import io.github.darkryh.katalyst.di.config.SchemaPolicy
 import io.github.darkryh.katalyst.di.config.ServerConfiguration
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
-import io.github.darkryh.katalyst.di.config.bootstrapKatalystDI
-import io.github.darkryh.katalyst.di.config.runPreStartInitializers
-import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
-import io.github.darkryh.katalyst.di.config.stopKoinStandalone
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
+import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.di.internal.KtorModuleRegistry
+import io.github.darkryh.katalyst.events.DomainEvent
+import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
-import org.koin.core.Koin
-import org.koin.core.module.Module
-import org.koin.core.parameter.ParametersDefinition
-import org.koin.core.qualifier.Qualifier
-import org.koin.core.scope.Scope
+import io.github.darkryh.katalyst.testing.core.config.FakeConfigProvider
+import io.github.darkryh.katalyst.testing.core.events.EventProbe
+import kotlin.reflect.KClass
 
 /**
  * Active test environment with a fully bootstrapped Katalyst DI container.
  *
- * Provides access to the underlying Koin instance plus the Ktor modules that were
- * discovered during component scanning so tests can install the exact same pipeline.
+ * Provides access to the active Katalyst container plus the Ktor modules that
+ * were discovered during component scanning so tests can install the exact same pipeline.
  */
 class KatalystTestEnvironment internal constructor(
     val options: KatalystDIOptions,
-    val koin: Koin,
+    val container: KatalystContainer,
     val discoveredKtorModules: List<KtorModule>,
     private val shutdownHook: () -> Unit
 ) : AutoCloseable {
@@ -36,17 +39,9 @@ class KatalystTestEnvironment internal constructor(
     }
 
     /**
-     * Convenience accessor for typed resolves from the environment's Koin context.
+     * Convenience accessor for typed resolves from the environment's Katalyst container.
      */
-    inline fun <reified T : Any> get(
-        qualifier: Qualifier? = null,
-        noinline parameters: ParametersDefinition? = null
-    ): T = koin.get(qualifier = qualifier, parameters = parameters)
-
-    /**
-     * Resolve a scoped instance from the root scope.
-     */
-    fun scope(id: String): Scope = koin.getScope(id)
+    inline fun <reified T : Any> get(): T = container.get(T::class)
 }
 
 /**
@@ -64,11 +59,16 @@ class KatalystTestEnvironmentBuilder {
     private var databaseConfig: DatabaseConfig = inMemoryDatabaseConfig()
     private val scanPackages = linkedSetOf<String>()
     private val extraFeatures = mutableListOf<KatalystFeature>()
-    private val overrideModules = mutableListOf<Module>()
+    private val overrideModules = mutableListOf<KatalystBeanModule>()
+    private val configOverrides = linkedMapOf<String, Any?>()
+    private val eventProbes = mutableListOf<EventProbe<out DomainEvent>>()
     private var includeDefaultFeatures: Boolean = true
+    private var defaultFeatures: KatalystTestFeaturesBuilder.() -> Unit = {}
+    private var runPreStartInitializers: Boolean = true
+    private var runRuntimeReadyInitializers: Boolean = true
 
     /**
-     * Whether Koin should accept overriding bindings. Enabled by default for tests.
+     * Whether the backing DI container should accept overriding bindings. Enabled by default for tests.
      */
     var allowOverrides: Boolean = true
 
@@ -121,23 +121,84 @@ class KatalystTestEnvironmentBuilder {
     }
 
     /**
+     * Configure the default test feature set without losing source compatibility.
+     */
+    fun features(configure: KatalystTestFeaturesBuilder.() -> Unit) = apply {
+        includeDefaultFeatures = true
+        defaultFeatures = configure
+    }
+
+    /**
      * Disable the default feature set.
      */
     fun disableDefaultFeatures() = apply {
         includeDefaultFeatures = false
     }
 
+    fun disableScheduler() = apply {
+        val previous = defaultFeatures
+        defaultFeatures = {
+            previous()
+            disableScheduler()
+        }
+    }
+
+    fun disableRuntimeReadyInitializers() = apply {
+        runRuntimeReadyInitializers = false
+    }
+
+    fun runRuntimeReadyInitializers(enabled: Boolean) = apply {
+        runRuntimeReadyInitializers = enabled
+    }
+
+    fun disablePreStartInitializers() = apply {
+        runPreStartInitializers = false
+    }
+
+    fun runPreStartInitializers(enabled: Boolean) = apply {
+        runPreStartInitializers = enabled
+    }
+
+    fun config(key: String, value: Any?) = apply {
+        configOverrides[key] = value
+    }
+
+    fun config(entries: Map<String, Any?>) = apply {
+        configOverrides += entries
+    }
+
+    fun configProvider(provider: ConfigProvider) = apply {
+        overrideModules += katalystBeanModule {
+            single<ConfigProvider> {
+                provider
+            }
+        }
+    }
+
+    fun fakeConfig(entries: Map<String, Any?>) = apply {
+        config(entries)
+    }
+
+    fun <T : DomainEvent> eventProbe(eventType: KClass<T>): EventProbe<T> {
+        val probe = EventProbe(eventType)
+        eventProbes += probe
+        return probe
+    }
+
+    inline fun <reified T : DomainEvent> eventProbe(): EventProbe<T> =
+        eventProbe(T::class)
+
     /**
-     * Register override modules that are loaded after the core ones.
+     * Register override bean modules that are loaded after the core ones.
      */
-    fun overrideModules(vararg modules: Module) = apply {
+    fun overrideBeanModules(vararg modules: KatalystBeanModule) = apply {
         overrideModules += modules
     }
 
     /**
-     * Register override modules via collection.
+     * Register override bean modules via collection.
      */
-    fun overrideModules(modules: Iterable<Module>) = apply {
+    fun overrideBeanModules(modules: Iterable<KatalystBeanModule>) = apply {
         overrideModules += modules
     }
 
@@ -149,54 +210,140 @@ class KatalystTestEnvironmentBuilder {
     }
 
     fun build(): KatalystTestEnvironment {
-        // Always start with a clean Koin context for deterministic tests.
-        runCatching { stopKoinStandalone() }
+        // Always start with a clean container context for deterministic tests.
+        runCatching { KatalystTestBootstrap.stopStandalone() }
 
         val effectiveFeatures = buildList {
             if (includeDefaultFeatures) {
-                addAll(defaultTestFeatures())
+                addAll(defaultTestFeatures(defaultFeatures))
             }
             addAll(extraFeatures)
         }
 
+        val effectiveOverrideModules = buildList {
+            addAll(overrideModules)
+            if (configOverrides.isNotEmpty()) {
+                add(katalystBeanModule {
+                    single<ConfigProvider> {
+                        FakeConfigProvider(configOverrides.toMap())
+                    }
+                })
+            }
+            eventProbes.forEachIndexed { index, probe ->
+                add(katalystBeanModule {
+                    single<EventHandler<*>>(qualifier = "katalyst-test-event-probe-$index") {
+                        probe
+                    }
+                })
+            }
+        }
+
         val options = KatalystDIOptions(
             databaseConfig = databaseConfig,
+            beanEngine = TestKatalystBeanEngine(),
             scanPackages = scanPackages.toTypedArray(),
-            features = effectiveFeatures
+            features = effectiveFeatures + TestOverrideFeature(effectiveOverrideModules),
+            schemaManagement = SchemaManagementOptions(policy = SchemaPolicy.CREATE_MISSING),
         )
 
-        val koin = bootstrapKatalystDI(
+        val nativeContainer = KatalystTestBootstrap.bootstrapContainer(
             databaseConfig = options.databaseConfig,
             scanPackages = options.scanPackages,
             features = options.features,
             serverConfig = serverConfiguration,
-            additionalModules = overrideModules.toList(),
-            allowOverrides = allowOverrides
+            allowOverrides = allowOverrides,
+            schemaManagement = options.schemaManagement,
+            beanEngine = options.beanEngine,
         )
-        runPreStartInitializers(koin)
-        runRuntimeReadyInitializers(koin)
+        if (runPreStartInitializers) {
+            KatalystTestBootstrap.runPreStartInitializers(nativeContainer)
+        }
+        if (runRuntimeReadyInitializers) {
+            KatalystTestBootstrap.runRuntimeReadyInitializers(nativeContainer)
+        }
 
-        val capturedKtorModules = captureKtorModules(koin)
+        val container = KatalystContainerProvider.current()
+        val capturedKtorModules = captureKtorModules(container)
 
         val shutdownHook = {
-            runCatching { koin.get<DatabaseFactory>() }.getOrNull()?.close()
-            stopKoinStandalone()
+            runCatching { container.getOrNull(DatabaseFactory::class) }.getOrNull()?.close()
+            KatalystTestBootstrap.stopStandalone()
         }
 
         return KatalystTestEnvironment(
             options = options,
-            koin = koin,
+            container = container,
             discoveredKtorModules = capturedKtorModules,
             shutdownHook = shutdownHook
         )
     }
 
-    private fun captureKtorModules(koin: Koin): List<KtorModule> {
+    private fun captureKtorModules(container: KatalystContainer): List<KtorModule> {
         val registryModules = KtorModuleRegistry.consume()
-        val koinModules = runCatching { koin.getAll<KtorModule>() }
+        val containerModules = runCatching { container.getAll(KtorModule::class) }
             .getOrElse { emptyList() }
             .distinctBy { it::class }
-        return (registryModules + koinModules)
+        return (registryModules + containerModules)
             .sortedBy { it.order }
+    }
+
+}
+
+private class TestOverrideFeature(
+    private val modules: List<KatalystBeanModule>
+) : KatalystFeature {
+    override val id: String = "katalyst-testing-overrides"
+
+    override fun provideBeanModules(): List<KatalystBeanModule> = modules
+}
+
+private object KatalystTestBootstrap {
+    private val configurationClass: Class<*> by lazy {
+        Class.forName("io.github.darkryh.katalyst.di.config.DIConfigurationKt")
+    }
+
+    fun bootstrapContainer(
+        databaseConfig: DatabaseConfig,
+        scanPackages: Array<String>,
+        features: List<KatalystFeature>,
+        serverConfig: ServerConfiguration,
+        allowOverrides: Boolean,
+        schemaManagement: SchemaManagementOptions,
+        beanEngine: Any?,
+    ): Any {
+        val method = configurationClass.methods.single {
+            it.name == "bootstrapKatalystContainer" && it.parameterTypes.size == 8
+        }
+        return method.invoke(
+            null,
+            databaseConfig,
+            scanPackages,
+            features,
+            serverConfig,
+            emptyList<Any>(),
+            allowOverrides,
+            schemaManagement,
+            beanEngine,
+        )
+    }
+
+    fun runPreStartInitializers(nativeContainer: Any) {
+        invokeNativeContainerFunction("runPreStartInitializers", nativeContainer)
+    }
+
+    fun runRuntimeReadyInitializers(nativeContainer: Any) {
+        invokeNativeContainerFunction("runRuntimeReadyInitializers", nativeContainer)
+    }
+
+    fun stopStandalone() {
+        configurationClass.methods.single {
+            it.name == "stopKatalystStandalone" && it.parameterTypes.isEmpty()
+        }.invoke(null)
+    }
+
+    private fun invokeNativeContainerFunction(name: String, nativeContainer: Any) {
+        configurationClass.methods.single {
+            it.name == name && it.parameterTypes.size == 1
+        }.invoke(null, nativeContainer)
     }
 }

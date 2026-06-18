@@ -8,7 +8,6 @@ dependencies {
     api(project(":katalyst-config-provider"))
     api(project(":katalyst-ktor"))
     api(project(":katalyst-persistence"))
-    api(libs.koin.core)
     api(kotlin("test"))
 
     implementation(project(":katalyst-config-yaml"))
@@ -19,9 +18,11 @@ dependencies {
     implementation(project(":katalyst-events"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.ktor.server.core)
+    runtimeOnly(libs.h2)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
+    testRuntimeOnly(project(":katalyst-koin-bean"))
 
     testFixturesImplementation(kotlin("test"))
     testFixturesImplementation(libs.ktor.server.core)

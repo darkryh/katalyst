@@ -33,7 +33,7 @@ class SchedulerService(
      * @param fixedRate Interval between executions (ZERO for one-time execution)
      * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
-    fun schedule(
+    internal fun schedule(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         fixedRate: Duration
@@ -74,7 +74,7 @@ class SchedulerService(
      * @param fixedDelay Delay after completion before next execution
      * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
-    fun scheduleFixedDelay(
+    internal fun scheduleFixedDelay(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         fixedDelay: Duration
@@ -112,7 +112,7 @@ class SchedulerService(
      * @param cronExpression The cron expression defining the schedule
      * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
-    fun scheduleCron(
+    internal fun scheduleCron(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         cronExpression: CronExpression

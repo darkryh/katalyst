@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.repositories
 
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.mapping
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.repositories.model.PageInfo
 import io.github.darkryh.katalyst.repositories.model.QueryFilter
@@ -9,11 +10,12 @@ import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.time.Instant
 import kotlin.test.*
 
 /**
@@ -44,33 +46,29 @@ class CrudRepositoryTest {
         val age = integer("age")
         val active = bool("active").default(true)
 
-        override fun mapRow(row: ResultRow): TestUser = TestUser(
-            id = row[id].value,
-            name = row[name],
-            email = row[email],
-            age = row[age],
-            active = row[active]
-        )
+        override val mapping = mapping<Long, TestUser> {
+            generatedId(id, TestUser::id)
+            field(name, TestUser::name)
+            field(email, TestUser::email)
+            field(age, TestUser::age)
+            field(active, TestUser::active)
 
-        override fun assignEntity(
-            statement: UpdateBuilder<*>,
-            entity: TestUser,
-            skipIdColumn: Boolean
-        ) {
-            if (!skipIdColumn && entity.id != null) {
-                statement[id] = entity.id
+            construct {
+                TestUser(
+                    id = this[id],
+                    name = this[name],
+                    email = this[email],
+                    age = this[age],
+                    active = this[active]
+                )
             }
-            statement[name] = entity.name
-            statement[email] = entity.email
-            statement[age] = entity.age
-            statement[active] = entity.active
         }
     }
 
     // Test repository implementation
     class TestUserRepository(private val db: Database) : CrudRepository<Long, TestUser> {
         override val table = TestUsersTable
-        override fun map(row: ResultRow): TestUser = table.mapRow(row)
+        override fun map(row: ResultRow): TestUser = table.mapping.read(row)
 
         private fun <T> blockingTx(block: () -> T): T =
             transaction(db) { block() }
@@ -96,6 +94,161 @@ class CrudRepositoryTest {
         override suspend fun delete(id: Long) {
             suspendedTx { super<CrudRepository>.delete(id) }
         }
+    }
+
+    data class RenamedUser(
+        override val id: Long? = null,
+        val publicName: String,
+        val loginEmail: String
+    ) : Identifiable<Long>
+
+    object RenamedUsersTable : LongIdTable("renamed_users"), Table<Long, RenamedUser> {
+        val name = varchar("name", 255)
+        val email = varchar("email", 255)
+
+        override val mapping = mapping<Long, RenamedUser> {
+            generatedId(id, RenamedUser::id)
+            field(name, RenamedUser::publicName)
+            field(email, RenamedUser::loginEmail)
+
+            construct {
+                RenamedUser(
+                    id = this[id],
+                    publicName = this[name],
+                    loginEmail = this[email]
+                )
+            }
+        }
+    }
+
+    class RenamedUserRepository(private val db: Database) : CrudRepository<Long, RenamedUser> {
+        override val table = RenamedUsersTable
+
+        private fun <T> blockingTx(block: () -> T): T =
+            transaction(db) { block() }
+
+        override fun save(entity: RenamedUser): RenamedUser =
+            blockingTx { super<CrudRepository>.save(entity) }
+
+        override fun findById(id: Long): RenamedUser? =
+            blockingTx { super<CrudRepository>.findById(id) }
+    }
+
+    data class TestProfile(
+        override val id: Long? = null,
+        val ownerId: Long,
+        val displayName: String
+    ) : Identifiable<Long>
+
+    object TestProfilesTable : LongIdTable("test_profiles"), Table<Long, TestProfile> {
+        val ownerId = reference("owner_id", TestUsersTable)
+        val displayName = varchar("display_name", 255)
+
+        override val mapping = mapping<Long, TestProfile> {
+            generatedId(id, TestProfile::id)
+            reference(ownerId, TestProfile::ownerId)
+            field(displayName, TestProfile::displayName)
+
+            construct {
+                TestProfile(
+                    id = this[id],
+                    ownerId = this[ownerId],
+                    displayName = this[displayName]
+                )
+            }
+        }
+    }
+
+    class TestProfileRepository(private val db: Database) : CrudRepository<Long, TestProfile> {
+        override val table = TestProfilesTable
+
+        private fun <T> blockingTx(block: () -> T): T =
+            transaction(db) { block() }
+
+        override fun save(entity: TestProfile): TestProfile =
+            blockingTx { super<CrudRepository>.save(entity) }
+
+        override fun findById(id: Long): TestProfile? =
+            blockingTx { super<CrudRepository>.findById(id) }
+    }
+
+    data class MissingWriteBindingEntity(
+        override val id: Long? = null,
+        val requiredName: String
+    ) : Identifiable<Long>
+
+    object MissingWriteBindingTable : LongIdTable("missing_write_bindings"), Table<Long, MissingWriteBindingEntity> {
+        val requiredName = varchar("required_name", 255)
+
+        override val mapping = mapping<Long, MissingWriteBindingEntity> {
+            generatedId(id, MissingWriteBindingEntity::id)
+
+            construct {
+                MissingWriteBindingEntity(
+                    id = this[id],
+                    requiredName = this[requiredName]
+                )
+            }
+        }
+    }
+
+    class MissingWriteBindingRepository(private val db: Database) :
+        CrudRepository<Long, MissingWriteBindingEntity> {
+        override val table = MissingWriteBindingTable
+
+        override fun save(entity: MissingWriteBindingEntity): MissingWriteBindingEntity =
+            transaction(db) { super<CrudRepository>.save(entity) }
+    }
+
+    enum class AuditStatus {
+        PENDING,
+        SENT,
+    }
+
+    data class AuditRecord(
+        override val id: Long? = null,
+        val status: AuditStatus,
+        val optionalStatus: AuditStatus?,
+        val createdAt: Instant,
+        val processedAt: Instant?,
+    ) : Identifiable<Long>
+
+    object AuditRecordsTable : LongIdTable("audit_records"), Table<Long, AuditRecord> {
+        val status = varchar("status", 32)
+        val optionalStatus = varchar("optional_status", 32).nullable()
+        val createdAt = timestamp("created_at")
+        val processedAt = timestamp("processed_at").nullable()
+
+        override val mapping = mapping<Long, AuditRecord> {
+            generatedId(id, AuditRecord::id)
+            enumName(status, AuditRecord::status)
+            nullableEnumName(optionalStatus, AuditRecord::optionalStatus)
+            instant(createdAt, AuditRecord::createdAt)
+            nullableInstant(processedAt, AuditRecord::processedAt)
+
+            construct {
+                AuditRecord(
+                    id = this[id],
+                    status = AuditStatus.valueOf(this[status]),
+                    optionalStatus = this[optionalStatus]?.let(AuditStatus::valueOf),
+                    createdAt = instant(createdAt),
+                    processedAt = nullableInstant(processedAt),
+                )
+            }
+        }
+    }
+
+    class AuditRecordRepository(private val db: Database) : CrudRepository<Long, AuditRecord> {
+        override val table = AuditRecordsTable
+
+        private fun <T> blockingTx(block: () -> T): T =
+            transaction(db) { block() }
+
+        override fun save(entity: AuditRecord): AuditRecord =
+            blockingTx { super<CrudRepository>.save(entity) }
+
+        override fun findById(id: Long): AuditRecord? =
+            blockingTx { super<CrudRepository>.findById(id) }
     }
 
     private lateinit var databaseFactory: DatabaseFactory
@@ -155,6 +308,112 @@ class CrudRepositoryTest {
         // Verify only one record exists
         val all = repository.findAll()
         assertEquals(1, all.size)
+    }
+
+    @Test
+    fun `mapping should allow entity property names to differ from table column names`() = runTest {
+        transaction(database) {
+            SchemaUtils.create(RenamedUsersTable)
+        }
+        try {
+            val renamedRepository = RenamedUserRepository(database)
+
+            val saved = renamedRepository.save(
+                RenamedUser(publicName = "Visible Name", loginEmail = "renamed@example.com")
+            )
+            val found = renamedRepository.findById(saved.id!!)
+
+            assertNotNull(found)
+            assertEquals("Visible Name", found.publicName)
+            assertEquals("renamed@example.com", found.loginEmail)
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(RenamedUsersTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping should read and write foreign keys as raw ids`() = runTest {
+        transaction(database) {
+            SchemaUtils.create(TestProfilesTable)
+        }
+        try {
+            val user = repository.save(TestUser(name = "Owner", email = "owner@example.com", age = 40))
+            val profileRepository = TestProfileRepository(database)
+
+            val saved = profileRepository.save(
+                TestProfile(ownerId = user.id!!, displayName = "Owner Profile")
+            )
+            val found = profileRepository.findById(saved.id!!)
+
+            assertNotNull(found)
+            assertEquals(user.id, found.ownerId)
+            assertEquals("Owner Profile", found.displayName)
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(TestProfilesTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping validation should fail when a required writable column is missing`() = runTest {
+        transaction(database) {
+            SchemaUtils.create(MissingWriteBindingTable)
+        }
+        try {
+            val brokenRepository = MissingWriteBindingRepository(database)
+
+            val failure = assertFailsWith<IllegalArgumentException> {
+                brokenRepository.save(MissingWriteBindingEntity(requiredName = "missing"))
+            }
+
+            assertTrue(failure.message.orEmpty().contains("required_name"))
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(MissingWriteBindingTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping should read and write enum names and instants`() = runTest {
+        transaction(database) {
+            SchemaUtils.create(AuditRecordsTable)
+        }
+        try {
+            val auditRepository = AuditRecordRepository(database)
+            val createdAt = Instant.parse("2026-06-17T10:15:30Z")
+            val processedAt = Instant.parse("2026-06-17T10:16:30Z")
+
+            val saved = auditRepository.save(
+                AuditRecord(
+                    status = AuditStatus.PENDING,
+                    optionalStatus = AuditStatus.SENT,
+                    createdAt = createdAt,
+                    processedAt = processedAt,
+                )
+            )
+            val updated = auditRepository.save(
+                saved.copy(
+                    status = AuditStatus.SENT,
+                    optionalStatus = null,
+                    processedAt = null,
+                )
+            )
+            val found = auditRepository.findById(updated.id!!)
+
+            assertNotNull(found)
+            assertEquals(AuditStatus.SENT, found.status)
+            assertNull(found.optionalStatus)
+            assertEquals(createdAt, found.createdAt)
+            assertNull(found.processedAt)
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(AuditRecordsTable)
+            }
+        }
     }
 
     @Test

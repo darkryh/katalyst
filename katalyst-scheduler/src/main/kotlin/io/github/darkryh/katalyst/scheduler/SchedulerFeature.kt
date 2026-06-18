@@ -1,9 +1,9 @@
 package io.github.darkryh.katalyst.scheduler
 
-import io.github.darkryh.katalyst.di.KatalystApplicationBuilder
+import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
+import io.github.darkryh.katalyst.di.feature.KatalystBeanContext
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
-import org.koin.core.Koin
-import org.koin.core.module.Module
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,12 +13,12 @@ object SchedulerFeature : KatalystFeature {
     private val logger = LoggerFactory.getLogger("SchedulerFeature")
     override val id: String = "scheduler"
 
-    override fun provideModules(): List<Module> {
+    override fun provideBeanModules(): List<KatalystBeanModule> {
         logger.info("Loading scheduler feature modules")
         return listOf(schedulerModule())
     }
 
-    override fun onKoinReady(koin: Koin) {
+    override fun onReady(context: KatalystBeanContext) {
         logger.info("Scheduler feature ready (SchedulerService available)")
     }
 }
@@ -27,5 +27,5 @@ object SchedulerFeature : KatalystFeature {
  * Enables scheduler support for the current Katalyst application by registering
  * the scheduler feature with the application builder.
  */
-fun KatalystApplicationBuilder.enableScheduler(): KatalystApplicationBuilder =
+fun KatalystFeaturesBuilder.enableScheduler(): KatalystFeaturesBuilder =
     feature(SchedulerFeature)

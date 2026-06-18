@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.scanner.extensions
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
 import io.github.darkryh.katalyst.scanner.core.DiscoveryMetadata
 import io.github.darkryh.katalyst.scanner.core.DiscoveryPredicate
@@ -8,7 +9,6 @@ import io.github.darkryh.katalyst.scanner.integration.AutoDiscoveryEngine
 import io.github.darkryh.katalyst.scanner.scanner.KotlinMethodScanner
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
 import io.github.darkryh.katalyst.scanner.util.MethodMetadata
-import org.koin.core.Koin
 
 /**
  * DSL builder for fluent method discovery configuration and execution.
@@ -38,16 +38,16 @@ import org.koin.core.Koin
  *     filterMethods { it.hasMethods() }
  * }.discoverEnhancedMetadata()
  *
- * // With instantiation from Koin
+ * // With instantiation from the active Katalyst container
  * val instances = methodDiscovery<RouteController> {
  *     baseType = RouteController::class.java
  *     scanPackages("com.ead.controllers")
- * }.discoverAndInstantiate(koin)
+ * }.discoverAndInstantiate(container)
  * ```
  *
  * @param T The base type or marker interface
  */
-class MethodDiscoveryBuilder<T> {
+class MethodDiscoveryBuilder<T : Any> {
     lateinit var baseType: Class<T>
     var baseTypeForGenericExtraction: Class<*>? = null
     private var packages: List<String> = emptyList()
@@ -205,30 +205,29 @@ class MethodDiscoveryBuilder<T> {
     }
 
     /**
-     * Discovers and instantiates all types from Koin.
+     * Discovers and instantiates all types from the supplied container.
      *
-     * **Note:** Discovered types must be registered in Koin
+     * **Note:** Discovered types must be registered in the container.
      *
-     * @param koin The Koin instance for dependency resolution
+     * @param container The Katalyst container for dependency resolution
      * @return List of instantiated service instances
      */
-    fun discoverAndInstantiate(koin: Koin): List<T> {
+    fun discoverAndInstantiate(container: KatalystContainer): List<T> {
         val discovery = buildScanner()
-        val engine = AutoDiscoveryEngine(discovery, koin)
+        val engine = AutoDiscoveryEngine(discovery, container)
         return engine.discoverAndInstantiate()
     }
 
     /**
-     * Discovers methods in classes (for potential instantiation from Koin).
+     * Discovers methods in classes.
      *
-     * **Note:** Classes can be registered in Koin for dependency injection
+     * **Note:** Classes can be registered in the application container for dependency injection.
      *
      * **Returns:** List of metadata for discovered methods
      *
-     * @param koin The Koin instance for potential dependency resolution
      * @return List of discovered method metadata
      */
-    fun discoverMethodsAndInstantiate(koin: Koin): List<DiscoveryMetadata> {
+    fun discoverMethodsAndInstantiate(): List<DiscoveryMetadata> {
         // Simply return discovered methods - actual instantiation
         // is handled when methods are called through the framework
         return discoverMethods()
@@ -251,7 +250,7 @@ class MethodDiscoveryBuilder<T> {
  * @param builder Lambda to configure the discovery
  * @return Configured MethodDiscoveryBuilder instance
  */
-fun <T> methodDiscovery(
+fun <T : Any> methodDiscovery(
     builder: MethodDiscoveryBuilder<T>.() -> Unit
 ): MethodDiscoveryBuilder<T> {
     return MethodDiscoveryBuilder<T>().apply(builder)

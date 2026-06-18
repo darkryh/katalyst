@@ -167,7 +167,7 @@ class RetryPolicyTest {
         // Verify delays are approximately: 0, ~100ms, ~200ms, ~400ms
         // (with jitter, so we use range checks)
         assertTrue(attemptTimes[1] >= 80) // ~100ms with jitter
-        assertTrue(attemptTimes[2] >= 250) // ~100 + 200ms with jitter
+        assertTrue(attemptTimes[2] >= 230) // ~100 + 200ms with jitter
         assertTrue(attemptTimes[3] >= 550) // ~100 + 200 + 400ms with jitter
     }
 

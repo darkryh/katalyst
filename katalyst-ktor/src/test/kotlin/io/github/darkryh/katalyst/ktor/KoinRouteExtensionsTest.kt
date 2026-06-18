@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.ktor
 
-import io.github.darkryh.katalyst.ktor.extension.koin
+import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
+import io.github.darkryh.katalyst.ktor.extension.katalystContainer
 import io.github.darkryh.katalyst.ktor.extension.ktInject
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -13,96 +14,66 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
-class KoinRouteExtensionsTest {
+class KatalystRouteExtensionsTest {
 
     @AfterTest
     fun tearDown() {
-        stopKoin()
+        KatalystContainerProvider.reset()
     }
 
     @Test
-    fun `route ktInject resolves dependency from global context`() {
-        stopKoin()
-        val koinApp = startKoin {
-            modules(
-                module {
-                    single { SampleDependency("route") }
-                }
-            )
-        }
+    fun `route ktInject resolves dependency from active container`() {
+        KatalystContainerProvider.set(containerWith(SampleDependency("route")))
 
-        try {
-            testApplication {
-                application {
-                    routing {
-                        val dependency by ktInject<SampleDependency>()
-                        get("/route-inject") {
-                            call.respondText(dependency.id)
-                        }
+        testApplication {
+            application {
+                routing {
+                    val dependency by ktInject<SampleDependency>()
+                    get("/route-inject") {
+                        call.respondText(dependency.id)
                     }
                 }
-
-                val response = client.get("/route-inject")
-                assertEquals("route", response.bodyAsText())
             }
-        } finally {
-            stopKoin()
+
+            val response = client.get("/route-inject")
+            assertEquals("route", response.bodyAsText())
         }
     }
 
     @Test
     fun `application call ktInject resolves dependency`() {
-        stopKoin()
-        startKoin {
-            modules(
-                module {
-                    single { SampleDependency("call") }
-                }
-            )
-        }
+        KatalystContainerProvider.set(containerWith(SampleDependency("call")))
 
-        try {
-            testApplication {
-                application {
-                    routing {
-                        get("/dep") {
-                            val dependency by call.ktInject<SampleDependency>()
-                            call.respondText(dependency.id)
-                        }
+        testApplication {
+            application {
+                routing {
+                    get("/dep") {
+                        val dependency by call.ktInject<SampleDependency>()
+                        call.respondText(dependency.id)
                     }
                 }
-
-                val response = client.get("/dep")
-                assertEquals("call", response.bodyAsText())
             }
-        } finally {
-            stopKoin()
+
+            val response = client.get("/dep")
+            assertEquals("call", response.bodyAsText())
         }
     }
 
     @Test
-    fun `application koin accessor returns active instance`() {
-        stopKoin()
-        val koinApp = startKoin {
-            modules(
-                module { single { SampleDependency("app") } }
-            )
-        }
+    fun `application container accessor returns active container`() {
+        val container = containerWith(SampleDependency("app"))
+        KatalystContainerProvider.set(container)
 
-        try {
-            testApplication {
-                application {
-                    assertSame(koinApp.koin, koin())
-                }
+        testApplication {
+            application {
+                assertSame(container, katalystContainer())
             }
-        } finally {
-            stopKoin()
         }
     }
+
+    private fun containerWith(dependency: SampleDependency) =
+        TestKatalystContainer(mapOf(TestKatalystContainer.Key(SampleDependency::class) to dependency))
 
     private data class SampleDependency(val id: String)
 }

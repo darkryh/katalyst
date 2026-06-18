@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.repositories
 import io.github.darkryh.katalyst.repositories.model.PageInfo
 import io.github.darkryh.katalyst.repositories.model.QueryFilter
 import io.github.darkryh.katalyst.repositories.model.SortOrder
+import io.github.darkryh.katalyst.core.persistence.WritableEntityMapping
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -22,10 +23,10 @@ import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
  *
  * Provides common data access patterns including query building, pagination, and
  * entity mapping. Implementers supply a table reference that also implements
- * [io.github.darkryh.katalyst.core.persistence.Table]. The table exposes explicit mappers
- * for translating between Exposed [ResultRow] objects and DOMAIN entities, as well
- * as a binder used for inserts/updates. This keeps persistence logic centralized
- * with the schema definition and avoids reflection-based inference.
+ * [io.github.darkryh.katalyst.core.persistence.Table]. The table exposes an explicit
+ * mapping DSL for translating between Exposed [ResultRow] objects and domain entities,
+ * as well as insert/update bindings. This keeps persistence logic centralized with
+ * the schema definition and avoids reflection-based inference.
  *
  * **Usage Example:**
  * ```kotlin
@@ -34,20 +35,20 @@ import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
  *     val email = varchar("email", 150)
  *     val createdAtMillis = long("created_at_millis")
  *
- *     override fun mapRow(row: ResultRow) = UserEntity(
- *         id = row[id].value,
- *         name = row[name],
- *         email = row[email],
- *         createdAtMillis = row[createdAtMillis]
- *     )
+ *     override val mapping = mapping<Long, UserEntity> {
+ *         generatedId(id, UserEntity::id)
+ *         field(name, UserEntity::name)
+ *         field(email, UserEntity::email)
+ *         field(createdAtMillis, UserEntity::createdAtMillis)
  *
- *     override fun assignEntity(statement: UpdateBuilder<*>, entity: UserEntity, skipIdColumn: Boolean) {
- *         if (!skipIdColumn && entity.id != null) {
- *             statement[id] = EntityID(entity.id, this)
+ *         construct {
+ *             UserEntity(
+ *                 id = this[id],
+ *                 name = this[name],
+ *                 email = this[email],
+ *                 createdAtMillis = this[createdAtMillis]
+ *             )
  *         }
- *         statement[name] = entity.name
- *         statement[email] = entity.email
- *         statement[createdAtMillis] = entity.createdAtMillis
  *     }
  * }
  *
@@ -66,7 +67,7 @@ import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
  * @param Id Primary key type managed by the table
  * @param IdentifiableEntityId Domain model returned by repository methods
  */
-interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiable<Id>> {
+interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id : Any, Id : Comparable<Id> {
     /**
      * Reference to the Exposed table that backs this repository.
      */
@@ -82,7 +83,7 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
      * - ID is correctly extracted and set on the entity
      */
     fun map(row: ResultRow): IdentifiableEntityId =
-        table.asKatalystTable<Id, IdentifiableEntityId>().mapRow(row)
+        table.asKatalystTable<Id, IdentifiableEntityId>().mapping.read(row)
 
 
     /**
@@ -96,9 +97,9 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
         val id = entity.id
         val persistedId = if (id != null) {
             val updated = updateEntity(id, entity) // returns rows updated
-            if (updated > 0) id else insertEntity(entity, skipIdColumn = false)
+            if (updated > 0) id else insertEntity(entity)
         } else {
-            insertEntity(entity, skipIdColumn = true)
+            insertEntity(entity)
         }
 
         return findById(persistedId)
@@ -172,18 +173,22 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
         }
     }
 
-    private fun insertEntity(entity: IdentifiableEntityId,skipIdColumn : Boolean = true): Id {
+    private fun insertEntity(entity: IdentifiableEntityId): Id {
         val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
+        val mapping = katalystTable.mapping.asWritable()
+        mapping.validate(table)
         val generatedId = table.insertAndGetId { insertStatement ->
-            katalystTable.assignEntity(insertStatement, entity, skipIdColumn = skipIdColumn)
+            mapping.writeInsert(insertStatement, entity)
         }.value
         return generatedId
     }
 
-    private fun updateEntity(id: Id, entity: IdentifiableEntityId, skipIdColumn: Boolean = true): Int {
+    private fun updateEntity(id: Id, entity: IdentifiableEntityId): Int {
         val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
+        val mapping = katalystTable.mapping.asWritable()
+        mapping.validate(table)
         return table.update({ table.id eq entityId(id) }) { updateStatement ->
-            katalystTable.assignEntity(updateStatement, entity, skipIdColumn = skipIdColumn)
+            mapping.writeUpdate(updateStatement, entity)
         }
     }
 
@@ -195,9 +200,15 @@ interface CrudRepository<Id : Comparable<Id>, IdentifiableEntityId : Identifiabl
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun <Id : Comparable<Id>, Entity : Identifiable<Id>> IdTable<Id>.asKatalystTable(): KatalystTable<Id, Entity> =
+private fun <Id, Entity : Identifiable<Id>> IdTable<Id>.asKatalystTable(): KatalystTable<Id, Entity>
+    where Id : Any, Id : Comparable<Id> =
     this as? KatalystTable<Id, Entity>
         ?: error(
             "Table ${this.tableName} must implement io.github.darkryh.katalyst.core.persistence.Table<Id, Entity> " +
                 "where Entity implements Identifiable<Id>, and provide explicit mapping helpers"
         )
+
+private fun <Id, Entity : Identifiable<Id>> io.github.darkryh.katalyst.core.persistence.EntityMapping<Id, Entity>.asWritable(): WritableEntityMapping<Id, Entity>
+    where Id : Any, Id : Comparable<Id> =
+    this as? WritableEntityMapping<Id, Entity>
+        ?: error("Table mapping must be created with io.github.darkryh.katalyst.core.persistence.mapping { ... }")

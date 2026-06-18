@@ -55,8 +55,8 @@ data class MigrationOptions(
     val baselineVersion: String? = null,
 
     /**
-     * Optional target version. When specified the runner stops once it reaches
-     * the migration whose id matches the target (exclusive).
+     * Optional target version. When specified the runner includes migrations
+     * whose id is less than or equal to this value.
      */
     val targetVersion: String? = null,
 

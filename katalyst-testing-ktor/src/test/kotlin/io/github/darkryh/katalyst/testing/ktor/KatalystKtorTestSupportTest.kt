@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.testing.ktor
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.di.config.KatalystDIOptions
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.testing.core.KatalystTestEnvironment
@@ -11,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import org.koin.dsl.koinApplication
+import kotlin.reflect.KClass
 
 class KatalystKtorTestSupportTest {
 
@@ -94,7 +95,7 @@ class KatalystKtorTestSupportTest {
     ): KatalystTestEnvironment {
         val constructor = KatalystTestEnvironment::class.java.getDeclaredConstructor(
             KatalystDIOptions::class.java,
-            org.koin.core.Koin::class.java,
+            KatalystContainer::class.java,
             List::class.java,
             kotlin.jvm.functions.Function0::class.java
         )
@@ -106,14 +107,23 @@ class KatalystKtorTestSupportTest {
             features = emptyList()
         )
 
-        val koin = koinApplication { }.koin
-
         return constructor.newInstance(
             options,
-            koin,
+            FakeKatalystContainer(),
             modules.sortedBy { it.order },
             { onClose() }
         )
+    }
+
+    private class FakeKatalystContainer : KatalystContainer {
+        override fun <T : Any> get(type: KClass<T>, qualifier: String?): T =
+            error("No fake binding registered for ${type.qualifiedName}")
+
+        override fun <T : Any> getOrNull(type: KClass<T>, qualifier: String?): T? = null
+
+        override fun <T : Any> getAll(type: KClass<T>): List<T> = emptyList()
+
+        override fun contains(type: KClass<*>, qualifier: String?): Boolean = false
     }
 
     private class RecordingModule(

@@ -3,14 +3,11 @@ plugins {
 }
 
 dependencies {
-    // Share routing + DI infrastructure from katalyst-ktor
-    implementation(projects.katalystKtor)
+    // WebSocket feature bridge; re-export the Ktor-owned WebSocket API.
+    api(projects.katalystKtor)
     implementation(projects.katalystDi)
 
-    // Ktor WebSocket stack
-    implementation(libs.ktor.server.web.sockets)
-
     // Testing
-    testImplementation(libs.koin.test)
+    testImplementation(projects.katalystCore)
     testImplementation(libs.ktor.client.websockets)
 }

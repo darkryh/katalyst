@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.migrations.extensions
 
-import io.github.darkryh.katalyst.di.KatalystApplicationBuilder
+import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
 import io.github.darkryh.katalyst.migrations.feature.MigrationFeature
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
 
@@ -9,9 +9,9 @@ import io.github.darkryh.katalyst.migrations.options.MigrationOptions
  * in the optional `katalyst-migrations` module so it is only available when the
  * dependency is added.
  */
-fun KatalystApplicationBuilder.enableMigrations(
+fun KatalystFeaturesBuilder.enableMigrations(
     configure: MigrationOptions.() -> Unit = {}
-): KatalystApplicationBuilder {
+): KatalystFeaturesBuilder {
     val options = MigrationOptions().apply(configure)
     return feature(MigrationFeature(options))
 }

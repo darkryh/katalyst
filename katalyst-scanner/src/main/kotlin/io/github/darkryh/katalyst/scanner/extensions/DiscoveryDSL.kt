@@ -1,12 +1,12 @@
 package io.github.darkryh.katalyst.scanner.extensions
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.scanner.core.DiscoveryConfig
 import io.github.darkryh.katalyst.scanner.core.DiscoveryPredicate
 import io.github.darkryh.katalyst.scanner.core.TypeDiscovery
 import io.github.darkryh.katalyst.scanner.integration.AutoDiscoveryEngine
-import io.github.darkryh.katalyst.scanner.integration.KoinDiscoveryRegistry
+import io.github.darkryh.katalyst.scanner.integration.ContainerDiscoveryRegistry
 import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
-import org.koin.core.Koin
 
 /**
  * DSL for fluent discovery configuration and execution.
@@ -26,7 +26,7 @@ import org.koin.core.Koin
  *     baseType = Service::class.java
  *     scanPackages("com.ead.xtory", "com.external")
  *     predicate = isNotTestClass()
- * }.discoverAndInstantiate(koin)
+ * }.discoverAndInstantiate(container)
  *
  * // Full configuration
  * discovery<Service> {
@@ -40,7 +40,7 @@ import org.koin.core.Koin
  *
  * @param T The base type or marker interface
  */
-class DiscoveryBuilder<T> {
+class DiscoveryBuilder<T : Any> {
     lateinit var baseType: Class<T>
     private var packages: List<String> = emptyList()
     var predicate: DiscoveryPredicate<T>? = null
@@ -78,20 +78,20 @@ class DiscoveryBuilder<T> {
     }
 
     /**
-     * Discovers and instantiates all types from Koin.
+     * Discovers and instantiates all types from the supplied container.
      */
-    fun discoverAndInstantiate(koin: Koin): List<T> {
+    fun discoverAndInstantiate(container: KatalystContainer): List<T> {
         val discovery = build()
-        val engine = AutoDiscoveryEngine(discovery, koin)
+        val engine = AutoDiscoveryEngine(discovery, container)
         return engine.discoverAndInstantiate()
     }
 
     /**
-     * Creates a Koin discovery registry.
+     * Creates a container-backed discovery registry.
      */
-    fun createRegistry(koin: Koin): KoinDiscoveryRegistry<T> {
+    fun createRegistry(container: KatalystContainer): ContainerDiscoveryRegistry<T> {
         require(::baseType.isInitialized) { "baseType must be set" }
-        return KoinDiscoveryRegistry(baseType, koin)
+        return ContainerDiscoveryRegistry(baseType, container)
     }
 }
 
@@ -110,6 +110,6 @@ class DiscoveryBuilder<T> {
  * @param builder Lambda to configure the discovery
  * @return Configured TypeDiscovery instance
  */
-fun <T> discovery(builder: DiscoveryBuilder<T>.() -> Unit): DiscoveryBuilder<T> {
+fun <T : Any> discovery(builder: DiscoveryBuilder<T>.() -> Unit): DiscoveryBuilder<T> {
     return DiscoveryBuilder<T>().apply(builder)
 }

@@ -1,7 +1,7 @@
 package io.github.darkryh.katalyst.scanner.integration
 
+import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.scanner.core.TypeDiscovery
-import org.koin.core.Koin
 import org.slf4j.LoggerFactory
 
 /**
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
  *
  * This engine:
  * 1. Discovers types using a TypeDiscovery implementation
- * 2. Retrieves instances from Koin container
+ * 2. Retrieves instances from a Katalyst container
  * 3. Returns fully instantiated and injected instances
  *
  * **Workflow:**
@@ -18,27 +18,27 @@ import org.slf4j.LoggerFactory
  *    ↓
  * Find Matching Classes
  *    ↓
- * Resolve from Koin
+ * Resolve from container
  *    ↓
  * Return Instances
  * ```
  *
  * **Usage:**
  * ```kotlin
- * val koin = getKoin()
+ * val container = KatalystContainerProvider.current()
  * val discovery: TypeDiscovery<Service> = ReflectionsTypeScanner(...)
  *
- * val engine = AutoDiscoveryEngine(discovery, koin)
+ * val engine = AutoDiscoveryEngine(discovery, container)
  * val instances = engine.discoverAndInstantiate()
  * ```
  *
  * @param T The base type or marker interface
  * @param discovery The TypeDiscovery implementation to use for scanning
- * @param koin The Koin instance for resolving dependencies
+ * @param container The Katalyst container for resolving dependencies
  */
-class AutoDiscoveryEngine<T>(
+class AutoDiscoveryEngine<T : Any>(
     private val discovery: TypeDiscovery<T>,
-    private val koin: Koin
+    private val container: KatalystContainer
 ) {
 
     private val logger = LoggerFactory.getLogger(AutoDiscoveryEngine::class.java)
@@ -53,9 +53,9 @@ class AutoDiscoveryEngine<T>(
     }
 
     /**
-     * Discovers all types and instantiates them from Koin.
+     * Discovers all types and instantiates them from the configured container.
      *
-     * **Important:** All discovered types MUST be registered in the Koin container.
+     * **Important:** All discovered types MUST be registered in the container.
      *
      * @return List of instantiated service instances
      */
@@ -69,7 +69,7 @@ class AutoDiscoveryEngine<T>(
 
         discoveredClasses.forEach { serviceClass ->
             try {
-                val instance = getInstanceFromKoin(serviceClass)
+                val instance = getInstance(serviceClass)
                 instances.add(instance)
                 logger.info("  ✅ {}", serviceClass.simpleName)
             } catch (e: Exception) {
@@ -95,7 +95,7 @@ class AutoDiscoveryEngine<T>(
 
         discovered.forEach { (clazz, metadata) ->
             try {
-                val instance = getInstanceFromKoin(clazz)
+                val instance = getInstance(clazz)
                 instances[clazz] = instance
                 logger.debug("Instantiated: {} (package: {})", metadata.simpleName, metadata.packageName)
             } catch (e: Exception) {
@@ -107,20 +107,18 @@ class AutoDiscoveryEngine<T>(
     }
 
     /**
-     * Gets an instance of a type from Koin.
+     * Gets an instance of a type from the container.
      *
      * @param type The class to instantiate
-     * @return The instance from Koin
-     * @throws IllegalArgumentException if the type is not registered in Koin
+     * @return The instance from the container
+     * @throws IllegalArgumentException if the type is not registered in the container
      */
-    private fun getInstanceFromKoin(type: Class<out T>): T {
+    private fun getInstance(type: Class<out T>): T {
         return try {
-            @Suppress("UNCHECKED_CAST")
-            koin.get(type.kotlin) as T
+            container.get(type.kotlin)
         } catch (e: Exception) {
             throw IllegalArgumentException(
-                "Type ${type.simpleName} not registered in Koin. " +
-                    "Ensure it's registered in a Koin module.",
+                "Type ${type.simpleName} is not registered in the Katalyst container.",
                 e
             )
         }

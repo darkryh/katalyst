@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.ktor.builder
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.http.HttpStatusCode
 import io.ktor.utils.io.KtorDsl
 import org.slf4j.LoggerFactory
 
@@ -179,7 +180,7 @@ class ExceptionHandlerBuilder {
      * Registers a status code handler for the given status codes.
      */
     @KtorDsl
-    fun status(vararg statusCodes: io.ktor.http.HttpStatusCode, handler: suspend StatusPagesConfig.(ApplicationCall, io.ktor.http.HttpStatusCode) -> Unit) {
+    fun status(vararg statusCodes: HttpStatusCode, handler: suspend StatusPagesConfig.(ApplicationCall, HttpStatusCode) -> Unit) {
         registrations += {
             status(*statusCodes) { call, code -> handler(call, code) }
         }

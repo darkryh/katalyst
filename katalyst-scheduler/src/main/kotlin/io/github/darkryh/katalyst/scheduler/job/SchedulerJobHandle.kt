@@ -29,11 +29,11 @@ import kotlinx.coroutines.Job
  *
  *     // Framework auto-discovers this at startup via reflection
  *     @Suppress("unused")  // Semantically correct - framework calls this
- *     fun scheduleAuthDigest(): SchedulerJobHandle = scheduler.scheduleCron(
- *         config = ScheduleConfig(taskName = "auth-digest"),
- *         task = { broadcastAuth() },
- *         cronExpression = CronExpression("0 0/1 * * * ?")
- *     )
+ *     fun scheduleAuthDigest(): SchedulerJobHandle = scheduler.jobs {
+ *         cron("auth-digest", "0 0/1 * * * ?") {
+ *             broadcastAuth()
+ *         }
+ *     }
  * }
  * ```
  *

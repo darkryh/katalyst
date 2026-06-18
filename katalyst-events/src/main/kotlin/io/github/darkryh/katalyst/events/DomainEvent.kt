@@ -1,7 +1,7 @@
 package io.github.darkryh.katalyst.events
 
-import java.util.UUID
-import kotlin.uuid.Uuid
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 
 /**
  * Base contract for all domain events in the system.
@@ -71,7 +71,7 @@ interface DomainEvent {
      *
      * NEW - P0 Critical Fix: Event Deduplication
      */
-    val eventId: String get() = UUID.randomUUID().toString()
+    val eventId: String get() = DomainEventDefaults.metadata(this).eventId
 
     /**
      * Get the metadata associated with this event.
@@ -86,8 +86,7 @@ interface DomainEvent {
      *
      * @return EventMetadata containing tracing and versioning information
      */
-    // optional can be used for clients or local we just put by default so in event locals we don't have to define this
-    fun getMetadata(): EventMetadata =  EventMetadata(eventType = this::class.simpleName ?: "UnknownEvent")
+    fun getMetadata(): EventMetadata = DomainEventDefaults.metadata(this)
 
 
     /**
@@ -99,4 +98,40 @@ interface DomainEvent {
      * @return String identifier for this event type
      */
     fun eventType(): String = getMetadata().eventType
+}
+
+private object DomainEventDefaults {
+    private val collectedEvents = ReferenceQueue<DomainEvent>()
+    private val metadataByEvent = mutableMapOf<IdentityWeakEventRef, EventMetadata>()
+
+    @Synchronized
+    fun metadata(event: DomainEvent): EventMetadata {
+        removeCollectedEvents()
+        val key = IdentityWeakEventRef(event)
+        return metadataByEvent.getOrPut(key) {
+            EventMetadata(eventType = event::class.simpleName ?: "UnknownEvent")
+        }
+    }
+
+    private fun removeCollectedEvents() {
+        while (true) {
+            val reference = collectedEvents.poll() as? IdentityWeakEventRef ?: return
+            metadataByEvent.remove(reference)
+        }
+    }
+
+    private class IdentityWeakEventRef(
+        event: DomainEvent,
+    ) : WeakReference<DomainEvent>(event, collectedEvents) {
+        private val identityHash = System.identityHashCode(event)
+
+        override fun hashCode(): Int = identityHash
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is IdentityWeakEventRef) return false
+            val event = get() ?: return false
+            return event === other.get()
+        }
+    }
 }
