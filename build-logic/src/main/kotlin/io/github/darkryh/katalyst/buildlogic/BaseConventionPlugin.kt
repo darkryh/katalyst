@@ -6,8 +6,10 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 
 class BaseConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -28,11 +30,52 @@ class BaseConventionPlugin : Plugin<Project> {
                 jvmToolchain(21)
             }
 
+            // Keep the coverage gate fast and deterministic: the benchmark/load suites must not be
+            // instrumented or pulled in by `koverVerify` (otherwise a flaky benchmark could fail the
+            // coverage gate, defeating the point of tagging them out of the default `test` task).
+            extensions.configure<KoverProjectExtension> {
+                currentProject {
+                    instrumentation {
+                        disabledForTestTasks.addAll("benchmarkTest", "loadTest")
+                    }
+                }
+            }
+
+            // Tag-based test categories. Slow/non-deterministic suites are tagged so the
+            // default `test` task (the CI gate) stays fast and deterministic:
+            //   @Tag("benchmark") -> timing/throughput microbenchmarks (flaky on shared CI)
+            //   @Tag("load")      -> stress / load / soak suites (long-running, resource heavy)
+            // Run them explicitly with `./gradlew benchmarkTest` or `./gradlew loadTest`.
+            val excludedTestTags = arrayOf("benchmark", "load")
+            val dedicatedTagTasks = setOf("benchmarkTest", "loadTest")
+
             tasks.withType<Test>().configureEach {
-                useJUnitPlatform()
                 testLogging {
                     events("passed", "skipped", "failed")
                 }
+                // The dedicated benchmarkTest/loadTest tasks include those tags explicitly, so
+                // they must NOT also inherit the global exclusion (exclude would win otherwise).
+                if (name !in dedicatedTagTasks) {
+                    useJUnitPlatform {
+                        excludeTags(*excludedTestTags)
+                    }
+                }
+            }
+
+            tasks.register<Test>("benchmarkTest") {
+                group = "verification"
+                description = "Runs @Tag(\"benchmark\") microbenchmarks (excluded from the default test gate)."
+                testClassesDirs = files(tasks.named("test").map { (it as Test).testClassesDirs })
+                classpath = files(tasks.named("test").map { (it as Test).classpath })
+                useJUnitPlatform { includeTags("benchmark") }
+            }
+
+            tasks.register<Test>("loadTest") {
+                group = "verification"
+                description = "Runs @Tag(\"load\") stress/load/soak suites (excluded from the default test gate)."
+                testClassesDirs = files(tasks.named("test").map { (it as Test).testClassesDirs })
+                classpath = files(tasks.named("test").map { (it as Test).classpath })
+                useJUnitPlatform { includeTags("load") }
             }
 
             extensions.configure<MavenPublishBaseExtension> {

@@ -107,8 +107,8 @@ class OperationLogRepositoryTest {
         // Then
         val operations = repository.getAllOperations(workflowId)
         assertEquals(1, operations.size)
-        // Note: operationData and undoData will be empty maps due to placeholder parseJson()
-        // This is expected until Phase 2.4 implements proper JSON serialization
+        assertEquals(operationData, operations.single().operationData)
+        assertEquals(undoData, operations.single().undoData)
     }
 
     @Test

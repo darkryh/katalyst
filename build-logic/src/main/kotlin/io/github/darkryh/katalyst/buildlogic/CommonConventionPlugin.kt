@@ -11,11 +11,6 @@ class CommonConventionPlugin : Plugin<Project> {
             pluginManager.apply(BaseConventionPlugin::class.java)
 
             dependencies {
-                implementation(libs.library("kotlin-stdlib"))
-                implementation(libs.library("kotlin-reflect"))
-                implementation(libs.library("kotlinx-coroutines-core"))
-                implementation(libs.library("logback"))
-
                 add("testImplementation", kotlin("test"))
                 testImplementation(libs.library("kotlin-test-junit5"))
                 testImplementation(libs.library("kotlinx-coroutines-test"))

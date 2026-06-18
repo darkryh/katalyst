@@ -3,6 +3,9 @@ package io.github.darkryh.katalyst.transactions.context
 import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.events.EventMetadata
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -327,6 +330,48 @@ class TransactionEventContextTest {
 
         // Then
         assertEquals(2, txContext.getPendingEventCount())
+    }
+
+    @Test
+    fun `events remain owned by context across dispatcher changes`() = runTest {
+        val txContext = TransactionEventContext()
+
+        withContext(txContext + Dispatchers.Default) {
+            txContext.queueEvent(TestEvent("worker"))
+        }
+
+        assertEquals(listOf("worker"), txContext.getPendingEvents().map { (it as TestEvent).data })
+    }
+
+    @Test
+    fun `concurrent producers do not lose events`() = runTest {
+        val txContext = TransactionEventContext()
+
+        withContext(txContext) {
+            (0 until 20).map { worker ->
+                async(Dispatchers.Default) {
+                    repeat(100) { index -> txContext.queueEvent(TestEvent("$worker-$index")) }
+                }
+            }.awaitAll()
+        }
+
+        assertEquals(2_000, txContext.getPendingEventCount())
+    }
+
+    @Test
+    fun `deferred items are isolated by owner and drained once`() {
+        val context = TransactionEventContext()
+        val firstOwner = Any()
+        val secondOwner = Any()
+        context.defer(firstOwner, "first")
+        context.defer(secondOwner, "second")
+
+        assertEquals(listOf("first"), context.drainDeferred(firstOwner))
+        assertEquals(emptyList(), context.drainDeferred(firstOwner))
+        assertEquals(1, context.getDeferredCount(secondOwner))
+
+        context.clear()
+        assertEquals(0, context.getDeferredCount(secondOwner))
     }
 
     // ========== EXTENSION FUNCTION TESTS ==========

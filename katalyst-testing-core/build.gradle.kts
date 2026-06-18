@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":katalyst-events"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.ktor.server.core)
+    implementation(kotlin("reflect"))
     runtimeOnly(libs.h2)
 
     testImplementation(kotlin("test"))

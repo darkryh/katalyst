@@ -97,6 +97,10 @@ class ReflectionsTypeScanner<T>(
 
             // Get all subtypes of the base type
             var implementations = reflections.getSubTypesOf(baseType)
+                .filterNot { clazz ->
+                    clazz.isAnonymousClass || clazz.isLocalClass || clazz.isSynthetic || clazz.canonicalName == null
+                }
+                .toSet()
 
             logger.info(
                 "✓ Discovered {} {} implementation(s) in {} ms",

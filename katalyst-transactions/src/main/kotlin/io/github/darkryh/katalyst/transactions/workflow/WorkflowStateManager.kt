@@ -72,6 +72,27 @@ interface WorkflowStateManager {
     suspend fun getFailedWorkflows(): List<WorkflowState>
 
     /**
+     * Returns a stable keyset page of failed workflows without materializing the
+     * complete recovery backlog. Implementations backed by a database should
+     * override this method with a bounded query.
+     */
+    suspend fun getFailedWorkflowsPage(
+        limit: Int,
+        after: WorkflowPageCursor? = null,
+    ): List<WorkflowState> {
+        require(limit > 0) { "limit must be positive" }
+        return getFailedWorkflows()
+            .asSequence()
+            .sortedWith(compareBy(WorkflowState::createdAt, WorkflowState::workflowId))
+            .filter { state ->
+                after == null || state.createdAt > after.createdAt ||
+                    (state.createdAt == after.createdAt && state.workflowId > after.workflowId)
+            }
+            .take(limit)
+            .toList()
+    }
+
+    /**
      * Delete old workflow state records (for cleanup/archival).
      *
      * @param beforeTimestamp Delete records created before this timestamp (millis)
@@ -79,6 +100,8 @@ interface WorkflowStateManager {
      */
     suspend fun deleteOldWorkflows(beforeTimestamp: Long): Int
 }
+
+data class WorkflowPageCursor(val createdAt: Long, val workflowId: String)
 
 /**
  * Current state of a workflow

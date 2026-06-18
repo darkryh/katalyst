@@ -1,5 +1,9 @@
 package io.github.darkryh.katalyst.transactions.workflow
 
+import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
+
 /**
  * Thread-local storage for current workflow context.
  *
@@ -55,6 +59,9 @@ object CurrentWorkflowContext {
         context.remove()
     }
 
+    /** Propagates [workflowId] across coroutine dispatcher changes. */
+    fun asContextElement(workflowId: String?): CoroutineContext = context.asContextElement(workflowId)
+
     /**
      * Execute code with a specific workflow context.
      *
@@ -73,17 +80,7 @@ object CurrentWorkflowContext {
      * @param block Code to execute
      * @return Result of block
      */
-    suspend inline fun <T> withContext(workflowId: String, block: suspend () -> T): T {
-        val previous = get()
-        set(workflowId)
-        return try {
-            block()
-        } finally {
-            if (previous != null) {
-                set(previous)
-            } else {
-                clear()
-            }
-        }
+    suspend fun <T> withContext(workflowId: String, block: suspend () -> T): T {
+        return withContext(asContextElement(workflowId)) { block() }
     }
 }

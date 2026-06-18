@@ -777,9 +777,12 @@ private val katalystDslMethods = setOf(
 )
 
 /**
- * Cache for bytecode analysis results to avoid repeated scanning.
+ * Per-declaring-class cache for bytecode analysis results. ClassValue allows
+ * disposable application/plugin classloaders to be reclaimed.
  */
-private val methodDslCallCache = ConcurrentHashMap<Method, Set<String>>()
+private val methodDslCallCache = object : ClassValue<ConcurrentHashMap<String, Set<String>>>() {
+    override fun computeValue(type: Class<*>): ConcurrentHashMap<String, Set<String>> = ConcurrentHashMap()
+}
 
 /**
  * Checks if a route function uses Katalyst routing DSL.
@@ -795,14 +798,14 @@ private fun Method.usesKatalystDsl(): Boolean = katalystDslCalls().isNotEmpty()
  * Returns the set of Katalyst DSL methods invoked by this route function.
  */
 private fun Method.katalystDslCalls(): Set<String> =
-    methodDslCallCache.computeIfAbsent(this) { method ->
-        runCatching { method.scanForKatalystDslCalls() }
+    methodDslCallCache.get(declaringClass).computeIfAbsent(name + Type.getMethodDescriptor(this)) {
+        runCatching { scanForKatalystDslCalls() }
             .onFailure { error ->
                 LoggerFactory.getLogger("AutoBindingRegistrar")
                     .debug(
                         "Failed to inspect route function {}.{} for katalyst DSL usage: {}",
-                        method.declaringClass.name,
-                        method.name,
+                        declaringClass.name,
+                        name,
                         error.message
                     )
             }

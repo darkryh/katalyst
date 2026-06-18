@@ -5,6 +5,7 @@ import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.context.getTransactionEventContext
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
@@ -136,6 +137,8 @@ suspend fun publishPendingEvents(
             try {
                 logger.debug("Publishing queued event: {}", event.eventType())
                 eventBus.publish(event)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(
                     "Failed to publish pending event {}: {}",

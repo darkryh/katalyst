@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapter
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.min
@@ -59,11 +60,6 @@ open class TransactionalSideEffectAdapter<T>(
 
     private val logger = LoggerFactory.getLogger(TransactionalSideEffectAdapter::class.java)
 
-    /**
-     * Side-effects queued for async execution after commit.
-     */
-    private val asyncSideEffects = mutableListOf<TransactionalSideEffect<*>>()
-
     override fun name(): String = name
 
     override fun priority(): Int = priority
@@ -83,7 +79,7 @@ open class TransactionalSideEffectAdapter<T>(
         when (phase) {
             TransactionPhase.BEFORE_COMMIT_VALIDATION -> validateAllSideEffects(context)
             TransactionPhase.BEFORE_COMMIT -> executeSyncSideEffects(context)
-            TransactionPhase.AFTER_COMMIT -> executeAsyncSideEffects()
+            TransactionPhase.AFTER_COMMIT -> executeAsyncSideEffects(context)
             TransactionPhase.ON_ROLLBACK -> discardPendingSideEffects(context)
             else -> Unit
         }
@@ -157,7 +153,7 @@ open class TransactionalSideEffectAdapter<T>(
 
         // Queue async side-effects for AFTER_COMMIT phase
         if (asyncSideEffects.isNotEmpty()) {
-            this.asyncSideEffects.addAll(asyncSideEffects)
+            asyncSideEffects.forEach { context.defer(this, it) }
             logger.debug(
                 "[{}] {} side-effect(s) queued for async execution after commit",
                 name,
@@ -201,6 +197,8 @@ open class TransactionalSideEffectAdapter<T>(
                     // Rethrow to rollback transaction
                     throw result.error
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(
                     "[{}] SYNC side-effect failed before commit: {} - {}",
@@ -328,7 +326,8 @@ open class TransactionalSideEffectAdapter<T>(
      * Side-effect failures don't affect the transaction - they're logged and isolated.
      * This provides eventual consistency with decoupled systems.
      */
-    private suspend fun executeAsyncSideEffects() {
+    private suspend fun executeAsyncSideEffects(context: TransactionEventContext) {
+        val asyncSideEffects = context.drainDeferred(this).filterIsInstance<TransactionalSideEffect<*>>()
         if (asyncSideEffects.isEmpty()) {
             logger.debug("[{}] No async side-effects to execute after transaction commit", name)
             return
@@ -362,6 +361,8 @@ open class TransactionalSideEffectAdapter<T>(
                     name,
                     sideEffect.sideEffectId
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 failedCount++
                 logger.error(
@@ -375,8 +376,6 @@ open class TransactionalSideEffectAdapter<T>(
                 // Failures are logged for monitoring/alerting
             }
         }
-
-        asyncSideEffects.clear()
 
         logger.debug(
             "[{}] Finished executing async side-effects: {} executed, {} failed (isolated)",
@@ -396,7 +395,7 @@ open class TransactionalSideEffectAdapter<T>(
      */
     private fun discardPendingSideEffects(context: TransactionEventContext) {
         val pendingCount = context.getPendingEventCount()
-        val asyncCount = asyncSideEffects.size
+        val asyncCount = context.getDeferredCount(this)
 
         if (pendingCount == 0 && asyncCount == 0) {
             logger.debug("[{}] No pending side-effects to discard on rollback", name)
@@ -416,7 +415,7 @@ open class TransactionalSideEffectAdapter<T>(
                 name,
                 asyncCount
             )
-            asyncSideEffects.clear()
+            context.clearDeferred(this)
         }
 
         logger.debug("[{}] Finished discarding pending side-effects", name)

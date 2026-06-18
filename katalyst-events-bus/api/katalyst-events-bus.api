@@ -1,0 +1,306 @@
+public final class io/github/darkryh/katalyst/events/bus/ApplicationEventBus : io/github/darkryh/katalyst/events/bus/EventBus {
+	public fun <init> ()V
+	public fun <init> (Lkotlinx/coroutines/CoroutineDispatcher;Ljava/util/List;)V
+	public synthetic fun <init> (Lkotlinx/coroutines/CoroutineDispatcher;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun configureHandlers (Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;)V
+	public fun events ()Lkotlinx/coroutines/flow/SharedFlow;
+	public fun eventsOf (Lkotlin/reflect/KClass;)Lkotlinx/coroutines/flow/Flow;
+	public final fun getHandlerConfig (Lio/github/darkryh/katalyst/events/DomainEvent;)Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;
+	public final fun hasHandlers (Lio/github/darkryh/katalyst/events/DomainEvent;)Z
+	public fun publish (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+}
+
+public abstract interface class io/github/darkryh/katalyst/events/bus/EventBus {
+	public abstract fun events ()Lkotlinx/coroutines/flow/SharedFlow;
+	public abstract fun eventsOf (Lkotlin/reflect/KClass;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun publish (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+}
+
+public abstract interface class io/github/darkryh/katalyst/events/bus/EventBusInterceptor {
+	public fun afterPublish (Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/PublishResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun afterPublish$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/PublishResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun beforePublish (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun beforePublish$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onPublishError (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/Throwable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun onPublishError$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/Throwable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/EventBusInterceptor$DefaultImpls {
+	public static fun afterPublish (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/PublishResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun beforePublish (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun onPublishError (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/Throwable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/EventHandlerConfig {
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;JZ)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;JZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+	public final fun component3 ()J
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;JZ)Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;Ljava/lang/String;Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;JZILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getFailOnHandlerError ()Z
+	public final fun getHandlingMode ()Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+	public final fun getTimeoutMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/events/bus/EventHandlerRegistry {
+	public abstract fun clear ()V
+	public abstract fun getAllHandlers ()Ljava/util/List;
+	public abstract fun getHandlers (Lkotlin/reflect/KClass;)Ljava/util/List;
+	public abstract fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+	public abstract fun size ()I
+}
+
+public final class io/github/darkryh/katalyst/events/bus/EventHandlingMode : java/lang/Enum {
+	public static final field ASYNC_AFTER_COMMIT Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+	public static final field SYNC_BEFORE_COMMIT Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+	public static fun values ()[Lio/github/darkryh/katalyst/events/bus/EventHandlingMode;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/EventSideEffect : io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect {
+	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compensate (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun component1 ()Lio/github/darkryh/katalyst/events/DomainEvent;
+	public final fun component2 ()Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;
+	public final fun component3 ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public final fun copy (Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;)Lio/github/darkryh/katalyst/events/bus/EventSideEffect;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/EventSideEffect;Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;ILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/EventSideEffect;
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun execute (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun execute (Lkotlin/Unit;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
+	public final fun getEventBus ()Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;
+	public fun getHandlingMode ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public fun getSideEffectId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/EventTopology {
+	public fun <init> (Lio/github/darkryh/katalyst/events/bus/EventBus;Lio/github/darkryh/katalyst/events/bus/EventHandlerRegistry;)V
+	public final fun getRegistry ()Lio/github/darkryh/katalyst/events/bus/EventHandlerRegistry;
+	public final fun registerHandlers (Ljava/util/List;)V
+}
+
+public final class io/github/darkryh/katalyst/events/bus/GlobalEventHandlerRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/events/bus/GlobalEventHandlerRegistry;
+	public final fun clear ()Ljava/util/List;
+	public final fun consumeAll ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+	public final fun size ()I
+}
+
+public final class io/github/darkryh/katalyst/events/bus/HandlerFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Throwable;)Lio/github/darkryh/katalyst/events/bus/HandlerFailure;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/HandlerFailure;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/HandlerFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getException ()Ljava/lang/Throwable;
+	public final fun getHandlerClass ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/InMemoryEventHandlerRegistry : io/github/darkryh/katalyst/events/bus/EventHandlerRegistry {
+	public fun <init> ()V
+	public fun clear ()V
+	public fun getAllHandlers ()Ljava/util/List;
+	public fun getHandlers (Lkotlin/reflect/KClass;)Ljava/util/List;
+	public fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+	public fun size ()I
+}
+
+public abstract class io/github/darkryh/katalyst/events/bus/InterceptResult {
+}
+
+public final class io/github/darkryh/katalyst/events/bus/InterceptResult$Abort : io/github/darkryh/katalyst/events/bus/InterceptResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/github/darkryh/katalyst/events/bus/InterceptResult$Abort;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/InterceptResult$Abort;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/InterceptResult$Abort;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/InterceptResult$Continue : io/github/darkryh/katalyst/events/bus/InterceptResult {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/events/bus/InterceptResult$Continue;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/PublishResult {
+	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;IIILjava/util/List;J)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;IIILjava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun allSucceeded ()Z
+	public final fun component1 ()Lio/github/darkryh/katalyst/events/DomainEvent;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()J
+	public final fun copy (Lio/github/darkryh/katalyst/events/DomainEvent;IIILjava/util/List;J)Lio/github/darkryh/katalyst/events/bus/PublishResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/PublishResult;Lio/github/darkryh/katalyst/events/DomainEvent;IIILjava/util/List;JILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/PublishResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
+	public final fun getFailures ()Ljava/util/List;
+	public final fun getHandlersFailed ()I
+	public final fun getHandlersInvoked ()I
+	public final fun getHandlersSucceeded ()I
+	public final fun hasFailed ()Z
+	public fun hashCode ()I
+	public final fun successRate ()D
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/TransactionAwareEventBus : io/github/darkryh/katalyst/events/bus/EventBus {
+	public fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;)V
+	public fun events ()Lkotlinx/coroutines/flow/SharedFlow;
+	public fun eventsOf (Lkotlin/reflect/KClass;)Lkotlinx/coroutines/flow/Flow;
+	public fun publish (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
+}
+
+public final class io/github/darkryh/katalyst/events/bus/TransactionAwareEventBusKt {
+	public static final fun publishPendingEvents (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lorg/slf4j/Logger;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/adapter/EventSideEffectAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
+	public fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;)V
+	public final fun configureEvent (Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;)V
+	public fun isCritical ()Z
+	public fun name ()Ljava/lang/String;
+	public fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun priority ()I
+}
+
+public final class io/github/darkryh/katalyst/events/bus/adapter/EventsTransactionAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
+	public fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator;Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator;Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isCritical ()Z
+	public fun name ()Ljava/lang/String;
+	public fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun priority ()I
+}
+
+public abstract interface class io/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore {
+	public abstract fun deletePublishedBefore (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPublishedCount (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isEventPublished (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAsPublished (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun markAsPublished$default (Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;Ljava/lang/String;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore$DefaultImpls {
+	public static synthetic fun markAsPublished$default (Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;Ljava/lang/String;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/deduplication/InMemoryEventDeduplicationStore : io/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore {
+	public fun <init> ()V
+	public fun <init> (IJ)V
+	public synthetic fun <init> (IJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun deletePublishedBefore (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getPublishedCount (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun isEventPublished (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsPublished (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/deduplication/NoOpEventDeduplicationStore : io/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore {
+	public fun <init> ()V
+	public fun deletePublishedBefore (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getPublishedCount (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun isEventPublished (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsPublished (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/EventPublishingException : java/lang/Exception {
+	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFailures ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/HandlerDiscoveryException : io/github/darkryh/katalyst/events/bus/exception/HandlerException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public class io/github/darkryh/katalyst/events/bus/exception/HandlerException : io/github/darkryh/katalyst/events/exception/EventException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/HandlerExecutionException : io/github/darkryh/katalyst/events/bus/exception/HandlerException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getHandlerClass ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/HandlerRegistrationException : io/github/darkryh/katalyst/events/bus/exception/HandlerException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getHandlerClass ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/InvalidHandlerMetadataException : io/github/darkryh/katalyst/events/bus/exception/HandlerException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getHandlerClass ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/exception/WrongEventTypeException : io/github/darkryh/katalyst/events/bus/exception/HandlerException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getActualType ()Ljava/lang/String;
+	public final fun getExpectedType ()Ljava/lang/String;
+	public final fun getHandlerClass ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/validation/DefaultEventPublishingValidator : io/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public fun validate (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator {
+	public abstract fun validate (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/validation/EventValidationException : java/lang/RuntimeException {
+	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/validation/ValidationResult {
+	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/events/bus/validation/ValidationResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/events/bus/validation/ValidationResult;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/events/bus/validation/ValidationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/String;
+	public final fun getEventId ()Ljava/lang/String;
+	public final fun getEventType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isValid ()Z
+	public fun toString ()Ljava/lang/String;
+}
+

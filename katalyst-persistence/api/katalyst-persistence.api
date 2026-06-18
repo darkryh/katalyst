@@ -1,0 +1,358 @@
+public final class io/github/darkryh/katalyst/config/DatabaseConfig {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIJJJZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIJJJZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Z
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIJJJZLjava/lang/String;)Lio/github/darkryh/katalyst/config/DatabaseConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/config/DatabaseConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIJJJZLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/config/DatabaseConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutoCommit ()Z
+	public final fun getConnectionTimeout ()J
+	public final fun getDriver ()Ljava/lang/String;
+	public final fun getIdleTimeout ()J
+	public final fun getMaxLifetime ()J
+	public final fun getMaxPoolSize ()I
+	public final fun getMinIdleConnections ()I
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getTransactionIsolation ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/persistence/EntityMapping {
+	public abstract fun read (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public abstract fun validate (Lorg/jetbrains/exposed/v1/core/Table;)V
+}
+
+public final class io/github/darkryh/katalyst/core/persistence/EntityMappingBuilder {
+	public fun <init> ()V
+	public final fun assignedId (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun construct (Lkotlin/jvm/functions/Function1;)V
+	public final fun custom (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function1;)V
+	public final fun enumName (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun field (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun generatedId (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun instant (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun nullableEnumName (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun nullableInstant (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun nullableReference (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun reference (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/reflect/KProperty1;)V
+	public final fun writeOnly (Lorg/jetbrains/exposed/v1/core/Column;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/github/darkryh/katalyst/core/persistence/EntityMappingKt {
+	public static final fun mapping (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/core/persistence/EntityMapping;
+}
+
+public final class io/github/darkryh/katalyst/core/persistence/MappedRow {
+	public final fun getColumnValue (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/Object;
+	public final fun getEntityIdValue (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/Object;
+	public final fun getNullableEntityIdValue (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/lang/Object;
+	public final fun instant (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/time/Instant;
+	public final fun nullableInstant (Lorg/jetbrains/exposed/v1/core/Column;)Ljava/time/Instant;
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/persistence/Table {
+	public abstract fun getMapping ()Lio/github/darkryh/katalyst/core/persistence/EntityMapping;
+}
+
+public final class io/github/darkryh/katalyst/database/DatabaseFactory : java/lang/AutoCloseable {
+	public static final field Companion Lio/github/darkryh/katalyst/database/DatabaseFactory$Companion;
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lcom/zaxxer/hikari/HikariDataSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun createSchema ([Lorg/jetbrains/exposed/v1/core/Schema;Z)V
+	public static synthetic fun createSchema$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;[Lorg/jetbrains/exposed/v1/core/Schema;ZILjava/lang/Object;)V
+	public final fun createSqlExecutor ()Lio/github/darkryh/katalyst/database/SqlExecutor;
+	public final fun createTable ([Lorg/jetbrains/exposed/v1/core/Table;Z)V
+	public static synthetic fun createTable$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;[Lorg/jetbrains/exposed/v1/core/Table;ZILjava/lang/Object;)V
+	public final fun getDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun poolSnapshot ()Lio/github/darkryh/katalyst/database/DatabasePoolSnapshot;
+}
+
+public final class io/github/darkryh/katalyst/database/DatabaseFactory$Companion {
+	public final fun create (Lio/github/darkryh/katalyst/config/DatabaseConfig;)Lio/github/darkryh/katalyst/database/DatabaseFactory;
+}
+
+public final class io/github/darkryh/katalyst/database/DatabaseFactoryStatementExtensionsKt {
+	public static final fun withStatement (Lio/github/darkryh/katalyst/database/DatabaseFactory;Lorg/slf4j/Logger;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withStatement (Lio/github/darkryh/katalyst/database/DatabaseFactory;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withStatement$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;Lorg/slf4j/Logger;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun withStatement$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/database/DatabasePoolSnapshot {
+	public fun <init> (IIIIZ)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun copy (IIIIZ)Lio/github/darkryh/katalyst/database/DatabasePoolSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/database/DatabasePoolSnapshot;IIIIZILjava/lang/Object;)Lio/github/darkryh/katalyst/database/DatabasePoolSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActive ()I
+	public final fun getClosed ()Z
+	public final fun getIdle ()I
+	public final fun getPending ()I
+	public final fun getTotal ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/database/ManagedSqlExecutor : io/github/darkryh/katalyst/database/SqlExecutor {
+	public static final field Companion Lio/github/darkryh/katalyst/database/ManagedSqlExecutor$Companion;
+	public fun <init> (Ljavax/sql/DataSource;)V
+	public fun executeBatch (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun executeUpdate (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun query (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryOne (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun withConnection (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/database/ManagedSqlExecutor$Companion {
+}
+
+public final class io/github/darkryh/katalyst/database/SqlExecutionException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract interface class io/github/darkryh/katalyst/database/SqlExecutor {
+	public abstract fun executeBatch (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun executeUpdate (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun executeUpdate$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun query (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun query$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun queryOne (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun queryOne$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun withConnection (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/database/SqlExecutor$DefaultImpls {
+	public static synthetic fun executeUpdate$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun query$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun queryOne$default (Lio/github/darkryh/katalyst/database/SqlExecutor;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/database/adapter/PersistenceTransactionAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
+	public fun <init> ()V
+	public fun isCritical ()Z
+	public fun name ()Ljava/lang/String;
+	public fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun priority ()I
+}
+
+public final class io/github/darkryh/katalyst/database/table/OperationLogTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/database/table/OperationLogTable;
+	public final fun getCommittedAt ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCreatedAt ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getErrorMessage ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOperationData ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOperationIndex ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getOperationType ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getResourceId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getResourceType ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getStatus ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUndoData ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getUndoneAt ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getWorkflowId ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public final class io/github/darkryh/katalyst/database/table/WorkflowStateTable : org/jetbrains/exposed/v1/core/Table {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/database/table/WorkflowStateTable;
+	public final fun getCompletedAt ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getCreatedAt ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getErrorMessage ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getFailedAtOperation ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
+	public final fun getStatus ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getTotalOperations ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getWorkflowId ()Lorg/jetbrains/exposed/v1/core/Column;
+	public final fun getWorkflowName ()Lorg/jetbrains/exposed/v1/core/Column;
+}
+
+public abstract interface class io/github/darkryh/katalyst/repositories/CrudRepository {
+	public fun count (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun count$suspendImpl (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun delete$suspendImpl (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun findAll ()Ljava/util/List;
+	public fun findAll (Lio/github/darkryh/katalyst/repositories/model/QueryFilter;)Lkotlin/Pair;
+	public fun findById (Ljava/lang/Object;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
+	public fun map (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public fun save (Lio/github/darkryh/katalyst/repositories/Identifiable;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+}
+
+public final class io/github/darkryh/katalyst/repositories/CrudRepository$DefaultImpls {
+	public static fun count (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun delete (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun findAll (Lio/github/darkryh/katalyst/repositories/CrudRepository;)Ljava/util/List;
+	public static fun findAll (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lio/github/darkryh/katalyst/repositories/model/QueryFilter;)Lkotlin/Pair;
+	public static fun findById (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/lang/Object;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public static fun map (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public static fun save (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lio/github/darkryh/katalyst/repositories/Identifiable;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+}
+
+public abstract interface class io/github/darkryh/katalyst/repositories/Identifiable {
+	public abstract fun getId ()Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/implementation/OperationLogRepository : io/github/darkryh/katalyst/transactions/workflow/OperationLog {
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;)V
+	public fun deleteOldOperations (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAllOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getFailedOperations (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getPendingOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun logOperation (Ljava/lang/String;ILio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAllAsCommitted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsCommitted (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsFailed (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsUndone (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/implementation/WorkflowStateRepository : io/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager {
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;)V
+	public fun commitWorkflow (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteOldWorkflows (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun failWorkflow (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getFailedWorkflows (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getFailedWorkflowsPage (ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getWorkflowState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun markAsUndone (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun startWorkflow (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/model/PageInfo {
+	public fun <init> (III)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (III)Lio/github/darkryh/katalyst/repositories/model/PageInfo;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/repositories/model/PageInfo;IIIILjava/lang/Object;)Lio/github/darkryh/katalyst/repositories/model/PageInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentPage ()I
+	public final fun getHasNextPage ()Z
+	public final fun getLimit ()I
+	public final fun getOffset ()I
+	public final fun getTotal ()I
+	public final fun getTotalPages ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/repositories/model/QueryFilter {
+	public fun <init> ()V
+	public fun <init> (IILjava/lang/String;Lio/github/darkryh/katalyst/repositories/model/SortOrder;)V
+	public synthetic fun <init> (IILjava/lang/String;Lio/github/darkryh/katalyst/repositories/model/SortOrder;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+	public final fun copy (IILjava/lang/String;Lio/github/darkryh/katalyst/repositories/model/SortOrder;)Lio/github/darkryh/katalyst/repositories/model/QueryFilter;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/repositories/model/QueryFilter;IILjava/lang/String;Lio/github/darkryh/katalyst/repositories/model/SortOrder;ILjava/lang/Object;)Lio/github/darkryh/katalyst/repositories/model/QueryFilter;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLimit ()I
+	public final fun getOffset ()I
+	public final fun getSortBy ()Ljava/lang/String;
+	public final fun getSortOrder ()Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/repositories/model/SortOrder : java/lang/Enum {
+	public static final field ASCENDING Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+	public static final field DESCENDING Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+	public static fun values ()[Lio/github/darkryh/katalyst/repositories/model/SortOrder;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/APICallUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
+	public fun <init> ()V
+	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/DeleteUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
+	public fun <init> ()V
+	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/EnhancedUndoEngine : io/github/darkryh/katalyst/transactions/workflow/UndoEngine {
+	public fun <init> ()V
+	public fun <init> (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun undoWorkflow (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/InsertUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
+	public fun <init> ()V
+	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/RetryPolicy {
+	public static final field Companion Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy$Companion;
+	public fun <init> ()V
+	public fun <init> (IJJDLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (IJJDLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getBackoffMultiplier ()D
+	public final fun getInitialDelayMs ()J
+	public final fun getMaxDelayMs ()J
+	public final fun getMaxRetries ()I
+	public final fun getRetryPredicate ()Lkotlin/jvm/functions/Function1;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/RetryPolicy$Companion {
+	public final fun aggressive ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
+	public final fun conservative ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
+	public final fun retryAll ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
+	public final fun retryTransient ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
+	public final fun transientOnly (Ljava/lang/Exception;)Z
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/SimpleUndoEngine : io/github/darkryh/katalyst/transactions/workflow/UndoEngine {
+	public fun <init> ()V
+	public fun undoWorkflow (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
+	public abstract fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
+	public abstract fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry {
+	public static final field Companion Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry$Companion;
+	public fun <init> ()V
+	public final fun findStrategy (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/repositories/undo/UndoStrategy;
+	public final fun getStrategies ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategy;)Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry$Companion {
+	public final fun createDefault ()Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;
+}
+
+public final class io/github/darkryh/katalyst/repositories/undo/UpdateUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
+	public fun <init> ()V
+	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

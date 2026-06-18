@@ -37,7 +37,8 @@ class RecoveryHealthMonitor(
     private val logger = LoggerFactory.getLogger(RecoveryHealthMonitor::class.java)
 
     private var lastHealthCheck: Instant? = null
-    private val alerts = mutableListOf<HealthAlert>()
+    private val alerts = ArrayDeque<HealthAlert>()
+    private val alertsLock = Any()
     private var alertCallback: ((HealthAlert) -> Unit)? = null
 
     /**
@@ -124,7 +125,10 @@ class RecoveryHealthMonitor(
                     message = issue.message,
                     metrics = metrics
                 )
-                alerts.add(alert)
+                synchronized(alertsLock) {
+                    if (alerts.size == config.maxAlertHistory) alerts.removeFirst()
+                    alerts.addLast(alert)
+                }
                 alertCallback?.invoke(alert)
                 logger.warn("Health Alert [{}]: {}", issue.severity, issue.message)
             }
@@ -156,14 +160,15 @@ class RecoveryHealthMonitor(
      * @return List of recent alerts
      */
     fun getRecentAlerts(maxResults: Int = 10): List<HealthAlert> {
-        return alerts.takeLast(maxResults)
+        require(maxResults >= 0) { "maxResults must be non-negative" }
+        return synchronized(alertsLock) { alerts.takeLast(maxResults) }
     }
 
     /**
      * Clear alert history.
      */
     fun clearAlerts() {
-        alerts.clear()
+        synchronized(alertsLock) { alerts.clear() }
     }
 
     /**
@@ -180,6 +185,7 @@ class RecoveryHealthMonitor(
         val status = scheduler.getStatus()
         val metrics = status.metrics
         val lastCheck = lastHealthCheck ?: Instant.now()
+        val recentAlerts = synchronized(alertsLock) { alerts.toList() }
 
         appendLine("=== Workflow Recovery Health Report ===")
         appendLine("Generated: $lastCheck")
@@ -200,9 +206,9 @@ class RecoveryHealthMonitor(
         appendLine("  Workflows in Retry: ${metrics.workflowsInRetry}")
         appendLine()
 
-        if (alerts.isNotEmpty()) {
-            appendLine("Recent Alerts (last ${alerts.size}):")
-            alerts.takeLast(5).forEach { alert ->
+        if (recentAlerts.isNotEmpty()) {
+            appendLine("Recent Alerts (last ${recentAlerts.size}):")
+            recentAlerts.takeLast(5).forEach { alert ->
                 appendLine("  [${alert.severity}] ${alert.timestamp}: ${alert.message}")
             }
         } else {
@@ -230,8 +236,13 @@ data class HealthMonitorConfig(
     val maxWorkflowsInRetry: Int = 50,
     val maxFailedRecoveriesThreshold: Int = 100,
     val alertOnWarnings: Boolean = true,
+    val maxAlertHistory: Int = 100,
     val healthCheckIntervalMs: Long = 300000  // 5 minutes
-)
+) {
+    init {
+        require(maxAlertHistory > 0) { "maxAlertHistory must be positive" }
+    }
+}
 
 /**
  * Overall health status.

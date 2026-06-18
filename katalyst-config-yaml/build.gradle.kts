@@ -18,6 +18,7 @@ dependencies {
     // YAML parsing
     implementation(libs.snakeyaml)
     implementation(libs.ktor.server.config.yaml)
+    implementation(libs.slf4j.api)
 
     // Testing
     testImplementation(libs.kotlinx.coroutines.test)

@@ -1,0 +1,340 @@
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryConfig {
+	public static final field Companion Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ZLjava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;)V
+	public synthetic fun <init> (Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ZLjava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()Lkotlin/jvm/functions/Function1;
+	public final fun component7 ()Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public final fun copy (Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ZLjava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ZLjava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEmptyResultSeverity ()Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public final fun getExcludePackages ()Ljava/util/List;
+	public final fun getIncludeSubPackages ()Z
+	public final fun getOnDiscover ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnError ()Lkotlin/jvm/functions/Function1;
+	public final fun getPredicate ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun getScanPackages ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder {
+	public fun <init> ()V
+	public final fun build ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;
+	public final fun emptyResultSeverity (Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun excludePackages ([Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun includeSubPackages (Z)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun onDiscover (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun onError (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun predicate (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun scanPackages (Ljava/util/List;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+	public final fun scanPackages ([Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Companion {
+	public final fun builder ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig$Builder;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryMetadata {
+	public static final field Companion Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata$Companion;
+	public fun <init> (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZILjava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZILjava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Class;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/util/List;
+	public final fun component8 ()Ljava/util/Map;
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZILjava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/Map;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata;Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZILjava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata;
+	public final fun describe ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun findMethodByName (Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/util/MethodMetadata;
+	public final fun getConstructorCount ()I
+	public final fun getCustomMetadata ()Ljava/util/Map;
+	public final fun getDiscoveredClass ()Ljava/lang/Class;
+	public final fun getGenericTypeArguments ()Ljava/util/List;
+	public final fun getHasNoArgsConstructor ()Z
+	public final fun getMethods ()Ljava/util/List;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getSimpleName ()Ljava/lang/String;
+	public final fun getTypeParameter (Ljava/lang/String;)Ljava/lang/Class;
+	public final fun getTypeParameterMapping ()Ljava/util/Map;
+	public final fun getTypeParameters ()Ljava/util/List;
+	public final fun hasMethods ()Z
+	public final fun hasTypeParameter (Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryMetadata$Companion {
+	public final fun from (Ljava/lang/Class;Ljava/util/List;Ljava/lang/Class;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata;
+	public static synthetic fun from$default (Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata$Companion;Ljava/lang/Class;Ljava/util/List;Ljava/lang/Class;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryMetadata;
+}
+
+public abstract interface class io/github/darkryh/katalyst/scanner/core/DiscoveryPredicate {
+	public static final field Companion Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate$Companion;
+	public fun and (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public abstract fun matches (Ljava/lang/Class;)Z
+	public fun not ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public fun or (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryPredicate$Companion {
+	public final fun all ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun create (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun none ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/DiscoveryPredicate$DefaultImpls {
+	public static fun and (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static fun not (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static fun or (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+}
+
+public abstract interface class io/github/darkryh/katalyst/scanner/core/DiscoveryRegistry {
+	public abstract fun clear ()V
+	public abstract fun getAll ()Ljava/util/Set;
+	public abstract fun getByName (Ljava/lang/String;)Ljava/lang/Class;
+	public abstract fun isRegistered (Ljava/lang/Class;)Z
+	public abstract fun register (Ljava/lang/Class;)V
+	public abstract fun registerAll (Ljava/util/Set;)V
+	public abstract fun size ()I
+}
+
+public final class io/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity : java/lang/Enum {
+	public static final field DEBUG Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static final field ERROR Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static final field INFO Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static final field NONE Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static final field WARN Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+	public static fun values ()[Lio/github/darkryh/katalyst/scanner/core/EmptyDiscoverySeverity;
+}
+
+public abstract interface class io/github/darkryh/katalyst/scanner/core/TypeDiscovery {
+	public abstract fun discover ()Ljava/util/Set;
+	public abstract fun discoverWithMetadata ()Ljava/util/Map;
+}
+
+public final class io/github/darkryh/katalyst/scanner/extensions/DiscoveryBuilder {
+	public field baseType Ljava/lang/Class;
+	public fun <init> ()V
+	public final fun build ()Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;
+	public final fun createRegistry (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)Lio/github/darkryh/katalyst/scanner/integration/ContainerDiscoveryRegistry;
+	public final fun discover ()Ljava/util/Set;
+	public final fun discoverAndInstantiate (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)Ljava/util/List;
+	public final fun excludePackages ([Ljava/lang/String;)V
+	public final fun getBaseType ()Ljava/lang/Class;
+	public final fun getOnDiscover ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnError ()Lkotlin/jvm/functions/Function1;
+	public final fun getPredicate ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun scanPackages ([Ljava/lang/String;)V
+	public final fun setBaseType (Ljava/lang/Class;)V
+	public final fun setOnDiscover (Lkotlin/jvm/functions/Function1;)V
+	public final fun setOnError (Lkotlin/jvm/functions/Function1;)V
+	public final fun setPredicate (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)V
+}
+
+public final class io/github/darkryh/katalyst/scanner/extensions/DiscoveryDSLKt {
+	public static final fun discovery (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/scanner/extensions/DiscoveryBuilder;
+}
+
+public final class io/github/darkryh/katalyst/scanner/extensions/MethodDiscoveryBuilder {
+	public field baseType Ljava/lang/Class;
+	public fun <init> ()V
+	public final fun discover ()Ljava/util/Set;
+	public final fun discoverAndInstantiate (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)Ljava/util/List;
+	public final fun discoverEnhancedMetadata ()Ljava/util/Map;
+	public final fun discoverMethods ()Ljava/util/List;
+	public final fun discoverMethodsAndInstantiate ()Ljava/util/List;
+	public final fun discoverMethodsGroupedByClass ()Ljava/util/Map;
+	public final fun excludePackages ([Ljava/lang/String;)V
+	public final fun filterMetadata (Lkotlin/jvm/functions/Function1;)V
+	public final fun filterMethods (Lkotlin/jvm/functions/Function1;)V
+	public final fun getBaseType ()Ljava/lang/Class;
+	public final fun getBaseTypeForGenericExtraction ()Ljava/lang/Class;
+	public final fun getMetadataFilter ()Lkotlin/jvm/functions/Function1;
+	public final fun getMethodFilter ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnDiscover ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnError ()Lkotlin/jvm/functions/Function1;
+	public final fun getPredicate ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public final fun scanPackages ([Ljava/lang/String;)V
+	public final fun setBaseType (Ljava/lang/Class;)V
+	public final fun setBaseTypeForGenericExtraction (Ljava/lang/Class;)V
+	public final fun setMetadataFilter (Lkotlin/jvm/functions/Function1;)V
+	public final fun setMethodFilter (Lkotlin/jvm/functions/Function1;)V
+	public final fun setOnDiscover (Lkotlin/jvm/functions/Function1;)V
+	public final fun setOnError (Lkotlin/jvm/functions/Function1;)V
+	public final fun setPredicate (Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)V
+}
+
+public final class io/github/darkryh/katalyst/scanner/extensions/MethodDiscoveryDSLKt {
+	public static final fun methodDiscovery (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/scanner/extensions/MethodDiscoveryBuilder;
+}
+
+public final class io/github/darkryh/katalyst/scanner/integration/AutoDiscoveryEngine {
+	public fun <init> (Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public final fun discover ()Ljava/util/Set;
+	public final fun discoverAndInstantiate ()Ljava/util/List;
+	public final fun discoverWithMetadataAndInstantiate ()Ljava/util/Map;
+}
+
+public final class io/github/darkryh/katalyst/scanner/integration/ContainerDiscoveryRegistry : io/github/darkryh/katalyst/scanner/core/DiscoveryRegistry {
+	public fun <init> (Ljava/lang/Class;Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public fun clear ()V
+	public fun getAll ()Ljava/util/Set;
+	public final fun getAllInstances ()Ljava/util/List;
+	public fun getByName (Ljava/lang/String;)Ljava/lang/Class;
+	public final fun getInstance (Ljava/lang/Class;)Ljava/lang/Object;
+	public final fun getInstanceOrNull (Ljava/lang/Class;)Ljava/lang/Object;
+	public fun isRegistered (Ljava/lang/Class;)Z
+	public fun register (Ljava/lang/Class;)V
+	public fun registerAll (Ljava/util/Set;)V
+	public fun size ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/integration/ScannerComponents {
+	public fun <init> (Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;Lio/github/darkryh/katalyst/scanner/core/DiscoveryRegistry;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;
+	public final fun component2 ()Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;
+	public final fun component3 ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryRegistry;
+	public final fun copy (Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;Lio/github/darkryh/katalyst/scanner/core/DiscoveryRegistry;)Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;Lio/github/darkryh/katalyst/scanner/core/DiscoveryRegistry;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfig ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;
+	public final fun getDiscovery ()Lio/github/darkryh/katalyst/scanner/core/TypeDiscovery;
+	public final fun getRegistry ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryRegistry;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/integration/ScannerModuleKt {
+	public static final fun methodScanner ()Lio/github/darkryh/katalyst/scanner/scanner/KotlinMethodScanner;
+	public static final fun scannerComponents (Ljava/lang/Class;Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;
+	public static synthetic fun scannerComponents$default (Ljava/lang/Class;Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;
+	public static final fun simpleScannerComponents (Ljava/lang/Class;[Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/integration/ScannerComponents;
+}
+
+public final class io/github/darkryh/katalyst/scanner/predicates/BuiltInPredicatesKt {
+	public static final fun hasNoArgsConstructor ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun hasPublicMethods ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun implementsInterface (Lkotlin/reflect/KClass;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isConcrete ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isInModule (Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isInstantiable ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isNotInterface ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isNotSynthetic ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun isNotTestClass ()Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun matchesCanonicalName (Lkotlin/text/Regex;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun matchesClassName (Lkotlin/text/Regex;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+	public static final fun matchesPackage (Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;
+}
+
+public final class io/github/darkryh/katalyst/scanner/scanner/InMemoryDiscoveryRegistry : io/github/darkryh/katalyst/scanner/core/DiscoveryRegistry {
+	public fun <init> (Ljava/lang/Class;)V
+	public fun clear ()V
+	public fun getAll ()Ljava/util/Set;
+	public fun getByName (Ljava/lang/String;)Ljava/lang/Class;
+	public fun isRegistered (Ljava/lang/Class;)Z
+	public fun register (Ljava/lang/Class;)V
+	public fun registerAll (Ljava/util/Set;)V
+	public fun size ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/scanner/KotlinMethodScanner {
+	public fun <init> ()V
+	public final fun discoverMethods (Ljava/util/Set;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static synthetic fun discoverMethods$default (Lio/github/darkryh/katalyst/scanner/scanner/KotlinMethodScanner;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
+	public final fun discoverMethodsGroupedByClass (Ljava/util/Set;Lkotlin/jvm/functions/Function1;)Ljava/util/Map;
+	public static synthetic fun discoverMethodsGroupedByClass$default (Lio/github/darkryh/katalyst/scanner/scanner/KotlinMethodScanner;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/Map;
+	public final fun discoverMethodsInClass (Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static synthetic fun discoverMethodsInClass$default (Lio/github/darkryh/katalyst/scanner/scanner/KotlinMethodScanner;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
+	public final fun findMethodByName (Ljava/util/Set;Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/util/MethodMetadata;
+}
+
+public final class io/github/darkryh/katalyst/scanner/scanner/ReflectionsTypeScanner : io/github/darkryh/katalyst/scanner/core/TypeDiscovery {
+	public fun <init> (Ljava/lang/Class;Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;)V
+	public synthetic fun <init> (Ljava/lang/Class;Lio/github/darkryh/katalyst/scanner/core/DiscoveryConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/Class;Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;)V
+	public synthetic fun <init> (Ljava/lang/Class;Ljava/util/List;Lio/github/darkryh/katalyst/scanner/core/DiscoveryPredicate;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun discover ()Ljava/util/Set;
+	public final fun discoverMethods (Ljava/util/Set;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static synthetic fun discoverMethods$default (Lio/github/darkryh/katalyst/scanner/scanner/ReflectionsTypeScanner;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
+	public final fun discoverWithEnhancedMetadata (Ljava/lang/Class;ZLkotlin/jvm/functions/Function1;)Ljava/util/Map;
+	public static synthetic fun discoverWithEnhancedMetadata$default (Lio/github/darkryh/katalyst/scanner/scanner/ReflectionsTypeScanner;Ljava/lang/Class;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/Map;
+	public fun discoverWithMetadata ()Ljava/util/Map;
+}
+
+public final class io/github/darkryh/katalyst/scanner/util/GenericTypeExtractor {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/scanner/util/GenericTypeExtractor;
+	public final fun extractTypeArgument (Ljava/lang/Class;Ljava/lang/Class;I)Ljava/lang/Class;
+	public final fun extractTypeArguments (Ljava/lang/Class;Ljava/lang/Class;)Ljava/util/List;
+	public final fun extractTypeArgumentsAsKClass (Ljava/lang/Class;Ljava/lang/Class;)Ljava/util/List;
+	public final fun extractTypeArgumentsAsMap (Ljava/lang/Class;Ljava/lang/Class;)Ljava/util/Map;
+	public final fun getTypeDescription (Ljava/lang/Class;Ljava/lang/Class;)Ljava/lang/String;
+	public final fun hasTypeArguments (Ljava/lang/Class;Ljava/lang/Class;)Z
+}
+
+public final class io/github/darkryh/katalyst/scanner/util/MethodMetadata {
+	public fun <init> (Ljava/lang/Class;Lkotlin/reflect/KFunction;Ljava/util/List;Lkotlin/reflect/KType;ZZLjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/Class;Lkotlin/reflect/KFunction;Ljava/util/List;Lkotlin/reflect/KType;ZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Class;
+	public final fun component2 ()Lkotlin/reflect/KFunction;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lkotlin/reflect/KType;
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/Class;Lkotlin/reflect/KFunction;Ljava/util/List;Lkotlin/reflect/KType;ZZLjava/util/Map;)Lio/github/darkryh/katalyst/scanner/util/MethodMetadata;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/scanner/util/MethodMetadata;Ljava/lang/Class;Lkotlin/reflect/KFunction;Ljava/util/List;Lkotlin/reflect/KType;ZZLjava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/util/MethodMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun findParameter (Ljava/lang/String;)Lio/github/darkryh/katalyst/scanner/util/ParameterMetadata;
+	public final fun getCustomMetadata ()Ljava/util/Map;
+	public final fun getDeclaringClass ()Ljava/lang/Class;
+	public final fun getMethod ()Lkotlin/reflect/KFunction;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getParameters ()Ljava/util/List;
+	public final fun getReturnType ()Lkotlin/reflect/KType;
+	public final fun getSignature ()Ljava/lang/String;
+	public final fun hasParameters ()Z
+	public fun hashCode ()I
+	public final fun isStatic ()Z
+	public final fun isSuspend ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/scanner/util/ParameterMetadata {
+	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KType;IZLjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/reflect/KType;IZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/reflect/KType;
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KType;IZLjava/util/Map;)Lio/github/darkryh/katalyst/scanner/util/ParameterMetadata;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/scanner/util/ParameterMetadata;Ljava/lang/String;Lkotlin/reflect/KType;IZLjava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/scanner/util/ParameterMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCustomMetadata ()Ljava/util/Map;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getIndex ()I
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Lkotlin/reflect/KType;
+	public final fun getTypeName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isOptional ()Z
+	public fun toString ()Ljava/lang/String;
+}
+

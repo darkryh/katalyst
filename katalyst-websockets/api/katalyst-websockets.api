@@ -1,0 +1,13 @@
+public final class io/github/darkryh/katalyst/websockets/WebSocketFeature : io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/websockets/WebSocketFeature;
+	public final fun configure (Lio/github/darkryh/katalyst/ktor/websocket/WebSocketOptions;)V
+	public fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/websockets/WebSocketFeatureKt {
+	public static final fun enableWebSockets (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+	public static synthetic fun enableWebSockets$default (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+}
+

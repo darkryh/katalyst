@@ -1,0 +1,1161 @@
+public final class io/github/darkryh/katalyst/di/KatalystApplicationBuilder {
+	public fun <init> ()V
+	public fun <init> (Lio/github/darkryh/katalyst/di/config/BootstrapArgs;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/di/config/BootstrapArgs;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun beanEngine (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun configuration (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun database (Lio/github/darkryh/katalyst/config/DatabaseConfig;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun database (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun engine (Lio/github/darkryh/katalyst/di/config/KatalystServerEngine;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun engine (Lio/ktor/server/engine/EmbeddedServer;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun feature (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun features (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun scanPackages ([Ljava/lang/String;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+	public final fun schema (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/KatalystApplicationBuilder;
+}
+
+public final class io/github/darkryh/katalyst/di/KatalystApplicationKt {
+	public static final fun katalystApplication ([Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun katalystApplication$default ([Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class io/github/darkryh/katalyst/di/KatalystFeaturesBuilder {
+	public final fun feature (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/ComponentNode {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/util/List;Ljava/util/List;ZZILjava/util/List;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/util/List;Ljava/util/List;ZZILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canBeInstantiatedGiven (Ljava/util/Set;)Z
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/util/List;
+	public final fun copy (Lkotlin/reflect/KClass;Ljava/util/List;Ljava/util/List;ZZILjava/util/List;)Lio/github/darkryh/katalyst/di/analysis/ComponentNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/analysis/ComponentNode;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/util/List;ZZILjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/analysis/ComponentNode;
+	public final fun describe ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependencies ()Ljava/util/List;
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getInstantiationOrder ()I
+	public final fun getSecondaryTypes ()Ljava/util/List;
+	public final fun getType ()Lkotlin/reflect/KClass;
+	public final fun hasErrors ()Z
+	public fun hashCode ()I
+	public final fun isDiscoverable ()Z
+	public final fun isInstantiable ()Z
+	public final fun optionalDependencies ()Ljava/util/List;
+	public final fun requiredDependencies ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+	public final fun unresolvableDependencies ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/ComponentOrderComputer {
+	public fun <init> (Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;)V
+	public final fun computeOrder ()Ljava/util/List;
+	public final fun describe ()Ljava/lang/String;
+	public final fun getInitialComponents ()Ljava/util/List;
+	public final fun getInstantiationGroup (Lkotlin/reflect/KClass;)I
+	public final fun validateOrder (Ljava/util/List;)Z
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/Dependency {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;ZZLio/github/darkryh/katalyst/di/analysis/DependencySource;Lkotlin/reflect/KClass;ZLio/github/darkryh/katalyst/di/analysis/InjectionMode;Ljava/lang/String;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;ZZLio/github/darkryh/katalyst/di/analysis/DependencySource;Lkotlin/reflect/KClass;ZLio/github/darkryh/katalyst/di/analysis/InjectionMode;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public final fun component6 ()Lkotlin/reflect/KClass;
+	public final fun component7 ()Z
+	public final fun component8 ()Lio/github/darkryh/katalyst/di/analysis/InjectionMode;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/reflect/KClass;Ljava/lang/String;ZZLio/github/darkryh/katalyst/di/analysis/DependencySource;Lkotlin/reflect/KClass;ZLio/github/darkryh/katalyst/di/analysis/InjectionMode;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/analysis/Dependency;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/analysis/Dependency;Lkotlin/reflect/KClass;Ljava/lang/String;ZZLio/github/darkryh/katalyst/di/analysis/DependencySource;Lkotlin/reflect/KClass;ZLio/github/darkryh/katalyst/di/analysis/InjectionMode;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/analysis/Dependency;
+	public final fun describe ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInjectionMode ()Lio/github/darkryh/katalyst/di/analysis/InjectionMode;
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getQualifierName ()Ljava/lang/String;
+	public final fun getRequestedType ()Lkotlin/reflect/KClass;
+	public final fun getSource ()Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public final fun getType ()Lkotlin/reflect/KClass;
+	public fun hashCode ()I
+	public final fun isDeferred ()Z
+	public final fun isOptional ()Z
+	public final fun isResolvable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/DependencyAnalyzer {
+	public fun <init> (Ljava/util/Map;Lio/github/darkryh/katalyst/core/di/KatalystContainer;[Ljava/lang/String;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/Map;Lio/github/darkryh/katalyst/core/di/KatalystContainer;[Ljava/lang/String;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun buildGraph ()Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/DependencyGraph {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canResolve (Lkotlin/reflect/KClass;)Z
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;)Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;
+	public final fun describe ()Ljava/lang/String;
+	public final fun edgeCount ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependencies (Lkotlin/reflect/KClass;)Ljava/util/Set;
+	public final fun getDependencyNodes (Lkotlin/reflect/KClass;)Ljava/util/Set;
+	public final fun getEdges ()Ljava/util/Map;
+	public final fun getKoinProvidedTypes ()Ljava/util/Set;
+	public final fun getLeafComponents ()Ljava/util/Set;
+	public final fun getNodes ()Ljava/util/Map;
+	public final fun getProvidersOfSecondaryType (Lkotlin/reflect/KClass;)Ljava/util/Set;
+	public final fun getRootComponents ()Ljava/util/Set;
+	public final fun getSecondaryTypeBindings ()Ljava/util/Map;
+	public final fun getTransitiveDependencies (Lkotlin/reflect/KClass;)Ljava/util/Set;
+	public fun hashCode ()I
+	public final fun isAvailable (Lkotlin/reflect/KClass;)Z
+	public final fun nodeCount ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun topologicalSort ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/DependencySource : java/lang/Enum {
+	public static final field CONSTRUCTOR Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public static final field SECONDARY_TYPE Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public static final field WELL_KNOWN_PROPERTY Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/analysis/DependencySource;
+}
+
+public final class io/github/darkryh/katalyst/di/analysis/InjectionMode : java/lang/Enum {
+	public static final field DIRECT Lio/github/darkryh/katalyst/di/analysis/InjectionMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/analysis/InjectionMode;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/analysis/InjectionMode;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ApplicationConfigProvider : io/github/darkryh/katalyst/core/component/Component, io/github/darkryh/katalyst/core/config/ConfigProvider {
+	public fun <init> (Lio/ktor/server/config/ApplicationConfig;)V
+	public fun get (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getAllKeys ()Ljava/util/Set;
+	public fun getBoolean (Ljava/lang/String;Z)Z
+	public fun getInt (Ljava/lang/String;I)I
+	public fun getList (Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public fun getLong (Ljava/lang/String;J)J
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun hasKey (Ljava/lang/String;)Z
+}
+
+public final class io/github/darkryh/katalyst/di/config/BootstrapArgs {
+	public static final field Companion Lio/github/darkryh/katalyst/di/config/BootstrapArgs$Companion;
+	public fun <init> ()V
+	public fun <init> ([Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> ([Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun applyProfileOverride ()V
+	public final fun component1 ()[Ljava/lang/String;
+	public final fun component2 ()[Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy ([Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)Lio/github/darkryh/katalyst/di/config/BootstrapArgs;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/BootstrapArgs;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/BootstrapArgs;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getForceCliConfig ()Z
+	public final fun getKtorArgs ()[Ljava/lang/String;
+	public final fun getProfileOverride ()Ljava/lang/String;
+	public final fun getRawArgs ()[Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/config/BootstrapArgs$Companion {
+	public final fun getEMPTY ()Lio/github/darkryh/katalyst/di/config/BootstrapArgs;
+	public final fun parse ([Ljava/lang/String;)Lio/github/darkryh/katalyst/di/config/BootstrapArgs;
+}
+
+public final class io/github/darkryh/katalyst/di/config/BootstrapArgsHolder {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/config/BootstrapArgsHolder;
+	public final fun clear ()V
+	public final fun current ()Lio/github/darkryh/katalyst/di/config/BootstrapArgs;
+	public final fun set (Lio/github/darkryh/katalyst/di/config/BootstrapArgs;)V
+}
+
+public final class io/github/darkryh/katalyst/di/config/CompositeConfigProvider : io/github/darkryh/katalyst/core/component/Component, io/github/darkryh/katalyst/core/config/ConfigProvider {
+	public fun <init> (Ljava/util/List;)V
+	public fun get (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getAllKeys ()Ljava/util/Set;
+	public fun getBoolean (Ljava/lang/String;Z)Z
+	public fun getInt (Ljava/lang/String;I)I
+	public fun getList (Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public fun getLong (Ljava/lang/String;J)J
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun hasKey (Ljava/lang/String;)Z
+}
+
+public final class io/github/darkryh/katalyst/di/config/DIConfigurationKt {
+	public static final fun bootstrapKatalystContainer (Lio/github/darkryh/katalyst/config/DatabaseConfig;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/ServerConfiguration;Ljava/util/List;ZLio/github/darkryh/katalyst/di/config/SchemaManagementOptions;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static synthetic fun bootstrapKatalystContainer$default (Lio/github/darkryh/katalyst/config/DatabaseConfig;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/ServerConfiguration;Ljava/util/List;ZLio/github/darkryh/katalyst/di/config/SchemaManagementOptions;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;ILjava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static final fun currentKatalystContainer ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static final fun initializeKatalystStandalone (Lio/github/darkryh/katalyst/di/config/KatalystDIOptions;Lio/github/darkryh/katalyst/di/config/ServerConfiguration;Ljava/util/List;ZZ)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static synthetic fun initializeKatalystStandalone$default (Lio/github/darkryh/katalyst/di/config/KatalystDIOptions;Lio/github/darkryh/katalyst/di/config/ServerConfiguration;Ljava/util/List;ZZILjava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static final fun runPreStartInitializers (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public static synthetic fun runPreStartInitializers$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;ILjava/lang/Object;)V
+	public static final fun runRuntimeReadyInitializers (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public static synthetic fun runRuntimeReadyInitializers$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;ILjava/lang/Object;)V
+	public static final fun stopKatalystStandalone ()V
+}
+
+public final class io/github/darkryh/katalyst/di/config/DatabaseConfigurationBuilder {
+	public static final field Companion Lio/github/darkryh/katalyst/di/config/DatabaseConfigurationBuilder$Companion;
+	public static final field DEFAULT_AUTO_COMMIT Z
+	public static final field DEFAULT_CONNECTION_TIMEOUT J
+	public static final field DEFAULT_IDLE_TIMEOUT J
+	public static final field DEFAULT_MAX_LIFETIME J
+	public static final field DEFAULT_MAX_POOL_SIZE I
+	public static final field DEFAULT_MIN_IDLE_CONNECTIONS I
+	public static final field DEFAULT_TRANSACTION_ISOLATION Ljava/lang/String;
+	public final fun fromConfiguration (Ljava/lang/String;)V
+	public static synthetic fun fromConfiguration$default (Lio/github/darkryh/katalyst/di/config/DatabaseConfigurationBuilder;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun getAutoCommit ()Z
+	public final fun getConfiguration ()Lio/github/darkryh/katalyst/core/config/ConfigProvider;
+	public final fun getConnectionTimeout ()J
+	public final fun getDriver ()Ljava/lang/String;
+	public final fun getIdleTimeout ()J
+	public final fun getMaxLifetime ()J
+	public final fun getMaxPoolSize ()I
+	public final fun getMinIdleConnections ()I
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getTransactionIsolation ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+	public final fun setAutoCommit (Z)V
+	public final fun setConnectionTimeout (J)V
+	public final fun setDriver (Ljava/lang/String;)V
+	public final fun setIdleTimeout (J)V
+	public final fun setMaxLifetime (J)V
+	public final fun setMaxPoolSize (I)V
+	public final fun setMinIdleConnections (I)V
+	public final fun setPassword (Ljava/lang/String;)V
+	public final fun setTransactionIsolation (Ljava/lang/String;)V
+	public final fun setUrl (Ljava/lang/String;)V
+	public final fun setUsername (Ljava/lang/String;)V
+}
+
+public final class io/github/darkryh/katalyst/di/config/DatabaseConfigurationBuilder$Companion {
+}
+
+public final class io/github/darkryh/katalyst/di/config/KatalystCommandLineConfig {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/config/KatalystCommandLineConfig;
+	public final fun prepare ([Ljava/lang/String;Z)Lio/ktor/server/engine/CommandLineConfig;
+}
+
+public final class io/github/darkryh/katalyst/di/config/KatalystDIOptions {
+	public fun <init> (Lio/github/darkryh/katalyst/config/DatabaseConfig;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/config/DatabaseConfig;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/config/DatabaseConfig;
+	public final fun component2 ()Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;
+	public final fun component3 ()[Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;
+	public final fun copy (Lio/github/darkryh/katalyst/config/DatabaseConfig;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;)Lio/github/darkryh/katalyst/di/config/KatalystDIOptions;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/KatalystDIOptions;Lio/github/darkryh/katalyst/config/DatabaseConfig;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/List;Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/KatalystDIOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBeanEngine ()Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;
+	public final fun getDatabaseConfig ()Lio/github/darkryh/katalyst/config/DatabaseConfig;
+	public final fun getFeatures ()Ljava/util/List;
+	public final fun getScanPackages ()[Ljava/lang/String;
+	public final fun getSchemaManagement ()Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/config/KatalystServerEngine {
+	public abstract fun build ()Lio/ktor/server/engine/EmbeddedServer;
+}
+
+public final class io/github/darkryh/katalyst/di/config/SchemaManagementBuilder {
+	public fun <init> ()V
+	public final fun createMissing ()V
+	public final fun createMissingAndValidate (Z)V
+	public static synthetic fun createMissingAndValidate$default (Lio/github/darkryh/katalyst/di/config/SchemaManagementBuilder;ZILjava/lang/Object;)V
+	public final fun none ()V
+	public final fun validateOnStartup (Z)V
+	public static synthetic fun validateOnStartup$default (Lio/github/darkryh/katalyst/di/config/SchemaManagementBuilder;ZILjava/lang/Object;)V
+}
+
+public final class io/github/darkryh/katalyst/di/config/SchemaManagementOptions {
+	public fun <init> ()V
+	public fun <init> (Lio/github/darkryh/katalyst/di/config/SchemaPolicy;Z)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/di/config/SchemaPolicy;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public final fun component2 ()Z
+	public final fun copy (Lio/github/darkryh/katalyst/di/config/SchemaPolicy;Z)Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;Lio/github/darkryh/katalyst/di/config/SchemaPolicy;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/SchemaManagementOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailOnPendingStatements ()Z
+	public final fun getPolicy ()Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/config/SchemaPolicy : java/lang/Enum {
+	public static final field CREATE_MISSING Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public static final field CREATE_MISSING_AND_VALIDATE Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public static final field NONE Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public static final field VALIDATE Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/config/SchemaPolicy;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ServerConfiguration {
+	public fun <init> (Lio/ktor/server/engine/EmbeddedServer;Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/ktor/server/engine/EmbeddedServer;Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/ktor/server/engine/EmbeddedServer;
+	public final fun component2 ()Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+	public final fun component3 ()Lkotlin/jvm/functions/Function1;
+	public final fun component4 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Lio/ktor/server/engine/EmbeddedServer;Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/config/ServerConfiguration;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/ServerConfiguration;Lio/ktor/server/engine/EmbeddedServer;Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/ServerConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApplicationWrapper ()Lkotlin/jvm/functions/Function1;
+	public final fun getDeployment ()Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+	public final fun getEngine ()Lio/ktor/server/engine/EmbeddedServer;
+	public final fun getServerWrapper ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ServerConfigurationKt {
+	public static final fun wrap (Lio/ktor/server/application/Application;Lkotlin/jvm/functions/Function1;)Lio/ktor/server/application/Application;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration {
+	public static final field Companion Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration$Companion;
+	public fun <init> (Ljava/lang/String;ILjava/lang/Integer;JJLjava/lang/String;Ljava/lang/String;Ljava/util/List;IIIIIIJLjava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Lio/github/darkryh/katalyst/di/config/SslConfiguration;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/Integer;JJLjava/lang/String;Ljava/lang/String;Ljava/util/List;IIIIIIJLjava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Lio/github/darkryh/katalyst/di/config/SslConfiguration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()I
+	public final fun component11 ()I
+	public final fun component12 ()I
+	public final fun component13 ()I
+	public final fun component14 ()I
+	public final fun component15 ()J
+	public final fun component16 ()Ljava/lang/Long;
+	public final fun component17 ()Ljava/lang/Integer;
+	public final fun component18 ()Ljava/lang/Integer;
+	public final fun component19 ()Lio/github/darkryh/katalyst/di/config/SslConfiguration;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()I
+	public final fun copy (Ljava/lang/String;ILjava/lang/Integer;JJLjava/lang/String;Ljava/lang/String;Ljava/util/List;IIIIIIJLjava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Lio/github/darkryh/katalyst/di/config/SslConfiguration;)Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;Ljava/lang/String;ILjava/lang/Integer;JJLjava/lang/String;Ljava/lang/String;Ljava/util/List;IIIIIIJLjava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Lio/github/darkryh/katalyst/di/config/SslConfiguration;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCallGroupSize ()I
+	public final fun getConnectionGroupSize ()I
+	public final fun getConnectionIdleTimeoutMs ()J
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getMaxChunkSize ()I
+	public final fun getMaxHeaderSize ()I
+	public final fun getMaxInitialLineLength ()I
+	public final fun getMaxThreads ()Ljava/lang/Integer;
+	public final fun getMinThreads ()Ljava/lang/Integer;
+	public final fun getPort ()I
+	public final fun getRequestTimeoutMs ()Ljava/lang/Long;
+	public final fun getRootPath ()Ljava/lang/String;
+	public final fun getShutdownGracePeriod ()J
+	public final fun getShutdownTimeout ()J
+	public final fun getShutdownUrl ()Ljava/lang/String;
+	public final fun getSslConfig ()Lio/github/darkryh/katalyst/di/config/SslConfiguration;
+	public final fun getSslPort ()Ljava/lang/Integer;
+	public final fun getWatchPaths ()Ljava/util/List;
+	public final fun getWorkerGroupSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration$Companion {
+	public final fun createDefault ()Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+}
+
+public final class io/github/darkryh/katalyst/di/config/ServerDeploymentConfigurationLoader : io/github/darkryh/katalyst/config/provider/ServiceConfigLoader {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfigurationLoader;
+	public fun loadConfig (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;
+	public synthetic fun loadConfig (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/lang/Object;
+	public fun validate (Lio/github/darkryh/katalyst/di/config/ServerDeploymentConfiguration;)V
+	public synthetic fun validate (Ljava/lang/Object;)V
+}
+
+public final class io/github/darkryh/katalyst/di/config/SslConfiguration {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/config/SslConfiguration;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/config/SslConfiguration;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/config/SslConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyAlias ()Ljava/lang/String;
+	public final fun getKeyManagerFactory ()Ljava/lang/String;
+	public final fun getKeyStore ()Ljava/lang/String;
+	public final fun getKeyStorePassword ()Ljava/lang/String;
+	public final fun getPrivateKeyPassword ()Ljava/lang/String;
+	public final fun getProvider ()Ljava/lang/String;
+	public final fun getTrustManagerFactory ()Ljava/lang/String;
+	public final fun getTrustStore ()Ljava/lang/String;
+	public final fun getTrustStorePassword ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun validate ()V
+}
+
+public final class io/github/darkryh/katalyst/di/discovery/DiscoverySnapshot {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun asValidationMap ()Ljava/util/Map;
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllTypes ()Ljava/util/Set;
+	public final fun getCategories ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun types (Ljava/lang/String;)Ljava/util/Set;
+}
+
+public final class io/github/darkryh/katalyst/di/discovery/DiscoverySnapshotBuilder {
+	public fun <init> ()V
+	public final fun build ()Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;
+	public final fun category (Ljava/lang/String;Ljava/util/Set;)Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshotBuilder;
+}
+
+public final class io/github/darkryh/katalyst/di/error/CircularDependencyError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/github/darkryh/katalyst/di/error/CircularDependencyError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/CircularDependencyError;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/CircularDependencyError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public final fun getCycle ()Ljava/util/List;
+	public fun getMessage ()Ljava/lang/String;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/FeatureProvidedTypeError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/error/FeatureProvidedTypeError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/FeatureProvidedTypeError;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/FeatureProvidedTypeError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public final fun getFeatureName ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getRequiredType ()Lkotlin/reflect/KClass;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/InstantiationFailureError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Throwable;
+	public final fun copy (Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;)Lio/github/darkryh/katalyst/di/error/InstantiationFailureError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/InstantiationFailureError;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/InstantiationFailureError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/MissingDependencyError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;ZZLkotlin/reflect/KClass;ZLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;ZZLkotlin/reflect/KClass;ZLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Lkotlin/reflect/KClass;
+	public final fun component7 ()Z
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;ZZLkotlin/reflect/KClass;ZLjava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/error/MissingDependencyError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/MissingDependencyError;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;ZZLkotlin/reflect/KClass;ZLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/MissingDependencyError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getContext ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getQualifierName ()Ljava/lang/String;
+	public final fun getRequestedType ()Lkotlin/reflect/KClass;
+	public final fun getRequiredType ()Lkotlin/reflect/KClass;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isDeferred ()Z
+	public final fun isDiscoverable ()Z
+	public final fun isInKoin ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/SecondaryTypeBindingError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/util/List;)Lio/github/darkryh/katalyst/di/error/SecondaryTypeBindingError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/SecondaryTypeBindingError;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/SecondaryTypeBindingError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getProvidingComponents ()Ljava/util/List;
+	public final fun getRequiredType ()Lkotlin/reflect/KClass;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/UninstantiableTypeError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/reflect/KClass;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/error/UninstantiableTypeError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/UninstantiableTypeError;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/UninstantiableTypeError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/github/darkryh/katalyst/di/error/ValidationError {
+	public abstract fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getContext ()Ljava/lang/String;
+	public abstract fun getMessage ()Ljava/lang/String;
+	public fun getSuggestion ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/ValidationReport {
+	public fun <init> (ZLjava/util/List;JJ)V
+	public synthetic fun <init> (ZLjava/util/List;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun copy (ZLjava/util/List;JJ)Lio/github/darkryh/katalyst/di/error/ValidationReport;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/ValidationReport;ZLjava/util/List;JJILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/ValidationReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnalysisDurationMs ()J
+	public final fun getCircularDependencyCount ()I
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getFeatureProvidedTypeErrorCount ()I
+	public final fun getMissingDependencyCount ()I
+	public final fun getSecondaryTypeBindingErrorCount ()I
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getTotalErrorCount ()I
+	public final fun getUninstantiableTypeCount ()I
+	public final fun getValidationDurationMs ()J
+	public final fun getWellKnownPropertyErrorCount ()I
+	public fun hashCode ()I
+	public final fun isValid ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/error/WellKnownPropertyError : io/github/darkryh/katalyst/di/error/ValidationError {
+	public fun <init> (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Z)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;Z)Lio/github/darkryh/katalyst/di/error/WellKnownPropertyError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/error/WellKnownPropertyError;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/di/error/WellKnownPropertyError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getComponent ()Lkotlin/reflect/KClass;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getPropertyName ()Ljava/lang/String;
+	public final fun getPropertyType ()Lkotlin/reflect/KClass;
+	public fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/exception/FatalDependencyValidationException : io/github/darkryh/katalyst/di/exception/KatalystDIException {
+	public static final field Companion Lio/github/darkryh/katalyst/di/exception/FatalDependencyValidationException$Companion;
+	public fun <init> (Ljava/util/List;Ljava/util/Map;)V
+	public final fun generateDetailedReport ()Ljava/lang/String;
+	public final fun generateSummaryReport (I)Ljava/lang/String;
+	public static synthetic fun generateSummaryReport$default (Lio/github/darkryh/katalyst/di/exception/FatalDependencyValidationException;IILjava/lang/Object;)Ljava/lang/String;
+	public final fun getDiscoveredTypes ()Ljava/util/Map;
+	public final fun getValidationErrors ()Ljava/util/List;
+	public final fun renderDetailedReport ()Ljava/lang/String;
+	public final fun renderReport (IZ)Ljava/lang/String;
+	public static synthetic fun renderReport$default (Lio/github/darkryh/katalyst/di/exception/FatalDependencyValidationException;IZILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/exception/FatalDependencyValidationException$Companion {
+}
+
+public class io/github/darkryh/katalyst/di/exception/KatalystDIException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/darkryh/katalyst/di/feature/EventSystemFeature : io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/EventSystemFeatureKt {
+	public static final fun enableEvents (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+	public static final fun eventSystemFeature ()Lio/github/darkryh/katalyst/di/feature/EventSystemFeature;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanContext {
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public final fun getContainer ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanDefinition {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun getProvider ()Lkotlin/jvm/functions/Function1;
+	public final fun getQualifier ()Ljava/lang/String;
+	public final fun getType ()Lkotlin/reflect/KClass;
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/feature/KatalystBeanEngine {
+	public abstract fun currentOrNull ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun loadModules (Ljava/util/List;Z)V
+	public static synthetic fun loadModules$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/util/List;ZILjava/lang/Object;)V
+	public abstract fun registerInstance (Ljava/lang/Object;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/lang/String;)V
+	public static synthetic fun registerInstance$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/lang/Object;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)V
+	public abstract fun start (Ljava/util/List;Z)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public static synthetic fun start$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/util/List;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public abstract fun stop ()V
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanEngine$DefaultImpls {
+	public static synthetic fun loadModules$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/util/List;ZILjava/lang/Object;)V
+	public static synthetic fun registerInstance$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/lang/Object;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)V
+	public static synthetic fun start$default (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;Ljava/util/List;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanEngines {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngines;
+	public final fun activate (Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;)Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;
+	public final fun activeOrNull ()Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;
+	public final fun clearActive ()V
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanModule {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getDefinitions ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystBeanModuleBuilder {
+	public final fun getDefinitions ()Ljava/util/List;
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public abstract fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystFeature$DefaultImpls {
+	public static fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public static fun provideBeanModules (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;)Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/KatalystFeatureKt {
+	public static final fun katalystBeanModule (Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/feature/KatalystBeanModule;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/ServerConfigurationFeature : io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/feature/ServerConfigurationFeature;
+	public fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/feature/ServerConfigurationFeatureKt {
+	public static final fun enableServerConfiguration (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+}
+
+public final class io/github/darkryh/katalyst/di/infra/KatalystModuleParametersInjector : io/ktor/server/application/ModuleParametersInjector {
+	public fun <init> ()V
+	public fun <init> ([Ljava/lang/String;)V
+	public synthetic fun <init> ([Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun resolveParameter (Lio/ktor/server/application/Application;Lkotlin/reflect/KParameter;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface annotation class io/github/darkryh/katalyst/di/injection/InjectNamed : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/internal/AutoBindingRegistrar {
+	public static final field Companion Lio/github/darkryh/katalyst/di/internal/AutoBindingRegistrar$Companion;
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;)V
+}
+
+public final class io/github/darkryh/katalyst/di/internal/AutoBindingRegistrar$Companion {
+	public final fun resetSecondaryTypeTracking ()V
+}
+
+public final class io/github/darkryh/katalyst/di/internal/ComponentRegistrationOrchestrator {
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;)V
+	public final fun registerAllWithValidation ()V
+}
+
+public final class io/github/darkryh/katalyst/di/internal/KtorModuleRegistry : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/internal/KtorModuleRegistry;
+	public final fun consume ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/ktor/KtorModule;)V
+	public fun reset ()V
+}
+
+public final class io/github/darkryh/katalyst/di/internal/ServiceRegistry : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/internal/ServiceRegistry;
+	public final fun clear ()V
+	public final fun count ()I
+	public final fun getAll ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/core/component/Service;)V
+	public fun reset ()V
+}
+
+public final class io/github/darkryh/katalyst/di/invocation/CallableInvoker {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/invocation/CallableInvoker;
+	public final fun callConstructor (Lkotlin/reflect/KFunction;Lio/github/darkryh/katalyst/di/invocation/ParameterResolver;Ljava/lang/String;)Ljava/lang/Object;
+	public final fun callFunction (Lkotlin/reflect/KFunction;Ljava/util/Map;Lio/github/darkryh/katalyst/di/invocation/ParameterResolver;Ljava/lang/String;)Ljava/lang/Object;
+	public final fun callMemberWithDefaults (Ljava/lang/Object;Lkotlin/reflect/KFunction;Lio/github/darkryh/katalyst/di/invocation/ParameterResolver;Ljava/lang/String;)Ljava/lang/Object;
+	public static synthetic fun callMemberWithDefaults$default (Lio/github/darkryh/katalyst/di/invocation/CallableInvoker;Ljava/lang/Object;Lkotlin/reflect/KFunction;Lio/github/darkryh/katalyst/di/invocation/ParameterResolver;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/di/invocation/ParameterResolver {
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+	public final fun resolveParameters (Lkotlin/reflect/KFunction;Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
+	public static synthetic fun resolveParameters$default (Lio/github/darkryh/katalyst/di/invocation/ParameterResolver;Lkotlin/reflect/KFunction;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/Map;
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/ApplicationInitializer {
+	public fun getInitializerId ()Ljava/lang/String;
+	public fun getOrder ()I
+	public abstract fun onApplicationReady (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ApplicationInitializer$DefaultImpls {
+	public static fun getInitializerId (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationInitializer;)Ljava/lang/String;
+	public static fun getOrder (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationInitializer;)I
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ApplicationInitializerRegistry : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/ApplicationInitializerRegistry;
+	public final fun getAll ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationInitializer;)V
+	public fun reset ()V
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializer {
+	public fun getInitializerId ()Ljava/lang/String;
+	public fun getOrder ()I
+	public abstract fun onRuntimeReady (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializer$DefaultImpls {
+	public static fun getInitializerId (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializer;)Ljava/lang/String;
+	public static fun getOrder (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializer;)I
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializerRegistry : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializerRegistry;
+	public final fun getAll ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/di/lifecycle/ApplicationReadyInitializer;)V
+	public fun reset ()V
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle : java/lang/Enum {
+	public static final field COMPONENT_DISCOVERY_REGISTRATION Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field DATABASE_SCHEMA_INITIALIZATION Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field KOIN_DI_BOOTSTRAP Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field KTOR_ENGINE_STARTUP Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field PRE_START_INITIALIZERS Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field RUNTIME_READY_INITIALIZERS Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static final field TRANSACTION_ADAPTER_REGISTRATION Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getDisplayName ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getLifecycleRef ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/BootstrapProgress {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgress;
+	public final fun clear ()V
+	public final fun completeLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;)V
+	public static synthetic fun completeLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgress;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun displayProgressSummary (Z)V
+	public static synthetic fun displayProgressSummary$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgress;ZILjava/lang/Object;)V
+	public final fun failLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/Throwable;)V
+	public static synthetic fun failLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgress;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public final fun getLifecycleDuration (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;)J
+	public final fun getLifecycles ()Ljava/util/List;
+	public final fun getTotalBootstrapTime ()J
+	public final fun skipLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;)V
+	public static synthetic fun skipLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgress;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun startLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;)V
+	public final fun startLifecycleCompact (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;)V
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger {
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun completeLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;)V
+	public static synthetic fun completeLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun displayProgressSummary (Z)V
+	public static synthetic fun displayProgressSummary$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger;ZILjava/lang/Object;)V
+	public final fun failLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/Throwable;)V
+	public static synthetic fun failLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public final fun getLifecycleDuration (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;)J
+	public final fun getLifecycles ()Ljava/util/List;
+	public final fun getTotalBootstrapTime ()J
+	public final fun skipLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;)V
+	public static synthetic fun skipLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun startLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;)V
+	public final fun startLifecycle (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;Z)V
+	public static synthetic fun startLifecycle$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;ZILjava/lang/Object;)V
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$LifecycleInfo {
+	public fun <init> (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;JJLio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;JJLio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;JJLio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$LifecycleInfo;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$LifecycleInfo;Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;JJLio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$LifecycleInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEndTime ()J
+	public final fun getLifecycle ()Lio/github/darkryh/katalyst/di/lifecycle/BootstrapLifecycle;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getStartTime ()J
+	public final fun getStatus ()Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public fun hashCode ()I
+	public final fun setEndTime (J)V
+	public final fun setMessage (Ljava/lang/String;)V
+	public final fun setStartTime (J)V
+	public final fun setStatus (Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus : java/lang/Enum {
+	public static final field COMPLETED Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static final field FAILED Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static final field PENDING Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static final field RUNNING Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static final field SKIPPED Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/lifecycle/BootstrapProgressLogger$PhaseStatus;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ComponentDiscoveryException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/DatabaseValidationException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/InitializerFailedException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitializerName ()Ljava/lang/String;
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public class io/github/darkryh/katalyst/di/lifecycle/LifecycleException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/LifecyclePhase : java/lang/Enum {
+	public static final field COMPONENT_DISCOVERY Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field DATABASE_VALIDATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field INITIALIZATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field POST_INITIALIZATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field PRE_INITIALIZATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field SCHEMA_INITIALIZATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field SERVICE_INSTANTIATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field TRANSACTION_ADAPTER_REGISTRATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static final field UNKNOWN Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public final fun getDisplayName ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/LifecycleStatusReport {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/LifecycleStatusReport;
+	public final fun snapshot ()Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/SchemaInitializationException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ServiceInitializationException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+	public final fun getServiceName ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport {
+	public fun <init> (JLjava/util/List;Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;
+	public final fun copy (JLjava/util/List;Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport;JLjava/util/List;Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLifecycles ()Ljava/util/List;
+	public final fun getTotalBootstrapTimeMs ()J
+	public final fun getWarningCounts ()Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$LifecycleReport {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$LifecycleReport;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$LifecycleReport;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$LifecycleReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getLifecycleRef ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts {
+	public fun <init> (III)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (III)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;IIIILjava/lang/Object;)Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport$WarningCounts;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCritical ()I
+	public final fun getInfo ()I
+	public final fun getWarning ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupWarnings {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/StartupWarnings;
+	public final fun add (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;)V
+	public static synthetic fun add$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupWarnings;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun clear ()V
+	public final fun countCritical ()I
+	public final fun countInfo ()I
+	public final fun countWarning ()I
+	public final fun display ()V
+	public final fun get ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator {
+	public fun <init> ()V
+	public final fun addWarning (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;)V
+	public static synthetic fun addWarning$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun clear ()V
+	public final fun displayIfPresent ()V
+	public final fun getCountBySeverity (Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;)I
+	public final fun getWarnings ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$Warning {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$Warning;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$Warning;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$Warning;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ljava/lang/String;
+	public final fun getHint ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSeverity ()Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity : java/lang/Enum {
+	public static final field CRITICAL Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public static final field INFO Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public static final field WARNING Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/lifecycle/StartupWarningsAggregator$WarningSeverity;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/TransactionAdapterException : io/github/darkryh/katalyst/di/lifecycle/LifecycleException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAdapterName ()Ljava/lang/String;
+	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
+}
+
+public final class io/github/darkryh/katalyst/di/model/TypeKey {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/reflect/KClass;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/reflect/KClass;Ljava/lang/String;)Lio/github/darkryh/katalyst/di/model/TypeKey;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/model/TypeKey;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/model/TypeKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getQualifier ()Ljava/lang/String;
+	public final fun getType ()Lkotlin/reflect/KClass;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/planning/BindingPlan {
+	public fun <init> (Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;
+	public final fun component2 ()Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;
+	public final fun copy (Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;)Lio/github/darkryh/katalyst/di/planning/BindingPlan;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/di/planning/BindingPlan;Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/planning/BindingPlan;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDiscovery ()Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;
+	public final fun getGraph ()Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/di/planning/BindingPlanBuilder {
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;[Ljava/lang/String;)V
+	public final fun build (Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Ljava/util/Set;)Lio/github/darkryh/katalyst/di/planning/BindingPlan;
+	public static synthetic fun build$default (Lio/github/darkryh/katalyst/di/planning/BindingPlanBuilder;Lio/github/darkryh/katalyst/di/discovery/DiscoverySnapshot;Ljava/util/Set;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/planning/BindingPlan;
+}
+
+public final class io/github/darkryh/katalyst/di/planning/InjectionStrategy : java/lang/Enum {
+	public static final field DEFAULT_VALUE Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static final field DIRECT Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static final field MISSING_REQUIRED Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static final field NULL_VALUE Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static final field SUPPLIED Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+	public static fun values ()[Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+}
+
+public final class io/github/darkryh/katalyst/di/planning/InjectionStrategyResolver {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/planning/InjectionStrategyResolver;
+	public final fun strategyFor (Lkotlin/reflect/KParameter;ZZ)Lio/github/darkryh/katalyst/di/planning/InjectionStrategy;
+}
+
+public final class io/github/darkryh/katalyst/di/registry/RegistryManager : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/registry/RegistryManager;
+	public final fun register (Lio/github/darkryh/katalyst/di/registry/ResettableRegistry;)V
+	public final fun registryCount ()I
+	public fun reset ()V
+	public final fun resetAll ()V
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public abstract fun reset ()V
+}
+
+public final class io/github/darkryh/katalyst/di/validation/DependencyValidator {
+	public fun <init> (Lio/github/darkryh/katalyst/di/analysis/DependencyGraph;)V
+	public final fun detectCycles ()Ljava/util/List;
+	public final fun findMissingDependencies ()Ljava/util/List;
+	public final fun findUninstantiableTypes ()Ljava/util/List;
+	public final fun getAllErrors ()Ljava/util/List;
+	public final fun validateAll ()Lio/github/darkryh/katalyst/di/error/ValidationReport;
+	public final fun validateSecondaryTypeBindings ()Ljava/util/List;
+	public final fun validateWellKnownProperties ()Ljava/util/List;
+}
+
+public abstract interface class io/github/darkryh/katalyst/migrations/KatalystMigration {
+	public fun down ()V
+	public fun getBlocking ()Z
+	public fun getChecksum ()Ljava/lang/String;
+	public fun getDescription ()Ljava/lang/String;
+	public abstract fun getId ()Ljava/lang/String;
+	public fun getTags ()Ljava/util/Set;
+	public fun getTransactional ()Z
+	public fun getVersion ()J
+	public abstract fun up ()V
+}
+
+public final class io/github/darkryh/katalyst/migrations/KatalystMigration$DefaultImpls {
+	public static fun down (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)V
+	public static fun getBlocking (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)Z
+	public static fun getChecksum (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)Ljava/lang/String;
+	public static fun getDescription (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)Ljava/lang/String;
+	public static fun getTags (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)Ljava/util/Set;
+	public static fun getTransactional (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)Z
+	public static fun getVersion (Lio/github/darkryh/katalyst/migrations/KatalystMigration;)J
+}
+

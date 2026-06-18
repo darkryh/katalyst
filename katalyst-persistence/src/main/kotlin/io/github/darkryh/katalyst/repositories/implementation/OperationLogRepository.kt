@@ -12,6 +12,16 @@ import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 
 /**
  * Persistent repository for operation logs.
@@ -47,8 +57,8 @@ class OperationLogRepository(private val database: Database) : OperationLog {
                     it[OperationLogTable.operationType] = operation.operationType
                     it[OperationLogTable.resourceType] = operation.resourceType
                     it[OperationLogTable.resourceId] = operation.resourceId
-                    it[OperationLogTable.operationData] = operation.operationData?.toString() // Convert to JSON string
-                    it[OperationLogTable.undoData] = operation.undoData?.toString()           // Convert to JSON string
+                    it[OperationLogTable.operationData] = operation.operationData?.let(::encodeJson)
+                    it[OperationLogTable.undoData] = operation.undoData?.let(::encodeJson)
                     it[OperationLogTable.status] = OperationStatus.PENDING.name
                     it[OperationLogTable.createdAt] = System.currentTimeMillis()
                 }
@@ -297,18 +307,42 @@ class OperationLogRepository(private val database: Database) : OperationLog {
         }
     }
 
-    /**
-     * Parse JSON string to Map.
-     *
-     * TODO: Use proper JSON serialization library (kotlinx.serialization or Jackson)
-     */
     private fun parseJson(json: String): Map<String, Any?>? {
         return try {
-            // Placeholder: In Phase 2.4 we'll implement proper JSON parsing
-            mapOf()
+            (Json.parseToJsonElement(json) as? JsonObject)?.mapValues { (_, value) -> value.toKotlinValue() }
         } catch (e: Exception) {
             logger.warn("Failed to parse JSON: {}", e.message)
             null
+        }
+    }
+
+    private fun encodeJson(value: Map<String, Any?>): String = JsonObject(
+        value.mapValues { (_, child) -> child.toJsonElement() }
+    ).toString()
+
+    private fun Any?.toJsonElement(): JsonElement = when (this) {
+        null -> JsonNull
+        is JsonElement -> this
+        is String -> JsonPrimitive(this)
+        is Boolean -> JsonPrimitive(this)
+        is Number -> JsonPrimitive(this)
+        is Enum<*> -> JsonPrimitive(name)
+        is Map<*, *> -> JsonObject(entries.associate { (key, value) -> key.toString() to value.toJsonElement() })
+        is Iterable<*> -> JsonArray(map { it.toJsonElement() })
+        is Array<*> -> JsonArray(map { it.toJsonElement() })
+        else -> JsonPrimitive(toString())
+    }
+
+    private fun JsonElement.toKotlinValue(): Any? = when (this) {
+        JsonNull -> null
+        is JsonObject -> mapValues { (_, value) -> value.toKotlinValue() }
+        is JsonArray -> map { it.toKotlinValue() }
+        is JsonPrimitive -> when {
+            isString -> contentOrNull
+            booleanOrNull != null -> booleanOrNull
+            longOrNull != null -> longOrNull
+            doubleOrNull != null -> doubleOrNull
+            else -> contentOrNull
         }
     }
 }

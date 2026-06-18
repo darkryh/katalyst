@@ -94,7 +94,17 @@ class ManagedSqlExecutor(
         sql: String,
         parameters: List<Any?>,
         mapper: (java.sql.ResultSet) -> T
-    ): T? = query(sql, parameters, mapper).firstOrNull()
+    ): T? = withConnection { connection ->
+        runSql(sql) {
+            connection.prepareStatement(sql).use { statement ->
+                bindParameters(statement, parameters)
+                statement.maxRows = 1
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) mapper(resultSet) else null
+                }
+            }
+        }
+    }
 
     private fun bindParameters(statement: java.sql.PreparedStatement, parameters: List<Any?>) {
         parameters.forEachIndexed { index, value ->

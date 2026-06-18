@@ -1,0 +1,36 @@
+public final class io/github/darkryh/katalyst/koin/KoinBeanEngine : io/github/darkryh/katalyst/di/feature/KatalystBeanEngine {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/koin/KoinBeanEngine;
+	public fun currentOrNull ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public fun getId ()Ljava/lang/String;
+	public fun loadModules (Ljava/util/List;Z)V
+	public fun registerInstance (Ljava/lang/Object;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/lang/String;)V
+	public fun start (Ljava/util/List;Z)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public fun stop ()V
+}
+
+public final class io/github/darkryh/katalyst/koin/KoinKatalystBeanEngine : io/github/darkryh/katalyst/di/feature/KatalystBeanEngine {
+	public fun <init> ()V
+	public fun currentOrNull ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public fun getId ()Ljava/lang/String;
+	public fun loadModules (Ljava/util/List;Z)V
+	public fun registerInstance (Ljava/lang/Object;Lkotlin/reflect/KClass;Ljava/util/List;Ljava/lang/String;)V
+	public fun start (Ljava/util/List;Z)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public fun stop ()V
+}
+
+public final class io/github/darkryh/katalyst/koin/KoinKatalystContainer : io/github/darkryh/katalyst/core/di/KatalystContainer {
+	public fun <init> (Lorg/koin/core/Koin;)V
+	public fun contains (Lkotlin/reflect/KClass;Ljava/lang/String;)Z
+	public fun get (Lkotlin/reflect/KClass;Ljava/lang/String;)Ljava/lang/Object;
+	public fun getAll (Lkotlin/reflect/KClass;)Ljava/util/List;
+	public final fun getKoin ()Lorg/koin/core/Koin;
+	public fun getOrNull (Lkotlin/reflect/KClass;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/koin/KoinKatalystContainerFactory : io/github/darkryh/katalyst/core/di/KatalystContainerFactory {
+	public fun <init> ()V
+	public fun create (Ljava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public fun getId ()Ljava/lang/String;
+	public fun supports (Ljava/lang/Object;)Z
+}
+

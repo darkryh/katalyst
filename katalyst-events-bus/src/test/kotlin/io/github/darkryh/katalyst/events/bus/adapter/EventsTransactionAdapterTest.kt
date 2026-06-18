@@ -4,12 +4,18 @@ import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.events.EventMetadata
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
+import io.github.darkryh.katalyst.events.bus.EventHandlerConfig
+import io.github.darkryh.katalyst.events.bus.EventHandlingMode
 import io.github.darkryh.katalyst.events.bus.deduplication.EventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.validation.DefaultEventPublishingValidator
 import io.github.darkryh.katalyst.events.bus.validation.EventValidationException
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import java.util.Collections
 import kotlin.reflect.KClass
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -419,5 +425,40 @@ class EventsTransactionAdapterTest {
             // Expected - validation failed before any publish attempt
             assertEquals(0, eventBus.publishedEvents.size)
         }
+    }
+
+    @Test
+    @DisplayName("Concurrent transactions keep async events isolated")
+    fun concurrentTransactionsKeepAsyncEventsIsolated() = runTest {
+        val bus = ApplicationEventBus()
+        val published = Collections.synchronizedList(mutableListOf<String>())
+        bus.register(object : EventHandler<TestEvent> {
+            override val eventType: KClass<TestEvent> = TestEvent::class
+            override suspend fun handle(event: TestEvent) {
+                published.add(event.eventId)
+            }
+        })
+        bus.configureHandlers(
+            EventHandlerConfig(
+                eventType = TestEvent::class.qualifiedName!!,
+                handlingMode = EventHandlingMode.ASYNC_AFTER_COMMIT,
+            )
+        )
+        val sharedAdapter = EventsTransactionAdapter(bus)
+
+        coroutineScope {
+            (0 until 100).map { index ->
+                async {
+                    val transactionContext = TransactionEventContext()
+                    transactionContext.queueEvent(TestEvent(eventId = "transaction-$index"))
+                    sharedAdapter.onPhase(TransactionPhase.BEFORE_COMMIT, transactionContext)
+                    sharedAdapter.onPhase(TransactionPhase.AFTER_COMMIT, transactionContext)
+                    assertEquals(0, transactionContext.getDeferredCount(sharedAdapter))
+                }
+            }.awaitAll()
+        }
+
+        assertEquals((0 until 100).map { "transaction-$it" }.toSet(), published.toSet())
+        assertEquals(100, published.size)
     }
 }

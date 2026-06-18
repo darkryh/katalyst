@@ -1,5 +1,5 @@
 plugins {
-    id("io.github.darkryh.katalyst.conventions.persistence")
+    id("io.github.darkryh.katalyst.conventions.common")
 }
 
 dependencies {
@@ -10,6 +10,8 @@ dependencies {
 
     implementation(libs.exposed.migration.core)
     implementation(libs.exposed.migration.jdbc)
+    implementation(libs.slf4j.api)
 
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.h2)
 }

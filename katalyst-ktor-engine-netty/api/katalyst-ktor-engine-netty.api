@@ -1,0 +1,6 @@
+public final class io/github/darkryh/katalyst/ktor/engine/netty/NettyServer : io/github/darkryh/katalyst/di/config/KatalystServerEngine {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/ktor/engine/netty/NettyServer;
+	public fun build ()Lio/ktor/server/engine/EmbeddedServer;
+	public final fun invoke ()Lio/ktor/server/engine/EmbeddedServer;
+}
+

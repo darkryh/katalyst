@@ -1,0 +1,132 @@
+public abstract interface class io/github/darkryh/katalyst/core/component/Component {
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/component/Service : io/github/darkryh/katalyst/core/component/Component {
+	public fun currentTransaction (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun currentTransaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getTransactionManager ()Lio/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager;
+	public fun transaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun transaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun workflowTransaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun workflowTransaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun workflowTransaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/core/component/Service$DefaultImpls {
+	public static fun currentTransaction (Lio/github/darkryh/katalyst/core/component/Service;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun getTransactionManager (Lio/github/darkryh/katalyst/core/component/Service;)Lio/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager;
+	public static fun transaction (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun workflowTransaction (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun workflowTransaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/core/config/ConfigException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/config/ConfigProvider : io/github/darkryh/katalyst/core/component/Component {
+	public abstract fun get (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun get$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getAllKeys ()Ljava/util/Set;
+	public abstract fun getBoolean (Ljava/lang/String;Z)Z
+	public static synthetic fun getBoolean$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
+	public abstract fun getInt (Ljava/lang/String;I)I
+	public static synthetic fun getInt$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;IILjava/lang/Object;)I
+	public abstract fun getList (Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static synthetic fun getList$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Ljava/util/List;
+	public abstract fun getLong (Ljava/lang/String;J)J
+	public static synthetic fun getLong$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;JILjava/lang/Object;)J
+	public abstract fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun getString$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public abstract fun hasKey (Ljava/lang/String;)Z
+}
+
+public final class io/github/darkryh/katalyst/core/config/ConfigProvider$DefaultImpls {
+	public static synthetic fun get$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun getBoolean$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
+	public static synthetic fun getInt$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;IILjava/lang/Object;)I
+	public static synthetic fun getList$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun getLong$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;JILjava/lang/Object;)J
+	public static synthetic fun getString$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/config/ConfigValidator : io/github/darkryh/katalyst/core/component/Component {
+	public abstract fun validate ()V
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/di/KatalystContainer {
+	public abstract fun contains (Lkotlin/reflect/KClass;Ljava/lang/String;)Z
+	public static synthetic fun contains$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Z
+	public abstract fun get (Lkotlin/reflect/KClass;Ljava/lang/String;)Ljava/lang/Object;
+	public static synthetic fun get$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getAll (Lkotlin/reflect/KClass;)Ljava/util/List;
+	public abstract fun getOrNull (Lkotlin/reflect/KClass;Ljava/lang/String;)Ljava/lang/Object;
+	public static synthetic fun getOrNull$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/core/di/KatalystContainer$DefaultImpls {
+	public static synthetic fun contains$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Z
+	public static synthetic fun get$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun getOrNull$default (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/core/di/KatalystContainerFactories {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/core/di/KatalystContainerFactories;
+	public final fun create (Ljava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/di/KatalystContainerFactory {
+	public abstract fun create (Ljava/lang/Object;)Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun supports (Ljava/lang/Object;)Z
+}
+
+public final class io/github/darkryh/katalyst/core/di/KatalystContainerProvider {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/core/di/KatalystContainerProvider;
+	public final fun current ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public final fun currentOrNull ()Lio/github/darkryh/katalyst/core/di/KatalystContainer;
+	public final fun reset ()V
+	public final fun set (Lio/github/darkryh/katalyst/core/di/KatalystContainer;)V
+}
+
+public abstract interface annotation class io/github/darkryh/katalyst/core/dsl/KatalystDslMarker : java/lang/annotation/Annotation {
+}
+
+public final class io/github/darkryh/katalyst/core/exception/DependencyInjectionException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/darkryh/katalyst/core/validation/ValidationResult {
+	public static final field Companion Lio/github/darkryh/katalyst/core/validation/ValidationResult$Companion;
+	public fun <init> (ZLjava/util/List;)V
+	public synthetic fun <init> (ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ZLjava/util/List;)Lio/github/darkryh/katalyst/core/validation/ValidationResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/core/validation/ValidationResult;ZLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/core/validation/ValidationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isValid ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/core/validation/ValidationResult$Companion {
+	public final fun invalid ([Ljava/lang/String;)Lio/github/darkryh/katalyst/core/validation/ValidationResult;
+	public final fun valid ()Lio/github/darkryh/katalyst/core/validation/ValidationResult;
+}
+
+public abstract interface class io/github/darkryh/katalyst/core/validation/Validator : io/github/darkryh/katalyst/core/component/Component {
+	public fun getValidationErrors (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getValidationErrors$suspendImpl (Lio/github/darkryh/katalyst/core/validation/Validator;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun validate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/core/validation/Validator$DefaultImpls {
+	public static fun getValidationErrors (Lio/github/darkryh/katalyst/core/validation/Validator;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

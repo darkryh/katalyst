@@ -17,6 +17,7 @@ class PersistenceConventionPlugin : Plugin<Project> {
                 implementation(libs.library("exposed-dao"))
                 implementation(libs.library("exposed-jdbc"))
                 implementation(libs.library("koin-core"))
+                implementation(libs.library("slf4j-api"))
 
                 testImplementation(libs.library("h2"))
                 testImplementation(libs.library("kotlin-test-junit5"))

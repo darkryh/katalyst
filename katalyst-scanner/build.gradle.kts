@@ -12,10 +12,13 @@ dependencies {
 
     // Concurrency & reflection utilities
     implementation(libs.reflections)
+    implementation(kotlin("reflect"))
+    implementation(libs.slf4j.api)
 
     // Testing
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.junit.platform.launcher)
     testImplementation(projects.katalystEvents)
+    testImplementation(libs.logback)
 }

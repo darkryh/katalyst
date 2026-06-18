@@ -1,0 +1,44 @@
+public final class io/github/darkryh/katalyst/config/spi/ConfigFormat {
+	public static final field Companion Lio/github/darkryh/katalyst/config/spi/ConfigFormat$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/github/darkryh/katalyst/config/spi/ConfigFormat;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/config/spi/ConfigFormat;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/config/spi/ConfigFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/config/spi/ConfigFormat$Companion {
+	public final fun fromExtension (Ljava/lang/String;)Lio/github/darkryh/katalyst/config/spi/ConfigFormat;
+	public final fun getHOCON ()Lio/github/darkryh/katalyst/config/spi/ConfigFormat;
+	public final fun getYAML ()Lio/github/darkryh/katalyst/config/spi/ConfigFormat;
+}
+
+public abstract interface class io/github/darkryh/katalyst/config/spi/ConfigLoader {
+	public abstract fun load (Ljava/util/List;)Lio/ktor/server/config/ApplicationConfig;
+	public abstract fun supports (Lio/github/darkryh/katalyst/config/spi/ConfigFormat;)Z
+}
+
+public final class io/github/darkryh/katalyst/config/spi/ConfigLoaderResolver {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/config/spi/ConfigLoaderResolver;
+	public final fun load (Ljava/util/List;Lio/github/darkryh/katalyst/config/spi/ConfigFormat;)Lio/ktor/server/config/ApplicationConfig;
+	public static synthetic fun load$default (Lio/github/darkryh/katalyst/config/spi/ConfigLoaderResolver;Ljava/util/List;Lio/github/darkryh/katalyst/config/spi/ConfigFormat;ILjava/lang/Object;)Lio/ktor/server/config/ApplicationConfig;
+	public final fun resolveProfiledPaths (Ljava/lang/String;Lio/github/darkryh/katalyst/config/spi/ConfigFormat;)Ljava/util/List;
+	public static synthetic fun resolveProfiledPaths$default (Lio/github/darkryh/katalyst/config/spi/ConfigLoaderResolver;Ljava/lang/String;Lio/github/darkryh/katalyst/config/spi/ConfigFormat;ILjava/lang/Object;)Ljava/util/List;
+}
+
+public abstract interface class io/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader : io/github/darkryh/katalyst/config/spi/ConfigLoader {
+	public fun defaultBaseName ()Ljava/lang/String;
+	public fun profileEnvVar ()Ljava/lang/String;
+	public abstract fun resolveProfiledPaths (Ljava/lang/String;)Ljava/util/List;
+	public static synthetic fun resolveProfiledPaths$default (Lio/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader$DefaultImpls {
+	public static fun defaultBaseName (Lio/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader;)Ljava/lang/String;
+	public static fun profileEnvVar (Lio/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader;)Ljava/lang/String;
+	public static synthetic fun resolveProfiledPaths$default (Lio/github/darkryh/katalyst/config/spi/ProfileAwareConfigLoader;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+}
+

@@ -1,17 +1,17 @@
 package io.github.darkryh.katalyst.events.bus.adapter
 
+import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
-import io.github.darkryh.katalyst.events.bus.EventHandlerConfig
 import io.github.darkryh.katalyst.events.bus.EventHandlingMode
 import io.github.darkryh.katalyst.events.bus.deduplication.EventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.deduplication.NoOpEventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.validation.DefaultEventPublishingValidator
 import io.github.darkryh.katalyst.events.bus.validation.EventPublishingValidator
 import io.github.darkryh.katalyst.events.bus.validation.EventValidationException
-import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapter
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
+import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 
 /**
@@ -54,12 +54,6 @@ class EventsTransactionAdapter(
 ) : TransactionAdapter {
     private val logger = LoggerFactory.getLogger(EventsTransactionAdapter::class.java)
 
-    /**
-     * Events to publish asynchronously after commit.
-     * SYNC_BEFORE_COMMIT events are published in BEFORE_COMMIT phase and removed from this list.
-     */
-    private val asyncEventsForAfterCommit = mutableListOf<DomainEvent>()
-
     override fun name(): String = "Events"
 
     override fun priority(): Int = 5  // Medium priority - after persistence
@@ -75,7 +69,7 @@ class EventsTransactionAdapter(
         when (phase) {
             TransactionPhase.BEFORE_COMMIT_VALIDATION -> validateAllEvents(context)
             TransactionPhase.BEFORE_COMMIT -> publishSyncBeforeCommitEvents(context)
-            TransactionPhase.AFTER_COMMIT -> publishAsyncAfterCommitEvents()
+            TransactionPhase.AFTER_COMMIT -> publishAsyncAfterCommitEvents(context)
             TransactionPhase.ON_ROLLBACK -> discardPendingEvents(context)
             else -> Unit
         }
@@ -154,7 +148,7 @@ class EventsTransactionAdapter(
 
         // Queue async events for AFTER_COMMIT phase
         if (asyncEvents.isNotEmpty()) {
-            asyncEventsForAfterCommit.addAll(asyncEvents)
+            asyncEvents.forEach { context.defer(this, it) }
             logger.debug("{} event(s) queued for async publishing after commit", asyncEvents.size)
         }
 
@@ -200,7 +194,8 @@ class EventsTransactionAdapter(
      * Handler failures don't affect the transaction - they're logged and isolated.
      * This provides eventual consistency with decoupled systems.
      */
-    private suspend fun publishAsyncAfterCommitEvents() {
+    private suspend fun publishAsyncAfterCommitEvents(context: TransactionEventContext) {
+        val asyncEventsForAfterCommit = context.drainDeferred(this).filterIsInstance<DomainEvent>()
         if (asyncEventsForAfterCommit.isEmpty()) {
             logger.trace("No async events to publish after transaction commit")
             return
@@ -233,6 +228,8 @@ class EventsTransactionAdapter(
                 publishedCount++
 
                 logger.debug("ASYNC event published successfully: {}", event::class.simpleName)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 failedCount++
                 logger.error(
@@ -247,7 +244,6 @@ class EventsTransactionAdapter(
             }
         }
 
-        asyncEventsForAfterCommit.clear()
         logger.debug(
             "Finished publishing async events: {} published, {} failed (isolated from transaction)",
             publishedCount,
@@ -268,7 +264,7 @@ class EventsTransactionAdapter(
      */
     private fun discardPendingEvents(context: TransactionEventContext) {
         val pendingCount = context.getPendingEventCount()
-        val asyncCount = asyncEventsForAfterCommit.size
+        val asyncCount = context.getDeferredCount(this)
 
         if (pendingCount == 0 && asyncCount == 0) {
             logger.debug("No pending events to discard on rollback")
@@ -280,7 +276,7 @@ class EventsTransactionAdapter(
 
         if (asyncCount > 0) {
             logger.debug("Discarding {} async event(s) queued for after-commit due to rollback", asyncCount)
-            asyncEventsForAfterCommit.clear()
+            context.clearDeferred(this)
         }
 
         logger.debug("Finished discarding pending events")

@@ -44,7 +44,7 @@ fun BoshiApp() {
     BoshiTheme {
         CompositionLocalProvider(value = DashboardCompositionLayoutState provides DashboardLayoutState()) {
             val navigator: Navigator = koinInject()
-            val entryProvider = koinEntryProvider()
+            val entryProvider = koinEntryProvider<Any>()
 
             var selectedAccount by remember { mutableStateOf(Stubs.accounts.first()) }
             var isComposeVisible by remember { mutableStateOf(false) }

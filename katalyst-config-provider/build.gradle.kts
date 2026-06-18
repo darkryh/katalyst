@@ -12,4 +12,5 @@ dependencies {
 
     // Reflections library - for bytecode scanning of AutomaticServiceConfigLoader
     implementation(libs.reflections)
+    implementation(libs.slf4j.api)
 }

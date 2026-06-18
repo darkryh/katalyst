@@ -28,6 +28,8 @@ dependencies {
 
     // Language/runtime utilities
     implementation(kotlin("reflect"))
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.slf4j.api)
 
     // Diagnostics & reflection aids
     implementation(libs.jansi)
@@ -45,4 +47,16 @@ dependencies {
     testImplementation(libs.junit.platform.launcher)
     testImplementation(testFixtures(projects.katalystTestingCore))
     testRuntimeOnly(projects.katalystKoinBean)
+    testImplementation(libs.logback)
+}
+
+// Per-module coverage floor (ratchet — raise as coverage grows; never lower). See TESTING_STRATEGY.md.
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(50) // baseline ~55% line coverage
+            }
+        }
+    }
 }

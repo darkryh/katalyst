@@ -1,16 +1,17 @@
 package io.github.darkryh.katalyst.transactions.context
 
 import io.github.darkryh.katalyst.events.DomainEvent
-import kotlinx.coroutines.ThreadContextElement
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Manages pending domain events within a transaction context.
  *
  * This context element allows events to be queued during transaction execution
- * and published after the transaction commits. Events are stored in a thread-local
- * queue that is automatically cleaned up when the context leaves scope.
+ * and published after the transaction commits. State belongs to this context
+ * instance, so it remains stable when a coroutine resumes on another thread.
  *
  * **Usage:**
  * ```kotlin
@@ -33,8 +34,8 @@ import kotlin.coroutines.CoroutineContext
 class TransactionEventContext : AbstractCoroutineContextElement(Key) {
     companion object Key : CoroutineContext.Key<TransactionEventContext>
 
-    // Thread-local queue for events in current transaction
-    private val pendingEvents = ThreadLocal.withInitial { mutableListOf<DomainEvent>() }
+    private val pendingEvents = ConcurrentLinkedQueue<DomainEvent>()
+    private val deferredItems = ConcurrentHashMap<Any, ConcurrentLinkedQueue<Any>>()
 
     /**
      * Queues an event to be published after the transaction commits.
@@ -42,7 +43,7 @@ class TransactionEventContext : AbstractCoroutineContextElement(Key) {
      * @param event The domain event to queue
      */
     fun queueEvent(event: DomainEvent) {
-        pendingEvents.get().add(event)
+        pendingEvents.add(event)
     }
 
     /**
@@ -51,7 +52,7 @@ class TransactionEventContext : AbstractCoroutineContextElement(Key) {
      * @return List of queued events
      */
     fun getPendingEvents(): List<DomainEvent> {
-        return pendingEvents.get().toList()
+        return pendingEvents.toList()
     }
 
     /**
@@ -59,7 +60,7 @@ class TransactionEventContext : AbstractCoroutineContextElement(Key) {
      * Called after events are published or transaction rolls back.
      */
     fun clearPendingEvents() {
-        pendingEvents.get().clear()
+        pendingEvents.clear()
     }
 
     /**
@@ -68,7 +69,7 @@ class TransactionEventContext : AbstractCoroutineContextElement(Key) {
      * @return true if events are queued, false otherwise
      */
     fun hasPendingEvents(): Boolean {
-        return pendingEvents.get().isNotEmpty()
+        return pendingEvents.isNotEmpty()
     }
 
     /**
@@ -77,7 +78,28 @@ class TransactionEventContext : AbstractCoroutineContextElement(Key) {
      * @return Number of queued events
      */
     fun getPendingEventCount(): Int {
-        return pendingEvents.get().size
+        return pendingEvents.size
+    }
+
+    /** Stores work owned by an adapter until a later transaction phase. */
+    fun defer(owner: Any, item: Any) {
+        deferredItems.computeIfAbsent(owner) { ConcurrentLinkedQueue() }.add(item)
+    }
+
+    /** Removes and returns all deferred work for [owner]. */
+    fun drainDeferred(owner: Any): List<Any> =
+        deferredItems.remove(owner)?.toList().orEmpty()
+
+    /** Discards deferred work for [owner], returning the number of removed items. */
+    fun clearDeferred(owner: Any): Int = deferredItems.remove(owner)?.size ?: 0
+
+    /** Returns the deferred item count for diagnostics and lifecycle tests. */
+    fun getDeferredCount(owner: Any): Int = deferredItems[owner]?.size ?: 0
+
+    /** Clears every payload retained by this transaction context. */
+    fun clear() {
+        pendingEvents.clear()
+        deferredItems.clear()
     }
 
     override fun toString(): String = "TransactionEventContext(pending=${getPendingEventCount()})"

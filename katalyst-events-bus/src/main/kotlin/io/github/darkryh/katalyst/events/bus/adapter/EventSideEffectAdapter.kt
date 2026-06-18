@@ -12,6 +12,7 @@ import io.github.darkryh.katalyst.transactions.sideeffects.SideEffectConfig
 import io.github.darkryh.katalyst.transactions.sideeffects.SideEffectHandlingMode
 import io.github.darkryh.katalyst.transactions.sideeffects.TransactionalSideEffectAdapter
 import org.slf4j.LoggerFactory
+import kotlinx.coroutines.CancellationException
 
 /**
  * Event-specialized adapter for the generic transactional side-effect framework.
@@ -64,11 +65,6 @@ class EventSideEffectAdapter(
         priority = 5,
         isCritical = true
     )
-
-    /**
-     * Pending events that were queued during transaction.
-     */
-    private val pendingEvents = mutableListOf<DomainEvent>()
 
     override fun name(): String = genericAdapter.name()
 
@@ -130,7 +126,7 @@ class EventSideEffectAdapter(
      * @throws Exception If SYNC event handler fails (causes rollback)
      */
     private suspend fun executeEventSideEffects(context: TransactionEventContext) {
-        val events = context.getPendingEvents().filterIsInstance<DomainEvent>()
+        val events = context.getPendingEvents()
         if (events.isEmpty()) {
             logger.debug("No events to execute before transaction commit")
             return
@@ -148,7 +144,7 @@ class EventSideEffectAdapter(
                 syncEvents.add(event)
             } else {
                 asyncEvents.add(event)
-                pendingEvents.add(event)  // Queue for AFTER_COMMIT
+                context.defer(this, event)
             }
         }
 
@@ -204,6 +200,7 @@ class EventSideEffectAdapter(
      * @param context The transaction context (unused - async is after commit)
      */
     private suspend fun handleAsyncEvents(context: TransactionEventContext) {
+        val pendingEvents = context.drainDeferred(this).filterIsInstance<DomainEvent>()
         if (pendingEvents.isEmpty()) {
             logger.debug("No async events to execute after transaction commit")
             return
@@ -234,6 +231,8 @@ class EventSideEffectAdapter(
                     "ASYNC event executed successfully: {}",
                     event.eventType()
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 failedCount++
                 logger.error(
@@ -244,8 +243,6 @@ class EventSideEffectAdapter(
                 // Don't rethrow - async events are fire-and-forget
             }
         }
-
-        pendingEvents.clear()
 
         logger.debug(
             "Finished executing async events: {} executed, {} failed (isolated)",
@@ -261,7 +258,7 @@ class EventSideEffectAdapter(
      */
     private fun discardPendingEvents(context: TransactionEventContext) {
         val pendingCount = context.getPendingEventCount()
-        val asyncCount = pendingEvents.size
+        val asyncCount = context.getDeferredCount(this)
 
         if (pendingCount == 0 && asyncCount == 0) {
             logger.debug("No pending events to discard on rollback")
@@ -279,7 +276,7 @@ class EventSideEffectAdapter(
                 "Discarding {} async event(s) queued for after-commit due to rollback",
                 asyncCount
             )
-            pendingEvents.clear()
+            context.clearDeferred(this)
         }
 
         logger.debug("Finished discarding pending events")

@@ -56,10 +56,17 @@ data class TransactionPhaseEvent(
  * tracer.recordPhaseComplete(TransactionPhase.BEFORE_COMMIT, eventCount = 5, durationMs = 50)
  * ```
  */
-class TransactionPhaseTracer {
+class TransactionPhaseTracer(
+    private val maxEvents: Int = 10_000,
+) {
     private val logger = LoggerFactory.getLogger(TransactionPhaseTracer::class.java)
-    private val events = mutableListOf<TransactionPhaseEvent>()
+    private val events = ArrayDeque<TransactionPhaseEvent>()
+    private val eventsLock = Any()
     private val phaseTimings = ConcurrentHashMap<String, Long>()
+
+    init {
+        require(maxEvents > 0) { "maxEvents must be positive" }
+    }
 
     /**
      * Record transaction phase started.
@@ -74,7 +81,7 @@ class TransactionPhaseTracer {
             phase = phase,
             eventType = TransactionPhaseEvent.EventType.PHASE_STARTED
         )
-        events.add(event)
+        record(event)
         logger.debug("Transaction phase started: {} (txId: {})", phase, transactionId)
     }
 
@@ -92,7 +99,7 @@ class TransactionPhaseTracer {
             eventType = TransactionPhaseEvent.EventType.EVENTS_VALIDATED,
             eventCount = eventCount
         )
-        events.add(event)
+        record(event)
         logger.debug("Events validated: {} event(s) in {}", eventCount, phase)
     }
 
@@ -112,7 +119,7 @@ class TransactionPhaseTracer {
             eventCount = eventCount,
             handlerCount = handlerCount
         )
-        events.add(event)
+        record(event)
         logger.debug("Events published: {} event(s) with {} handler(s) in {}", eventCount, handlerCount, phase)
     }
 
@@ -134,7 +141,7 @@ class TransactionPhaseTracer {
             failedHandlerCount = failedCount,
             error = error
         )
-        events.add(event)
+        record(event)
         logger.warn("Events failed: {} of {} event(s) in {} - {}", failedCount, eventCount, phase, error)
     }
 
@@ -152,7 +159,7 @@ class TransactionPhaseTracer {
             eventType = TransactionPhaseEvent.EventType.EVENTS_QUEUED,
             eventCount = eventCount
         )
-        events.add(event)
+        record(event)
         logger.debug("Events queued for later: {} event(s) in {}", eventCount, phase)
     }
 
@@ -172,7 +179,8 @@ class TransactionPhaseTracer {
             eventCount = eventCount,
             durationMs = durationMs
         )
-        events.add(event)
+        record(event)
+        phaseTimings.remove("$transactionId:${phase.name}:start")
         logger.debug("Phase completed: {} ({} event(s), {}ms)", phase, eventCount, durationMs)
     }
 
@@ -192,7 +200,8 @@ class TransactionPhaseTracer {
             eventCount = eventCount,
             error = reason
         )
-        events.add(event)
+        record(event)
+        phaseTimings.remove("$transactionId:${phase.name}:start")
         logger.warn("Rollback triggered: {} event(s) discarded in {} - {}", eventCount, phase, reason)
     }
 
@@ -210,26 +219,28 @@ class TransactionPhaseTracer {
             eventType = TransactionPhaseEvent.EventType.ERROR_OCCURRED,
             error = error.message
         )
-        events.add(event)
+        record(event)
+        phaseTimings.remove("$transactionId:${phase.name}:start")
         logger.error("Phase error: {} - {}", phase, error.message, error)
     }
 
     /**
      * Get all recorded events.
      */
-    fun getEvents(): List<TransactionPhaseEvent> = events.toList()
+    fun getEvents(): List<TransactionPhaseEvent> = synchronized(eventsLock) { events.toList() }
 
     /**
      * Get events for specific phase.
      */
     fun getPhaseEvents(phase: TransactionPhase): List<TransactionPhaseEvent> {
-        return events.filter { it.phase == phase }
+        return getEvents().filter { it.phase == phase }
     }
 
     /**
      * Get summary of transaction execution.
      */
     fun getSummary(): String {
+        val events = getEvents()
         if (events.isEmpty()) {
             return "No transaction events recorded"
         }
@@ -255,7 +266,7 @@ class TransactionPhaseTracer {
      * Clear recorded events.
      */
     fun clear() {
-        events.clear()
+        synchronized(eventsLock) { events.clear() }
         phaseTimings.clear()
     }
 
@@ -263,6 +274,7 @@ class TransactionPhaseTracer {
      * Get detailed metrics.
      */
     fun getMetrics(): TransactionMetrics {
+        val events = getEvents()
         val publishedCount = events
             .filter { it.eventType == TransactionPhaseEvent.EventType.EVENTS_PUBLISHED }
             .sumOf { it.eventCount }
@@ -282,6 +294,16 @@ class TransactionPhaseTracer {
             totalDurationMs = totalDuration,
             averageDurationMs = if (events.isNotEmpty()) totalDuration / events.size else 0
         )
+    }
+
+    /** Current retained trace-event count. */
+    fun size(): Int = synchronized(eventsLock) { events.size }
+
+    private fun record(event: TransactionPhaseEvent) {
+        synchronized(eventsLock) {
+            if (events.size == maxEvents) events.removeFirst()
+            events.addLast(event)
+        }
     }
 
     /**

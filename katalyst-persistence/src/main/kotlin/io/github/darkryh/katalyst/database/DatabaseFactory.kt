@@ -60,6 +60,18 @@ class DatabaseFactory private constructor(
      */
     fun createSqlExecutor(): SqlExecutor = ManagedSqlExecutor(dataSource)
 
+    /** Returns connection-pool cardinalities without exposing the datasource. */
+    fun poolSnapshot(): DatabasePoolSnapshot {
+        val pool = dataSource.hikariPoolMXBean
+        return DatabasePoolSnapshot(
+            active = pool?.activeConnections ?: 0,
+            idle = pool?.idleConnections ?: 0,
+            pending = pool?.threadsAwaitingConnection ?: 0,
+            total = pool?.totalConnections ?: 0,
+            closed = dataSource.isClosed,
+        )
+    }
+
     companion object {
         private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
 
@@ -142,3 +154,11 @@ class DatabaseFactory private constructor(
         }
     }
 }
+
+data class DatabasePoolSnapshot(
+    val active: Int,
+    val idle: Int,
+    val pending: Int,
+    val total: Int,
+    val closed: Boolean,
+)

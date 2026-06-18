@@ -1,0 +1,151 @@
+public final class io/github/darkryh/katalyst/migrations/extensions/MigrationBuilderExtensionsKt {
+	public static final fun enableMigrations (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+	public static synthetic fun enableMigrations$default (Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/di/KatalystFeaturesBuilder;
+}
+
+public final class io/github/darkryh/katalyst/migrations/feature/MigrationFeature : io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public fun <init> (Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;)V
+	public fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/migrations/options/MigrationOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ZLjava/util/Set;Ljava/util/Set;ZZLjava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;)V
+	public synthetic fun <init> (Ljava/lang/String;ZLjava/util/Set;Ljava/util/Set;ZZLjava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/Set;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/nio/file/Path;
+	public final fun copy (Ljava/lang/String;ZLjava/util/Set;Ljava/util/Set;ZZLjava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;)Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;Ljava/lang/String;ZLjava/util/Set;Ljava/util/Set;ZZLjava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;ILjava/lang/Object;)Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaselineVersion ()Ljava/lang/String;
+	public final fun getDryRun ()Z
+	public final fun getExcludeTags ()Ljava/util/Set;
+	public final fun getIncludeTags ()Ljava/util/Set;
+	public final fun getRunAtStartup ()Z
+	public final fun getSchemaTable ()Ljava/lang/String;
+	public final fun getScriptDirectory ()Ljava/nio/file/Path;
+	public final fun getStopOnFailure ()Z
+	public final fun getTargetVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationDryRunReport {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationDryRunReport;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/migrations/runner/MigrationDryRunReport;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/migrations/runner/MigrationDryRunReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getPending ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationRunner {
+	public fun <init> (Lio/github/darkryh/katalyst/database/DatabaseFactory;Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;)V
+	public final fun dryRun (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationDryRunReport;
+	public final fun runMigrations (Ljava/util/List;)V
+	public final fun status (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationStatusReport;
+	public final fun validateMigrations (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationValidationResult;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationState : java/lang/Enum {
+	public static final field APPLIED Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static final field BASELINED Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static final field FILTERED Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static final field PENDING Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static final field UNKNOWN_APPLIED Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public static fun values ()[Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationStatus {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lio/github/darkryh/katalyst/migrations/runner/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lio/github/darkryh/katalyst/migrations/runner/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Set;
+	public final fun component6 ()Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun component9 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lio/github/darkryh/katalyst/migrations/runner/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lio/github/darkryh/katalyst/migrations/runner/MigrationStatus;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/migrations/runner/MigrationStatus;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lio/github/darkryh/katalyst/migrations/runner/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lio/github/darkryh/katalyst/migrations/runner/MigrationStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecksum ()Ljava/lang/String;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getExecutedAtEpochMs ()Ljava/lang/Long;
+	public final fun getExecutionTimeMs ()Ljava/lang/Long;
+	public final fun getHistoryStatus ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getState ()Lio/github/darkryh/katalyst/migrations/runner/MigrationState;
+	public final fun getTags ()Ljava/util/Set;
+	public final fun getVersion ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationStatusReport {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationStatusReport;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/migrations/runner/MigrationStatusReport;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/migrations/runner/MigrationStatusReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApplied ()Ljava/util/List;
+	public final fun getBaselined ()Ljava/util/List;
+	public final fun getFiltered ()Ljava/util/List;
+	public final fun getMigrations ()Ljava/util/List;
+	public final fun getPending ()Ljava/util/List;
+	public final fun getUnknownApplied ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/migrations/runner/MigrationValidationResult {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/github/darkryh/katalyst/migrations/runner/MigrationValidationResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/migrations/runner/MigrationValidationResult;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/migrations/runner/MigrationValidationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getValid ()Z
+	public fun hashCode ()I
+	public final fun throwIfInvalid ()V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/migrations/service/SchemaDiffService {
+	public fun <init> (Lio/github/darkryh/katalyst/database/DatabaseFactory;Ljava/nio/file/Path;)V
+	public final fun dropUnmappedColumnsStatements ([Lorg/jetbrains/exposed/v1/core/Table;)Ljava/util/List;
+	public final fun generateMigrationScript (Ljava/lang/String;[Lorg/jetbrains/exposed/v1/core/Table;ZZ)Ljava/nio/file/Path;
+	public static synthetic fun generateMigrationScript$default (Lio/github/darkryh/katalyst/migrations/service/SchemaDiffService;Ljava/lang/String;[Lorg/jetbrains/exposed/v1/core/Table;ZZILjava/lang/Object;)Ljava/nio/file/Path;
+	public final fun missingColumnStatements ([Lorg/jetbrains/exposed/v1/core/Table;)Ljava/util/List;
+	public final fun statementsRequiredForDatabaseMigration ([Lorg/jetbrains/exposed/v1/core/Table;)Ljava/util/List;
+}
+
+public abstract class io/github/darkryh/katalyst/migrations/sql/SqlMigration : io/github/darkryh/katalyst/migrations/KatalystMigration {
+	public fun <init> ()V
+	public fun down ()V
+	public fun getBlocking ()Z
+	public fun getChecksum ()Ljava/lang/String;
+	public fun getDescription ()Ljava/lang/String;
+	public fun getTags ()Ljava/util/Set;
+	public fun getTransactional ()Z
+	public fun getVersion ()J
+	protected abstract fun statements ()Ljava/util/List;
+	public fun up ()V
+}
+

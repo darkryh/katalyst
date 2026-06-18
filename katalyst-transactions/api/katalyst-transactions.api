@@ -1,0 +1,1383 @@
+public final class io/github/darkryh/katalyst/transactions/adapter/AdapterExecutionResult {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ZLjava/lang/Exception;J)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ZLjava/lang/Exception;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/lang/Exception;
+	public final fun component5 ()J
+	public final fun copy (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ZLjava/lang/Exception;J)Lio/github/darkryh/katalyst/transactions/adapter/AdapterExecutionResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/adapter/AdapterExecutionResult;Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ZLjava/lang/Exception;JILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/adapter/AdapterExecutionResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdapter ()Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;
+	public final fun getDuration ()J
+	public final fun getError ()Ljava/lang/Exception;
+	public final fun getPhase ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun getSuccess ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/adapter/PhaseExecutionResults {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/util/List;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/util/List;)Lio/github/darkryh/katalyst/transactions/adapter/PhaseExecutionResults;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/adapter/PhaseExecutionResults;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/adapter/PhaseExecutionResults;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCriticalFailures ()Ljava/util/List;
+	public final fun getNonCriticalFailures ()Ljava/util/List;
+	public final fun getPhase ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun getResults ()Ljava/util/List;
+	public final fun getSuccesses ()Ljava/util/List;
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun hasCriticalFailures ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun totalDuration ()J
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
+	public fun isCritical ()Z
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun priority ()I
+}
+
+public final class io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter$DefaultImpls {
+	public static fun isCritical (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)Z
+	public static fun priority (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)I
+}
+
+public final class io/github/darkryh/katalyst/transactions/adapter/TransactionAdapterException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Exception;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Exception;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/adapter/TransactionAdapterRegistry {
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun executeAdapters (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;ZZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun executeAdapters$default (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapterRegistry;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;ZZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun getAdapters ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+	public final fun size ()I
+	public final fun unregister (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/BackoffStrategy : java/lang/Enum {
+	public static final field EXPONENTIAL Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public static final field IMMEDIATE Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public static final field LINEAR Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/DefaultTransactionExceptionSeverityClassifier : io/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/transactions/config/DefaultTransactionExceptionSeverityClassifier;
+	public fun classify (Ljava/lang/Exception;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;)Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/RetryPolicy {
+	public fun <init> ()V
+	public fun <init> (ILio/github/darkryh/katalyst/transactions/config/BackoffStrategy;JJDLjava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (ILio/github/darkryh/katalyst/transactions/config/BackoffStrategy;JJDLjava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()D
+	public final fun component6 ()Ljava/util/Set;
+	public final fun component7 ()Ljava/util/Set;
+	public final fun copy (ILio/github/darkryh/katalyst/transactions/config/BackoffStrategy;JJDLjava/util/Set;Ljava/util/Set;)Lio/github/darkryh/katalyst/transactions/config/RetryPolicy;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/config/RetryPolicy;ILio/github/darkryh/katalyst/transactions/config/BackoffStrategy;JJDLjava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/config/RetryPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackoffStrategy ()Lio/github/darkryh/katalyst/transactions/config/BackoffStrategy;
+	public final fun getInitialDelayMs ()J
+	public final fun getJitterFactor ()D
+	public final fun getMaxDelayMs ()J
+	public final fun getMaxRetries ()I
+	public final fun getNonRetryableExceptions ()Ljava/util/Set;
+	public final fun getRetryableExceptions ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/TransactionConfig {
+	public synthetic fun <init> (JLio/github/darkryh/katalyst/transactions/config/RetryPolicy;Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;Ljava/util/Set;ZLio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLio/github/darkryh/katalyst/transactions/config/RetryPolicy;Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;Ljava/util/Set;ZLio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/config/RetryPolicy;
+	public final fun component3 ()Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Z
+	public final fun component6 ()Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;
+	public final fun copy-bz6L7rs (JLio/github/darkryh/katalyst/transactions/config/RetryPolicy;Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;Ljava/util/Set;ZLio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;)Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;
+	public static synthetic fun copy-bz6L7rs$default (Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;JLio/github/darkryh/katalyst/transactions/config/RetryPolicy;Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;Ljava/util/Set;ZLio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExceptionSeverityClassifier ()Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier;
+	public final fun getExpectedBusinessExceptions ()Ljava/util/Set;
+	public final fun getIsolationLevel ()Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public final fun getPhaseLoggingEnabled ()Z
+	public final fun getRetryPolicy ()Lio/github/darkryh/katalyst/transactions/config/RetryPolicy;
+	public final fun getTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity : java/lang/Enum {
+	public static final field ERROR Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+	public static final field INFO Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+	public static final field WARN Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverityClassifier {
+	public abstract fun classify (Ljava/lang/Exception;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;)Lio/github/darkryh/katalyst/transactions/config/TransactionExceptionSeverity;
+}
+
+public final class io/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel : java/lang/Enum {
+	public static final field READ_COMMITTED Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public static final field READ_UNCOMMITTED Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public static final field REPEATABLE_READ Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public static final field SERIALIZABLE Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/config/TransactionIsolationLevel;
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionContextKt {
+	public static final fun getTransactionEventContext (Lkotlin/coroutines/CoroutineContext;)Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;
+	public static final fun isInTransactionContext (Lkotlin/coroutines/CoroutineContext;)Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionEventContext : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext$Key;
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun clearDeferred (Ljava/lang/Object;)I
+	public final fun clearPendingEvents ()V
+	public final fun defer (Ljava/lang/Object;Ljava/lang/Object;)V
+	public final fun drainDeferred (Ljava/lang/Object;)Ljava/util/List;
+	public final fun getDeferredCount (Ljava/lang/Object;)I
+	public final fun getPendingEventCount ()I
+	public final fun getPendingEvents ()Ljava/util/List;
+	public final fun hasPendingEvents ()Z
+	public final fun queueEvent (Lio/github/darkryh/katalyst/events/DomainEvent;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionEventContext$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionScopeContext : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lio/github/darkryh/katalyst/transactions/context/TransactionScopeContext$Key;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILio/github/darkryh/katalyst/transactions/context/TransactionScopeState;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILio/github/darkryh/katalyst/transactions/context/TransactionScopeState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDepth ()I
+	public final fun getState ()Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public final fun setDepth (I)V
+	public final fun setState (Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionScopeContext$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class io/github/darkryh/katalyst/transactions/context/TransactionScopeState : java/lang/Enum {
+	public static final field ACTIVE Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public static final field CLOSED Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public static final field COMPLETED Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public static final field ROLLED_BACK Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/context/TransactionScopeState;
+}
+
+public final class io/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent {
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;IJIILjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;IJIILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun component4 ()Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public final fun component5 ()I
+	public final fun component6 ()J
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;IJIILjava/lang/String;)Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;IJIILjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getError ()Ljava/lang/String;
+	public final fun getEventCount ()I
+	public final fun getEventType ()Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public final fun getFailedHandlerCount ()I
+	public final fun getHandlerCount ()I
+	public final fun getPhase ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public final fun getTransactionId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType : java/lang/Enum {
+	public static final field ERROR_OCCURRED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field EVENTS_FAILED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field EVENTS_PUBLISHED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field EVENTS_QUEUED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field EVENTS_VALIDATED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field PHASE_COMPLETED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field PHASE_STARTED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static final field ROLLBACK_TRIGGERED Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseEvent$EventType;
+}
+
+public final class io/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer$TransactionMetrics;
+	public final fun getPhaseEvents (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;)Ljava/util/List;
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun recordError (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/Exception;Ljava/lang/String;)V
+	public static synthetic fun recordError$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/Exception;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun recordEventsFailed (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IILjava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun recordEventsFailed$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun recordEventsPublished (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IILjava/lang/String;)V
+	public static synthetic fun recordEventsPublished$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IILjava/lang/String;ILjava/lang/Object;)V
+	public final fun recordEventsQueued (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;)V
+	public static synthetic fun recordEventsQueued$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;ILjava/lang/Object;)V
+	public final fun recordEventsValidated (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;)V
+	public static synthetic fun recordEventsValidated$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;ILjava/lang/Object;)V
+	public final fun recordPhaseComplete (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IJLjava/lang/String;)V
+	public static synthetic fun recordPhaseComplete$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;IJLjava/lang/String;ILjava/lang/Object;)V
+	public final fun recordPhaseStart (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;)V
+	public static synthetic fun recordPhaseStart$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun recordRollback (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun recordRollback$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun size ()I
+}
+
+public final class io/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer$TransactionMetrics {
+	public fun <init> (IIIJJ)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun copy (IIIJJ)Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer$TransactionMetrics;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer$TransactionMetrics;IIIJJILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer$TransactionMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAverageDurationMs ()J
+	public final fun getFailedEvents ()I
+	public final fun getTotalDurationMs ()J
+	public final fun getTotalEvents ()I
+	public final fun getTotalPhases ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/event/TransactionPhaseTracerKt {
+	public static final fun tracePhase (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun tracePhase$default (Lio/github/darkryh/katalyst/transactions/event/TransactionPhaseTracer;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;ILjava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/exception/DeadlockException : java/sql/SQLException {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun isRetryable ()Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/exception/TransactionExceptionsKt {
+	public static final fun isTransient (Ljava/lang/Exception;)Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/exception/TransactionFailedException : java/lang/Exception {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFinalAttemptNumber ()I
+	public final fun getTotalRetries ()I
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun isRetryable ()Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/exception/TransactionTimeoutException : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/time/Duration;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/time/Duration;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAttemptNumber ()I
+	public final fun getTimeout-FghU774 ()Lkotlin/time/Duration;
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun isRetryable ()Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/exception/TransientException : java/lang/Exception {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun isRetryable ()Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/hooks/TransactionPhase : java/lang/Enum {
+	public static final field AFTER_BEGIN Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field AFTER_COMMIT Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field AFTER_ROLLBACK Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field BEFORE_BEGIN Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field BEFORE_COMMIT Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field BEFORE_COMMIT_VALIDATION Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static final field ON_ROLLBACK Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+}
+
+public final class io/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager : io/github/darkryh/katalyst/transactions/manager/TransactionManager {
+	public static final field Companion Lio/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager$Companion;
+	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapterRegistry;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;)V
+	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapterRegistry;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun addAdapter (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+	public final fun getAdapterCount ()I
+	public fun removeAdapter (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+	public fun transaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager$Companion {
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/manager/TransactionManager {
+	public abstract fun addAdapter (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+	public abstract fun removeAdapter (Lio/github/darkryh/katalyst/transactions/adapter/TransactionAdapter;)V
+	public abstract fun transaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/darkryh/katalyst/transactions/manager/TransactionManager;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/manager/TransactionManager$DefaultImpls {
+	public static synthetic fun transaction$default (Lio/github/darkryh/katalyst/transactions/manager/TransactionManager;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/AdapterMetrics {
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;Lkotlin/time/Duration;ZLjava/lang/Exception;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;Lkotlin/time/Duration;ZLjava/lang/Exception;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun calculateDuration-FghU774 ()Lkotlin/time/Duration;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun component4 ()Ljava/time/Instant;
+	public final fun component5-FghU774 ()Lkotlin/time/Duration;
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/Exception;
+	public final fun copy-Zzr-CC0 (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;Lkotlin/time/Duration;ZLjava/lang/Exception;)Lio/github/darkryh/katalyst/transactions/metrics/AdapterMetrics;
+	public static synthetic fun copy-Zzr-CC0$default (Lio/github/darkryh/katalyst/transactions/metrics/AdapterMetrics;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;Lkotlin/time/Duration;ZLjava/lang/Exception;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/AdapterMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdapterName ()Ljava/lang/String;
+	public final fun getDuration-FghU774 ()Lkotlin/time/Duration;
+	public final fun getEndTime ()Ljava/time/Instant;
+	public final fun getError ()Ljava/lang/Exception;
+	public final fun getPhase ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun getStartTime ()Ljava/time/Instant;
+	public final fun getSuccess ()Z
+	public fun hashCode ()I
+	public final fun setDuration-BwNAW2A (Lkotlin/time/Duration;)V
+	public final fun setEndTime (Ljava/time/Instant;)V
+	public final fun setError (Ljava/lang/Exception;)V
+	public final fun setSuccess (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/DefaultMetricsCollector : io/github/darkryh/katalyst/transactions/metrics/MetricsCollector {
+	public fun <init> ()V
+	public fun <init> (IIII)V
+	public synthetic fun <init> (IIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun clearAllMetrics ()V
+	public fun clearMetrics (Ljava/lang/String;)Z
+	public final fun clearMetricsBefore (Ljava/time/Instant;)I
+	public fun completeTransaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;I)V
+	public fun getAllMetrics ()Ljava/util/Map;
+	public fun getMetrics (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public final fun getTransactionCount ()I
+	public fun recordAdapterExecution (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;ZLjava/lang/Exception;)V
+	public fun recordError (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/Exception;Z)V
+	public fun recordEventPublished (Ljava/lang/String;)V
+	public fun recordOperationExecuted (Ljava/lang/String;)V
+	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/JsonMetricsExporter : io/github/darkryh/katalyst/transactions/metrics/MetricsExporter {
+	public static final field Companion Lio/github/darkryh/katalyst/transactions/metrics/JsonMetricsExporter$Companion;
+	public fun <init> ()V
+	public fun export (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/JsonMetricsExporter$Companion {
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/LoggingMetricsExporter : io/github/darkryh/katalyst/transactions/metrics/MetricsExporter {
+	public static final field Companion Lio/github/darkryh/katalyst/transactions/metrics/LoggingMetricsExporter$Companion;
+	public fun <init> ()V
+	public fun export (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/LoggingMetricsExporter$Companion {
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/metrics/MetricsCollector {
+	public abstract fun clearAllMetrics ()V
+	public abstract fun clearMetrics (Ljava/lang/String;)Z
+	public abstract fun completeTransaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;I)V
+	public static synthetic fun completeTransaction$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILjava/lang/Object;)V
+	public abstract fun getAllMetrics ()Ljava/util/Map;
+	public abstract fun getMetrics (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public abstract fun recordAdapterExecution (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;ZLjava/lang/Exception;)V
+	public static synthetic fun recordAdapterExecution$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;ZLjava/lang/Exception;ILjava/lang/Object;)V
+	public abstract fun recordError (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/Exception;Z)V
+	public abstract fun recordEventPublished (Ljava/lang/String;)V
+	public abstract fun recordOperationExecuted (Ljava/lang/String;)V
+	public abstract fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public static synthetic fun startTransaction$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/MetricsCollector$DefaultImpls {
+	public static synthetic fun completeTransaction$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILjava/lang/Object;)V
+	public static synthetic fun recordAdapterExecution$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;ZLjava/lang/Exception;ILjava/lang/Object;)V
+	public static synthetic fun startTransaction$default (Lio/github/darkryh/katalyst/transactions/metrics/MetricsCollector;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/metrics/MetricsExporter {
+	public abstract fun export (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/MetricsExporterRegistry {
+	public fun <init> ()V
+	public final fun clearExporters ()V
+	public final fun exportMetrics (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getExporters ()Ljava/util/List;
+	public final fun registerExporter (Lio/github/darkryh/katalyst/transactions/metrics/MetricsExporter;)V
+	public final fun unregisterExporter (Lio/github/darkryh/katalyst/transactions/metrics/MetricsExporter;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/NoOpMetricsCollector : io/github/darkryh/katalyst/transactions/metrics/MetricsCollector {
+	public fun <init> ()V
+	public fun clearAllMetrics ()V
+	public fun clearMetrics (Ljava/lang/String;)Z
+	public fun completeTransaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;I)V
+	public fun getAllMetrics ()Ljava/util/Map;
+	public fun getMetrics (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public fun recordAdapterExecution (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/time/Instant;Ljava/time/Instant;ZLjava/lang/Exception;)V
+	public fun recordError (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/Exception;Z)V
+	public fun recordEventPublished (Ljava/lang/String;)V
+	public fun recordOperationExecuted (Ljava/lang/String;)V
+	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/TransactionError {
+	public fun <init> (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/metrics/TransactionError;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExceptionClassName ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPhase ()Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;
+	public final fun getStackTrace ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public final fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/TransactionMetrics {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILkotlin/time/Duration;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILkotlin/time/Duration;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component11 ()I
+	public final fun component12 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun component4 ()Ljava/time/Instant;
+	public final fun component5 ()Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8-FghU774 ()Lkotlin/time/Duration;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy-BAHpl2s (Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILkotlin/time/Duration;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public static synthetic fun copy-BAHpl2s$default (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;IILkotlin/time/Duration;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdapterExecutions ()Ljava/util/List;
+	public final fun getConfig ()Ljava/lang/Object;
+	public final fun getDuration-FghU774 ()Lkotlin/time/Duration;
+	public final fun getEndTime ()Ljava/time/Instant;
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getEventCount ()I
+	public final fun getOperationCount ()I
+	public final fun getRetryCount ()I
+	public final fun getStartTime ()Ljava/time/Instant;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setDuration-BwNAW2A (Lkotlin/time/Duration;)V
+	public final fun setEndTime (Ljava/time/Instant;)V
+	public final fun setEventCount (I)V
+	public final fun setOperationCount (I)V
+	public final fun setRetryCount (I)V
+	public final fun setStatus (Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/TransactionMetricsSummary {
+	public synthetic fun <init> (IIIIIJJJJJJIIIIDDLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10-UwyO8pc ()J
+	public final fun component11-UwyO8pc ()J
+	public final fun component12 ()I
+	public final fun component13 ()I
+	public final fun component14 ()I
+	public final fun component15 ()I
+	public final fun component16 ()D
+	public final fun component17 ()D
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6-UwyO8pc ()J
+	public final fun component7-UwyO8pc ()J
+	public final fun component8-UwyO8pc ()J
+	public final fun component9-UwyO8pc ()J
+	public final fun copy-GkOrCwU (IIIIIJJJJJJIIIIDD)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetricsSummary;
+	public static synthetic fun copy-GkOrCwU$default (Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetricsSummary;IIIIIJJJJJJIIIIDDILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionMetricsSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAverageDuration-UwyO8pc ()J
+	public final fun getAverageRetries ()D
+	public final fun getFailedTransactions ()I
+	public final fun getMaxDuration-UwyO8pc ()J
+	public final fun getMinDuration-UwyO8pc ()J
+	public final fun getP50Duration-UwyO8pc ()J
+	public final fun getP95Duration-UwyO8pc ()J
+	public final fun getP99Duration-UwyO8pc ()J
+	public final fun getRolledBackTransactions ()I
+	public final fun getSuccessRate ()D
+	public final fun getSuccessfulTransactions ()I
+	public final fun getTimedOutTransactions ()I
+	public final fun getTotalErrors ()I
+	public final fun getTotalEvents ()I
+	public final fun getTotalOperations ()I
+	public final fun getTotalRetries ()I
+	public final fun getTotalTransactions ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/metrics/TransactionStatus : java/lang/Enum {
+	public static final field COMMITTED Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static final field FAILED Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static final field ROLLED_BACK Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static final field RUNNING Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static final field TIMEOUT Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/metrics/TransactionStatus;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/DefaultTransientErrorClassifier : io/github/darkryh/katalyst/transactions/sideeffects/TransientErrorClassifier {
+	public static final field Companion Lio/github/darkryh/katalyst/transactions/sideeffects/DefaultTransientErrorClassifier$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isTransient (Ljava/lang/Exception;)Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/DefaultTransientErrorClassifier$Companion {
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig {
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;JZLjava/util/Map;IJDLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;JZLjava/util/Map;IJDLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public final fun component3 ()J
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()I
+	public final fun component7 ()J
+	public final fun component8 ()D
+	public final fun component9 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;JZLjava/util/Map;IJDLkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;JZLjava/util/Map;IJDLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackoffMultiplier ()D
+	public final fun getFailOnHandlerError ()Z
+	public final fun getHandlingMode ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public final fun getMaxRetries ()I
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getRetryDelayMs ()J
+	public final fun getSideEffectId ()Ljava/lang/String;
+	public final fun getTimeoutMs ()J
+	public fun hashCode ()I
+	public final fun isTransientError ()Lkotlin/jvm/functions/Function1;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigRegistry {
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun getConfig (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public final fun register (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigs {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigs;
+	public final fun getASYNC_NOTIFICATION ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public final fun getASYNC_WITH_RETRIES ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public final fun getCRITICAL_SIDE_EFFECT ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public final fun getNO_RETRY ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+	public final fun getTRANSACTIONAL_EVENT ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectContext {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearPending ()V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/List;Ljava/util/List;Ljava/util/Map;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectContext;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectContext;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExecuted ()Ljava/util/List;
+	public final fun getExecutedSideEffects ()Ljava/util/List;
+	public final fun getPending ()Ljava/util/List;
+	public final fun getPendingCount ()I
+	public final fun getPendingSideEffects ()Ljava/util/List;
+	public final fun getRetryAttemptCount (Ljava/lang/String;)I
+	public final fun getRetryContext (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectRetryContext;
+	public final fun getRetryContexts ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun queue (Lio/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect;)V
+	public final fun recordExecution (Lio/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;)V
+	public final fun recordRetryAttempt (Ljava/lang/String;Ljava/lang/Exception;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode : java/lang/Enum {
+	public static final field ASYNC_AFTER_COMMIT Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public static final field SYNC_BEFORE_COMMIT Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+}
+
+public abstract class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult {
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Failed : io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult {
+	public fun <init> (Ljava/lang/Exception;Ljava/time/Instant;I)V
+	public synthetic fun <init> (Ljava/lang/Exception;Ljava/time/Instant;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Exception;
+	public final fun component2 ()Ljava/time/Instant;
+	public final fun component3 ()I
+	public final fun copy (Ljava/lang/Exception;Ljava/time/Instant;I)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Failed;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Failed;Ljava/lang/Exception;Ljava/time/Instant;IILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Exception;
+	public final fun getExecutedAt ()Ljava/time/Instant;
+	public final fun getRetryCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Skipped : io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult {
+	public fun <init> (Ljava/lang/String;Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;Ljava/time/Instant;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Skipped;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Skipped;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Skipped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExecutedAt ()Ljava/time/Instant;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Success : io/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult {
+	public fun <init> ()V
+	public fun <init> (Ljava/time/Instant;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/time/Instant;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/time/Instant;Ljava/util/Map;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Success;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Success;Ljava/time/Instant;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExecutedAt ()Ljava/time/Instant;
+	public final fun getMetadata ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffectRetryContext {
+	public fun <init> (Ljava/lang/String;ILjava/lang/Exception;Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/Exception;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/Exception;
+	public final fun component4 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;ILjava/lang/Exception;Ljava/time/Instant;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectRetryContext;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectRetryContext;Ljava/lang/String;ILjava/lang/Exception;Ljava/time/Instant;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectRetryContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttemptCount ()I
+	public final fun getLastError ()Ljava/lang/Exception;
+	public final fun getRetryScheduledAt ()Ljava/time/Instant;
+	public final fun getSideEffectId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect {
+	public fun compensate (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun compensate$suspendImpl (Lio/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun execute (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getHandlingMode ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
+	public abstract fun getSideEffectId ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect$DefaultImpls {
+	public static fun compensate (Lio/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public class io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffectAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
+	public fun <init> (Ljava/lang/String;IZLio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigRegistry;)V
+	public synthetic fun <init> (Ljava/lang/String;IZLio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun configureeSideEffect (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;)V
+	protected fun getSideEffectsFromContext (Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;)Ljava/util/List;
+	public fun isCritical ()Z
+	public fun name ()Ljava/lang/String;
+	public fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun priority ()I
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/sideeffects/TransientErrorClassifier {
+	public abstract fun isTransient (Ljava/lang/Exception;)Z
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/ComposedWorkflow {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
+	public final fun execute (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCheckpoints ()Ljava/util/List;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSteps ()Ljava/util/List;
+	public final fun resumeFrom (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/CurrentWorkflowContext {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/transactions/workflow/CurrentWorkflowContext;
+	public final fun asContextElement (Ljava/lang/String;)Lkotlin/coroutines/CoroutineContext;
+	public final fun clear ()V
+	public final fun get ()Ljava/lang/String;
+	public final fun isActive ()Z
+	public final fun set (Ljava/lang/String;)V
+	public final fun withContext (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/ExecutedStep {
+	public fun <init> (Ljava/lang/String;ZJLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;ZJLjava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/ExecutedStep;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/ExecutedStep;Ljava/lang/String;ZJLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/ExecutedStep;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSucceeded ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/ExecutionStatus : java/lang/Enum {
+	public static final field FAILED Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public static final field IN_PROGRESS Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public static final field SUCCEEDED Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthAlert {
+	public fun <init> (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun copy (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)Lio/github/darkryh/katalyst/transactions/workflow/HealthAlert;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/HealthAlert;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/HealthAlert;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponent ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun getSeverity ()Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthCheckResult {
+	public fun <init> (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;Ljava/util/List;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component2 ()Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun copy (Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;Ljava/util/List;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)Lio/github/darkryh/katalyst/transactions/workflow/HealthCheckResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/HealthCheckResult;Ljava/time/Instant;Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;Ljava/util/List;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/HealthCheckResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIssues ()Ljava/util/List;
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public final fun isDegraded ()Z
+	public final fun isHealthy ()Z
+	public final fun isUnhealthy ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthIssue {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/HealthIssue;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/HealthIssue;Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/HealthIssue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponent ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSeverity ()Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig {
+	public fun <init> ()V
+	public fun <init> (DIIZIJ)V
+	public synthetic fun <init> (DIIZIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun component5 ()I
+	public final fun component6 ()J
+	public final fun copy (DIIZIJ)Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;DIIZIJILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlertOnWarnings ()Z
+	public final fun getHealthCheckIntervalMs ()J
+	public final fun getMaxAlertHistory ()I
+	public final fun getMaxFailedRecoveriesThreshold ()I
+	public final fun getMaxWorkflowsInRetry ()I
+	public final fun getMinSuccessRatePercent ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthSeverity : java/lang/Enum {
+	public static final field CRITICAL Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public static final field INFO Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public static final field WARNING Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/HealthSeverity;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/HealthStatus : java/lang/Enum {
+	public static final field DEGRADED Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public static final field HEALTHY Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public static final field UNHEALTHY Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/HealthStatus;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/workflow/OperationLog {
+	public abstract fun deleteOldOperations (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAllOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getFailedOperations (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getPendingOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun logOperation (Ljava/lang/String;ILio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAllAsCommitted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAsCommitted (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAsFailed (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAsUndone (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/OperationStatus : java/lang/Enum {
+	public static final field COMMITTED Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static final field FAILED Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static final field PENDING Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static final field UNDONE Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static final field UNFINISHED Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/OperationStatus;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryAttemptResult {
+	public fun <init> (Ljava/lang/String;ZLio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;)V
+	public synthetic fun <init> (Ljava/lang/String;ZLio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public final fun component4 ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;
+	public final fun copy (Ljava/lang/String;ZLio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryAttemptResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryAttemptResult;Ljava/lang/String;ZLio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryAttemptResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;
+	public final fun getStrategy ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isSuccessful ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryHealthMonitor {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobScheduler;Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobScheduler;Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearAlerts ()V
+	public final fun generateHealthReport ()Ljava/lang/String;
+	public final fun getConfig ()Lio/github/darkryh/katalyst/transactions/workflow/HealthMonitorConfig;
+	public final fun getHealthStatus ()Lio/github/darkryh/katalyst/transactions/workflow/HealthCheckResult;
+	public final fun getRecentAlerts (I)Ljava/util/List;
+	public static synthetic fun getRecentAlerts$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryHealthMonitor;IILjava/lang/Object;)Ljava/util/List;
+	public final fun performHealthCheck ()Lio/github/darkryh/katalyst/transactions/workflow/HealthCheckResult;
+	public final fun setAlertCallback (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig {
+	public fun <init> ()V
+	public fun <init> (IJIJJII)V
+	public synthetic fun <init> (IJIJJIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun copy (IJIJJII)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig;IJIJJIIILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBatchSize ()I
+	public final fun getDelayBetweenRecoveriesMs ()J
+	public final fun getMaxErrorsPerScan ()I
+	public final fun getMaxRetriesPerWorkflow ()I
+	public final fun getMaxTrackedWorkflowRetries ()I
+	public final fun getRetryDelayMs ()J
+	public final fun getScanIntervalMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryJobScheduler {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowRecoveryJob;JLkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowRecoveryJob;JLkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/transactions/workflow/RecoverySchedulerStatus;
+	public final fun isActive ()Z
+	public final fun manualScan (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun start ()V
+	public final fun stop ()V
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics {
+	public fun <init> (JJJJDI)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()D
+	public final fun component6 ()I
+	public final fun copy (JJJJDI)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;JJJJDIILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSuccessRate ()D
+	public final fun getTotalFailedRecoveries ()J
+	public final fun getTotalFailedWorkflowsFound ()J
+	public final fun getTotalScans ()J
+	public final fun getTotalSuccessfulRecoveries ()J
+	public final fun getWorkflowsInRetry ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryScanResult {
+	public fun <init> (JIIIJLjava/util/List;)V
+	public final fun component1 ()J
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/util/List;
+	public final fun copy (JIIIJLjava/util/List;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryScanResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoveryScanResult;JIIIJLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryScanResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getFailedWorkflowsFound ()I
+	public final fun getRecoveryRate ()D
+	public final fun getScanNumber ()J
+	public final fun getTotalProcessed ()I
+	public final fun getWorkflowsFailed ()I
+	public final fun getWorkflowsRecovered ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoverySchedulerStatus {
+	public fun <init> (ZJIILio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)V
+	public final fun component1 ()Z
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun copy (ZJIILio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;)Lio/github/darkryh/katalyst/transactions/workflow/RecoverySchedulerStatus;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/RecoverySchedulerStatus;ZJIILio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/RecoverySchedulerStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveErrors ()I
+	public final fun getMaxConsecutiveErrors ()I
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun getScanIntervalMs ()J
+	public fun hashCode ()I
+	public final fun isHealthy ()Z
+	public final fun isRunning ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy : java/lang/Enum {
+	public static final field ABANDON Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public static final field MANUAL_INTERVENTION Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public static final field RESUME_FROM_CHECKPOINT Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public static final field RETRY Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/RecoveryStrategy;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/SimpleTransactionOperation : io/github/darkryh/katalyst/transactions/workflow/TransactionOperation {
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/Map;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/transactions/workflow/SimpleTransactionOperation;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/SimpleTransactionOperation;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/SimpleTransactionOperation;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getOperationData ()Ljava/util/Map;
+	public fun getOperationIndex ()I
+	public fun getOperationType ()Ljava/lang/String;
+	public fun getResourceId ()Ljava/lang/String;
+	public fun getResourceType ()Ljava/lang/String;
+	public fun getUndoData ()Ljava/util/Map;
+	public fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public fun undo (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/StateTransitionRecord {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;J)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public final fun component2 ()J
+	public final fun copy (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;J)Lio/github/darkryh/katalyst/transactions/workflow/StateTransitionRecord;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/StateTransitionRecord;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;JILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/StateTransitionRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationSinceMs ()J
+	public final fun getState ()Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public final fun getTimestamp ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/workflow/TransactionOperation {
+	public abstract fun getOperationData ()Ljava/util/Map;
+	public abstract fun getOperationIndex ()I
+	public abstract fun getOperationType ()Ljava/lang/String;
+	public abstract fun getResourceId ()Ljava/lang/String;
+	public abstract fun getResourceType ()Ljava/lang/String;
+	public abstract fun getUndoData ()Ljava/util/Map;
+	public abstract fun getWorkflowId ()Ljava/lang/String;
+	public abstract fun undo (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/workflow/UndoEngine {
+	public abstract fun undoWorkflow (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoOperationResult {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoOperationResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoOperationResult;ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoOperationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/String;
+	public final fun getOperationIndex ()I
+	public final fun getOperationType ()Ljava/lang/String;
+	public final fun getResourceType ()Ljava/lang/String;
+	public final fun getSucceeded ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoResult {
+	public fun <init> (Ljava/lang/String;IIILjava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;IIILjava/util/List;)Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoResult;Ljava/lang/String;IIILjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine$UndoResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailedCount ()I
+	public final fun getResults ()Ljava/util/List;
+	public final fun getSucceededCount ()I
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getTotalOperations ()I
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isFullySuccessful ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowCheckpoint {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy (Ljava/lang/String;I)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowCheckpoint;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowCheckpoint;Ljava/lang/String;IILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowCheckpoint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getStepIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowComposer {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun build ()Lio/github/darkryh/katalyst/transactions/workflow/ComposedWorkflow;
+	public final fun checkpoint (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowComposer;
+	public final fun execute (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCheckpoints ()Ljava/util/List;
+	public final fun getSteps ()Ljava/util/List;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public final fun getWorkflowName ()Ljava/lang/String;
+	public final fun resumeFrom (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun step (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowComposer;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowExecutionResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowExecutionResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowExecutionResult;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowExecutionResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/String;
+	public final fun getExecutedSteps ()Ljava/util/List;
+	public final fun getFailedStep ()Lio/github/darkryh/katalyst/transactions/workflow/ExecutedStep;
+	public final fun getLastExecutedStep ()Lio/github/darkryh/katalyst/transactions/workflow/ExecutedStep;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/transactions/workflow/ExecutionStatus;
+	public final fun getTotalDurationMs ()Ljava/lang/Long;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public final fun getWorkflowName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isSuccessful ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState : java/lang/Enum {
+	public static final field COMMITTED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field CREATED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field FAILED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field FAILED_UNDO Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field PAUSED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field RUNNING Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field UNDOING Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static final field UNDONE Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor {
+	public fun <init> (JLjava/lang/String;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (JLjava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;JLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAt ()J
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowRecoveryJob {
+	public fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;Lio/github/darkryh/katalyst/transactions/workflow/OperationLog;Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;Lio/github/darkryh/katalyst/transactions/workflow/OperationLog;Lio/github/darkryh/katalyst/transactions/workflow/UndoEngine;Lio/github/darkryh/katalyst/transactions/workflow/RecoveryJobConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMetrics ()Lio/github/darkryh/katalyst/transactions/workflow/RecoveryMetrics;
+	public final fun getTrackedRetryCount ()I
+	public final fun resetMetrics ()V
+	public final fun scanAndRecover (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowState {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;ILjava/lang/Integer;Ljava/lang/String;JLjava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;ILjava/lang/Integer;Ljava/lang/String;JLjava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()J
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;ILjava/lang/Integer;Ljava/lang/String;JLjava/lang/Long;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowState;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowState;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;ILjava/lang/Integer;Ljava/lang/String;JLjava/lang/Long;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompletedAt ()Ljava/lang/Long;
+	public final fun getCreatedAt ()J
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getFailedAtOperation ()Ljava/lang/Integer;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public final fun getTotalOperations ()I
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public final fun getWorkflowName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowStateMachine {
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canUndo ()Z
+	public final fun describe ()Ljava/lang/String;
+	public final fun getState ()Lio/github/darkryh/katalyst/transactions/workflow/WorkflowMachineState;
+	public final fun getStateHistory ()Ljava/util/List;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public final fun isActive ()Z
+	public final fun isTerminal ()Z
+	public final fun onStateChange (Lkotlin/jvm/functions/Function2;)V
+	public final fun transition (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;)Z
+}
+
+public abstract interface class io/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager {
+	public abstract fun commitWorkflow (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteOldWorkflows (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun failWorkflow (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getFailedWorkflows (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getFailedWorkflowsPage (ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getFailedWorkflowsPage$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun getFailedWorkflowsPage$suspendImpl (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getWorkflowState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun markAsUndone (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun startWorkflow (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager$DefaultImpls {
+	public static fun getFailedWorkflowsPage (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getFailedWorkflowsPage$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition : java/lang/Enum {
+	public static final field ABORT Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field BEGIN_EXECUTION Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field BEGIN_UNDO Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field COMMIT Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field FAIL Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field PAUSE Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field RESUME Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field RETRY Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field UNDO_COMPLETE Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static final field UNDO_FAIL Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateTransition;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowStatus : java/lang/Enum {
+	public static final field COMMITTED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static final field FAILED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static final field FAILED_UNDO Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static final field STARTED Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static final field UNDONE Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStatus;
+}
+
+public final class io/github/darkryh/katalyst/transactions/workflow/WorkflowStep {
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStep;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStep;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStep;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHandler ()Lkotlin/jvm/functions/Function1;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

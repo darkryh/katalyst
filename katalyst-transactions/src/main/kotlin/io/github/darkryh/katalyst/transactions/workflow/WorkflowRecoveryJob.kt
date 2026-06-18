@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CancellationException
 
 /**
  * Background job for recovering failed workflows.
@@ -70,10 +71,8 @@ class WorkflowRecoveryJob(
             totalScans.get(), config.batchSize)
 
         return try {
-            val failedWorkflows = workflowStateManager.getFailedWorkflows()
-            failedWorkflowsFound.addAndGet(failedWorkflows.size.toLong())
-
-            if (failedWorkflows.isEmpty()) {
+            var page = workflowStateManager.getFailedWorkflowsPage(config.batchSize)
+            if (page.isEmpty()) {
                 logger.debug("No failed workflows found")
                 return RecoveryScanResult(
                     scanNumber = totalScans.get(),
@@ -85,15 +84,16 @@ class WorkflowRecoveryJob(
                 )
             }
 
-            logger.info("Found {} failed workflows, attempting recovery", failedWorkflows.size)
-
             val errors = mutableListOf<RecoveryError>()
             var recovered = 0
             var failed = 0
+            var found = 0
+            var cursor: WorkflowPageCursor? = null
 
-            // Process workflows in batches
-            failedWorkflows.chunked(config.batchSize).forEach { batch ->
-                for (workflow in batch) {
+            while (page.isNotEmpty()) {
+                found += page.size
+                failedWorkflowsFound.addAndGet(page.size.toLong())
+                for (workflow in page) {
                     val result = attemptRecovery(workflow)
                     if (result.isSuccessful) {
                         recovered++
@@ -101,7 +101,7 @@ class WorkflowRecoveryJob(
                     } else {
                         failed++
                         failedRecoveries.incrementAndGet()
-                        if (result.error != null) {
+                        if (result.error != null && errors.size < config.maxErrorsPerScan) {
                             errors.add(result.error)
                         }
                     }
@@ -111,6 +111,9 @@ class WorkflowRecoveryJob(
                         kotlinx.coroutines.delay(config.delayBetweenRecoveriesMs)
                     }
                 }
+                val last = page.last()
+                cursor = WorkflowPageCursor(last.createdAt, last.workflowId)
+                page = workflowStateManager.getFailedWorkflowsPage(config.batchSize, cursor)
             }
 
             val totalDuration = System.currentTimeMillis() - scanStartTime
@@ -121,12 +124,14 @@ class WorkflowRecoveryJob(
 
             RecoveryScanResult(
                 scanNumber = totalScans.get(),
-                failedWorkflowsFound = failedWorkflows.size,
+                failedWorkflowsFound = found,
                 workflowsRecovered = recovered,
                 workflowsFailed = failed,
                 durationMs = totalDuration,
                 errors = errors
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Recovery scan failed with exception", e)
             RecoveryScanResult(
@@ -186,15 +191,16 @@ class WorkflowRecoveryJob(
                 logger.info("Successfully recovered workflow: {}", workflow.workflowId)
                 workflowRetryAttempts.remove(workflow.workflowId)
             } else {
-                workflowRetryAttempts.compute(workflow.workflowId) { _, current ->
-                    (current ?: 0) + 1
-                }
+                recordFailedAttempt(workflow.workflowId)
                 logger.warn("Failed to recover workflow: {} (retry {}/{})",
                     workflow.workflowId, retryCount + 1, config.maxRetriesPerWorkflow)
             }
 
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
+            recordFailedAttempt(workflow.workflowId)
             logger.error("Exception while recovering workflow: {}", workflow.workflowId, e)
             RecoveryAttemptResult(
                 workflowId = workflow.workflowId,
@@ -209,24 +215,24 @@ class WorkflowRecoveryJob(
         }
     }
 
+    /** Current bounded retry-cardinality for diagnostics. */
+    fun getTrackedRetryCount(): Int = workflowRetryAttempts.size
+
+    private fun recordFailedAttempt(workflowId: String) {
+        workflowRetryAttempts.compute(workflowId) { _, current -> (current ?: 0) + 1 }
+        while (workflowRetryAttempts.size > config.maxTrackedWorkflowRetries) {
+            val key = workflowRetryAttempts.keys.firstOrNull() ?: break
+            workflowRetryAttempts.remove(key)
+        }
+    }
+
     /**
      * Determine the best recovery strategy based on workflow failure.
      */
     private suspend fun determineRecoveryStrategy(workflow: WorkflowState): RecoveryStrategy {
-        return when {
-            // If failed at specific operation, try resuming from checkpoint
-            workflow.failedAtOperation != null && workflow.failedAtOperation!! > 0 -> {
-                RecoveryStrategy.RESUME_FROM_CHECKPOINT
-            }
-            // If error is transient, retry entire workflow
-            isTransientError(workflow.errorMessage) -> {
-                RecoveryStrategy.RETRY
-            }
-            // Otherwise, require manual intervention
-            else -> {
-                RecoveryStrategy.MANUAL_INTERVENTION
-            }
-        }
+        // Retry and checkpoint executors are not implemented yet. Selecting either
+        // would consume retry memory and repeatedly perform work that cannot succeed.
+        return RecoveryStrategy.MANUAL_INTERVENTION
     }
 
     /**
@@ -345,8 +351,16 @@ data class RecoveryJobConfig(
     val retryDelayMs: Long = 1000,
     val batchSize: Int = 10,
     val delayBetweenRecoveriesMs: Long = 100,
-    val scanIntervalMs: Long = 30000
-)
+    val scanIntervalMs: Long = 30000,
+    val maxTrackedWorkflowRetries: Int = 10_000,
+    val maxErrorsPerScan: Int = 100,
+) {
+    init {
+        require(batchSize > 0) { "batchSize must be positive" }
+        require(maxTrackedWorkflowRetries > 0) { "maxTrackedWorkflowRetries must be positive" }
+        require(maxErrorsPerScan >= 0) { "maxErrorsPerScan must be non-negative" }
+    }
+}
 
 /**
  * Recovery strategies for different failure types.

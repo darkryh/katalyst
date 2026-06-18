@@ -31,6 +31,7 @@ import java.util.*
 import kotlin.reflect.KClass
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager as ExposedTransactionManager
 
 /**
@@ -233,14 +234,16 @@ class DatabaseTransactionManager(
 
                     // Use exception-based timeout detection so nullable transaction results
                     // are not misclassified as timeouts.
-                    return withTimeout(activeConfig.timeout) {
-                        executeTransactionBlock(
-                            txId = resolvedWorkflowId,
-                            config = activeConfig,
-                            transactionEventContext = transactionEventContext,
-                            transactionScopeContext = transactionScopeContext,
-                            block = block
-                        )
+                    return withContext(CurrentWorkflowContext.asContextElement(resolvedWorkflowId)) {
+                        withTimeout(activeConfig.timeout) {
+                            executeTransactionBlock(
+                                txId = resolvedWorkflowId,
+                                config = activeConfig,
+                                transactionEventContext = transactionEventContext,
+                                transactionScopeContext = transactionScopeContext,
+                                block = block
+                            )
+                        }
                     }
                 } catch (e: TimeoutCancellationException) {
                     val timeoutException = TransactionTimeoutException(
@@ -265,7 +268,7 @@ class DatabaseTransactionManager(
                         if (attempt < maxAttempts - 1) {
                             val delayMs = calculateBackoffDelay(attempt, activeConfig.retryPolicy)
                             logger.debug("Waiting {}ms before retry", delayMs)
-                            delay(delayMs)
+                            delay(delayMs.milliseconds)
                         }
                     } else {
                         logNonRetryableException(
@@ -291,7 +294,7 @@ class DatabaseTransactionManager(
                         if (attempt < maxAttempts - 1) {
                             val delayMs = calculateBackoffDelay(attempt, activeConfig.retryPolicy)
                             logger.debug("Waiting {}ms before retry", delayMs)
-                            delay(delayMs)
+                            delay(delayMs.milliseconds)
                         }
                     } else {
                         logNonRetryableException(
@@ -467,6 +470,7 @@ class DatabaseTransactionManager(
 
             throw e
         } finally {
+            transactionEventContext.clear()
             transactionScopeContext.state = TransactionScopeState.CLOSED
         }
     }
@@ -514,7 +518,7 @@ class DatabaseTransactionManager(
         transactionId: String,
         exception: Exception,
         config: TransactionConfig
-    ) {
+) {
         when (config.exceptionSeverityClassifier.classify(exception, config)) {
             TransactionExceptionSeverity.INFO -> {
                 logger.info(
@@ -630,6 +634,9 @@ class DatabaseTransactionManager(
     override fun removeAdapter(adapter: TransactionAdapter) {
         adapterRegistry.unregister(adapter)
     }
+
+    /** Number of registered transaction adapters for diagnostics. */
+    fun getAdapterCount(): Int = adapterRegistry.size()
 }
 
 internal fun shouldRetryException(

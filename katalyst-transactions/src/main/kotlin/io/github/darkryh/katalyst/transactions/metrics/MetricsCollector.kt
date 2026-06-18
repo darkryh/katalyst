@@ -155,12 +155,30 @@ interface MetricsCollector {
  * }, 1, 1, TimeUnit.MINUTES)
  * ```
  */
-class DefaultMetricsCollector : MetricsCollector {
+class DefaultMetricsCollector(
+    private val maxTransactions: Int = 10_000,
+    private val maxAdapterExecutionsPerTransaction: Int = 128,
+    private val maxErrorsPerTransaction: Int = 32,
+    private val maxStackTraceChars: Int = 16_384,
+) : MetricsCollector {
     private val metricsMap = ConcurrentHashMap<String, TransactionMetrics>()
+    private val capacityLock = Any()
+
+    init {
+        require(maxTransactions > 0) { "maxTransactions must be positive" }
+        require(maxAdapterExecutionsPerTransaction >= 0) { "maxAdapterExecutionsPerTransaction must be non-negative" }
+        require(maxErrorsPerTransaction >= 0) { "maxErrorsPerTransaction must be non-negative" }
+        require(maxStackTraceChars >= 0) { "maxStackTraceChars must be non-negative" }
+    }
 
     override fun startTransaction(transactionId: String, workflowId: String?): TransactionMetrics {
         val metrics = TransactionMetrics(transactionId, workflowId)
-        metricsMap[transactionId] = metrics
+        synchronized(capacityLock) {
+            if (!metricsMap.containsKey(transactionId)) {
+                evictToCapacity()
+            }
+            metricsMap[transactionId] = metrics
+        }
         return metrics
     }
 
@@ -175,7 +193,9 @@ class DefaultMetricsCollector : MetricsCollector {
     ) {
         metricsMap[transactionId]?.let { metrics ->
             val duration = (endTime.toEpochMilli() - startTime.toEpochMilli()).toDuration(DurationUnit.MILLISECONDS)
-            metrics.adapterExecutions.add(
+            synchronized(metrics.adapterExecutions) {
+                if (metrics.adapterExecutions.size >= maxAdapterExecutionsPerTransaction) return@let
+                metrics.adapterExecutions.add(
                 AdapterMetrics(
                     adapterName = adapterName,
                     phase = phase,
@@ -184,8 +204,8 @@ class DefaultMetricsCollector : MetricsCollector {
                     duration = duration,
                     success = success,
                     error = error
-                )
-            )
+                ))
+            }
         }
     }
 
@@ -207,16 +227,19 @@ class DefaultMetricsCollector : MetricsCollector {
         error: Exception,
         isRetryable: Boolean
     ) {
-        metricsMap[transactionId]?.errors?.add(
-            TransactionError(
+        metricsMap[transactionId]?.let { metrics ->
+            synchronized(metrics.errors) {
+                if (metrics.errors.size >= maxErrorsPerTransaction) return@let
+                metrics.errors.add(TransactionError(
                 timestamp = Instant.now(),
                 phase = phase,
                 message = error.message ?: "Unknown error",
-                stackTrace = error.stackTraceToString(),
+                stackTrace = error.stackTraceToString().take(maxStackTraceChars),
                 isRetryable = isRetryable,
                 exceptionClassName = error::class.simpleName ?: "Unknown"
-            )
-        )
+                ))
+            }
+        }
     }
 
     override fun completeTransaction(
@@ -272,6 +295,15 @@ class DefaultMetricsCollector : MetricsCollector {
             }
         }
         return removed
+    }
+
+    private fun evictToCapacity() {
+        while (metricsMap.size >= maxTransactions) {
+            val oldest = metricsMap.values.minWithOrNull(
+                compareBy<TransactionMetrics>({ it.endTime == null }, { it.endTime ?: it.startTime })
+            ) ?: return
+            metricsMap.remove(oldest.transactionId, oldest)
+        }
     }
 }
 

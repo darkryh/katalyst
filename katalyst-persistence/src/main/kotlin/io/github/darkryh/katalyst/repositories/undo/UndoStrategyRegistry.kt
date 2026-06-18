@@ -84,10 +84,10 @@ class UndoStrategyRegistry {
 
         override suspend fun undo(operation: io.github.darkryh.katalyst.transactions.workflow.TransactionOperation): Boolean {
             logger.warn(
-                "No undo strategy available for operation={}, resource={}, skipping",
+                "No undo strategy available for operation={}, resource={}; failing closed",
                 operation.operationType, operation.resourceType
             )
-            return true  // Return true to continue with other operations
+            return false
         }
     }
 

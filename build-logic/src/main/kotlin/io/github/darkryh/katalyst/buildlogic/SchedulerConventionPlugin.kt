@@ -13,8 +13,10 @@ class SchedulerConventionPlugin : Plugin<Project> {
 
             dependencies {
                 implementation(libs.library("koin-core"))
-                implementation(libs.library("koin-core-jvm"))
                 implementation(libs.library("asm"))
+                implementation(libs.library("slf4j-api"))
+                implementation(libs.library("kotlin-reflect"))
+                implementation(libs.library("kotlinx-coroutines-core"))
             }
         }
     }

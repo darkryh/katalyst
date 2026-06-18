@@ -189,9 +189,9 @@ class EnhancedUndoEngineTest {
         // When
         val result = engine.undoWorkflow("wf1", operations)
 
-        // Then - NoOp strategy should return true
-        assertEquals(1, result.succeededCount)
-        assertEquals(0, result.failedCount)
+        // Then - unknown undo operations fail closed
+        assertEquals(0, result.succeededCount)
+        assertEquals(1, result.failedCount)
     }
 
     // ========== BEST-EFFORT EXECUTION ==========

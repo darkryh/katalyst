@@ -18,6 +18,7 @@ class KtorServerConventionPlugin : Plugin<Project> {
                 implementation(libs.library("ktor-server-status-pages"))
                 implementation(libs.library("koin-ktor"))
                 implementation(libs.library("koin-core"))
+                implementation(libs.library("slf4j-api"))
 
                 testImplementation(libs.library("ktor-server-test-host"))
                 testImplementation(libs.library("koin-test"))

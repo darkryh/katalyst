@@ -63,12 +63,21 @@ interface EventDeduplicationStore {
  * Thread-safe using ConcurrentHashMap. Suitable for single-node systems.
  * For distributed systems, consider using a persistent store (database, Redis).
  */
-class InMemoryEventDeduplicationStore : EventDeduplicationStore {
+class InMemoryEventDeduplicationStore(
+    private val maxEntries: Int = 100_000,
+    private val retentionMillis: Long = 7L * 24 * 60 * 60 * 1_000,
+) : EventDeduplicationStore {
 
     private val logger = LoggerFactory.getLogger(InMemoryEventDeduplicationStore::class.java)
 
     // Map of event ID to publication timestamp (millis)
     private val publishedEvents = ConcurrentHashMap<String, Long>()
+    private val evictionLock = Any()
+
+    init {
+        require(maxEntries > 0) { "maxEntries must be positive" }
+        require(retentionMillis >= 0) { "retentionMillis must be non-negative" }
+    }
 
     override suspend fun isEventPublished(eventId: String): Boolean {
         val isPublished = publishedEvents.containsKey(eventId)
@@ -79,7 +88,17 @@ class InMemoryEventDeduplicationStore : EventDeduplicationStore {
     }
 
     override suspend fun markAsPublished(eventId: String, publishedAtMillis: Long) {
-        publishedEvents[eventId] = publishedAtMillis
+        synchronized(evictionLock) {
+            publishedEvents[eventId] = publishedAtMillis
+            if (publishedEvents.size > maxEntries) {
+                val expiry = publishedAtMillis - retentionMillis
+                publishedEvents.entries.removeIf { it.value < expiry }
+            }
+            while (publishedEvents.size > maxEntries) {
+                val oldest = publishedEvents.entries.minByOrNull { it.value } ?: break
+                publishedEvents.remove(oldest.key, oldest.value)
+            }
+        }
         logger.debug("Event marked as published: {} (timestamp: {})", eventId, publishedAtMillis)
     }
 

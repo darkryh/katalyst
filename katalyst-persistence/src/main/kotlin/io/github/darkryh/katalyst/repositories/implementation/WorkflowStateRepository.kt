@@ -4,9 +4,12 @@ import io.github.darkryh.katalyst.database.table.WorkflowStateTable
 import io.github.darkryh.katalyst.transactions.workflow.WorkflowState
 import io.github.darkryh.katalyst.transactions.workflow.WorkflowStateManager
 import io.github.darkryh.katalyst.transactions.workflow.WorkflowStatus
+import io.github.darkryh.katalyst.transactions.workflow.WorkflowPageCursor
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -186,6 +189,45 @@ class WorkflowStateRepository(private val database: Database) : WorkflowStateMan
             emptyList()
         }
     }
+
+    override suspend fun getFailedWorkflowsPage(
+        limit: Int,
+        after: WorkflowPageCursor?,
+    ): List<WorkflowState> {
+        require(limit > 0) { "limit must be positive" }
+        return try {
+            transaction(database) {
+                val failed = (WorkflowStateTable.status eq WorkflowStatus.FAILED.name) or
+                    (WorkflowStateTable.status eq WorkflowStatus.FAILED_UNDO.name)
+                val afterCursor = after?.let { cursor ->
+                    (WorkflowStateTable.createdAt greater cursor.createdAt) or
+                        ((WorkflowStateTable.createdAt eq cursor.createdAt) and
+                            (WorkflowStateTable.workflowId greater cursor.workflowId))
+                }
+                WorkflowStateTable
+                    .selectAll()
+                    .where { if (afterCursor == null) failed else failed and afterCursor }
+                    .orderBy(WorkflowStateTable.createdAt)
+                    .orderBy(WorkflowStateTable.workflowId)
+                    .limit(limit)
+                    .map(::toWorkflowState)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to get failed workflow page", e)
+            emptyList()
+        }
+    }
+
+    private fun toWorkflowState(row: ResultRow): WorkflowState = WorkflowState(
+        workflowId = row[WorkflowStateTable.workflowId],
+        workflowName = row[WorkflowStateTable.workflowName],
+        status = WorkflowStatus.valueOf(row[WorkflowStateTable.status]),
+        totalOperations = row[WorkflowStateTable.totalOperations],
+        failedAtOperation = row[WorkflowStateTable.failedAtOperation],
+        errorMessage = row[WorkflowStateTable.errorMessage],
+        createdAt = row[WorkflowStateTable.createdAt],
+        completedAt = row[WorkflowStateTable.completedAt],
+    )
 
     /**
      * Delete old workflow state records (for cleanup/archival).

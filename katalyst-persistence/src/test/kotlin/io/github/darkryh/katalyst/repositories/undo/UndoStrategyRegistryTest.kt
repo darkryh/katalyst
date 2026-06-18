@@ -212,7 +212,7 @@ class UndoStrategyRegistryTest {
     }
 
     @Test
-    fun `NoOp strategy should return true when undoing`() = runTest {
+    fun `NoOp strategy should fail closed when undoing`() = runTest {
         // Given
         val registry = UndoStrategyRegistry()  // Empty registry
         val operation = createOperation(
@@ -227,8 +227,7 @@ class UndoStrategyRegistryTest {
         val strategy = registry.findStrategy("UNKNOWN", "User")
         val result = strategy.undo(operation)
 
-        // Then - NoOp should return true to continue with other operations
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
@@ -247,8 +246,8 @@ class UndoStrategyRegistryTest {
         val strategy = registry.findStrategy("TOTALLY_UNKNOWN", "SomeResource")
         val result = strategy.undo(operation)
 
-        // Then - Should complete without exception
-        assertTrue(result)
+        // Then - Should complete without exception and report unsupported undo
+        assertFalse(result)
     }
 
     // ========== createDefault() TESTS ==========

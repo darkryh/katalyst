@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.events.bus.exception.EventPublishingException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -193,6 +194,8 @@ class ApplicationEventBus(
                         logger.info("Event publishing aborted: {}", result.reason)
                         return
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.warn("Interceptor.beforePublish failed: {}", e.message, e)
                     // Continue even if interceptor fails
@@ -218,6 +221,8 @@ class ApplicationEventBus(
             for (interceptor in interceptors) {
                 try {
                     interceptor.afterPublish(event, result)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.warn("Interceptor.afterPublish failed: {}", e.message, e)
                     // Continue even if interceptor fails
@@ -230,6 +235,8 @@ class ApplicationEventBus(
                 throw EventPublishingException(event, result.failures)
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Error during event publishing: {}", e.message, e)
 
@@ -268,6 +275,8 @@ class ApplicationEventBus(
                 launch(dispatcher) {
                     try {
                         handler.invoker(event)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         logger.error(
                             "Event handler failed for {}: {}",
