@@ -3,7 +3,8 @@
 package com.ead.boshi.app.config
 
 import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.config.provider.intOrNull
+import io.github.darkryh.katalyst.config.provider.stringOrNull
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 
 
@@ -19,10 +20,10 @@ data class DnsConfig(
  */
 object DnsConfigLoader : ServiceConfigLoader<DnsConfig> {
     override fun loadConfig(provider: ConfigProvider): DnsConfig {
-        val dnsServersStr = ConfigLoaders.loadOptionalString(provider, "dns.servers","8.8.8.8,8.8.4.4")
+        val dnsServersStr = provider.stringOrNull("dns.servers") ?: "8.8.8.8,8.8.4.4"
         val dnsServers = dnsServersStr.split(",").map { it.trim() }
-        val mxCacheHours = ConfigLoaders.loadOptionalInt(provider, "dns.mxCacheHours",24)
-        val mxLookupTimeout = ConfigLoaders.loadOptionalInt(provider, "dns.mxLookupTimeoutSeconds",10)
+        val mxCacheHours = provider.intOrNull("dns.mxCacheHours") ?: 24
+        val mxLookupTimeout = provider.intOrNull("dns.mxLookupTimeoutSeconds") ?: 10
 
         return DnsConfig(
             dnsServers = dnsServers,

@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.example.routes
 
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.github.darkryh.katalyst.testing.ktor.katalystTestApplication
 import io.ktor.client.plugins.websocket.WebSockets
@@ -16,8 +17,9 @@ class NotificationWebSocketRoutesTest {
     fun `websocket welcomes client and responds to ping`() = katalystTestApplication(
         configureEnvironment = {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
-        }
+        },
     ) { 
         val socketClient = client.config { install(WebSockets) }
         socketClient.webSocket("/ws/users") {

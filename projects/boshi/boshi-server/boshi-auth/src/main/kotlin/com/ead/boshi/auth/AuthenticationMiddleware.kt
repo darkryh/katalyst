@@ -1,7 +1,8 @@
 package com.ead.boshi.auth
 
-import com.ead.boshi.auth.config.AuthConfigImpl
+import com.ead.boshi.auth.config.models.AuthConfig
 import io.github.darkryh.katalyst.ktor.middleware.katalystMiddleware
+import io.github.darkryh.katalyst.ktor.middleware.ktInject
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 
@@ -11,7 +12,7 @@ import io.ktor.server.auth.*
  */
 @Suppress("unused")
 fun Application.authenticationMiddleware() = katalystMiddleware {
-    val apiKeyExpected = AuthConfigImpl.loadConfig().apiKey
+    val authConfig by ktInject<AuthConfig>()
 
     authentication {
         bearer("api-key") {
@@ -20,7 +21,7 @@ fun Application.authenticationMiddleware() = katalystMiddleware {
             authenticate { tokenCredential ->
                 val apiKeyReceived = tokenCredential.token
 
-                if (apiKeyReceived == apiKeyExpected) {
+                if (apiKeyReceived == authConfig.apiKey) {
                     BearerTokenCredential(apiKeyReceived)
                 } else {
                     null

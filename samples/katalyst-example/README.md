@@ -26,7 +26,7 @@ environment.close()
 ```
 
 The builder wires the same optional features used by `Application.kt`
-(`ConfigProviderFeature`, `eventSystemFeature`, `SchedulerFeature`,
+(`YamlConfigurationFeature`, `eventSystemFeature`, `SchedulerFeature`,
 `WebSocketFeature`, and `MigrationFeature`), so services that call
 `requireScheduler()` or load `ConfigProvider` behave exactly as they do in
 production. For HTTP tests, `katalystTestApplication { ... }` installs all

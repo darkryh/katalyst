@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.example.service
 
 import io.github.darkryh.katalyst.example.api.dto.LoginRequest
 import io.github.darkryh.katalyst.example.api.dto.RegisterRequest
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.example.infra.database.repositories.AuthAccountRepository
 import io.github.darkryh.katalyst.testing.core.KatalystTestEnvironment
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
@@ -24,6 +25,7 @@ class AuthenticationServiceIntegrationTest {
     fun bootstrap() {
         environment = katalystTestEnvironment {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     }

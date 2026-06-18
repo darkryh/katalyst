@@ -1,7 +1,8 @@
 package io.github.darkryh.katalyst.example.domain.events
 
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.events.bus.EventBus
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.example.infra.database.entities.AuthAccountEntity
 import io.github.darkryh.katalyst.example.infra.database.repositories.AuthAccountRepository
 import io.github.darkryh.katalyst.example.infra.database.repositories.UserProfileRepository
@@ -23,6 +24,7 @@ class UserRegistrationFlowTest {
     fun bootstrap() {
         environment = katalystTestEnvironment {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     }

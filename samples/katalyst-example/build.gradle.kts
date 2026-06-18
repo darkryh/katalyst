@@ -17,6 +17,7 @@ dependencies {
     implementation("io.github.darkryh.katalyst:katalyst-ktor")
     implementation("io.github.darkryh.katalyst:katalyst-scanner")
     implementation("io.github.darkryh.katalyst:katalyst-di")
+    implementation("io.github.darkryh.katalyst:katalyst-koin-bean")
     implementation("io.github.darkryh.katalyst:katalyst-migrations")
     implementation("io.github.darkryh.katalyst:katalyst-scheduler")
     implementation("io.github.darkryh.katalyst:katalyst-websockets")

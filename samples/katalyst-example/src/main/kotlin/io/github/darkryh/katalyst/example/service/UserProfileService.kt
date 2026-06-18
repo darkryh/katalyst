@@ -6,8 +6,6 @@ import io.github.darkryh.katalyst.example.domain.exception.UserExampleValidation
 import io.github.darkryh.katalyst.example.infra.database.entities.UserProfileEntity
 import io.github.darkryh.katalyst.example.infra.database.repositories.UserProfileRepository
 import io.github.darkryh.katalyst.example.infra.mappers.toDomain
-import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
-import io.github.darkryh.katalyst.scheduler.cron.CronExpression
 import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import io.ktor.util.logging.*
 
@@ -45,14 +43,15 @@ class UserProfileService(
     }
 
     @Suppress("unused")
-    fun scheduleProfileDigest() = scheduler.scheduleCron(
-        config = ScheduleConfig(
+    fun scheduleProfileDigest() = scheduler.jobs {
+        cron(
             taskName = "profiles.broadcast",
-            tags = setOf("demo")
-        ),
-        task = { broadcastProfiles() },
-        cronExpression = CronExpression("0 0/1 * * * ?")
-    )
+            expression = "0 0/1 * * * ?",
+            tags = setOf("demo"),
+        ) {
+            broadcastProfiles()
+        }
+    }
 
     private suspend fun broadcastProfiles() = transactionManager.transaction {
         val profiles = repository.findAll().map { it.toDomain() }

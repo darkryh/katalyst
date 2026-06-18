@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.example.api.dto.AuthResponse
 import io.github.darkryh.katalyst.example.api.dto.LoginRequest
 import io.github.darkryh.katalyst.example.api.dto.RegisterRequest
 import io.github.darkryh.katalyst.example.api.dto.UserProfileResponse
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.example.service.UserProfileService
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.github.darkryh.katalyst.testing.ktor.katalystTestApplication
@@ -23,6 +24,7 @@ class ExampleApiE2ETest {
     fun `register login and fetch profile over HTTP`() = katalystTestApplication(
         configureEnvironment = {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     ) { environment ->

@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.example.service
 
-import io.github.darkryh.katalyst.core.transaction.DatabaseTransactionManager
+import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.example.infra.database.entities.AuthAccountEntity
 import io.github.darkryh.katalyst.example.infra.database.repositories.AuthAccountRepository
 import io.github.darkryh.katalyst.example.util.PasswordHasher
@@ -28,6 +29,7 @@ class TransactionBoundaryReliabilityIntegrationTest {
     fun bootstrap() {
         environment = katalystTestEnvironment {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     }

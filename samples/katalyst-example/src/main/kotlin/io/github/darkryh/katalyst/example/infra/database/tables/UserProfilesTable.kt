@@ -1,14 +1,10 @@
 package io.github.darkryh.katalyst.example.infra.database.tables
 
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.mapping
 import io.github.darkryh.katalyst.example.infra.database.entities.UserProfileEntity
-import io.github.darkryh.katalyst.example.infra.database.tables.UserProfilesTable.assignEntity
-import io.github.darkryh.katalyst.example.infra.database.tables.UserProfilesTable.mapRow
 import org.jetbrains.exposed.v1.core.ReferenceOption
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed definition + entity mappers for the `user_profiles` table.
@@ -17,8 +13,8 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * The explicit mapping functions ensure type safety and performance by avoiding reflection.
  *
  * **Mapping Contract:**
- * - [mapRow] transforms a database row into a fully-populated UserProfileEntity
- * - [assignEntity] populates an INSERT/UPDATE statement from a UserProfileEntity
+ * - [mapping] transforms database rows into fully-populated UserProfileEntity values
+ * - [mapping] populates INSERT/UPDATE statements from UserProfileEntity values
  */
 object UserProfilesTable : LongIdTable("katalyst_example_service.user_profiles"), Table<Long, UserProfileEntity> {
     val accountId = reference(
@@ -30,23 +26,21 @@ object UserProfilesTable : LongIdTable("katalyst_example_service.user_profiles")
     val bio = text("bio").nullable()
     val avatarUrl = varchar("avatar_url", 255).nullable()
 
-    override fun mapRow(row: ResultRow): UserProfileEntity = UserProfileEntity(
-        id = row[id].value,
-        accountId = row[accountId].value,
-        displayName = row[displayName],
-        bio = row[bio],
-        avatarUrl = row[avatarUrl]
-    )
+    override val mapping = mapping<Long, UserProfileEntity> {
+        generatedId(id, UserProfileEntity::id)
+        reference(accountId, UserProfileEntity::accountId)
+        field(displayName, UserProfileEntity::displayName)
+        field(bio, UserProfileEntity::bio)
+        field(avatarUrl, UserProfileEntity::avatarUrl)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: UserProfileEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) { statement[id] = EntityID(entity.id, this) }
-        statement[accountId] = EntityID(entity.accountId, AuthAccountsTable)
-        statement[displayName] = entity.displayName
-        statement[bio] = entity.bio
-        statement[avatarUrl] = entity.avatarUrl
+        construct {
+            UserProfileEntity(
+                id = this[id],
+                accountId = this[accountId],
+                displayName = this[displayName],
+                bio = this[bio],
+                avatarUrl = this[avatarUrl]
+            )
+        }
     }
 }

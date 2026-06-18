@@ -3,7 +3,8 @@
 package com.ead.boshi.app.config
 
 import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.config.provider.intOrNull
+import io.github.darkryh.katalyst.config.provider.stringOrNull
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 
 
@@ -23,14 +24,14 @@ data class SmtpServerConfig(
  */
 object SmtpServerConfigLoader : ServiceConfigLoader<SmtpServerConfig> {
     override fun loadConfig(provider: ConfigProvider): SmtpServerConfig {
-        val serverName = ConfigLoaders.loadOptionalString(provider, "smtp.server.name","boshi.local")
-        val maxConnections = ConfigLoaders.loadOptionalInt(provider, "smtp.server.maxConnections",100)
-        val connectionTimeout = ConfigLoaders.loadOptionalInt(provider, "smtp.server.connectionTimeoutSeconds",30)
-        val maxRetries = ConfigLoaders.loadOptionalInt(provider, "smtp.delivery.maxRetries",3)
-        val retryDelay = ConfigLoaders.loadOptionalInt(provider, "smtp.delivery.retryDelaySeconds",300)
-        val retentionDays = ConfigLoaders.loadOptionalInt(provider, "smtp.storage.retentionDays",14)
-        val cleanupBatchSize = ConfigLoaders.loadOptionalInt(provider, "smtp.storage.cleanupBatchSize",1000)
-        val cleanupSchedule = ConfigLoaders.loadOptionalString(provider, "smtp.storage.cleanupSchedule","0 2 * * * ?")
+        val serverName = provider.stringOrNull("smtp.server.name") ?: "boshi.local"
+        val maxConnections = provider.intOrNull("smtp.server.maxConnections") ?: 100
+        val connectionTimeout = provider.intOrNull("smtp.server.connectionTimeoutSeconds") ?: 30
+        val maxRetries = provider.intOrNull("smtp.delivery.maxRetries") ?: 3
+        val retryDelay = provider.intOrNull("smtp.delivery.retryDelaySeconds") ?: 300
+        val retentionDays = provider.intOrNull("smtp.storage.retentionDays") ?: 14
+        val cleanupBatchSize = provider.intOrNull("smtp.storage.cleanupBatchSize") ?: 1000
+        val cleanupSchedule = provider.stringOrNull("smtp.storage.cleanupSchedule") ?: "0 2 * * * ?"
 
         return SmtpServerConfig(
             serverName = serverName,

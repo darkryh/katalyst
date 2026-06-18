@@ -1,13 +1,9 @@
 package io.github.darkryh.katalyst.example.infra.database.tables
 
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.mapping
 import io.github.darkryh.katalyst.example.infra.database.entities.AuthAccountEntity
-import io.github.darkryh.katalyst.example.infra.database.tables.AuthAccountsTable.assignEntity
-import io.github.darkryh.katalyst.example.infra.database.tables.AuthAccountsTable.mapRow
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed definition + entity mappers for the `auth_accounts` table.
@@ -16,8 +12,8 @@ import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
  * The explicit mapping functions ensure type safety and performance by avoiding reflection.
  *
  * **Mapping Contract:**
- * - [mapRow] transforms a database row into a fully-populated AuthAccountEntity
- * - [assignEntity] populates an INSERT/UPDATE statement from an AuthAccountEntity
+ * - [mapping] transforms database rows into fully-populated AuthAccountEntity values
+ * - [mapping] populates INSERT/UPDATE statements from AuthAccountEntity values
  */
 object AuthAccountsTable : LongIdTable("katalyst_example_service.auth_accounts"), Table<Long, AuthAccountEntity> {
     val email = varchar("email", 150).uniqueIndex()
@@ -26,27 +22,23 @@ object AuthAccountsTable : LongIdTable("katalyst_example_service.auth_accounts")
     val lastLoginAtMillis = long("last_login_at_millis").nullable()
     val status = varchar("status", 32).default("active")
 
-    override fun mapRow(row: ResultRow): AuthAccountEntity = AuthAccountEntity(
-        id = row[id].value,
-        email = row[email],
-        passwordHash = row[passwordHash],
-        createdAtMillis = row[createdAtMillis],
-        lastLoginAtMillis = row[lastLoginAtMillis],
-        status = row[status]
-    )
+    override val mapping = mapping<Long, AuthAccountEntity> {
+        generatedId(id, AuthAccountEntity::id)
+        field(email, AuthAccountEntity::email)
+        field(passwordHash, AuthAccountEntity::passwordHash)
+        field(createdAtMillis, AuthAccountEntity::createdAtMillis)
+        field(lastLoginAtMillis, AuthAccountEntity::lastLoginAtMillis)
+        field(status, AuthAccountEntity::status)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: AuthAccountEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id, this)
+        construct {
+            AuthAccountEntity(
+                id = this[id],
+                email = this[email],
+                passwordHash = this[passwordHash],
+                createdAtMillis = this[createdAtMillis],
+                lastLoginAtMillis = this[lastLoginAtMillis],
+                status = this[status]
+            )
         }
-        statement[email] = entity.email
-        statement[passwordHash] = entity.passwordHash
-        statement[createdAtMillis] = entity.createdAtMillis
-        statement[lastLoginAtMillis] = entity.lastLoginAtMillis
-        statement[status] = entity.status
     }
 }

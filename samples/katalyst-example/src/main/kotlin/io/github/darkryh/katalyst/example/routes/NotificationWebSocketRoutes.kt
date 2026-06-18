@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.example.routes
 
-import io.github.darkryh.katalyst.websockets.builder.katalystWebSockets
+import io.github.darkryh.katalyst.ktor.websocket.katalystWebSockets
 import io.ktor.server.routing.Route
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame

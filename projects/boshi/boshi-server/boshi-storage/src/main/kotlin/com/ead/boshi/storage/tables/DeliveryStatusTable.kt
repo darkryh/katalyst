@@ -2,11 +2,9 @@ package com.ead.boshi.storage.tables
 
 import com.ead.boshi.shared.models.DeliveryStatusEntity
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.ReferenceOption
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed table definition for delivery status tracking
@@ -45,37 +43,33 @@ object DeliveryStatusTable : LongIdTable("delivering_service.delivery_status"), 
         index(false, status, nextRetryAtMillis)
     }
 
-    override fun mapRow(row: ResultRow): DeliveryStatusEntity = DeliveryStatusEntity(
-        id = row[id].value,
-        sentEmailId = row[sentEmailId].value,
-        messageId = row[messageId],
-        status = row[status],
-        statusChangedAtMillis = row[statusChangedAtMillis],
-        lastAttemptAtMillis = row[lastAttemptAtMillis],
-        attemptCount = row[attemptCount],
-        nextRetryAtMillis = row[nextRetryAtMillis],
-        errorMessage = row[errorMessage],
-        deliveredAtMillis = row[deliveredAtMillis],
-        metadata = row[metadata]
-    )
+    override val mapping = mapping<Long, DeliveryStatusEntity> {
+        generatedId(id, DeliveryStatusEntity::id)
+        reference(sentEmailId, DeliveryStatusEntity::sentEmailId)
+        field(messageId, DeliveryStatusEntity::messageId)
+        field(status, DeliveryStatusEntity::status)
+        field(statusChangedAtMillis, DeliveryStatusEntity::statusChangedAtMillis)
+        field(lastAttemptAtMillis, DeliveryStatusEntity::lastAttemptAtMillis)
+        field(attemptCount, DeliveryStatusEntity::attemptCount)
+        field(nextRetryAtMillis, DeliveryStatusEntity::nextRetryAtMillis)
+        field(errorMessage, DeliveryStatusEntity::errorMessage)
+        field(deliveredAtMillis, DeliveryStatusEntity::deliveredAtMillis)
+        field(metadata, DeliveryStatusEntity::metadata)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: DeliveryStatusEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id as Long, this)
+        construct {
+            DeliveryStatusEntity(
+                id = this[id],
+                sentEmailId = this[sentEmailId],
+                messageId = this[messageId],
+                status = this[status],
+                statusChangedAtMillis = this[statusChangedAtMillis],
+                lastAttemptAtMillis = this[lastAttemptAtMillis],
+                attemptCount = this[attemptCount],
+                nextRetryAtMillis = this[nextRetryAtMillis],
+                errorMessage = this[errorMessage],
+                deliveredAtMillis = this[deliveredAtMillis],
+                metadata = this[metadata]
+            )
         }
-        statement[sentEmailId] = EntityID(entity.sentEmailId, SentEmailsTable)
-        statement[messageId] = entity.messageId
-        statement[status] = entity.status
-        statement[statusChangedAtMillis] = entity.statusChangedAtMillis
-        statement[lastAttemptAtMillis] = entity.lastAttemptAtMillis
-        statement[attemptCount] = entity.attemptCount
-        statement[nextRetryAtMillis] = entity.nextRetryAtMillis
-        statement[errorMessage] = entity.errorMessage
-        statement[deliveredAtMillis] = entity.deliveredAtMillis
-        statement[metadata] = entity.metadata
     }
 }

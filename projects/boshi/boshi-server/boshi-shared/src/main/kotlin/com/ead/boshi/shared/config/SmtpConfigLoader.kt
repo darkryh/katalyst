@@ -2,7 +2,10 @@ package com.ead.boshi.shared.config
 
 import com.ead.boshi.shared.config.models.SmtpConfig
 import io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
+import io.github.darkryh.katalyst.config.provider.boolean
+import io.github.darkryh.katalyst.config.provider.intOrNull
+import io.github.darkryh.katalyst.config.provider.requiredString
+import io.github.darkryh.katalyst.config.provider.stringOrNull
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.reflect.KClass
 
@@ -40,14 +43,14 @@ object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
 
     override fun loadConfig(provider: ConfigProvider): SmtpConfig {
         return SmtpConfig(
-            host = ConfigLoaders.loadRequiredString(provider, "smtp.host"),
-            port = ConfigLoaders.loadOptionalInt(provider, "smtp.port", 25),
-            localHostname = ConfigLoaders.loadOptionalString(provider, "smtp.localHostname", "boshi.local"),
-            username = ConfigLoaders.loadOptionalString(provider, "smtp.username", ""),
-            password = ConfigLoaders.loadOptionalString(provider, "smtp.password", ""),
-            useTls = ConfigLoaders.loadOptionalBoolean(provider, "smtp.useTls", false),
-            connectionTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.connectionTimeoutSeconds", 30),
-            readTimeoutSeconds = ConfigLoaders.loadOptionalInt(provider, "smtp.readTimeoutSeconds", 30)
+            host = provider.requiredString("smtp.host"),
+            port = provider.intOrNull("smtp.port") ?: 25,
+            localHostname = provider.stringOrNull("smtp.localHostname") ?: "boshi.local",
+            username = provider.stringOrNull("smtp.username").orEmpty(),
+            password = provider.stringOrNull("smtp.password").orEmpty(),
+            useTls = provider.boolean("smtp.useTls"),
+            connectionTimeoutSeconds = provider.intOrNull("smtp.connectionTimeoutSeconds") ?: 30,
+            readTimeoutSeconds = provider.intOrNull("smtp.readTimeoutSeconds") ?: 30
         )
     }
 

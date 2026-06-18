@@ -1,9 +1,10 @@
 package io.github.darkryh.katalyst.example.bootstrap
 
+import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.github.darkryh.katalyst.testing.ktor.katalystTestApplication
-import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -14,10 +15,11 @@ class ApplicationInitializerSmokeTest {
     fun `bootstrap executes custom initializer with new no-arg lifecycle contract`() = katalystTestApplication(
         configureEnvironment = {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
 
-            overrideModules(
-                module {
+            overrideBeanModules(
+                katalystBeanModule {
                     single { this@ApplicationInitializerSmokeTest.probe }
                     single<ApplicationInitializer> { SmokeProbeInitializer(get()) }
                 }

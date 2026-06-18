@@ -2,10 +2,8 @@ package com.ead.boshi.storage.tables
 
 import com.ead.boshi.shared.models.SentEmailEntity
 import io.github.darkryh.katalyst.core.persistence.Table
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed table definition for sent emails
@@ -40,45 +38,43 @@ object SentEmailsTable : LongIdTable("email_service.sent_emails"), Table<Long, S
         index(false, userId, expiresAtMillis)
     }
 
-    override fun mapRow(row: ResultRow): SentEmailEntity = SentEmailEntity(
-        id = row[id].value,
-        messageId = row[messageId],
-        userId = row[userId],
-        senderEmail = row[senderEmail],
-        recipientEmail = row[recipientEmail],
-        subject = row[subject],
-        body = row[body],
-        contentHash = row[contentHash],
-        contentSizeBytes = row[contentSizeBytes],
-        submittedAtMillis = row[submittedAtMillis],
-        expiresAtMillis = row[expiresAtMillis],
-        spamScore = row[spamScore],
-        spamDetected = row[spamDetected],
-        ipAddress = row[ipAddress],
-        tags = row[tags],
-        metadata = row[metadata]
-    )
+    override val mapping = mapping<Long, SentEmailEntity> {
+        generatedId(id, SentEmailEntity::id)
+        field(messageId, SentEmailEntity::messageId)
+        field(userId, SentEmailEntity::userId)
+        field(senderEmail, SentEmailEntity::senderEmail)
+        field(recipientEmail, SentEmailEntity::recipientEmail)
+        field(subject, SentEmailEntity::subject)
+        field(body, SentEmailEntity::body)
+        field(contentHash, SentEmailEntity::contentHash)
+        field(contentSizeBytes, SentEmailEntity::contentSizeBytes)
+        field(submittedAtMillis, SentEmailEntity::submittedAtMillis)
+        field(expiresAtMillis, SentEmailEntity::expiresAtMillis)
+        field(spamScore, SentEmailEntity::spamScore)
+        field(spamDetected, SentEmailEntity::spamDetected)
+        field(ipAddress, SentEmailEntity::ipAddress)
+        field(tags, SentEmailEntity::tags)
+        field(metadata, SentEmailEntity::metadata)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: SentEmailEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) { statement[id] = EntityID(entity.id as Long, this) }
-        statement[messageId] = entity.messageId
-        statement[userId] = entity.userId
-        statement[senderEmail] = entity.senderEmail
-        statement[recipientEmail] = entity.recipientEmail
-        statement[subject] = entity.subject
-        statement[body] = entity.body
-        statement[contentHash] = entity.contentHash
-        statement[contentSizeBytes] = entity.contentSizeBytes
-        statement[submittedAtMillis] = entity.submittedAtMillis
-        statement[expiresAtMillis] = entity.expiresAtMillis
-        statement[spamScore] = entity.spamScore
-        statement[spamDetected] = entity.spamDetected
-        statement[ipAddress] = entity.ipAddress
-        statement[tags] = entity.tags
-        statement[metadata] = entity.metadata
+        construct {
+            SentEmailEntity(
+                id = this[id],
+                messageId = this[messageId],
+                userId = this[userId],
+                senderEmail = this[senderEmail],
+                recipientEmail = this[recipientEmail],
+                subject = this[subject],
+                body = this[body],
+                contentHash = this[contentHash],
+                contentSizeBytes = this[contentSizeBytes],
+                submittedAtMillis = this[submittedAtMillis],
+                expiresAtMillis = this[expiresAtMillis],
+                spamScore = this[spamScore],
+                spamDetected = this[spamDetected],
+                ipAddress = this[ipAddress],
+                tags = this[tags],
+                metadata = this[metadata]
+            )
+        }
     }
 }

@@ -7,8 +7,6 @@ import com.ead.boshi.smtp.services.SmtpDeliveryService
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
 import io.github.darkryh.katalyst.core.component.Service
-import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
-import io.github.darkryh.katalyst.scheduler.cron.CronExpression
 import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import org.slf4j.LoggerFactory
 
@@ -21,27 +19,19 @@ class InitialEmailDeliveryService(
     private val smtpDeliveryService: SmtpDeliveryService
 ) : Service {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     private val scheduler = requireScheduler()
 
     companion object {
         private const val INITIAL_DELIVERY_BATCH_SIZE = 50
     }
 
-    /**
-     * Job: Process initial delivery of pending emails.
-     * Schedule: Every minute.
-     */
-    // Registered by Katalyst scheduler via return type
-    fun initialEmailDeliveryJob() = scheduler.scheduleCron(
-        config = ScheduleConfig("boshi.scheduler.initial-delivery"),
-        task = {
+    fun initialEmailDeliveryJob() = scheduler.jobs {
+        cron("boshi.scheduler.initial-delivery", "0 * * * * ?") {
             val delivered = deliverPendingEmails()
 
             logger.info("Initial delivery job completed: processed $delivered emails")
-        },
-        cronExpression = CronExpression("0 * * * * ?") // Every minute
-    )
+        }
+    }
 
     /**
      * Process pending emails for initial delivery.

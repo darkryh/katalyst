@@ -1,7 +1,9 @@
 package io.github.darkryh.katalyst.example.scheduler
 
+import io.github.darkryh.katalyst.core.component.Service
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
-import io.github.darkryh.katalyst.scheduler.service.SchedulerService
+import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import io.github.darkryh.katalyst.testing.core.KatalystTestEnvironment
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.github.darkryh.katalyst.testing.core.katalystTestEnvironment
@@ -20,6 +22,7 @@ class SchedulerIntegrationTest {
     fun setup() {
         environment = katalystTestEnvironment {
             database(inMemoryDatabaseConfig())
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     }
@@ -31,21 +34,28 @@ class SchedulerIntegrationTest {
 
     @Test
     fun `scheduler executes fixed rate job`() = runBlocking {
-        val scheduler = environment.get<SchedulerService>()
         val completion = CompletableDeferred<Unit>()
+        val service = object : Service {
+            private val scheduler = requireScheduler()
 
-        val handle = scheduler.schedule(
-            config = ScheduleConfig(
-                taskName = "scheduler.integration.test",
-                onSuccess = { _, _ -> completion.complete(Unit) },
-                onError = { _, exception, _ ->
-                    completion.completeExceptionally(exception)
-                    false
+            fun scheduleTestJob() = scheduler.jobs {
+                fixedRate(
+                    config = ScheduleConfig(
+                        taskName = "scheduler.integration.test",
+                        onSuccess = { _, _ -> completion.complete(Unit) },
+                        onError = { _, exception, _ ->
+                            completion.completeExceptionally(exception)
+                            false
+                        }
+                    ),
+                    every = 100.milliseconds,
+                ) {
+                    // no-op
                 }
-            ),
-            task = { /* no-op */ },
-            fixedRate = 100.milliseconds
-        )
+            }
+        }
+
+        val handle = service.scheduleTestJob()
 
         withTimeout(5_000) {
             completion.await()

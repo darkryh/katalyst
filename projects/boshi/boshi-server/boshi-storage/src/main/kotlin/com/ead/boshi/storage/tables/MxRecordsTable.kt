@@ -2,10 +2,8 @@ package com.ead.boshi.storage.tables
 
 import com.ead.boshi.shared.models.MxRecordEntity
 import io.github.darkryh.katalyst.core.persistence.Table
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import io.github.darkryh.katalyst.core.persistence.mapping
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 
 /**
  * Exposed table definition for cached DNS MX records
@@ -28,31 +26,27 @@ object MxRecordsTable : LongIdTable("dns_service.mx_records"), Table<Long, MxRec
     val failedAttempts = integer("failed_attempts").default(0)
     val lastFailedAtMillis = long("last_failed_at_millis").nullable()
 
-    override fun mapRow(row: ResultRow): MxRecordEntity = MxRecordEntity(
-        id = row[id].value,
-        domain = row[domain],
-        mxHostname = row[mxHostname],
-        priority = row[priority],
-        resolvedAtMillis = row[resolvedAtMillis],
-        expiresAtMillis = row[expiresAtMillis],
-        failedAttempts = row[failedAttempts],
-        lastFailedAtMillis = row[lastFailedAtMillis]
-    )
+    override val mapping = mapping<Long, MxRecordEntity> {
+        generatedId(id, MxRecordEntity::id)
+        field(domain, MxRecordEntity::domain)
+        field(mxHostname, MxRecordEntity::mxHostname)
+        field(priority, MxRecordEntity::priority)
+        field(resolvedAtMillis, MxRecordEntity::resolvedAtMillis)
+        field(expiresAtMillis, MxRecordEntity::expiresAtMillis)
+        field(failedAttempts, MxRecordEntity::failedAttempts)
+        field(lastFailedAtMillis, MxRecordEntity::lastFailedAtMillis)
 
-    override fun assignEntity(
-        statement: UpdateBuilder<*>,
-        entity: MxRecordEntity,
-        skipIdColumn: Boolean
-    ) {
-        if (!skipIdColumn && entity.id != null) {
-            statement[id] = EntityID(entity.id as Long, this)
+        construct {
+            MxRecordEntity(
+                id = this[id],
+                domain = this[domain],
+                mxHostname = this[mxHostname],
+                priority = this[priority],
+                resolvedAtMillis = this[resolvedAtMillis],
+                expiresAtMillis = this[expiresAtMillis],
+                failedAttempts = this[failedAttempts],
+                lastFailedAtMillis = this[lastFailedAtMillis]
+            )
         }
-        statement[domain] = entity.domain
-        statement[mxHostname] = entity.mxHostname
-        statement[priority] = entity.priority
-        statement[resolvedAtMillis] = entity.resolvedAtMillis
-        statement[expiresAtMillis] = entity.expiresAtMillis
-        statement[failedAttempts] = entity.failedAttempts
-        statement[lastFailedAtMillis] = entity.lastFailedAtMillis
     }
 }

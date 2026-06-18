@@ -7,8 +7,6 @@ import com.ead.boshi.smtp.services.SmtpDeliveryService
 import com.ead.boshi.storage.repositories.DeliveryStatusRepository
 import com.ead.boshi.storage.repositories.SentEmailRepository
 import io.github.darkryh.katalyst.core.component.Service
-import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
-import io.github.darkryh.katalyst.scheduler.cron.CronExpression
 import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import org.slf4j.LoggerFactory
 
@@ -21,28 +19,20 @@ class RetryService(
     private val smtpDeliveryService: SmtpDeliveryService
 ) : Service {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     private val scheduler = requireScheduler()
 
     companion object {
         private const val RETRY_BATCH_SIZE = 100
     }
 
-    /**
-     * Job: Retry pending emails.
-     * Schedule: Every 30 minutes.
-     */
-    // Registered by Katalyst scheduler via return type
-    fun retryPendingEmailsJob() = scheduler.scheduleCron(
-        config = ScheduleConfig("boshi.scheduler.retry-pending-emails"),
-        task = {
+    fun retryPendingEmailsJob() = scheduler.jobs {
+        cron("boshi.scheduler.retry-pending-emails", "0 */30 * * * ?") {
             logger.debug("Running scheduled retry of pending emails")
             val retried = retryPendingEmails()
 
             logger.info("Retry job completed: processed $retried emails")
-        },
-        cronExpression = CronExpression("0 */30 * * * ?") // Every 30 minutes
-    )
+        }
+    }
 
     /**
      * Retries pending emails due for delivery.

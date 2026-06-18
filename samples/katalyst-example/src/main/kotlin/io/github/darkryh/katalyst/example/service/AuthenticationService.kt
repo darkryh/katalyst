@@ -14,8 +14,6 @@ import io.github.darkryh.katalyst.example.infra.database.repositories.AuthAccoun
 import io.github.darkryh.katalyst.example.infra.mappers.toDomain
 import io.github.darkryh.katalyst.example.config.JwtSettingsService
 import io.github.darkryh.katalyst.core.component.Service
-import io.github.darkryh.katalyst.scheduler.cron.CronExpression
-import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
 import io.github.darkryh.katalyst.scheduler.extension.requireScheduler
 import io.ktor.util.logging.*
 import kotlin.time.Duration.Companion.minutes
@@ -79,15 +77,14 @@ class AuthenticationService(
         )
 
     @Suppress("unused")
-    fun scheduleAuthDigest() = scheduler.scheduleCron(
-        config = ScheduleConfig(
+    fun scheduleAuthDigest() = scheduler.jobs {
+        cron(
             taskName = "authentication.broadcast",
+            expression = "0 0/1 * * * ?",
             tags = setOf("demo"),
-            maxExecutionTime = 1.minutes
-        ),
-        task = { broadcastAuth() },
-        cronExpression = CronExpression("0 0/1 * * * ?")
-    )
+            maxExecutionTime = 1.minutes,
+        ) { broadcastAuth() }
+    }
 
     private suspend fun broadcastAuth() = transactionManager.transaction {
         val profiles = repository.findAll().map { it.toDomain() }

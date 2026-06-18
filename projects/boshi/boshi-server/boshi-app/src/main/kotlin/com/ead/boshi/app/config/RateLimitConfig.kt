@@ -3,9 +3,8 @@
 package com.ead.boshi.app.config
 
 import io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader
-import io.github.darkryh.katalyst.config.provider.ConfigBootstrapHelper
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
-import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.boolean
+import io.github.darkryh.katalyst.config.provider.intOrNull
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.reflect.KClass
 
@@ -31,12 +30,12 @@ object RateLimitConfigLoader : AutomaticServiceConfigLoader<RateLimitConfig> {
 
     override fun loadConfig(provider: ConfigProvider): RateLimitConfig {
         return RateLimitConfig(
-            enabled = ConfigLoaders.loadOptionalBoolean(provider, "rateLimit.enabled", true),
-            requestsPerSecond = ConfigLoaders.loadOptionalInt(provider, "rateLimit.requestsPerSecond", 10),
-            refillPeriodSeconds = ConfigLoaders.loadOptionalInt(provider, "rateLimit.refillPeriodSeconds", 1),
-            initialTokens = ConfigLoaders.loadOptionalInt(provider, "rateLimit.initialTokens", 10),
-            emailSendLimit = ConfigLoaders.loadOptionalInt(provider, "rateLimit.emailSendLimit", 100),
-            statusCheckLimit = ConfigLoaders.loadOptionalInt(provider, "rateLimit.statusCheckLimit", 100)
+            enabled = provider.boolean("rateLimit.enabled", default = true),
+            requestsPerSecond = provider.intOrNull("rateLimit.requestsPerSecond") ?: 10,
+            refillPeriodSeconds = provider.intOrNull("rateLimit.refillPeriodSeconds") ?: 1,
+            initialTokens = provider.intOrNull("rateLimit.initialTokens") ?: 10,
+            emailSendLimit = provider.intOrNull("rateLimit.emailSendLimit") ?: 100,
+            statusCheckLimit = provider.intOrNull("rateLimit.statusCheckLimit") ?: 100
         )
     }
 
