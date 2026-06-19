@@ -11,7 +11,6 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import java.lang.management.ManagementFactory
 
-@Suppress("unused")
 fun Route.memoryValidationRoutes() = katalystRouting {
     get("/internal/memory-validation/telemetry") {
         if (System.getenv("KATALYST_MEMORY_VALIDATION") != "true") {

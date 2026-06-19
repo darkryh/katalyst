@@ -76,7 +76,6 @@ class AuthenticationService(
             token = jwtSettings.generateToken(account.id, account.email)
         )
 
-    @Suppress("unused")
     fun scheduleAuthDigest() = scheduler.jobs {
         cron(
             taskName = "authentication.broadcast",

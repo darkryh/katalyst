@@ -37,7 +37,6 @@ import kotlin.reflect.KClass
  * }
  * ```
  */
-@Suppress("unused")
 object SmtpConfigLoader : AutomaticServiceConfigLoader<SmtpConfig> {
     override val configType: KClass<SmtpConfig> = SmtpConfig::class
 

@@ -9,7 +9,6 @@ import io.ktor.util.logging.*
 /**
  * Request logging middleware.
  */
-@Suppress("unused")
 fun Application.requestLoggingMiddleware() = katalystMiddleware {
     val logger = KtorSimpleLogger("RequestLogger")
 

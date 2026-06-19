@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.ead.boshi.retention.services
 
 import com.ead.boshi.shared.constants.DeliveryStatus

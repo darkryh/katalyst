@@ -16,7 +16,6 @@ import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 
 
-@Suppress("unused")
 fun Route.emailRoutes() = katalystRouting {
     val emailService by ktInject<EmailService>()
     val mxResolver by ktInject<MxRecordResolver>()

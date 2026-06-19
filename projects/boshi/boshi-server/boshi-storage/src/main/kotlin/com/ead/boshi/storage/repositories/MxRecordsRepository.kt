@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory
  * Repository for managing cached DNS MX records
  * Extends CrudRepository for automatic CRUD operations
  */
-@Suppress("unused")
 class MxRecordsRepository : CrudRepository<Long, MxRecordEntity> {
     private val logger = LoggerFactory.getLogger(this::class.java)
 

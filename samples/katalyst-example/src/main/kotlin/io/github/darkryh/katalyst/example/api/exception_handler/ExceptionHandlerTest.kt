@@ -48,7 +48,6 @@ import io.ktor.util.logging.*
  * - Log important errors for debugging
  * - Consider client API contracts when designing responses
  */
-@Suppress("unused")
 fun Application.exceptionHandlersTest() = katalystExceptionHandler {
     val logger = KtorSimpleLogger("ExceptionHandler")
 

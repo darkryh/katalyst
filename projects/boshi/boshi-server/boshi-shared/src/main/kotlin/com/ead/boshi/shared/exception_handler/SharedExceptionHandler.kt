@@ -10,7 +10,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
 
-@Suppress("unused")
 fun Application.sharedExceptionHandler() = katalystExceptionHandler {
     exception<InvalidEmailException> { call, exception ->
         call.respond(

@@ -1,0 +1,11 @@
+# Build output
+build/
+.gradle/
+
+# Plugin signing material — NEVER commit these.
+chain.crt
+private.pem
+*.pem
+*.crt
+*.p12
+*.key

@@ -9,7 +9,6 @@ import io.ktor.server.plugins.contentnegotiation.*
 /**
  * HTTP configuration with JSON serialization.
  */
-@Suppress("unused")
 fun Application.httpConfigMiddleware() = katalystMiddleware {
     install(ContentNegotiation) {
         json()

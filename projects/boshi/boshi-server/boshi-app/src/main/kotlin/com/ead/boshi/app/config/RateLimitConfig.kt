@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.ead.boshi.app.config
 
 import io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader

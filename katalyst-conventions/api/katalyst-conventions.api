@@ -1,0 +1,39 @@
+public final class io/github/darkryh/katalyst/conventions/KatalystConventions {
+	public static final field APPLICATION_INITIALIZER Ljava/lang/String;
+	public static final field APPLICATION_READY_INITIALIZER Ljava/lang/String;
+	public static final field AUTOMATIC_SERVICE_CONFIG_LOADER Ljava/lang/String;
+	public static final field COMPONENT Ljava/lang/String;
+	public static final field CRUD_REPOSITORY Ljava/lang/String;
+	public static final field DSL_EXCEPTION_HANDLER Ljava/lang/String;
+	public static final field DSL_MIDDLEWARE Ljava/lang/String;
+	public static final field DSL_ROUTING Ljava/lang/String;
+	public static final field DSL_WEBSOCKETS Ljava/lang/String;
+	public static final field EVENT_HANDLER Ljava/lang/String;
+	public static final field EXPOSED_TABLE Ljava/lang/String;
+	public static final field IDENTIFIABLE Ljava/lang/String;
+	public static final field INSTANCE Lio/github/darkryh/katalyst/conventions/KatalystConventions;
+	public static final field KATALYST_MIGRATION Ljava/lang/String;
+	public static final field KTOR_APPLICATION Ljava/lang/String;
+	public static final field KTOR_MODULE Ljava/lang/String;
+	public static final field KTOR_ROUTE Ljava/lang/String;
+	public static final field SCHEDULER_JOB_HANDLE Ljava/lang/String;
+	public static final field SERVICE Ljava/lang/String;
+	public static final field TABLE Ljava/lang/String;
+	public final fun getDslMethodNames ()Ljava/util/Set;
+	public final fun getDslOwnerInternalNames ()Ljava/util/Set;
+	public final fun getDslOwnerQualifiedNames ()Ljava/util/Set;
+	public final fun getKtorReceiverTypes ()Ljava/util/Set;
+	public final fun getMarkerInterfaces ()Ljava/util/Set;
+	public final fun installOrderFor (Ljava/util/Set;Ljava/lang/String;)I
+}
+
+public final class io/github/darkryh/katalyst/conventions/KatalystConventions$Categories {
+	public static final field COMPONENTS Ljava/lang/String;
+	public static final field EVENT_HANDLERS Ljava/lang/String;
+	public static final field INSTANCE Lio/github/darkryh/katalyst/conventions/KatalystConventions$Categories;
+	public static final field KTOR_MODULES Ljava/lang/String;
+	public static final field MIGRATIONS Ljava/lang/String;
+	public static final field REPOSITORIES Ljava/lang/String;
+	public static final field SERVICES Ljava/lang/String;
+}
+

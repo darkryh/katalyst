@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     // Katalyst modules orchestrated by DI
+    implementation(projects.katalystConventions)
     implementation(projects.katalystCore)
     implementation(projects.katalystTransactions)
     implementation(projects.katalystPersistence)

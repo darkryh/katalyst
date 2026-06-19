@@ -10,7 +10,6 @@ import io.ktor.server.auth.*
  * Install Bearer token authentication middleware
  * Validates API key from Authorization Bearer token header
  */
-@Suppress("unused")
 fun Application.authenticationMiddleware() = katalystMiddleware {
     val authConfig by ktInject<AuthConfig>()
 

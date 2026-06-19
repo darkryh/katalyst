@@ -1,0 +1,130 @@
+<idea-plugin>
+    <!--
+      id / name / version / idea-version are injected by the IntelliJ Platform Gradle plugin from
+      the intellijPlatform { pluginConfiguration { } } block, so they must not be declared here.
+    -->
+    <vendor email="xavier.torres.ac@gmail.com" url="https://github.com/darkryh/katalyst">darkryh</vendor>
+
+    <!-- Shown on the Marketplace listing and in the IDE's plugin update dialog. -->
+    <change-notes><![CDATA[
+        <b>0.2.0</b>
+        <ul>
+            <li>Scheduler: cron expressions are now shown in plain English inline
+                (e.g. <code>0 0 2 * * ?</code> &rarr; <i>Every day at 02:00</i>).</li>
+            <li>Scheduler: invalid cron expressions are flagged in the editor with the exact field
+                error, instead of only failing at startup.</li>
+            <li>Scheduler: duplicate job names within a <code>jobs { }</code> block are flagged.</li>
+            <li>Events: warns when an <code>EventHandler&lt;T&gt;</code>'s <code>eventType</code> does
+                not match its type argument (a handler wired to the wrong event).</li>
+        </ul>
+        <b>0.1.4</b>
+        <ul>
+            <li>Declare the Java-plugin dependency required by the Kotlin light-class APIs we use
+                (resolves the IntelliJ Plugin Verifier compatibility problem).</li>
+        </ul>
+        <b>0.1.3</b>
+        <ul>
+            <li>Fix: actually suppress the "never used" warning on entrypoints. The Kotlin inspection
+                checks the light element (PsiMethod/PsiClass), so we now unwrap to the Kotlin origin.</li>
+        </ul>
+        <b>0.1.2</b>
+        <ul>
+            <li>Fix: recognise expression-body entrypoints like
+                <code>fun Route.authRoutes() = katalystRouting { }</code> — they are now correctly
+                marked used and no longer flagged "calls no katalyst* DSL".</li>
+            <li>Gutter-icon detection moved off the fast path (no resolve in getLineMarkerInfo).</li>
+        </ul>
+        <b>0.1.1</b>
+        <ul>
+            <li>Declare support for K2 Kotlin mode (fixes "incompatible with the Kotlin plugin in K2 mode").</li>
+        </ul>
+        <b>0.1.0</b>
+        <ul>
+            <li>Initial release.</li>
+            <li>Marks Katalyst entrypoints (routes, middleware, websockets, exception handlers,
+                services, components, repositories, tables, event handlers, schedulers, migrations,
+                initializers, config loaders) as used — no more <code>@Suppress("unused")</code>.</li>
+            <li>Gutter icons for discovered entrypoints.</li>
+            <li>Inspection that warns when a function looks like a Katalyst entrypoint but won't be discovered.</li>
+        </ul>
+    ]]></change-notes>
+
+    <description><![CDATA[
+        Editor support for the <b>Katalyst</b> Kotlin backend framework.<br/>
+        Katalyst is annotation-free and discovers routes, middleware, websockets, exception handlers,
+        services, components, repositories, tables, event handlers, schedulers, migrations,
+        initializers and config loaders by convention at startup. This plugin teaches the IDE those
+        conventions so it stops reporting framework entrypoints as <i>unused</i> (no more
+        <code>@Suppress("unused")</code>), marks them with gutter icons, and warns when a function
+        looks like an entrypoint but won't be discovered. Works in IntelliJ IDEA and Android Studio.
+    ]]></description>
+
+    <!-- Kotlin PSI + the unused-symbol inspection we hook into; present in IDEA and Android Studio. -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.kotlin</depends>
+    <!-- We touch Java PSI (PsiClass/PsiMethod/PsiType) through Kotlin light classes; that API lives
+         in the Java plugin (split out of the platform in 2019.2). Bundled in IDEA + Android Studio. -->
+    <depends>com.intellij.modules.java</depends>
+
+    <!--
+      Declare compatibility with the K2 Kotlin analysis mode (the default in recent IDEs) while
+      keeping K1 support (supportsK1 defaults to true). This is safe because the plugin only uses
+      mode-agnostic PSI + light-class APIs (toLightClass/toLightMethods, InheritanceUtil, PSI
+      traversal) and never the K1-only resolve/descriptor (analyze {}) API.
+      Ref: https://plugins.jetbrains.com/docs/intellij/k2-kotlin-mode.html
+    -->
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true" />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Headline feature: marks Katalyst entrypoints as used so the IDE never flags them unused. -->
+        <implicitUsageProvider
+            implementation="io.github.darkryh.katalyst.idea.usage.KatalystImplicitUsageProvider" />
+
+        <!-- Gutter icons next to every discovered entrypoint. -->
+        <codeInsight.lineMarkerProvider
+            language="kotlin"
+            implementationClass="io.github.darkryh.katalyst.idea.gutter.KatalystLineMarkerProvider" />
+
+        <!-- Warns about functions that look like entrypoints but won't be discovered. -->
+        <localInspection
+            language="kotlin"
+            shortName="KatalystDslSignature"
+            displayName="Katalyst DSL entrypoint signature"
+            groupName="Katalyst"
+            enabledByDefault="true"
+            level="WARNING"
+            implementationClass="io.github.darkryh.katalyst.idea.inspection.KatalystDslSignatureInspection" />
+
+        <!-- Validates the scheduler DSL: invalid cron expressions and duplicate job names. -->
+        <localInspection
+            language="kotlin"
+            shortName="KatalystScheduler"
+            displayName="Katalyst scheduler job validation"
+            groupName="Katalyst"
+            enabledByDefault="true"
+            level="WARNING"
+            implementationClass="io.github.darkryh.katalyst.idea.inspection.KatalystSchedulerInspection" />
+
+        <!-- Warns when an EventHandler's eventType does not match its type argument. -->
+        <localInspection
+            language="kotlin"
+            shortName="KatalystEventHandler"
+            displayName="Katalyst event handler type"
+            groupName="Katalyst"
+            enabledByDefault="true"
+            level="WARNING"
+            implementationClass="io.github.darkryh.katalyst.idea.inspection.KatalystEventHandlerInspection" />
+
+        <!-- Inline English rendering of cron expressions in the scheduler DSL. -->
+        <codeInsight.declarativeInlayProvider
+            language="kotlin"
+            providerId="io.github.darkryh.katalyst.cron"
+            isEnabledByDefault="true"
+            group="VALUES_GROUP"
+            bundle="messages.KatalystBundle"
+            nameKey="inlay.cron.name"
+            implementationClass="io.github.darkryh.katalyst.idea.inlay.KatalystCronInlayProvider" />
+    </extensions>
+</idea-plugin>

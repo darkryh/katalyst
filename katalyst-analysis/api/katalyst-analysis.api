@@ -1,0 +1,564 @@
+public final class io/github/darkryh/katalyst/analysis/KatalystAnalysisConfig {
+	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;
+	public final fun copy (Ljava/util/List;Ljava/util/List;Ljava/util/List;Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;)Lio/github/darkryh/katalyst/analysis/KatalystAnalysisConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/KatalystAnalysisConfig;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/KatalystAnalysisConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClasspath ()Ljava/util/List;
+	public final fun getOptions ()Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;
+	public final fun getScanPackages ()Ljava/util/List;
+	public final fun getSourceRoots ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/KatalystAnalysisOptions {
+	public fun <init> ()V
+	public fun <init> (ZZZ)V
+	public synthetic fun <init> (ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun copy (ZZZ)Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;ZZZILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/KatalystAnalysisOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIncludeDiDiagnostics ()Z
+	public final fun getIncludeStaticChecks ()Z
+	public final fun getTreatWarningsAsErrors ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/KatalystAnalyzer {
+	public fun <init> ()V
+	public final fun analyze (Lio/github/darkryh/katalyst/analysis/KatalystAnalysisConfig;)Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/DiagnosticRecord {
+	public static final field Companion Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSeverity ()Ljava/lang/String;
+	public final fun getSuggestion ()Ljava/lang/String;
+	public final fun getSymbolFqName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/analysis/export/DiagnosticRecord$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/analysis/export/DiagnosticRecord;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/DiagnosticRecord$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/EdgeRecord {
+	public static final field Companion Lio/github/darkryh/katalyst/analysis/export/EdgeRecord$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)Lio/github/darkryh/katalyst/analysis/export/EdgeRecord;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/export/EdgeRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/export/EdgeRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Ljava/lang/String;
+	public final fun getOptional ()Z
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getResolvable ()Z
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTo ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/analysis/export/EdgeRecord$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/analysis/export/EdgeRecord$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/analysis/export/EdgeRecord;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/analysis/export/EdgeRecord;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/EdgeRecord$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/GraphDocument {
+	public static final field Companion Lio/github/darkryh/katalyst/analysis/export/GraphDocument$Companion;
+	public static final field SCHEMA_VERSION I
+	public fun <init> (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)Lio/github/darkryh/katalyst/analysis/export/GraphDocument;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/export/GraphDocument;ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/export/GraphDocument;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependencies ()Ljava/util/List;
+	public final fun getDiagnostics ()Ljava/util/List;
+	public final fun getNodes ()Ljava/util/List;
+	public final fun getScanPackages ()Ljava/util/List;
+	public final fun getSchemaVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/analysis/export/GraphDocument$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/analysis/export/GraphDocument$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/analysis/export/GraphDocument;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/analysis/export/GraphDocument;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/GraphDocument$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/KatalystGraphJson {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/analysis/export/KatalystGraphJson;
+	public final fun decode (Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/export/GraphDocument;
+	public final fun encode (Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;)Ljava/lang/String;
+	public final fun toDocument (Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;)Lio/github/darkryh/katalyst/analysis/export/GraphDocument;
+	public final fun writeTo (Ljava/io/File;Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;)Ljava/io/File;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/NodeRecord {
+	public static final field Companion Lio/github/darkryh/katalyst/analysis/export/NodeRecord$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/github/darkryh/katalyst/analysis/export/NodeRecord;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/export/NodeRecord;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/export/NodeRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getDiscoveryDetail ()Ljava/lang/String;
+	public final fun getDiscoveryExplanation ()Ljava/lang/String;
+	public final fun getDiscoveryRule ()Ljava/lang/String;
+	public final fun getFqName ()Ljava/lang/String;
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getSimpleName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/analysis/export/NodeRecord$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/analysis/export/NodeRecord$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/analysis/export/NodeRecord;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/analysis/export/NodeRecord;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/export/NodeRecord$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/ComponentNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;)Lio/github/darkryh/katalyst/analysis/model/ComponentNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/ComponentNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/ComponentNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstantiable ()Z
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun getSecondaryTypes ()Ljava/util/List;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/ConfigLoaderNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/ConfigLoaderNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/ConfigLoaderNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/ConfigLoaderNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfigType ()Ljava/lang/String;
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/DependencyEdge {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/DependencyEdge;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/DependencyEdge;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/DependencyEdge;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFromFqName ()Ljava/lang/String;
+	public final fun getOptional ()Z
+	public final fun getParameterName ()Ljava/lang/String;
+	public final fun getResolvable ()Z
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getToFqName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/DiagnosticKind : java/lang/Enum {
+	public static final field CIRCULAR_DEPENDENCY Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field DUPLICATE_BINDING Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field DUPLICATE_ROUTE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field FEATURE_PROVIDED_TYPE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field INSTANTIATION_FAILURE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field INVALID_DSL_SIGNATURE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field MISSING_DEPENDENCY Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field REPOSITORY_WITHOUT_TABLE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field SECONDARY_TYPE_BINDING Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field TABLE_WITHOUT_ENTITY Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field UNINSTANTIABLE_TYPE Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field UNSUPPORTED_GENERIC Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static final field WELL_KNOWN_PROPERTY Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public static fun values ()[Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/DiagnosticSeverity : java/lang/Enum {
+	public static final field ERROR Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public static final field INFO Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public static final field WARNING Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public static fun values ()[Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/DiscoveryReason {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getExplanation ()Ljava/lang/String;
+	public final fun getRule ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/DiscoveryRule : java/lang/Enum {
+	public static final field CALLS_ROUTING_DSL Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public static final field DUAL_BOUND_TABLE Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public static final field IMPLEMENTS_MARKER Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public static final field RETURNS_SCHEDULER_HANDLE Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+	public static fun values ()[Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/EventHandlerNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/EventHandlerNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/EventHandlerNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/EventHandlerNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEventType ()Ljava/lang/String;
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/InitializerNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Z)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Z
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Z)Lio/github/darkryh/katalyst/analysis/model/InitializerNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/InitializerNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/InitializerNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun getRunsAfterStartup ()Z
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph {
+	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component11 ()Ljava/util/List;
+	public final fun component12 ()Ljava/util/List;
+	public final fun component13 ()Ljava/util/List;
+	public final fun component14 ()Ljava/util/List;
+	public final fun component15 ()Ljava/util/List;
+	public final fun component16 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/util/List;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/KatalystApplicationGraph;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllNodes ()Ljava/util/List;
+	public final fun getComponents ()Ljava/util/List;
+	public final fun getConfigLoaders ()Ljava/util/List;
+	public final fun getDependencies ()Ljava/util/List;
+	public final fun getDiagnostics ()Ljava/util/List;
+	public final fun getEventHandlers ()Ljava/util/List;
+	public final fun getExceptionHandlers ()Ljava/util/List;
+	public final fun getHasErrors ()Z
+	public final fun getInitializers ()Ljava/util/List;
+	public final fun getMiddleware ()Ljava/util/List;
+	public final fun getMigrations ()Ljava/util/List;
+	public final fun getRepositories ()Ljava/util/List;
+	public final fun getRoutes ()Ljava/util/List;
+	public final fun getScanPackages ()Ljava/util/List;
+	public final fun getSchedulers ()Ljava/util/List;
+	public final fun getServices ()Ljava/util/List;
+	public final fun getTables ()Ljava/util/List;
+	public final fun getUsedSymbolFqNames ()Ljava/util/Set;
+	public final fun getWebsockets ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/KatalystDiagnostic {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/KatalystDiagnostic;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/KatalystDiagnostic;Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/KatalystDiagnostic;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lio/github/darkryh/katalyst/analysis/model/DiagnosticKind;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSeverity ()Lio/github/darkryh/katalyst/analysis/model/DiagnosticSeverity;
+	public final fun getSuggestion ()Ljava/lang/String;
+	public final fun getSymbolFqName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public abstract fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public abstract fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/KatalystNodeKind : java/lang/Enum {
+	public static final field COMPONENT Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field CONFIG_LOADER Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field EVENT_HANDLER Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field EXCEPTION_HANDLER Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field INITIALIZER Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field MIDDLEWARE Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field MIGRATION Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field REPOSITORY Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field ROUTE Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field SCHEDULER Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field SERVICE Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field TABLE Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static final field WEBSOCKET Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public static fun values ()[Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/KatalystSymbol {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;Lio/github/darkryh/katalyst/analysis/model/SourceLocation;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;Lio/github/darkryh/katalyst/analysis/model/SourceLocation;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public final fun component5 ()Lio/github/darkryh/katalyst/analysis/model/SourceLocation;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;Lio/github/darkryh/katalyst/analysis/model/SourceLocation;)Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;Lio/github/darkryh/katalyst/analysis/model/SourceLocation;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFqName ()Ljava/lang/String;
+	public final fun getKind ()Lio/github/darkryh/katalyst/analysis/model/KatalystNodeKind;
+	public final fun getLocation ()Lio/github/darkryh/katalyst/analysis/model/SourceLocation;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getSimpleName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/MigrationNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;)Lio/github/darkryh/katalyst/analysis/model/MigrationNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/MigrationNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/MigrationNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/RepositoryNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/RepositoryNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/RepositoryNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/RepositoryNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityType ()Ljava/lang/String;
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun getTableType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/RouteFunctionNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/util/Set;I)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()I
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/util/Set;I)Lio/github/darkryh/katalyst/analysis/model/RouteFunctionNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/RouteFunctionNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/util/Set;IILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/RouteFunctionNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDslCalls ()Ljava/util/Set;
+	public final fun getInstallOrder ()I
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun getReceiverType ()Ljava/lang/String;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/SchedulerNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/SchedulerNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/SchedulerNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/SchedulerNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOwningServiceFqName ()Ljava/lang/String;
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/ServiceNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;)Lio/github/darkryh/katalyst/analysis/model/ServiceNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/ServiceNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;ZLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/ServiceNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstantiable ()Z
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun getSecondaryTypes ()Ljava/util/List;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/SourceLocation {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Integer;)Lio/github/darkryh/katalyst/analysis/model/SourceLocation;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/SourceLocation;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/SourceLocation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFilePath ()Ljava/lang/String;
+	public final fun getLine ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/analysis/model/TableNode : io/github/darkryh/katalyst/analysis/model/KatalystNode {
+	public fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public final fun component2 ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/analysis/model/TableNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/analysis/model/TableNode;Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/analysis/model/TableNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityType ()Ljava/lang/String;
+	public final fun getExposedTableType ()Ljava/lang/String;
+	public fun getReason ()Lio/github/darkryh/katalyst/analysis/model/DiscoveryReason;
+	public fun getSymbol ()Lio/github/darkryh/katalyst/analysis/model/KatalystSymbol;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

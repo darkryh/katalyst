@@ -42,7 +42,6 @@ class UserProfileService(
         repository.findByAccountId(accountId)?.toDomain()
     }
 
-    @Suppress("unused")
     fun scheduleProfileDigest() = scheduler.jobs {
         cron(
             taskName = "profiles.broadcast",

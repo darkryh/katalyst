@@ -8,7 +8,6 @@ import java.util.*
 /**
  * Correlation ID middleware for request tracing.
  */
-@Suppress("unused")
 fun Application.correlationIdMiddleware() = katalystMiddleware {
     install(CallId) {
         header("X-Correlation-ID")

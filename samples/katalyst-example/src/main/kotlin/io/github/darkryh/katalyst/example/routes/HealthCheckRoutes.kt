@@ -48,7 +48,6 @@ import io.ktor.server.routing.*
  * - healthCheckRoutes() - Application health and status
  * - New route functions can be added and auto-discovered
  */
-@Suppress("unused")
 fun Route.healthCheckRoutes() = katalystRouting {
     route("/health") {
         /**

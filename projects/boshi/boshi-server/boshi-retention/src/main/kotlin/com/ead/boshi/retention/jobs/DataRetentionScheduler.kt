@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.ead.boshi.retention.jobs
 
 import com.ead.boshi.retention.services.CleanupService

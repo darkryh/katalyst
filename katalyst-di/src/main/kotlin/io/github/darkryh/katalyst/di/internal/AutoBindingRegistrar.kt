@@ -5,6 +5,7 @@ import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.conventions.KatalystConventions
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.events.EventHandler
@@ -755,26 +756,18 @@ private class RouteFunctionModule(
  * Internal class names that define Katalyst routing DSL functions.
  *
  * Used for bytecode analysis to detect if a route function uses Katalyst DSL.
+ * Sourced from [KatalystConventions] so the runtime, static analysis and the IDE
+ * plugin all agree on what counts as a Katalyst route function.
  */
-private val katalystDslOwners = setOf(
-    "io/github/darkryh/katalyst/ktor/builder/RoutingBuilderKt",
-    "io/github/darkryh/katalyst/ktor/websocket/WebSocketBuilderKt",
-    "io/github/darkryh/katalyst/websockets/builder/WebSocketBuilderKt",
-    "io/github/darkryh/katalyst/ktor/builder/ExceptionHandlerBuilderKt",
-    "io/github/darkryh/katalyst/ktor/middleware/MiddlewareKt"
-)
+private val katalystDslOwners = KatalystConventions.dslOwnerInternalNames
 
 /**
  * Katalyst routing DSL method names.
  *
  * Route functions must call at least one of these to be registered.
+ * Sourced from [KatalystConventions] (single source of truth).
  */
-private val katalystDslMethods = setOf(
-    "katalystRouting",
-    "katalystWebSockets",
-    "katalystExceptionHandler",
-    "katalystMiddleware"
-)
+private val katalystDslMethods = KatalystConventions.dslMethodNames
 
 /**
  * Per-declaring-class cache for bytecode analysis results. ClassValue allows

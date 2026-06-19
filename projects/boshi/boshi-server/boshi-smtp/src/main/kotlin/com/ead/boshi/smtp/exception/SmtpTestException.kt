@@ -8,7 +8,6 @@ import io.ktor.server.response.respond
 class SmtpTestException : Exception("test")
 
 //just testing purpose
-@Suppress("unused")
 fun Application.smtpTestException() = katalystExceptionHandler {
     exception<SmtpTestException> { call, exception ->
         call.respond(

@@ -12,7 +12,6 @@ import kotlin.time.Duration.Companion.seconds
  * Install and configure Ktor's RateLimit plugin
  * Protects email API endpoints from abuse
  */
-@Suppress("unused")
 fun Application.installRateLimit() = katalystMiddleware {
     val config by ktInject<RateLimitConfig>()
 

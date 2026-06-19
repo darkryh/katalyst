@@ -18,7 +18,18 @@ if (providers.gradleProperty("includeBoshiComposite").orNull == "true") {
     includeBuild("projects/boshi")
 }
 
+// The IntelliJ plugin is a separate composite build: it applies the (heavy,
+// version-sensitive) IntelliJ Platform Gradle plugin and is not published as a Maven
+// library, so it must not be pulled into the main library build by default. Opt in with
+// -PincludeIntellijPluginComposite=true (e.g. when developing the plugin).
+if (providers.gradleProperty("includeIntellijPluginComposite").orNull == "true") {
+    includeBuild("katalyst-intellij-plugin")
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+// Shared conventions / contracts (zero-dependency single source of truth)
+include(":katalyst-conventions")
 
 // Core infrastructure modules
 include(":katalyst-scanner")
@@ -46,6 +57,10 @@ include(":katalyst-events")
 include(":katalyst-events-bus")
 
 include(":katalyst-transactions")
+
+// Semantic analysis layer consumed by Gradle tooling, CLIs, tests and the IDE plugin
+include(":katalyst-analysis")
+
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
 include(":katalyst-ktor-engine-netty")

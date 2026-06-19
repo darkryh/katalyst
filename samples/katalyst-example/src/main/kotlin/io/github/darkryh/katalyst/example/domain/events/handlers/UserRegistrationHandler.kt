@@ -4,7 +4,6 @@ import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.example.domain.events.UserRegisteredEvent
 import io.github.darkryh.katalyst.example.service.UserProfileService
 
-@Suppress("unused")
 class UserRegistrationHandler(
     private val userProfileService: UserProfileService
 ) : EventHandler<UserRegisteredEvent> {
