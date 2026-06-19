@@ -1,0 +1,107 @@
+site_name: Katalyst
+site_description: A convention-driven backend framework for Kotlin and Ktor.
+site_author: darkryh
+site_url: https://darkryh.github.io/katalyst/
+repo_name: darkryh/katalyst
+repo_url: https://github.com/darkryh/katalyst
+edit_uri: edit/master/docs/
+copyright: Copyright &copy; darkryh
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/darkryh/katalyst
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Tutorials:
+      - tutorials/index.md
+  - How-to guides:
+      - how-to/index.md
+      - Configure with YAML: how-to/configure-yaml.md
+      - Add typed service configuration: how-to/add-service-config.md
+      - Define tables and repositories: how-to/define-tables-and-repositories.md
+      - Run database migrations: how-to/run-migrations.md
+      - Schedule background jobs: how-to/schedule-jobs.md
+      - Publish and handle events: how-to/publish-and-handle-events.md
+      - Add routes and middleware: how-to/add-routes-and-middleware.md
+      - Add WebSockets: how-to/add-websockets.md
+      - Choose a server engine: how-to/choose-an-engine.md
+      - Test your application: how-to/test-applications.md
+  - Reference:
+      - reference/index.md
+      - Module map: reference/modules.md
+      - Application DSL: reference/application-dsl.md
+      - DI and auto-wiring: reference/di-auto-wiring.md
+      - Configuration: reference/configuration.md
+      - Persistence: reference/persistence.md
+      - Transactions: reference/transactions.md
+      - Migrations: reference/migrations.md
+      - Scheduler: reference/scheduler.md
+      - Events: reference/events.md
+      - Ktor integration: reference/ktor.md
+      - Testing: reference/testing.md
+  - Explanation:
+      - explanation/index.md
+      - Architecture and bootstrap: explanation/architecture.md
+      - Design decisions: explanation/design-decisions.md
+

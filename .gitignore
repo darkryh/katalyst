@@ -41,3 +41,9 @@ out/
 
 ### Local issue notes ###
 /issues/
+
+# MkDocs build output
+site/
+
+# Skill validation scratch output
+.claude/skills/katalyst-workspace/

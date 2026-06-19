@@ -1,0 +1,26 @@
+{
+  "skill_name": "katalyst",
+  "evals": [
+    {
+      "id": 0,
+      "name": "vertical-slice-projects-feature",
+      "prompt": "In this Katalyst project (samples/katalyst-example uses package io.github.darkryh.katalyst.example), add a complete 'projects' feature: an entity Project with fields id, name, ownerEmail, and createdAtMillis; its table; a repository; a service with create(name, ownerEmail) and listAll(); and REST routes POST /api/projects and GET /api/projects. Follow the project's existing conventions so it is auto-discovered and compiles.",
+      "expected_output": "Entity implements Identifiable<Long> with override val id: Long? = null; table is a LongIdTable implementing Table<Long, Project> with a mapping{} block (generatedId/field/construct); repository implements CrudRepository<Long, Project> with override val table; service implements Service and wraps writes in transactionManager.transaction{}; routes use fun Route.xxx()=katalystRouting{} with call.ktInject<ProjectService>(); all imports use io.github.darkryh.katalyst.* and Exposed org.jetbrains.exposed.v1.*; NO annotation-based DI.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "bootstrap-postgres-events-scheduler",
+      "prompt": "Write the main() bootstrap for a new Katalyst service that uses a PostgreSQL database loaded from YAML, runs on Netty, and enables events and the scheduler. Also show the application.yaml database section. Make it boot correctly.",
+      "expected_output": "katalystApplication(args){} with engine(NettyServer), beanEngine(KoinBeanEngine), enableYamlConfiguration(), database{ fromConfiguration() }, scanPackages(...), schema{...}, features{ enableEvents(); enableScheduler() }; correct import paths (di.katalystApplication, koin.KoinBeanEngine, ktor.engine.netty.NettyServer, config.yaml.enableYamlConfiguration, di.feature.enableEvents, scheduler.enableScheduler); yaml has database.url/username/password/driver. Recognizes engine + beanEngine + database + scanPackages are required.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "transaction-aware-event",
+      "prompt": "In a Katalyst service, I want to publish a ProjectCreatedEvent when a project is created, and have a handler that sends a notification — but the notification must NOT happen if the database transaction rolls back. Show the event, the service publishing it, and the handler.",
+      "expected_output": "Event implements DomainEvent (plain data class); service injects EventBus and calls eventBus.publish(...) INSIDE transactionManager.transaction{} so delivery defers to commit; handler implements EventHandler<ProjectCreatedEvent> with override val eventType and suspend fun handle; explains transaction-aware/deferred-until-commit behavior; handler discovered by implementing the interface (no annotation).",
+      "files": []
+    }
+  ]
+}

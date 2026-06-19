@@ -1,34 +1,46 @@
-# Katalyst – Ktor Bootstrap Starter Kit
+# Katalyst
+
+> A convention-driven backend framework for Kotlin and Ktor — Spring Boot's developer
+> experience, the Kotlin way.
+
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh.katalyst/katalyst-core?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.darkryh.katalyst/katalyst-core)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg?logo=kotlin)](https://kotlinlang.org)
+[![Ktor](https://img.shields.io/badge/Ktor-3.5.0-orange.svg?logo=ktor)](https://ktor.io)
 
-Katalyst gives you a ready-to-use Ktor backend stack: automatic DI, YAML configuration, Exposed/Hikari/JDBC persistence, migrations, scheduler, events, websockets, and first-class testing helpers—so you can focus on business logic instead of wiring.
+Katalyst gives a Ktor service the things you would otherwise wire by hand: dependency
+injection, YAML configuration, Exposed + HikariCP persistence, transactions, database
+migrations, a scheduler, an in-process event bus, WebSockets, and testing helpers. You
+declare a component by implementing an interface and point Katalyst at your package — it
+discovers, validates, orders, and injects everything at startup. No annotations, no module
+files.
 
-- **What you get:** DI (Koin), persistence with Exposed + HikariCP, YAML config, scheduler + events, websockets, migrations, and testing utilities—all packaged for Ktor services.
-- **Current alpha line:** `1.0.0-alpha`.
-- **DI status:** Koin is the only supported DI adapter in this alpha. Katalyst's public DSL is being kept framework-oriented so a small container SPI can be introduced later without changing the reflection-based discovery model.
-- **Docs:** see [`documentation/README.md`](documentation/README.md) for the full guide index.
-- **Latest version:** see [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the current release.
+📖 **Full documentation: [the docs site](https://darkryh.github.io/katalyst/)** (also
+browsable as Markdown under [`docs/`](docs/index.md)).
 
-## What's New (Latest Alpha)
+## Why Katalyst
 
-- Simpler automatic injection in `katalyst-di`:
-  - Use normal constructor parameters for services, repositories, components, configs, and framework contracts.
-  - Kotlin default parameters are honored during reflective framework invocation.
-  - Nullable missing dependencies resolve to `null`; required missing dependencies fail with clear diagnostics.
-  - Route and scheduler functions can receive injectable object/config parameters.
-  - Optional `@InjectNamed("...")` remains available for qualifier disambiguation.
-- `ApplicationInitializer` supports multi-binding with deterministic execution order.
-- Managed low-level SQL API in `katalyst-persistence` via `SqlExecutor` (`executeUpdate`, `query`, `queryOne`, `executeBatch`), reusing active transaction connections when present.
+If you have written Spring Boot, this will feel familiar — autowiring, a starter stack,
+sensible defaults — but it stays idiomatic Kotlin and runs on Ktor:
 
-## Add Katalyst to your project (Gradle)
+- **Interface-driven discovery, not annotations.** Implement `Service`, `Component`,
+  `CrudRepository`, `EventHandler`, or return the right type from a function, and Katalyst
+  finds it. Constructor parameters are injected by type.
+- **Explicit, readable bootstrap.** One `katalystApplication { … }` block declares your
+  engine, DI adapter, config source, database, scanned packages, schema policy, and
+  feature toggles. Nothing is hidden.
+- **Fail-fast at startup.** Missing dependencies, circular graphs, invalid config, and
+  checksum drift surface during boot with actionable diagnostics — not at the first request.
 
-Use the published artifacts from Maven Central (see badge above or [`maven-metadata.xml`](https://repo1.maven.org/maven2/io/github/darkryh/katalyst/katalyst-core/maven-metadata.xml) for the latest version).
+## Installation
+
+Requires JDK 21+, Kotlin 2.4.x, and Ktor 3.5.x. Pin the version from the Maven Central
+badge above (latest stable line: `1.0.0-alpha`).
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.2.21"
-    id("io.ktor.plugin") version "3.3.3"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+    kotlin("jvm") version "2.4.0"
+    id("io.ktor.plugin") version "3.5.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.0"
 }
 
 repositories {
@@ -36,183 +48,121 @@ repositories {
 }
 
 dependencies {
-    val katalystVersion = "1.0.0-alpha" // or the latest version from Maven Central
-    // Pin your app stack as needed
-    val ktorVersion = "3.3.3"
-    val exposedVersion = "1.3.0"
-    val hikariVersion = "5.1.0"
-    val postgresVersion = "42.7.8"
+    val katalyst = "1.0.0-alpha"
 
-    // Core Katalyst modules
-    implementation("io.github.darkryh.katalyst:katalyst-core:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-di:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-koin-bean:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-migrations:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-scheduler:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalystVersion")
+    // Core runtime
+    implementation("io.github.darkryh.katalyst:katalyst-core:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-di:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-koin-bean:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalyst")
 
-    // Optional feature-toggle bridge for enableWebSockets(); route DSL/options live in katalyst-ktor
-    implementation("io.github.darkryh.katalyst:katalyst-websockets:$katalystVersion")
+    // Persistence + transactions
+    implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-migrations:$katalyst")
 
-    // Config
-    implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalystVersion")
+    // Configuration (YAML)
+    implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalyst")
 
-    // Events
-    implementation("io.github.darkryh.katalyst:katalyst-events:$katalystVersion")
-    implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalystVersion")
+    // Optional features
+    implementation("io.github.darkryh.katalyst:katalyst-scheduler:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-events:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-websockets:$katalyst")
 
     // Testing helpers
-    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalystVersion")
-    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:$katalystVersion")
-
-    // Ktor surface + persistence (pin to your needs; shown for reference)
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("com.zaxxer:HikariCP:$hikariVersion")
-    implementation("org.postgresql:postgresql:$postgresVersion")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalyst")
+    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:$katalyst")
 }
 ```
 
-To iterate on Katalyst locally without publishing, you can use a composite build override in your consumer’s `settings.gradle.kts`:
+See the [module map](docs/reference/modules.md) for every artifact, including the Jetty
+and CIO engines.
+
+## Quick start
 
 ```kotlin
-includeBuild("../katalyst") // path to local checkout, removes the need to publish during local dev
-```
-
-## Minimal Boot Sequence
-
-```kotlin
-package io.github.darkryh.katalyst.example // EXAMPLE - BASE PACKAGE
 import io.github.darkryh.katalyst.di.katalystApplication
 import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
 import io.github.darkryh.katalyst.config.yaml.enableYamlConfiguration
 import io.github.darkryh.katalyst.koin.KoinBeanEngine
 import io.github.darkryh.katalyst.ktor.engine.netty.NettyServer
-import io.github.darkryh.katalyst.websockets.enableWebSockets
 
 fun main(args: Array<String>) = katalystApplication(args) {
-    engine(NettyServer)
-    beanEngine(KoinBeanEngine)
-    enableYamlConfiguration()
-    database {
-        fromConfiguration()
-    }
-    scanPackages("io.github.darkryh.katalyst.example") // REQUIRED
+    engine(NettyServer)                          // pick a server engine
+    beanEngine(KoinBeanEngine)                    // pick a DI adapter
+    enableYamlConfiguration()                     // install the YAML source
+    database { fromConfiguration() }              // read database.* before DI
+    scanPackages("com.example")                   // discover everything here
+    schema { validateOnStartup() }                // schema policy
+    features { enableServerConfiguration() }
+}
+```
 
-    schema {
-        validateOnStartup() // default when schema { ... } is omitted
-        // createMissing()  // local/test compatibility
-        // none()           // external migration job owns schema lifecycle
-    }
+Declare a service — implementing `Service` is the only signal needed:
 
-    features {
-        enableServerConfiguration()
-        enableEvents()
-        enableMigrations()
-        enableScheduler()
-        enableWebSockets()
+```kotlin
+class GreetingService(private val repository: GreetingRepository) : Service {
+    suspend fun greet(name: String): String = transactionManager.transaction {
+        repository.recordGreeting(name)
+        "Hello, $name"
     }
 }
 ```
 
-Once DI is running, Katalyst discovers everything else automatically (see [`documentation/auto-wiring.md`](documentation/auto-wiring.md) for more examples):
+And a route — `katalystRouting` registers it automatically:
 
 ```kotlin
-@Suppress("unused") // automatically injected
-fun Route.authRoutes() = katalystRouting {
-    route("/api/auth") {
-        post("/login") {
-            val service = call.ktInject<AuthenticationService>()
-            call.respond(service.login(call.receive()))
-        }
-    }
-}
-
 @Suppress("unused")
-fun Route.notificationWebSocketRoutes() = katalystWebSockets {
-    webSocket("/ws/users") {
-        send(Frame.Text("""{"type":"welcome"}"""))
-        for (frame in incoming) if (frame is Frame.Text && frame.readText() == "ping") {
-            send(Frame.Text("""{"type":"pong"}"""))
-        }
+fun Route.greetingRoutes() = katalystRouting {
+    get("/greet/{name}") {
+        val service = call.ktInject<GreetingService>()
+        call.respond(service.greet(call.parameters["name"]!!))
     }
 }
 ```
 
-Services and components simply declare their dependencies; implementing `Service`/`Component` is what signals auto-discovery:
-
-```kotlin
-class AuthenticationService(
-    private val repository: AuthAccountRepository,
-    private val validator: AuthValidator,
-    private val passwordHasher: PasswordHasher,
-    private val eventBus: EventBus, // event-bus module needed
-    private val jwtSettings: JwtSettingsService
-) : Service {
-    private val scheduler = requireScheduler()
-
-    suspend fun register(request: RegisterRequest): AuthResponse = transactionManager.transaction {
-        validator.validate(request)
-        val account = repository.save(/* … */).toDomain()
-        eventBus.publish(UserRegisteredEvent(account.id, account.email, request.displayName))
-        AuthResponse(account.id, account.email, jwtSettings.generateToken(account.id, account.email))
-    }
-
-    fun scheduleAuthDigest() = scheduler.jobs {
-        cron("authentication.broadcast", "0 0/1 * * * ?") {
-            broadcastAuth()
-        }
-    }
-}
-
-@Suppress("unused")
-class UserRegistrationFlowMonitor(
-    private val eventBus: EventBus
-) : Component { // implementing Component marks this class for auto-discovery
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-    init {
-        scope.launch {
-            eventBus.eventsOf<UserRegisteredEvent>().collect { event ->
-                println("Flow spotted registration for ${'$'}{event.email}")
-            }
-        }
-    }
-}
-```
-
-## Testing & Coverage
-
-Prefer the testing modules over ad-hoc bootstrapping (full details in [`documentation/testing.md`](documentation/testing.md)):
-
-```kotlin
-@Test
-fun `register login over HTTP`() = katalystTestApplication(
-    configureEnvironment = {
-        database(inMemoryDatabaseConfig())
-        scan("io.github.darkryh.katalyst.example")
-    }
-) { env ->
-    val register = client.post("/api/auth/register") { /* body */ }
-    val profile = client.get("/api/users/me") {
-        header(HttpHeaders.Authorization, "Bearer ${register.jwt}")
-    }
-    assertTrue(env.get<UserProfileService>().listProfiles().any { it.accountId == register.accountId })
-}
-```
-
-Commands:
+Run it:
 
 ```bash
-./gradlew build                      # full build + tests
-./gradlew :katalyst-example:test     # example module tests (H2 + Postgres container)
-./gradlew :katalyst-example:koverHtmlReport  # coverage report (build/reports/kover/html/index.html)
+./gradlew run
+# Katalyst bootstrap → server running on http://0.0.0.0:8080
 ```
 
-Need deeper walkthroughs? Check the `documentation/` folder.
+Full walkthrough: the [getting-started tutorial](docs/getting-started.md).
+
+## Documentation
+
+The docs follow the [Diátaxis](https://diataxis.fr) model — four sections, each for a
+different need:
+
+- **[Tutorial](docs/getting-started.md)** — learn by building your first service.
+- **[How-to guides](docs/how-to/index.md)** — recipes for configuration, persistence,
+  migrations, scheduling, events, WebSockets, engines, and testing.
+- **[Reference](docs/reference/index.md)** — every module, the application DSL, discovery
+  interfaces, config keys, and each subsystem.
+- **[Explanation](docs/explanation/index.md)** — the bootstrap lifecycle and design
+  rationale.
+
+## Examples
+
+- [`samples/katalyst-example`](samples/katalyst-example) — full stack (auth, persistence,
+  events, scheduler, WebSockets, migrations) on the Netty engine with profile-aware YAML.
+
+## Building and testing
+
+```bash
+./gradlew build                              # compile all modules + run checks
+./gradlew :katalyst-scheduler:test           # test a single module
+./gradlew :katalyst-example:koverHtmlReport  # coverage report
+```
+
+See the [contributing guidelines](AGENTS.md) for repository conventions.
+
+## License
+
+<!-- TODO: confirm and link the project's LICENSE file. -->
+
