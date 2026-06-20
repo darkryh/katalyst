@@ -86,6 +86,7 @@ nav:
       - Add routes and middleware: how-to/add-routes-and-middleware.md
       - Add WebSockets: how-to/add-websockets.md
       - Choose a server engine: how-to/choose-an-engine.md
+      - Install the IDE plugin: how-to/install-ide-plugin.md
       - Test your application: how-to/test-applications.md
   - Reference:
       - reference/index.md

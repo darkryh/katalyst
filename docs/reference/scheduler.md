@@ -20,7 +20,6 @@ import kotlin.time.Duration.Companion.seconds
 class MaintenanceJobs(private val service: MaintenanceService) : Service {
     private val scheduler = requireScheduler()
 
-    @Suppress("unused")
     fun jobs() = scheduler.jobs {
         cron("nightly", "0 0 2 * * ?") { service.runNightly() }
         fixedDelay("poll", 5.seconds) { service.poll() }

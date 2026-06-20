@@ -33,3 +33,8 @@ option set behind any task, follow the links into the [reference](../reference/i
 - [Choose a server engine](choose-an-engine.md) — Netty, Jetty, or CIO.
 - [Test your application](test-applications.md) — unit, integration, and end-to-end tests.
 
+## Tooling
+
+- [Install the IDE plugin](install-ide-plugin.md) — teach IntelliJ IDEA and Android Studio
+  Katalyst's conventions so entrypoints aren't flagged unused (no `@Suppress` needed).
+

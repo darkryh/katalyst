@@ -226,7 +226,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AddBookmarkRequest(val url: String)
 
-@Suppress("unused")
 fun Route.bookmarkRoutes() = katalystRouting {
     post("/bookmarks") {
         val service = call.ktInject<BookmarkService>()
@@ -252,7 +251,6 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 
-@Suppress("unused")
 fun Application.jsonMiddleware() = katalystMiddleware {
     install(ContentNegotiation) { json() }
 }
@@ -261,6 +259,10 @@ fun Application.jsonMiddleware() = katalystMiddleware {
 `katalystRouting`, `katalystMiddleware`, and `katalystWebSockets` are the three Ktor entry
 points Katalyst installs automatically once DI is ready. Inside a route, `call.ktInject<T>()`
 resolves a dependency.
+
+Katalyst calls these top-level functions for you, so your own code never references them — your
+IDE may flag them as unused. Install the [Katalyst IDE plugin](how-to/install-ide-plugin.md) and
+the IDE recognizes them as framework entrypoints, so no `@Suppress("unused")` is needed.
 
 ## Step 8: Run it
 

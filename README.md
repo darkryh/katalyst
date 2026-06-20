@@ -103,7 +103,6 @@ class GreetingService(private val repository: GreetingRepository) : Service {
 And a route — `katalystRouting` registers it automatically:
 
 ```kotlin
-@Suppress("unused")
 fun Route.greetingRoutes() = katalystRouting {
     get("/greet/{name}") {
         val service = call.ktInject<GreetingService>()
@@ -120,6 +119,16 @@ Run it:
 ```
 
 Full walkthrough: the [getting-started tutorial](docs/getting-started.md).
+
+## IDE support
+
+Katalyst discovers entrypoints by convention, so the IDE can't tell they're used and reports
+them as unused. Install the **Katalyst Support** plugin for IntelliJ IDEA and Android Studio —
+from **Settings → Plugins → Marketplace**, or the
+[JetBrains Marketplace](https://plugins.jetbrains.com/plugin/32380-katalyst-support) — and the
+editor recognizes routes, services, repositories, event handlers, scheduled jobs, and the rest
+as live code. No `@Suppress("unused")` required. See
+[Install the IDE plugin](docs/how-to/install-ide-plugin.md) for the full feature list.
 
 ## Documentation
 

@@ -6,6 +6,9 @@ extension function you place under a scanned package. Inside any of them, `ktInj
 dependencies. For task help, see [Add routes, middleware, and exception handlers](../how-to/add-routes-and-middleware.md)
 and [Add WebSockets](../how-to/add-websockets.md).
 
+Katalyst discovers and invokes these functions, so your code never calls them; the
+[IDE plugin](../how-to/install-ide-plugin.md) marks them as used so they aren't reported unused.
+
 ## katalystRouting
 
 Registers routes. Available on both `Route` and `Application`.
@@ -16,7 +19,6 @@ fun Application.katalystRouting(block: Routing.() -> Unit)
 ```
 
 ```kotlin
-@Suppress("unused")
 fun Route.authRoutes() = katalystRouting {
     route("/api/auth") {
         post("/login") {
@@ -44,7 +46,6 @@ fun Application.katalystMiddleware(block: MiddlewareBuilder.() -> Unit)
 ```
 
 ```kotlin
-@Suppress("unused")
 fun Application.security() = katalystMiddleware {
     val jwtSettings by ktInject<JwtSettingsService>()
     jwtSettings.configure(this@security)
@@ -63,7 +64,6 @@ fun Route.katalystWebSockets(block: Route.() -> Unit)
 ```
 
 ```kotlin
-@Suppress("unused")
 fun Route.notificationRoutes() = katalystWebSockets {
     webSocket("/ws/users") {
         send(Frame.Text("""{"type":"welcome"}"""))
@@ -93,7 +93,6 @@ fun Application.katalystExceptionHandler(block: ExceptionHandlerBuilder.() -> Un
 ```
 
 ```kotlin
-@Suppress("unused")
 fun Application.exceptionHandlers() = katalystExceptionHandler {
     exception<ValidationException> { call, exception ->
         call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", exception.message))

@@ -18,7 +18,6 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 
-@Suppress("unused")
 fun Route.authRoutes() = katalystRouting {
     route("/api/auth") {
         post("/register") {
@@ -37,14 +36,15 @@ You can also inject a dependency as a function parameter — Katalyst supplies i
 invokes the function:
 
 ```kotlin
-@Suppress("unused")
 fun Route.authRoutes(service: AuthenticationService) = katalystRouting {
     post("/login") { call.respond(service.login(call.receive())) }
 }
 ```
 
-The `@Suppress("unused")` is cosmetic: the function is never called from your code, only by
-Katalyst, so the compiler would otherwise warn.
+These functions are never called from your code — Katalyst discovers and invokes them for you.
+Because of that, the IDE can flag them as unused. Install the
+[Katalyst IDE plugin](install-ide-plugin.md), which teaches IntelliJ IDEA and Android Studio to
+recognize Katalyst entrypoints, and the warning goes away — no `@Suppress` needed.
 
 ## Add middleware
 
@@ -60,12 +60,10 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 
-@Suppress("unused")
 fun Application.contentNegotiation() = katalystMiddleware {
     install(ContentNegotiation) { json() }
 }
 
-@Suppress("unused")
 fun Application.security() = katalystMiddleware {
     val jwtSettings by ktInject<JwtSettingsService>()
     jwtSettings.configure(this@security)
@@ -84,7 +82,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
 
-@Suppress("unused")
 fun Application.exceptionHandlers() = katalystExceptionHandler {
     exception<ValidationException> { call, exception ->
         call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", exception.message))

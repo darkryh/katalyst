@@ -33,7 +33,6 @@ import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 
-@Suppress("unused")
 fun Route.notificationWebSocketRoutes() = katalystWebSockets {
     webSocket("/ws/users") {
         send(Frame.Text("""{"type":"welcome"}"""))

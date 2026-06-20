@@ -25,7 +25,6 @@ import kotlin.time.Duration.Companion.seconds
 class CleanupJobs(private val cleanupService: CleanupService) : Service {
     private val scheduler = requireScheduler()
 
-    @Suppress("unused")
     fun cleanupJobs() = scheduler.jobs {
         cron("cleanup-expired", "0 0 * * * ?") {
             cleanupService.cleanupExpired()
