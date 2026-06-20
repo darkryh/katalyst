@@ -67,19 +67,25 @@ Pick the door that matches what you need right now.
 
 ## What you get
 
-| Capability | Module(s) | Reference |
-|------------|-----------|-----------|
-| Application bootstrap DSL | `katalyst-di` | [Application DSL](reference/application-dsl.md) |
-| Annotation-free dependency injection | `katalyst-di`, `katalyst-koin-bean` | [DI & auto-wiring](reference/di-auto-wiring.md) |
-| YAML configuration, profiles, env interpolation | `katalyst-config-*` | [Configuration](reference/configuration.md) |
-| Exposed + HikariCP persistence | `katalyst-persistence` | [Persistence](reference/persistence.md) |
-| Transaction management with retry | `katalyst-transactions` | [Transactions](reference/transactions.md) |
-| Database migrations | `katalyst-migrations` | [Migrations](reference/migrations.md) |
-| Scheduler (cron / fixed delay / fixed rate / one-time) | `katalyst-scheduler` | [Scheduler](reference/scheduler.md) |
-| In-process transactional event bus | `katalyst-events`, `katalyst-events-bus` | [Events](reference/events.md) |
-| Routing, middleware, WebSockets, exception handlers | `katalyst-ktor`, `katalyst-websockets` | [Ktor integration](reference/ktor.md) |
-| Pluggable server engines (Netty / Jetty / CIO) | `katalyst-ktor-engine-*` | [Choose an engine](how-to/choose-an-engine.md) |
-| Testing helpers | `katalyst-testing-core`, `katalyst-testing-ktor` | [Testing](reference/testing.md) |
+You depend on **starters**: each one bundles the Katalyst modules and external libraries
+(Ktor, Exposed, HikariCP, JDBC drivers, …) for a capability, so you never list those
+third-party dependencies yourself. A BOM keeps every version aligned.
 
-See the [module map](reference/modules.md) for every artifact and its coordinates.
+| Capability | Starter | Reference |
+|------------|---------|-----------|
+| Application bootstrap DSL | `katalyst-starter-core` | [Application DSL](reference/application-dsl.md) |
+| Annotation-free dependency injection | `katalyst-starter-core` | [DI & auto-wiring](reference/di-auto-wiring.md) |
+| YAML configuration, profiles, env interpolation | `katalyst-starter-core` | [Configuration](reference/configuration.md) |
+| In-process transactional event bus | `katalyst-starter-core` | [Events](reference/events.md) |
+| Exposed + HikariCP persistence | `katalyst-starter-persistence` | [Persistence](reference/persistence.md) |
+| Transaction management with retry | `katalyst-starter-persistence` | [Transactions](reference/transactions.md) |
+| Database migrations | `katalyst-starter-migrations` | [Migrations](reference/migrations.md) |
+| Scheduler (cron / fixed delay / fixed rate / one-time) | `katalyst-starter-scheduler` | [Scheduler](reference/scheduler.md) |
+| Routing, middleware, exception handlers, Netty engine | `katalyst-starter-web` | [Ktor integration](reference/ktor.md) |
+| WebSockets | `katalyst-starter-websockets` | [Ktor integration](reference/ktor.md) |
+| Pluggable server engines (Netty / Jetty / CIO) | `katalyst-starter-web` + engine module | [Choose an engine](how-to/choose-an-engine.md) |
+| Testing helpers | `katalyst-starter-test` | [Testing](reference/testing.md) |
+
+See the [module map](reference/modules.md) for every starter, the underlying modules each one
+bundles, and their coordinates.
 

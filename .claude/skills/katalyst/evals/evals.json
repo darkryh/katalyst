@@ -21,6 +21,36 @@
       "prompt": "In a Katalyst service, I want to publish a ProjectCreatedEvent when a project is created, and have a handler that sends a notification — but the notification must NOT happen if the database transaction rolls back. Show the event, the service publishing it, and the handler.",
       "expected_output": "Event implements DomainEvent (plain data class); service injects EventBus and calls eventBus.publish(...) INSIDE transactionManager.transaction{} so delivery defers to commit; handler implements EventHandler<ProjectCreatedEvent> with override val eventType and suspend fun handle; explains transaction-aware/deferred-until-commit behavior; handler discovered by implementing the interface (no annotation).",
       "files": []
+    },
+    {
+      "id": 3,
+      "name": "dep-setup-web-persistence",
+      "prompt": "I'm starting a brand-new Katalyst service from scratch. Write the dependencies { } block of my build.gradle.kts for a web service backed by a database — I need HTTP routes and persistence (an embedded H2 is fine for now). Use the current recommended way to depend on Katalyst, and tell me which versions I have to specify.",
+      "expected_output": "Uses platform(\"io.github.darkryh.katalyst:katalyst-bom:1.0.0-alpha01\") for version alignment; adds katalyst-starter-web and katalyst-starter-persistence with NO version each; explains that only the BOM carries a version and starters bring Ktor/Netty/Exposed/HikariCP/H2 transitively. Does NOT list individual modules (katalyst-core/-di/-ktor/-persistence/-ktor-engine-netty) and does NOT add Ktor/Exposed/HikariCP/H2 as explicit dependencies.",
+      "assertions": [
+        {"text": "Declares the BOM via platform(\"io.github.darkryh.katalyst:katalyst-bom:...\")"},
+        {"text": "Adds katalyst-starter-web"},
+        {"text": "Adds katalyst-starter-persistence"},
+        {"text": "Starter coordinates carry NO explicit version (only the BOM does)"},
+        {"text": "Does NOT declare individual modules like katalyst-core, katalyst-di, katalyst-ktor, or katalyst-ktor-engine-netty"},
+        {"text": "Does NOT add Ktor, Exposed, HikariCP, or H2 as explicit third-party dependencies"},
+        {"text": "Uses version 1.0.0-alpha01 (not 1.0.0-alpha)"}
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "dep-add-features-and-test",
+      "prompt": "My Katalyst app's build.gradle.kts already declares the Katalyst BOM and katalyst-starter-web. I now need to add WebSockets, the scheduler, and the ability to write integration tests. Which dependency lines do I add?",
+      "expected_output": "Adds katalyst-starter-websockets and katalyst-starter-scheduler (implementation) and katalyst-starter-test (testImplementation); all WITHOUT explicit versions because the BOM is already present; does NOT tell the user to add ktor-server-websockets, the bare katalyst-scheduler/katalyst-websockets modules, or katalyst-testing-core/-ktor directly.",
+      "assertions": [
+        {"text": "Adds katalyst-starter-websockets"},
+        {"text": "Adds katalyst-starter-scheduler"},
+        {"text": "Adds katalyst-starter-test as a testImplementation"},
+        {"text": "New starter lines carry NO explicit version (BOM already present)"},
+        {"text": "Does NOT instruct adding individual modules (ktor-server-websockets, katalyst-scheduler, katalyst-testing-core/-ktor)"}
+      ],
+      "files": []
     }
   ]
 }

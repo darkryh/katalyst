@@ -39,28 +39,26 @@ plugins {
 repositories { mavenCentral() }
 
 dependencies {
-    val katalyst = "1.0.0-alpha"
-    implementation("io.github.darkryh.katalyst:katalyst-core:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-di:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-koin-bean:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalyst")
-
-    // Database stack
-    implementation("io.ktor:ktor-server-content-negotiation:3.5.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
-    implementation("com.h2database:h2:2.2.224")
+    val katalyst = "1.0.0-alpha01"
+    implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
+    implementation("io.github.darkryh.katalyst:katalyst-starter-web")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")
 }
 
 application {
     mainClass.set("com.example.ApplicationKt")
 }
 ```
+
+You declare two things: the **BOM** and the **starters** you need. The BOM
+(`platform(...)`) pins every Katalyst artifact to one version, so the starter coordinates
+below carry no version of their own. Each starter then brings its external dependencies
+transitively — you never list Ktor, Exposed, HikariCP, or a JDBC driver yourself:
+
+- `katalyst-starter-web` pulls in Ktor (server, content negotiation, JSON serialization)
+  and the Netty engine.
+- `katalyst-starter-persistence` pulls in Exposed, HikariCP, and the H2 and PostgreSQL
+  drivers.
 
 Run `./gradlew build` once to confirm the dependencies resolve. You should see
 `BUILD SUCCESSFUL`.

@@ -1,19 +1,18 @@
 # Choose a server engine
 
 Katalyst runs on any of three Ktor server engines: Netty, Jetty, or CIO. You select one in
-the bootstrap by passing the engine object to `engine(...)`. Each engine ships in its own
-module so you only depend on the one you use.
+the bootstrap by passing the engine object to `engine(...)`.
+
+`katalyst-starter-web` already bundles the **Netty** engine, so the default needs no extra
+dependency. To run on Jetty or CIO instead, add that engine's module — its version is
+managed by the BOM, so you omit the version — and the matching Ktor engine arrives
+transitively.
 
 ## Select an engine
 
-Add the matching dependency and pass the engine object:
-
 === "Netty"
 
-    ```kotlin
-    // build.gradle.kts
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:1.0.0-alpha")
-    ```
+    Bundled in `katalyst-starter-web`; no extra dependency. Just pass the engine object:
 
     ```kotlin
     import io.github.darkryh.katalyst.ktor.engine.netty.NettyServer
@@ -27,7 +26,8 @@ Add the matching dependency and pass the engine object:
 === "Jetty"
 
     ```kotlin
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-jetty:1.0.0-alpha")
+    // build.gradle.kts — version comes from the Katalyst BOM
+    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-jetty")
     ```
 
     ```kotlin
@@ -42,7 +42,8 @@ Add the matching dependency and pass the engine object:
 === "CIO"
 
     ```kotlin
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-cio:1.0.0-alpha")
+    // build.gradle.kts — version comes from the Katalyst BOM
+    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-cio")
     ```
 
     ```kotlin
@@ -55,7 +56,8 @@ Add the matching dependency and pass the engine object:
     ```
 
 Each of `NettyServer`, `JettyServer`, and `CioServer` is an object implementing
-`KatalystServerEngine`, so swapping engines is a one-line change plus the dependency.
+`KatalystServerEngine`, so swapping engines is a one-line change in the bootstrap (plus the
+engine module for non-default engines).
 
 ## Which one
 

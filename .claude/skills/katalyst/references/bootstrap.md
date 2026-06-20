@@ -21,16 +21,17 @@ fun engine(engine: KatalystServerEngine): KatalystApplicationBuilder
 fun engine(engine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>): KatalystApplicationBuilder
 ```
 
-Pass one of the engine objects (each in its own module, so you only depend on the one you use):
+Pass one of the engine objects. Netty ships inside `katalyst-starter-web`, so it needs no extra
+dependency; Jetty and CIO each live in their own module, added versionless (the BOM pins it):
 
-| Engine | Import | Module |
-|--------|--------|--------|
-| `NettyServer` | `io.github.darkryh.katalyst.ktor.engine.netty.NettyServer` | `katalyst-ktor-engine-netty` |
-| `JettyServer` | `io.github.darkryh.katalyst.ktor.engine.jetty.JettyServer` | `katalyst-ktor-engine-jetty` |
-| `CioServer` | `io.github.darkryh.katalyst.ktor.engine.cio.CioServer` | `katalyst-ktor-engine-cio` |
+| Engine | Import | Dependency |
+|--------|--------|------------|
+| `NettyServer` | `io.github.darkryh.katalyst.ktor.engine.netty.NettyServer` | bundled in `katalyst-starter-web` |
+| `JettyServer` | `io.github.darkryh.katalyst.ktor.engine.jetty.JettyServer` | add `katalyst-ktor-engine-jetty` |
+| `CioServer` | `io.github.darkryh.katalyst.ktor.engine.cio.CioServer` | add `katalyst-ktor-engine-cio` |
 
-All three implement `KatalystServerEngine`, so switching engines is a one-line change plus the
-dependency. Netty is the usual default.
+All three implement `KatalystServerEngine`, so switching engines is a one-line change in the
+bootstrap (plus the engine module for the non-default engines). Netty is the usual default.
 
 ### beanEngine — REQUIRED
 

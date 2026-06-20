@@ -1,9 +1,44 @@
 # Module map & imports
 
-Group `io.github.darkryh.katalyst`. All modules share one version (line `1.0.0-alpha`).
-`implementation("io.github.darkryh.katalyst:<module>:<version>")`.
+Group `io.github.darkryh.katalyst`. All artifacts share one version (current line
+`1.0.0-alpha01`).
 
-## Modules
+## How apps depend on Katalyst — BOM + starters (do this)
+
+Applications do **not** list individual `katalyst-*` modules, and they do **not** list the
+external libraries (Ktor, Exposed, HikariCP, JDBC drivers, JUnit, …) themselves. Instead you
+declare the **BOM** once — it pins every Katalyst artifact to one version — and then add the
+**feature starters** you need with no version. Each starter pulls its own Katalyst modules
+*and* their third-party dependencies transitively. This is the single most common thing to get
+right in a build file; the old per-module + explicit-external-deps style is gone.
+
+```kotlin
+val katalyst = "1.0.0-alpha01"
+implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))   // version alignment only
+implementation("io.github.darkryh.katalyst:katalyst-starter-web")               // Ktor + Netty + JSON
+implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")       // Exposed + Hikari + H2/Postgres
+implementation("io.github.darkryh.katalyst:katalyst-starter-migrations")        // + migrations
+implementation("io.github.darkryh.katalyst:katalyst-starter-scheduler")         // + scheduler
+implementation("io.github.darkryh.katalyst:katalyst-starter-websockets")        // + WebSockets
+testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")          // test host + JUnit + Testcontainers
+```
+
+| Starter | Bundles (Katalyst modules) | Brings transitively (external) |
+|---------|----------------------------|--------------------------------|
+| `katalyst-starter-core` | core, di, koin-bean, scanner, config-provider, config-yaml, events, events-bus | coroutines, kotlinx-serialization, slf4j, logback |
+| `katalyst-starter-web` | starter-core, ktor, ktor-engine-netty | Ktor server (core, content-negotiation, auth/JWT, call-id, rate-limit, status-pages, JSON), Netty |
+| `katalyst-starter-persistence` | starter-core, persistence, transactions | Exposed (core/dao/jdbc), HikariCP, H2 + PostgreSQL drivers |
+| `katalyst-starter-migrations` | starter-persistence, migrations | (via persistence) |
+| `katalyst-starter-scheduler` | starter-core, scheduler | — |
+| `katalyst-starter-websockets` | starter-web, websockets | Ktor WebSockets |
+| `katalyst-starter-test` | testing-core, testing-ktor | kotlin-test-junit5, Ktor WS client, Testcontainers-Postgres, JUnit runtime |
+
+The BOM adds no classes by itself — starters control capabilities. Netty ships inside
+`katalyst-starter-web`; to run on Jetty or CIO add that engine module (versionless, BOM-managed)
+— see the engine rows below. Depend on a bare module directly only for advanced integrations
+that no starter covers.
+
+## Modules (what each starter bundles)
 
 | Module | Responsibility | Key public API |
 |--------|----------------|----------------|

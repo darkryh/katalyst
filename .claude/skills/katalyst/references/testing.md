@@ -1,15 +1,15 @@
 # Testing reference
 
-Two modules boot the real DI graph so tests exercise real wiring.
-
-| Module | Provides |
-|--------|----------|
-| `katalyst-testing-core` | `katalystTestEnvironment`, `inMemoryDatabaseConfig`, `FakeConfigProvider` |
-| `katalyst-testing-ktor` | `katalystTestApplication` |
+The testing helpers boot the real DI graph so tests exercise real wiring. They ship in two
+modules — `katalyst-testing-core` (`katalystTestEnvironment`, `inMemoryDatabaseConfig`,
+`FakeConfigProvider`) and `katalyst-testing-ktor` (`katalystTestApplication`) — but you don't
+depend on those directly. Add the single test starter; it bundles both plus JUnit 5, the Ktor
+WebSocket test client, and Testcontainers for PostgreSQL. Its version comes from the BOM, so
+omit it (add the BOM to the test config if the module isn't already on it):
 
 ```kotlin
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:<version>")
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:<version>")
+testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-alpha01"))
+testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 ```
 
 Helper choice:

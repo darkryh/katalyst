@@ -6,10 +6,18 @@ bootstrappers. This guide shows how to choose and use each helper.
 
 ## Add the test dependencies
 
+One starter covers all the testing helpers. Its version comes from the BOM you already
+declare for the main dependencies, so add the BOM to the test configuration too and omit the
+starter's version:
+
 ```kotlin
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:1.0.0-alpha")
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:1.0.0-alpha")
+testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-alpha01"))
+testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 ```
+
+`katalyst-starter-test` brings the test host (`katalystTestEnvironment`,
+`katalystTestApplication`), JUnit 5, the Ktor WebSocket test client, and Testcontainers for
+PostgreSQL transitively — you don't list them yourself.
 
 ## Choose a helper
 
