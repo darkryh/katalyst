@@ -2,11 +2,29 @@
 
 Katalyst is published as a set of focused modules under the group
 `io.github.darkryh.katalyst`. Depend only on what you use. All modules share the same
-version (current line: `1.0.0-alpha`).
+version (current line: `1.0.0-alpha01`). Applications should consume the BOM and feature
+starters; the lower-level modules below remain useful for advanced integrations.
 
 ```kotlin
-implementation("io.github.darkryh.katalyst:<module>:1.0.0-alpha")
+val katalyst = "1.0.0-alpha01"
+implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
+implementation("io.github.darkryh.katalyst:katalyst-starter-web")
 ```
+
+## Starters
+
+| Starter | Includes |
+|---------|----------|
+| `katalyst-starter-core` | Bootstrap, DI, scanning, YAML configuration, and events |
+| `katalyst-starter-web` | Core starter, Ktor integration, and the Netty engine |
+| `katalyst-starter-persistence` | Core starter, transactions, Exposed, HikariCP, and JDBC drivers |
+| `katalyst-starter-migrations` | Persistence starter and migration support |
+| `katalyst-starter-scheduler` | Core starter and scheduling support |
+| `katalyst-starter-websockets` | Web starter and WebSocket support |
+| `katalyst-starter-test` | Core and Ktor testing support |
+
+The BOM controls Katalyst artifact versions. Starters control capabilities. Adding the BOM by
+itself adds no runtime classes.
 
 ## Core runtime
 
@@ -63,26 +81,16 @@ implementation("io.github.darkryh.katalyst:<module>:1.0.0-alpha")
 A full-featured service usually pulls in:
 
 ```kotlin
-val katalyst = "1.0.0-alpha"
-implementation("io.github.darkryh.katalyst:katalyst-core:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-di:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-koin-bean:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-migrations:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-scheduler:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-events:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalyst")
-implementation("io.github.darkryh.katalyst:katalyst-websockets:$katalyst")
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalyst")
-testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:$katalyst")
+val katalyst = "1.0.0-alpha01"
+implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
+implementation("io.github.darkryh.katalyst:katalyst-starter-web")
+implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")
+implementation("io.github.darkryh.katalyst:katalyst-starter-migrations")
+implementation("io.github.darkryh.katalyst:katalyst-starter-scheduler")
+implementation("io.github.darkryh.katalyst:katalyst-starter-websockets")
+testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 ```
 
-You also pin your own Ktor, Exposed, HikariCP, and JDBC-driver versions. Katalyst targets
-Kotlin 2.4.x, Ktor 3.5.x, Koin 4.2.x, Exposed 1.3.x, and HikariCP 5.1.x.
-
+The starters provide their corresponding Ktor, Exposed, HikariCP, and JDBC dependencies.
+Applications only declare those libraries directly when overriding or extending the curated
+stack.

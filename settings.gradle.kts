@@ -63,6 +63,27 @@ include(":katalyst-analysis")
 
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
+include(":katalyst-bom")
+include(":katalyst-starter-core")
+include(":katalyst-starter-web")
+include(":katalyst-starter-persistence")
+include(":katalyst-starter-migrations")
+include(":katalyst-starter-scheduler")
+include(":katalyst-starter-websockets")
+include(":katalyst-starter-test")
+
+listOf(
+    "katalyst-starter-core",
+    "katalyst-starter-web",
+    "katalyst-starter-persistence",
+    "katalyst-starter-migrations",
+    "katalyst-starter-scheduler",
+    "katalyst-starter-websockets",
+    "katalyst-starter-test",
+).forEach { starter ->
+    project(":$starter").projectDir = file("starter/$starter")
+}
+
 include(":katalyst-ktor-engine-netty")
 include(":katalyst-ktor-engine-jetty")
 include(":katalyst-ktor-engine-cio")

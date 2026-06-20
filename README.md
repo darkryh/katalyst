@@ -34,7 +34,7 @@ sensible defaults — but it stays idiomatic Kotlin and runs on Ktor:
 ## Installation
 
 Requires JDK 21+, Kotlin 2.4.x, and Ktor 3.5.x. Pin the version from the Maven Central
-badge above (latest stable line: `1.0.0-alpha`).
+badge above (latest prerelease: `1.0.0-alpha01`).
 
 ```kotlin
 plugins {
@@ -48,36 +48,23 @@ repositories {
 }
 
 dependencies {
-    val katalyst = "1.0.0-alpha"
+    val katalyst = "1.0.0-alpha01"
+    implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
 
-    // Core runtime
-    implementation("io.github.darkryh.katalyst:katalyst-core:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-di:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-koin-bean:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-scanner:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-ktor-engine-netty:$katalyst")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-web")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")
 
-    // Persistence + transactions
-    implementation("io.github.darkryh.katalyst:katalyst-persistence:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-transactions:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-migrations:$katalyst")
+    // Add only the optional features the application uses.
+    implementation("io.github.darkryh.katalyst:katalyst-starter-migrations")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-scheduler")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-websockets")
 
-    // Configuration (YAML)
-    implementation("io.github.darkryh.katalyst:katalyst-config-provider:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-config-yaml:$katalyst")
-
-    // Optional features
-    implementation("io.github.darkryh.katalyst:katalyst-scheduler:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-events:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-events-bus:$katalyst")
-    implementation("io.github.darkryh.katalyst:katalyst-websockets:$katalyst")
-
-    // Testing helpers
-    testImplementation("io.github.darkryh.katalyst:katalyst-testing-core:$katalyst")
-    testImplementation("io.github.darkryh.katalyst:katalyst-testing-ktor:$katalyst")
+    testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 }
 ```
+
+Add feature starters explicitly so scheduler, migrations, and WebSockets are not selected
+unless they are needed.
 
 See the [module map](docs/reference/modules.md) for every artifact, including the Jetty
 and CIO engines.
@@ -165,4 +152,3 @@ See the [contributing guidelines](AGENTS.md) for repository conventions.
 ## License
 
 <!-- TODO: confirm and link the project's LICENSE file. -->
-

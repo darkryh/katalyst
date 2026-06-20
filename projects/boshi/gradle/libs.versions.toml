@@ -6,6 +6,7 @@ composeMultiplatform = "1.9.1"
 junit = "4.13.2"
 
 kotlin = "2.4.0"
+katalyst = "1.0.0-alpha01"
 kotlinx-coroutines = "1.8.0"
 ktor = "3.5.0"
 koin = "4.2.2"
@@ -139,23 +140,14 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 
 # --- Katalyst Framework ---
-katalyst-core = { module = "io.github.darkryh.katalyst:katalyst-core" }
-katalyst-transactions = { module = "io.github.darkryh.katalyst:katalyst-transactions" }
-katalyst-persistence = { module = "io.github.darkryh.katalyst:katalyst-persistence" }
-katalyst-ktor = { module = "io.github.darkryh.katalyst:katalyst-ktor" }
-katalyst-scanner = { module = "io.github.darkryh.katalyst:katalyst-scanner" }
-katalyst-di = { module = "io.github.darkryh.katalyst:katalyst-di" }
-katalyst-migrations = { module = "io.github.darkryh.katalyst:katalyst-migrations" }
-katalyst-scheduler = { module = "io.github.darkryh.katalyst:katalyst-scheduler" }
-katalyst-websockets = { module = "io.github.darkryh.katalyst:katalyst-websockets" }
-katalyst-config-provider = { module = "io.github.darkryh.katalyst:katalyst-config-provider" }
-katalyst-config-yaml = { module = "io.github.darkryh.katalyst:katalyst-config-yaml" }
-katalyst-ktor-engine = { module = "io.github.darkryh.katalyst:katalyst-ktor-engine" }
-katalyst-ktor-engine-netty = { module = "io.github.darkryh.katalyst:katalyst-ktor-engine-netty" }
-katalyst-events = { module = "io.github.darkryh.katalyst:katalyst-events" }
-katalyst-events-bus = { module = "io.github.darkryh.katalyst:katalyst-events-bus" }
-katalyst-testing-core = { module = "io.github.darkryh.katalyst:katalyst-testing-core" }
-katalyst-testing-ktor = { module = "io.github.darkryh.katalyst:katalyst-testing-ktor" }
+katalyst-bom = { module = "io.github.darkryh.katalyst:katalyst-bom", version.ref = "katalyst" }
+katalyst-starter-core = { module = "io.github.darkryh.katalyst:katalyst-starter-core" }
+katalyst-starter-web = { module = "io.github.darkryh.katalyst:katalyst-starter-web" }
+katalyst-starter-persistence = { module = "io.github.darkryh.katalyst:katalyst-starter-persistence" }
+katalyst-starter-migrations = { module = "io.github.darkryh.katalyst:katalyst-starter-migrations" }
+katalyst-starter-scheduler = { module = "io.github.darkryh.katalyst:katalyst-starter-scheduler" }
+katalyst-starter-websockets = { module = "io.github.darkryh.katalyst:katalyst-starter-websockets" }
+katalyst-starter-test = { module = "io.github.darkryh.katalyst:katalyst-starter-test" }
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

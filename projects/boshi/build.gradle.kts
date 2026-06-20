@@ -19,3 +19,9 @@ allprojects {
         // JVM plugin is applied - nothing extra needed
     }
 }
+
+subprojects {
+    tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+        useJUnitPlatform()
+    }
+}

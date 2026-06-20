@@ -19,6 +19,14 @@ apiValidation {
         "memory-validation",
         "katalyst-testing-core",
         "katalyst-testing-ktor",
+        "katalyst-starter-test",
+        "katalyst-bom",
+        "katalyst-starter-core",
+        "katalyst-starter-web",
+        "katalyst-starter-persistence",
+        "katalyst-starter-migrations",
+        "katalyst-starter-scheduler",
+        "katalyst-starter-websockets",
     )
 }
 
@@ -26,6 +34,46 @@ tasks.register("memoryBaseline") {
     group = "verification"
     description = "Runs the canonical full-backend memory validation workload"
     dependsOn(":memory-validation:memoryBaseline")
+}
+
+val starterBoundaries = mapOf(
+    ":katalyst-starter-core" to setOf("katalyst-migrations", "katalyst-scheduler", "katalyst-websockets"),
+    ":katalyst-starter-web" to setOf("katalyst-migrations", "katalyst-scheduler", "katalyst-websockets"),
+    ":katalyst-starter-persistence" to setOf("katalyst-migrations", "katalyst-scheduler", "katalyst-websockets"),
+    ":katalyst-starter-migrations" to setOf("katalyst-scheduler", "katalyst-websockets"),
+    ":katalyst-starter-scheduler" to setOf("katalyst-migrations", "katalyst-websockets"),
+    ":katalyst-starter-websockets" to setOf("katalyst-migrations", "katalyst-scheduler"),
+)
+
+val starterBoundaryChecks = starterBoundaries.map { (projectPath, forbiddenModules) ->
+    val starterName = projectPath.removePrefix(":")
+    evaluationDependsOn(projectPath)
+    val runtimeClasspath = project(projectPath).configurations.named("runtimeClasspath")
+
+    tasks.register("validate${starterName.split('-').joinToString("") { it.replaceFirstChar(Char::uppercase) }}Boundary") {
+        group = "verification"
+        description = "Verifies optional feature modules do not leak into $starterName"
+        inputs.files(runtimeClasspath)
+            .withPropertyName("runtimeClasspath")
+            .withNormalizer(ClasspathNormalizer::class.java)
+
+        doLast {
+            val leakedModules = forbiddenModules.filter { module ->
+                inputs.files.files.any { artifact ->
+                    artifact.name == "$module.jar" || artifact.name.startsWith("$module-")
+                }
+            }
+            check(leakedModules.isEmpty()) {
+                "$projectPath leaks optional modules: ${leakedModules.sorted().joinToString()}"
+            }
+        }
+    }
+}
+
+tasks.register("validateStarterBoundaries") {
+    group = "verification"
+    description = "Verifies optional feature modules do not leak into unrelated starters"
+    dependsOn(starterBoundaryChecks)
 }
 
 // ---------------------------------------------------------------------------
