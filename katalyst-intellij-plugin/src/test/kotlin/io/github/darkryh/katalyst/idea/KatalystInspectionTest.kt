@@ -45,6 +45,83 @@ class KatalystInspectionTest : BasePlatformTestCase() {
         assertEmpty(found)
     }
 
+    fun testNamedExpressionCronIsValidated() {
+        myFixture.enableInspections(KatalystSchedulerInspection())
+        val found = highlightsContaining(
+            """
+            fun jobs() = scheduler.jobs {
+                cron(taskName = "nightly", expression = "0 0 25 * * ?") { }
+            }
+            """.trimIndent(),
+            "Invalid cron expression",
+        )
+        assertTrue("expected named expression cron warning", found.isNotEmpty())
+    }
+
+    fun testScheduleConfigCronExpressionIsValidated() {
+        myFixture.enableInspections(KatalystSchedulerInspection())
+        val found = highlightsContaining(
+            """
+            fun jobs() = scheduler.jobs {
+                cron(
+                    config = ScheduleConfig(taskName = "nightly"),
+                    expression = "0 0 25 * * ?",
+                ) { }
+            }
+            """.trimIndent(),
+            "Invalid cron expression",
+        )
+        assertTrue("expected config expression cron warning", found.isNotEmpty())
+    }
+
+    fun testCronExpressionWrapperIsValidated() {
+        myFixture.enableInspections(KatalystSchedulerInspection())
+        val found = highlightsContaining(
+            """
+            fun jobs() = scheduler.jobs {
+                cron("nightly", CronExpression("0 0 25 * * ?")) { }
+            }
+            """.trimIndent(),
+            "Invalid cron expression",
+        )
+        assertTrue("expected CronExpression wrapper warning", found.isNotEmpty())
+    }
+
+    fun testMixedCronArgumentShapesAreValidated() {
+        myFixture.enableInspections(KatalystSchedulerInspection())
+
+        val cases = listOf(
+            """cron("nightly", "0 0 25 * * ?",) { }""",
+            """cron("nightly", expression = "0 0 25 * * ?") { }""",
+            """cron(taskName = "nightly", "0 0 25 * * ?") { }""",
+            """cron(config = ScheduleConfig(taskName = "nightly"), "0 0 25 * * ?") { }""",
+            """cron("nightly", CronExpression(expression = "0 0 25 * * ?"),) { }""",
+            """cron(taskName = "nightly", expression = CronExpression("0 0 25 * * ?")) { }""",
+            """
+            cron(
+                config = ScheduleConfig(
+                    taskName = "nightly",
+                ),
+                expression = CronExpression(
+                    expression = "0 0 25 * * ?",
+                ),
+            ) { }
+            """.trimIndent(),
+        )
+
+        cases.forEachIndexed { index, cronCall ->
+            val found = highlightsContaining(
+                """
+                fun jobs() = scheduler.jobs {
+                    $cronCall
+                }
+                """.trimIndent(),
+                "Invalid cron expression",
+            )
+            assertTrue("expected invalid-cron warning for mixed argument case #$index: $cronCall", found.isNotEmpty())
+        }
+    }
+
     fun testCronOutsideJobsBlockIsIgnored() {
         myFixture.enableInspections(KatalystSchedulerInspection())
         // A `cron(...)` call that is not inside a jobs { } block must not be validated.
@@ -80,6 +157,20 @@ class KatalystInspectionTest : BasePlatformTestCase() {
             "Duplicate scheduler job name",
         )
         assertEmpty(found)
+    }
+
+    fun testDuplicateScheduleConfigJobNameIsFlagged() {
+        myFixture.enableInspections(KatalystSchedulerInspection())
+        val found = highlightsContaining(
+            """
+            fun jobs() = scheduler.jobs {
+                cron(config = ScheduleConfig(taskName = "dup"), expression = "0 0 2 * * ?") { }
+                fixedDelay(config = ScheduleConfig(taskName = "dup"), delay = x) { }
+            }
+            """.trimIndent(),
+            "Duplicate scheduler job name",
+        )
+        assertTrue("expected duplicate config-name warnings", found.size >= 2)
     }
 
     // --- events: eventType vs type argument ---

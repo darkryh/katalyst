@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.memory
 
 import java.io.Closeable
+import java.io.File
 import java.net.ServerSocket
 import java.net.URI
 import java.net.http.HttpClient
@@ -97,7 +98,7 @@ private class BackendProcess(
         val libDir = config.sampleDir.resolve("lib")
         require(libDir.exists()) { "Sample distribution not found at ${config.sampleDir}" }
 
-        val separator = System.getProperty("path.separator")
+        val separator = File.pathSeparator
         val classpath = Files.list(libDir).use { paths ->
             paths.filter { it.fileName.toString().endsWith(".jar") }
                 .sorted()
