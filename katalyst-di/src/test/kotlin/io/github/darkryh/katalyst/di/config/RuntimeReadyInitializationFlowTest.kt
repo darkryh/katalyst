@@ -4,7 +4,7 @@ import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.feature.katalystBeanModule
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
 import io.github.darkryh.katalyst.di.registry.RegistryManager
 import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlin.test.AfterTest
@@ -97,17 +97,17 @@ private class RuntimeReadyTestFeature(
 
     override fun provideBeanModules(): List<KatalystBeanModule> = listOf(
         katalystBeanModule {
-            single<ApplicationReadyInitializer> { RuntimeReadyProbeInitializer(probe) }
+            single<ReadyHook> { RuntimeReadyProbeInitializer(probe) }
         }
     )
 }
 
 private class RuntimeReadyProbeInitializer(
     private val probe: RuntimeReadyProbe
-) : ApplicationReadyInitializer {
-    override val initializerId: String = "RuntimeReadyProbeInitializer"
+) : ReadyHook {
+    override val id: String = "RuntimeReadyProbeInitializer"
 
-    override suspend fun onRuntimeReady() {
+    override suspend fun onReady() {
         probe.executed = true
         probe.executions += 1
     }

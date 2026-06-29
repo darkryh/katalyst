@@ -2,7 +2,6 @@ package io.github.darkryh.katalyst.di
 
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.config.DatabaseConfig
-import io.github.darkryh.katalyst.config.provider.ConfigMetadata
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.core.di.getAll
@@ -258,14 +257,14 @@ class KatalystApplicationBuilder(
      * 1. Attempts to load from application.yaml via ServerDeploymentConfigurationLoader
      * 2. Falls back to sensible defaults if YAML loading is unavailable or fails
      *
-     * For custom YAML loading behavior, call enableServerConfiguration() in the feature scope:
+     * For custom YAML loading behavior, call enableServerTuning() in the feature scope:
      * ```kotlin
      * fun main() = katalystApplication {
      *     engine(NettyEngine)
      *     database(...)
      *     scanPackages(...)
      *     features {
-     *         enableServerConfiguration()  // Customize YAML loading
+     *         enableServerTuning()  // Customize YAML loading
      *     }
      * }
      * ```
@@ -311,25 +310,6 @@ class KatalystApplicationBuilder(
                 "For Koin, add `io.github.darkryh.katalyst:katalyst-koin-bean` and call `beanEngine(KoinBeanEngine)`."
         )
 
-    private fun validateServiceConfigs() {
-        val provider = serverConfigurationResolver.bootstrapConfigProvider() ?: return
-        if (componentScanPackages.isEmpty()) return
-
-        val loaders = ConfigMetadata.discoverLoaders(componentScanPackages)
-        if (loaders.isEmpty()) {
-            logger.debug("No ServiceConfigLoader implementations discovered for validation")
-            return
-        }
-
-        logger.info("Validating {} ServiceConfigLoader implementation(s)", loaders.size)
-        try {
-            ConfigMetadata.validateLoaders(provider, loaders)
-        } catch (e: Exception) {
-            logger.error("Service config validation failed: {}", e.message)
-            throw e
-        }
-    }
-
     /**
      * Initialize DI with all configured modules.
      */
@@ -337,9 +317,6 @@ class KatalystApplicationBuilder(
         val config = resolveDatabaseConfigOrThrow()
 
         val scanTargets = if (componentScanPackages.isNotEmpty()) componentScanPackages else emptyArray()
-
-        // Validate all service config loaders (beyond DB) when a provider is available
-        validateServiceConfigs()
 
         // Resolve server configuration (auto-detect if not explicitly set)
         val resolvedServerConfig = resolveServerConfiguration()
@@ -423,6 +400,20 @@ class KatalystFeaturesBuilder internal constructor(
      */
     fun feature(feature: KatalystFeature): KatalystFeaturesBuilder {
         application.feature(feature)
+        return this
+    }
+
+    /**
+     * Install the configuration source on the enclosing application builder.
+     *
+     * Exposed here so configuration-backed feature toggles (e.g.
+     * `enableYamlConfiguration()` from `katalyst-config-yaml`) can live inside the
+     * `features { }` block. The source is recorded synchronously while the block runs,
+     * which is before DI initialization and server-configuration resolution, so Phase-0
+     * ordering is preserved.
+     */
+    fun configuration(source: ConfigProvider): KatalystFeaturesBuilder {
+        application.configuration(source)
         return this
     }
 }

@@ -10,22 +10,22 @@ import org.slf4j.LoggerFactory
  * **Execution Order:** FIRST (order=-100)
  *
  * **Critical Safety Mechanism:**
- * This initializer runs FIRST and MUST validate everything before ANY other
- * pre-start initializer gets to run.
+ * This hook runs FIRST and MUST validate everything before ANY other
+ * pre-start hook gets to run.
  *
- * The InitializerRegistry sorts by order and executes sequentially:
+ * The StartupHookRunner sorts by order and executes sequentially:
  * ```
- * initializers.sortBy { it.order }  // StartupValidator runs first
- * initializers.forEach { initializer.onApplicationReady() }
+ * hooks.sortBy { it.order }  // StartupValidator runs first
+ * hooks.forEach { hook.onStartup() }
  * ```
  *
- * If StartupValidator throws ANY exception → InitializerRegistry catches it
- * (line 97: onFailure) → Application stops immediately.
+ * If StartupValidator throws ANY exception → StartupHookRunner catches it
+ * (onFailure) → Application stops immediately.
  *
  * **Why This Matters:**
- * Runtime-ready hooks (such as scheduler registration) may query the database.
+ * Ready hooks (such as scheduler registration) may query the database.
  * StartupValidator must detect and prevent schema/connectivity issues before
- * runtime-ready activation begins.
+ * ready activation begins.
  *
  * **Validation Checks (Fail-Fast):**
  * 1. DatabaseTransactionManager is available
@@ -35,20 +35,20 @@ import org.slf4j.LoggerFactory
  *
  * **Order Guarantee:**
  * The order=-100 parameter ensures:
- * - StartupValidator always runs before any custom pre-start initializer
- * - StartupValidator always runs before any user initializers (order=0+)
- * - If we throw → subsequent initializers NEVER run
+ * - StartupValidator always runs before any custom pre-start hook
+ * - StartupValidator always runs before any user hooks (order=0+)
+ * - If we throw → subsequent hooks NEVER run
  * - If we return normally → schema is guaranteed valid
  */
 internal class StartupValidator(
     private val txManager: DatabaseTransactionManager
-) : ApplicationInitializer {
+) : StartupHook {
     private val logger = LoggerFactory.getLogger("StartupValidator")
 
-    override val initializerId: String = "StartupValidator"
+    override val id: String = "StartupValidator"
     override val order: Int = -100
 
-    override suspend fun onApplicationReady() {
+    override suspend fun onStartup() {
         logger.info("")
         logger.info("╔════════════════════════════════════════════════════╗")
         logger.info("║ STARTUP VALIDATION (FAIL-FAST)                    ║")
@@ -88,7 +88,7 @@ internal class StartupValidator(
 
         } catch (e: Exception) {
             logger.error("✗ Startup validation failed: {}", e.message ?: "Unknown startup validation error")
-            logger.error("  Runtime-ready initializers will not run; server will not start")
+            logger.error("  Ready hooks will not run; server will not start")
 
             // Re-throw to stop application startup
             throw e

@@ -14,9 +14,6 @@ includeBuild("build-logic")
 if (providers.gradleProperty("includeSamplesComposite").orNull == "true") {
     includeBuild("samples")
 }
-if (providers.gradleProperty("includeBoshiComposite").orNull == "true") {
-    includeBuild("projects/boshi")
-}
 
 // The IntelliJ plugin is a separate composite build: it applies the (heavy,
 // version-sensitive) IntelliJ Platform Gradle plugin and is not published as a Maven

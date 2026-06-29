@@ -46,10 +46,10 @@ class ComponentRegistrationOrchestrator(
 ) {
 
     /**
-     * Cache for discovered config loaders to avoid redundant classpath scanning.
+     * Cache for discovered config types to avoid redundant classpath scanning.
      * Discovery is expensive (reflection + bytecode scanning), so we cache results.
      */
-    private var cachedConfigLoaders: Map<KClass<*>, Any>? = null
+    private var cachedConfigTypes: Set<KClass<*>>? = null
 
     /**
      * Executes the complete enhanced component registration process.
@@ -283,42 +283,35 @@ class ComponentRegistrationOrchestrator(
     }
 
     /**
-     * Phase 6: Discovers, loads, validates, and registers AutomaticServiceConfigLoader implementations.
+     * Phase 6: Discovers, binds, and registers annotated/code configuration types.
      *
      * This phase:
-     * 1. Discovers all [io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader] implementations in scan packages
-     * 2. Loads each configuration using the discovered loader
-     * 3. Validates each loaded configuration
-     * 4. Registers each configuration as a singleton in the active container
-     * 5. Logs all registered configurations
+     * 1. Discovers all bindable configuration types (via [io.github.darkryh.katalyst.config.provider.ConfigBinder])
+     *    — classes annotated with `@ConfigPrefix` and `ConfigBinding` implementors.
+     * 2. Binds each configuration from the active ConfigProvider (data-class `init {}` validation runs).
+     * 3. Registers each bound instance as a singleton in the active container.
      *
      * This phase runs after ConfigProvider is available (from DI modules) but before
      * component instantiation, so components can receive configurations through constructor injection.
      *
-     * Failure to load or validate a configuration is fatal - the application will not start.
+     * Failure to bind a configuration is fatal - the application will not start.
      * This ensures configuration errors are caught immediately at startup.
      *
-     * @throws Exception if configuration loading or validation fails
+     * @throws Exception if configuration binding fails
      */
     private fun registerAutomaticConfigurations() {
-        logger.info("Discovering AutomaticServiceConfigLoader implementations...")
+        logger.info("Discovering configuration types...")
 
         try {
-            // Discover loaders FIRST to know if we need ConfigProvider
-            val loaders = try {
-                discoverAutomaticConfigLoaders()
-            } catch (_: ClassNotFoundException) {
-                logger.debug("AutomaticConfigLoaderDiscovery class not found, skipping automatic config loading")
-                logger.debug("Ensure katalyst-config-provider is on the classpath to enable automatic config loading")
+            // Discover config types FIRST to know if we need ConfigProvider
+            val configTypes = discoverConfigTypesReflectively()
+
+            if (configTypes.isEmpty()) {
+                logger.debug("No configuration types discovered")
                 return
             }
 
-            if (loaders.isEmpty()) {
-                logger.debug("No AutomaticServiceConfigLoader implementations discovered")
-                return
-            }
-
-            logger.info("Discovered {} automatic config loader(s)", loaders.size)
+            logger.info("Discovered {} configuration type(s)", configTypes.size)
 
             // Now check if ConfigProvider is available - FAIL FAST if not
             val configProvider = container.getOrNull<ConfigProvider>()
@@ -327,8 +320,8 @@ class ComponentRegistrationOrchestrator(
                     buildString {
                         appendLine("ConfigProvider is required but not available!")
                         appendLine()
-                        appendLine("Found ${loaders.size} AutomaticServiceConfigLoader(s) requiring ConfigProvider:")
-                        loaders.keys.forEach { configType ->
+                        appendLine("Found ${configTypes.size} configuration type(s) requiring ConfigProvider:")
+                        configTypes.forEach { configType ->
                             appendLine("  - ${configType.simpleName}")
                         }
                         appendLine()
@@ -343,62 +336,28 @@ class ComponentRegistrationOrchestrator(
                 )
             }
 
-            // Load, validate, and register each configuration
-            loaders.forEach { (configType, loader) ->
+            // Bind every configuration (fail-fast inside ConfigBinder.bindAll).
+            val configs = bindAllReflectively(configProvider)
+
+            // Register each bound instance by its type.
+            val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
+            configs.forEach { (configType, instance) ->
                 try {
-                    logger.info("Loading configuration for {}", configType.simpleName)
-
-                    // Call loader.loadConfig(configProvider)
-                    val loadConfigMethod = loader::class.java.getDeclaredMethod(
-                        "loadConfig",
-                        ConfigProvider::class.java
-                    ).apply { isAccessible = true }
-
-                    val config = loadConfigMethod.invoke(loader, configProvider)
-                    logger.debug("Loaded configuration: {}", config)
-
-                    // Call loader.validate(config) - try exact type first, then Any
-                    val validateMethod = try {
-                        loader::class.java.getDeclaredMethod("validate", configType.java)
-                    } catch (_: NoSuchMethodException) {
-                        try {
-                            loader::class.java.getDeclaredMethod("validate", Any::class.java)
-                        } catch (_: NoSuchMethodException) {
-                            null // validate() is optional (default implementation)
-                        }
-                    }
-
-                    validateMethod?.let { method ->
-                        method.isAccessible = true
-                        method.invoke(loader, config)
-                        logger.debug("Configuration validated: {}", configType.simpleName)
-                    }
-
-                    // Register the configuration in the active container.
-                    try {
-                        val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
-                        registrar.registerInstance(config, configType, emptyList())
-
-                        logger.info("✓ Registered {} configuration", configType.simpleName)
-                    } catch (e: Exception) {
-                        logger.error("Failed to register {} in container: {}", configType.simpleName, e.message)
-                        throw e
-                    }
+                    registrar.registerInstance(instance, configType, emptyList())
+                    logger.info("✓ Registered {} configuration", configType.simpleName)
                 } catch (e: Exception) {
-                    logger.error("✗ Failed to load {} configuration: {}",
-                        configType.simpleName, e.message)
-                    logger.error("Exception details: {}", e.toString())
-                    throw e  // Fail-fast - config errors are fatal
+                    logger.error("Failed to register {} in container: {}", configType.simpleName, e.message)
+                    throw e
                 }
             }
 
-            logger.info("✓ All {} automatic configuration(s) loaded and registered", loaders.size)
+            logger.info("✓ All {} configuration(s) bound and registered", configs.size)
         } catch (e: KatalystDIException) {
             // Re-throw DI exceptions as-is (includes FatalDependencyValidationException)
             throw e
         } catch (e: Exception) {
-            logger.error("Error during automatic configuration loading: {}", e.message)
-            logger.debug("Full error during config loading", e)
+            logger.error("Error during configuration binding: {}", e.message)
+            logger.debug("Full error during config binding", e)
             throw e
         }
     }
@@ -507,83 +466,104 @@ class ComponentRegistrationOrchestrator(
     }
 
     /**
-     * Pre-discover automatic configuration types before validation.
+     * Pre-discover configuration types before validation.
      *
-     * This scans for all AutomaticServiceConfigLoader implementations and extracts their
-     * config types. These types are then marked as "will be available" in the dependency
-     * graph during validation, preventing "missing dependency" errors for configs that
-     * will be registered during Phase 6a.
+     * This scans for all bindable configuration types (via ConfigBinder). These types are
+     * then marked as "will be available" in the dependency graph during validation,
+     * preventing "missing dependency" errors for configs that will be registered during
+     * Phase 6a.
      *
      * @return Set of KClass types that will be registered as configurations
      */
     private fun discoverAutomaticConfigTypes(): Set<KClass<*>> {
-        val configTypes = mutableSetOf<KClass<*>>()
-
         if (scanPackages.isEmpty()) {
-            return configTypes
+            return emptySet()
         }
 
-        try {
-            val loaders = discoverAutomaticConfigLoaders()
-            // Extract the config types from the discovered loaders
-            configTypes.addAll(loaders.keys)
-
-            if (loaders.isNotEmpty()) {
-                logger.debug("Pre-discovered {} automatic config types", configTypes.size)
+        return try {
+            val configTypes = discoverConfigTypesReflectively()
+            if (configTypes.isNotEmpty()) {
+                logger.debug("Pre-discovered {} configuration types", configTypes.size)
             }
+            configTypes
         } catch (e: Exception) {
-            logger.warn("Error pre-discovering automatic config types: {}", e.message)
+            logger.warn("Error pre-discovering configuration types: {}", e.message)
             logger.debug("Full error during config type pre-discovery", e)
+            emptySet()
         }
-
-        return configTypes
     }
 
     /**
-     * Helper: Discovers AutomaticServiceConfigLoader implementations via reflection.
+     * Helper: Discovers configuration types via reflection.
      *
-     * Uses reflection to call AutomaticConfigLoaderDiscovery.discoverLoaders() because
-     * AutomaticConfigLoaderDiscovery is in a different module (katalyst-config-provider)
-     * which may not be on the classpath.
+     * Uses reflection to call `ConfigBinder.discoverConfigTypes()` because ConfigBinder is in a
+     * different module (katalyst-config-provider) which may not be on the classpath.
      *
-     * Results are cached to avoid redundant classpath scanning (discovery is called
-     * in both Phase 2 for pre-discovery and Phase 5a for actual loading).
+     * Results are cached to avoid redundant classpath scanning (discovery is called in both
+     * Phase 2 for pre-discovery and Phase 5a for actual binding).
      *
-     * @return Map of config type to loader instance, or empty map if discovery fails
+     * @return Set of config types, or empty set if config-provider is absent / discovery fails
      */
-    private fun discoverAutomaticConfigLoaders(): Map<KClass<*>, Any> {
+    private fun discoverConfigTypesReflectively(): Set<KClass<*>> {
         // Return cached result if available
-        cachedConfigLoaders?.let {
-            logger.debug("Using cached config loaders ({} loaders)", it.size)
+        cachedConfigTypes?.let {
+            logger.debug("Using cached config types ({} types)", it.size)
             return it
         }
 
-        val loaders = try {
-            val discoveryClass = Class.forName(
-                "io.github.darkryh.katalyst.config.provider.AutomaticConfigLoaderDiscovery"
+        val types = try {
+            val binderClass = Class.forName(
+                "io.github.darkryh.katalyst.config.provider.ConfigBinder"
             )
 
-            val instanceField = discoveryClass.getDeclaredField("INSTANCE")
+            val instanceField = binderClass.getDeclaredField("INSTANCE")
             instanceField.isAccessible = true
-            val discoveryInstance = instanceField.get(null)
+            val binderInstance = instanceField.get(null)
 
-            val discoverMethod = discoveryClass.getDeclaredMethod(
-                "discoverLoaders",
+            val discoverMethod = binderClass.getDeclaredMethod(
+                "discoverConfigTypes",
                 Array<String>::class.java
             ).apply { isAccessible = true }
 
             @Suppress("UNCHECKED_CAST")
-            discoverMethod.invoke(discoveryInstance, scanPackages) as Map<KClass<*>, Any>
+            discoverMethod.invoke(binderInstance, scanPackages) as Set<KClass<*>>
         } catch (_: ClassNotFoundException) {
-            logger.debug("AutomaticConfigLoaderDiscovery not found - automatic config loading disabled")
-            emptyMap()
+            logger.debug("ConfigBinder not found - automatic config binding disabled")
+            emptySet()
         } catch (e: Exception) {
-            logger.debug("Error discovering automatic config loaders: {}", e.message)
-            emptyMap()
+            logger.debug("Error discovering configuration types: {}", e.message)
+            emptySet()
         }
 
         // Cache the result
-        cachedConfigLoaders = loaders
-        return loaders
+        cachedConfigTypes = types
+        return types
+    }
+
+    /**
+     * Helper: Binds all configuration types via reflection.
+     *
+     * Uses reflection to call `ConfigBinder.bindAll()` because ConfigBinder is in a different
+     * module (katalyst-config-provider) which may not be on the classpath.
+     *
+     * @return Map of config type to bound instance
+     */
+    private fun bindAllReflectively(provider: ConfigProvider): Map<KClass<*>, Any> {
+        val binderClass = Class.forName(
+            "io.github.darkryh.katalyst.config.provider.ConfigBinder"
+        )
+
+        val instanceField = binderClass.getDeclaredField("INSTANCE")
+        instanceField.isAccessible = true
+        val binderInstance = instanceField.get(null)
+
+        val bindAllMethod = binderClass.getDeclaredMethod(
+            "bindAll",
+            Array<String>::class.java,
+            ConfigProvider::class.java
+        ).apply { isAccessible = true }
+
+        @Suppress("UNCHECKED_CAST")
+        return bindAllMethod.invoke(binderInstance, scanPackages, provider) as Map<KClass<*>, Any>
     }
 }

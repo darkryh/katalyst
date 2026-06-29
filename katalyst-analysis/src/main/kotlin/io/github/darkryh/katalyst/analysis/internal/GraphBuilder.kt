@@ -51,7 +51,7 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
     private val migration = marker(KatalystConventions.KATALYST_MIGRATION)
     private val initializer = marker(KatalystConventions.APPLICATION_INITIALIZER)
     private val readyInitializer = marker(KatalystConventions.APPLICATION_READY_INITIALIZER)
-    private val configLoader = marker(KatalystConventions.AUTOMATIC_SERVICE_CONFIG_LOADER)
+    private val configBinding = marker(KatalystConventions.CONFIG_BINDING)
     private val schedulerHandle = marker(KatalystConventions.SCHEDULER_JOB_HANDLE)
     private val ktorApplication = marker(KatalystConventions.KTOR_APPLICATION)
     private val ktorRoute = marker(KatalystConventions.KTOR_ROUTE)
@@ -97,11 +97,12 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
                 implementsMarker(clazz, migration) ->
                     migrations += MigrationNode(symbol(clazz, KatalystNodeKind.MIGRATION), markerReason(KatalystConventions.KATALYST_MIGRATION))
 
-                implementsMarker(clazz, configLoader) ->
+                implementsMarker(clazz, configBinding) ->
                     configLoaders += ConfigLoaderNode(
                         symbol(clazz, KatalystNodeKind.CONFIG_LOADER),
-                        markerReason(KatalystConventions.AUTOMATIC_SERVICE_CONFIG_LOADER),
-                        configType = GenericTypes.argumentOf(clazz, KatalystConventions.AUTOMATIC_SERVICE_CONFIG_LOADER, 0)?.name,
+                        markerReason(KatalystConventions.CONFIG_BINDING),
+                        // A ConfigBinding implementor is registered by its own type.
+                        configType = clazz.name,
                     )
 
                 implementsMarker(clazz, readyInitializer) ->
@@ -240,12 +241,12 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
         }
     }
 
-    /** Config types produced by discovered AutomaticServiceConfigLoader<T> implementations. */
+    /** Config types contributed by discovered ConfigBinding implementors (registered by their own type). */
     private fun collectConfigTypes(): Set<KClass<*>> {
-        val loader = configLoader ?: return emptySet()
+        val binding = configBinding ?: return emptySet()
         return concrete
-            .filter { implementsMarker(it, loader) }
-            .mapNotNull { GenericTypes.argumentOf(it, KatalystConventions.AUTOMATIC_SERVICE_CONFIG_LOADER, 0)?.kotlin }
+            .filter { implementsMarker(it, binding) }
+            .map { it.kotlin }
             .toSet()
     }
 

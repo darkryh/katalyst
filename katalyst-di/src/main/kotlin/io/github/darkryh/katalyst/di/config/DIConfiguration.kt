@@ -20,8 +20,8 @@ import io.github.darkryh.katalyst.di.internal.ComponentRegistrationOrchestrator
 import io.github.darkryh.katalyst.di.internal.TableRegistry
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
-import io.github.darkryh.katalyst.di.lifecycle.InitializerRegistry
-import io.github.darkryh.katalyst.di.lifecycle.RuntimeReadyInitializerRunner
+import io.github.darkryh.katalyst.di.lifecycle.StartupHookRunner
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRunner
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
@@ -488,9 +488,9 @@ fun stopKatalystStandalone() {
 fun runPreStartInitializers(container: KatalystContainer = KatalystContainerProvider.current()) {
     try {
         logger.info("Starting pre-start initialization lifecycle")
-        val registry = InitializerRegistry(container)
+        val runner = StartupHookRunner(container)
         runBlocking {
-            registry.invokeAll()
+            runner.invokeAll()
         }
         logger.info("Pre-start initialization lifecycle completed")
     } catch (e: Exception) {
@@ -503,7 +503,7 @@ fun runRuntimeReadyInitializers(container: KatalystContainer = KatalystContainer
     try {
         BootstrapProgress.startLifecycleCompact(BootstrapLifecycle.RUNTIME_READY_INITIALIZERS)
         logger.info("Starting runtime-ready initialization lifecycle")
-        val runner = RuntimeReadyInitializerRunner(container)
+        val runner = ReadyHookRunner(container)
         runBlocking {
             runner.invokeAll()
         }

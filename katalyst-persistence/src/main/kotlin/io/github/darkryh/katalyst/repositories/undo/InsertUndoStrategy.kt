@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  * - Phase 2: This is a stub that logs the undo attempt
  * - Phase 3+: Will integrate with actual repository delete methods
  */
-class InsertUndoStrategy : UndoStrategy {
+internal class InsertUndoStrategy : UndoStrategy {
     private val logger = LoggerFactory.getLogger(InsertUndoStrategy::class.java)
 
     override fun canHandle(operationType: String, resourceType: String): Boolean {

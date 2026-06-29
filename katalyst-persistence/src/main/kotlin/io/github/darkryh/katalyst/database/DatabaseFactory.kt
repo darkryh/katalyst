@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.database
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.darkryh.katalyst.config.DatabaseConfig
+import io.github.darkryh.katalyst.core.annotation.KatalystInternalApi
 import io.github.darkryh.katalyst.database.DatabaseFactory.Companion.create
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.exposed.v1.core.Schema
@@ -46,7 +47,12 @@ import org.slf4j.LoggerFactory
  *
  * @property database The Exposed Database instance for running queries
  * @constructor Private constructor - use factory method [create] instead
+ *
+ * Framework-internal: applications inject [SqlExecutor] for raw SQL rather than this
+ * pool/lifecycle/schema infrastructure. The Exposed [database] handle remains reachable
+ * for advanced migration use. See [KatalystInternalApi].
  */
+@KatalystInternalApi
 class DatabaseFactory private constructor(
     val database: Database,
     private val dataSource: HikariDataSource

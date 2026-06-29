@@ -69,7 +69,7 @@ class SchedulerJobsDslTest {
         val service = ExplicitOneTimeSchedulerService()
         ServiceRegistry.register(service)
 
-        SchedulerInitializer().onRuntimeReady()
+        SchedulerInitializer().onReady()
         advanceUntilIdle()
 
         assertEquals(1, service.runCount)

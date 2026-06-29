@@ -1,7 +1,7 @@
 package io.github.darkryh.katalyst.example
 
 import io.github.darkryh.katalyst.config.yaml.enableYamlConfiguration
-import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
+import io.github.darkryh.katalyst.di.feature.enableServerTuning
 import io.github.darkryh.katalyst.di.feature.enableEvents
 import io.github.darkryh.katalyst.di.katalystApplication
 import io.github.darkryh.katalyst.koin.KoinBeanEngine
@@ -20,11 +20,13 @@ import io.github.darkryh.katalyst.websockets.enableWebSockets
  * 3. Works with any project - dependencies on YAML provider are optional
  *
  * Configuration flow:
- * 1. engine() - Select Ktor engine (REQUIRED)
- * 2. enableYamlConfiguration() - Install the YAML source once
+ * 1. engine() / beanEngine() - Select Ktor engine + DI engine (REQUIRED)
+ * 2. features { enableYamlConfiguration(); ... } - Install the YAML source + enable features
  * 3. database { fromConfiguration() } - Load database.* from the installed YAML source
  * 4. scanPackages() - Discover services
- * 5. features { ... } - Enable optional server/config/runtime features
+ *
+ * NOTE: features { } comes before database { } because enableYamlConfiguration() installs the
+ * config source that database { fromConfiguration() } reads.
  *
  * YAML Configuration:
  * - application.yaml: Base configuration with all ktor.deployment properties
@@ -46,12 +48,21 @@ import io.github.darkryh.katalyst.websockets.enableWebSockets
  * ```
  */
 fun main(args: Array<String>) = katalystApplication(args) {
-    // Step 1: Select engine (REQUIRED)
+    // Step 1: Select engine + bean engine (REQUIRED)
     engine(NettyServer)
     beanEngine(KoinBeanEngine)
 
-    // Step 2: Enable YAML configuration once.
-    enableYamlConfiguration()
+    // Step 2: Enable optional features.
+    // enableYamlConfiguration() installs the config source synchronously here, so this block
+    // must come BEFORE database { fromConfiguration() } (which reads database.* from it).
+    features {
+        enableYamlConfiguration()
+        enableServerTuning()        // loads ktor.deployment.* from YAML
+        enableEvents()
+        enableMigrations()
+        enableScheduler()
+        enableWebSockets()
+    }
 
     // Step 3: Configure database from YAML with Hikari defaults.
     database {
@@ -61,14 +72,4 @@ fun main(args: Array<String>) = katalystApplication(args) {
     // Step 4: Scan packages for components
     scanPackages("io.github.darkryh.katalyst.example")
     schema { createMissing() }
-
-    // Step 5: Enable optional features
-    features {
-        // Loads all ktor.deployment.* properties from YAML
-        enableServerConfiguration()
-        enableEvents()
-        enableMigrations()
-        enableScheduler()
-        enableWebSockets()
-    }
 }

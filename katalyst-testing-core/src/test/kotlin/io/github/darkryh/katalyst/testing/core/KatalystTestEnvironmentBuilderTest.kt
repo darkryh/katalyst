@@ -3,8 +3,8 @@ package io.github.darkryh.katalyst.testing.core
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.di.feature.eventSystemFeature
 import io.github.darkryh.katalyst.di.feature.katalystBeanModule
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
+import io.github.darkryh.katalyst.di.lifecycle.StartupHook
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
 import io.github.darkryh.katalyst.events.DomainEvent
 import io.github.darkryh.katalyst.events.bus.EventBus
 import io.github.darkryh.katalyst.testing.core.events.EventProbe
@@ -56,7 +56,7 @@ class KatalystTestEnvironmentBuilderTest {
             disableRuntimeReadyInitializers()
             overrideBeanModules(
                 katalystBeanModule {
-                    single<ApplicationReadyInitializer> {
+                    single<ReadyHook> {
                         CountingRuntimeReadyInitializer(counter)
                     }
                 }
@@ -76,8 +76,8 @@ class KatalystTestEnvironmentBuilderTest {
             disableRuntimeReadyInitializers()
             overrideBeanModules(
                 katalystBeanModule {
-                    single<ApplicationInitializer> {
-                        CountingApplicationInitializer(counter)
+                    single<StartupHook> {
+                        CountingStartupHook(counter)
                     }
                 }
             )
@@ -109,16 +109,16 @@ class KatalystTestEnvironmentBuilderTest {
 
     private class CountingRuntimeReadyInitializer(
         private val counter: Counter
-    ) : ApplicationReadyInitializer {
-        override suspend fun onRuntimeReady() {
+    ) : ReadyHook {
+        override suspend fun onReady() {
             counter.value++
         }
     }
 
-    private class CountingApplicationInitializer(
+    private class CountingStartupHook(
         private val counter: Counter
-    ) : ApplicationInitializer {
-        override suspend fun onApplicationReady() {
+    ) : StartupHook {
+        override suspend fun onStartup() {
             counter.value++
         }
     }

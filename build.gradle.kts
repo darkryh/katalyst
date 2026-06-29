@@ -14,6 +14,10 @@ plugins {
 }
 
 apiValidation {
+    // Declarations annotated with this marker are framework-internal infrastructure that must be
+    // `public` for cross-module visibility but are excluded from the committed public API surface.
+    nonPublicMarkers += "io.github.darkryh.katalyst.core.annotation.KatalystInternalApi"
+
     // Exclude non-published / test-helper / sample modules from the public API surface.
     ignoredProjects += listOf(
         "memory-validation",

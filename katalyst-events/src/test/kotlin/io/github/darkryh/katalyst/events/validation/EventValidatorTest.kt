@@ -18,13 +18,13 @@ class EventValidatorTest {
     fun `composite validator aggregates errors`() = runBlocking {
         val failingValidator = object : EventValidator<SampleEvent> {
             override val eventType = SampleEvent::class
-            override suspend fun validate(event: SampleEvent): ValidationResult =
-                ValidationResult.Invalid(listOf("bad"))
+            override suspend fun validate(event: SampleEvent): EventValidationResult =
+                EventValidationResult.Invalid(listOf("bad"))
         }
         val passingValidator = object : EventValidator<SampleEvent> {
             override val eventType = SampleEvent::class
-            override suspend fun validate(event: SampleEvent): ValidationResult =
-                ValidationResult.Valid
+            override suspend fun validate(event: SampleEvent): EventValidationResult =
+                EventValidationResult.Valid
         }
 
         val composite = CompositeEventValidator(
@@ -33,7 +33,7 @@ class EventValidatorTest {
         )
 
         val result = composite.validate(SampleEvent("1"))
-        assertTrue(result is ValidationResult.Invalid)
+        assertTrue(result is EventValidationResult.Invalid)
         assertEquals(listOf("bad"), result.errors())
     }
 
@@ -41,6 +41,6 @@ class EventValidatorTest {
     fun `noop validator always returns valid`() = runBlocking {
         val validator = NoOpEventValidator(SampleEvent::class)
         val result = validator.validate(SampleEvent("1"))
-        assertTrue(result is ValidationResult.Valid)
+        assertTrue(result is EventValidationResult.Valid)
     }
 }

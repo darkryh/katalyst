@@ -9,7 +9,7 @@ import kotlin.reflect.KParameter
  * current supported behavior: supplied framework values, direct lookup,
  * Kotlin defaults, nullable nulls, or a fatal missing dependency.
  */
-object InjectionStrategyResolver {
+internal object InjectionStrategyResolver {
     fun strategyFor(parameter: KParameter, hasSuppliedValue: Boolean, hasBinding: Boolean): InjectionStrategy =
         when {
             hasSuppliedValue -> InjectionStrategy.SUPPLIED
@@ -20,7 +20,7 @@ object InjectionStrategyResolver {
         }
 }
 
-enum class InjectionStrategy {
+internal enum class InjectionStrategy {
     SUPPLIED,
     DIRECT,
     DEFAULT_VALUE,

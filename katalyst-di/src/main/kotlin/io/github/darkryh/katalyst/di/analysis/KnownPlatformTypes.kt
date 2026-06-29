@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
 import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
+import io.github.darkryh.katalyst.database.SqlExecutor
 import io.github.darkryh.katalyst.events.bus.EventBus
 import org.slf4j.Logger
 import kotlin.reflect.KClass
@@ -16,6 +17,7 @@ import kotlin.reflect.KClass
 internal object KnownPlatformTypes {
     val alwaysAvailableContracts: Set<KClass<*>> = setOf(
         DatabaseFactory::class,
+        SqlExecutor::class,
         DatabaseTransactionManager::class,
         ConfigProvider::class,
         EventBus::class,

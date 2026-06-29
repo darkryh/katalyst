@@ -5,7 +5,7 @@ import io.github.darkryh.katalyst.events.EventMetadata
 import io.github.darkryh.katalyst.events.bus.adapter.EventsTransactionAdapter
 import io.github.darkryh.katalyst.events.bus.deduplication.InMemoryEventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.validation.DefaultEventPublishingValidator
-import io.github.darkryh.katalyst.events.bus.validation.EventValidationException
+import io.github.darkryh.katalyst.events.bus.validation.EventPublishingException
 import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapterRegistry
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
@@ -14,8 +14,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -102,8 +100,8 @@ class Phase1IntegrationTests {
         // Act & Assert
         try {
             strictAdapter.onPhase(TransactionPhase.BEFORE_COMMIT_VALIDATION, context)
-            fail("Should have thrown EventValidationException")
-        } catch (e: EventValidationException) {
+            fail("Should have thrown EventPublishingException")
+        } catch (_: EventPublishingException) {
             // Expected - validation fails before any commit
             assertEquals(0, dedupStore.getPublishedCount(), "No events should be marked as published on validation failure")
             assertEquals(2, context.getPendingEventCount(), "All events should still be pending")

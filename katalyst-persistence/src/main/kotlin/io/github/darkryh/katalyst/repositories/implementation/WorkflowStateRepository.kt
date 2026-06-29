@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory
  * - UNDONE: All operations successfully undone
  * - FAILED_UNDO: Undo operation failed, manual intervention needed
  */
-class WorkflowStateRepository(private val database: Database) : WorkflowStateManager {
+internal class WorkflowStateRepository(private val database: Database) : WorkflowStateManager {
 
     private val logger = LoggerFactory.getLogger(WorkflowStateRepository::class.java)
 

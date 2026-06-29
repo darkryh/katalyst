@@ -1,7 +1,7 @@
 package io.github.darkryh.katalyst.di.config
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
-import io.github.darkryh.katalyst.config.provider.boolean
+import io.github.darkryh.katalyst.config.provider.booleanOrNull
 import io.github.darkryh.katalyst.config.provider.intOrNull
 import io.github.darkryh.katalyst.config.provider.longOrNull
 import io.github.darkryh.katalyst.config.provider.requiredString
@@ -60,7 +60,7 @@ class DatabaseConfigurationBuilder internal constructor(
         connectionTimeout = config.longOrNull("$prefix.pool.connectionTimeout") ?: DEFAULT_CONNECTION_TIMEOUT
         idleTimeout = config.longOrNull("$prefix.pool.idleTimeout") ?: DEFAULT_IDLE_TIMEOUT
         maxLifetime = config.longOrNull("$prefix.pool.maxLifetime") ?: DEFAULT_MAX_LIFETIME
-        autoCommit = config.boolean("$prefix.autoCommit", DEFAULT_AUTO_COMMIT)
+        autoCommit = config.booleanOrNull("$prefix.autoCommit") ?: DEFAULT_AUTO_COMMIT
         transactionIsolation = config.stringOrNull("$prefix.transactionIsolation") ?: DEFAULT_TRANSACTION_ISOLATION
     }
 

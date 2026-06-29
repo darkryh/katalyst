@@ -1,7 +1,7 @@
 package io.github.darkryh.katalyst.config.yaml
 
 import io.github.darkryh.katalyst.core.config.ConfigProvider
-import io.github.darkryh.katalyst.di.KatalystApplicationBuilder
+import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
 import io.github.darkryh.katalyst.di.feature.KatalystBeanContext
 import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
@@ -141,7 +141,7 @@ class YamlConfigurationFeature(
  *
  * @return The builder instance for method chaining
  */
-fun KatalystApplicationBuilder.enableYamlConfiguration(
+fun KatalystFeaturesBuilder.enableYamlConfiguration(
     source: ConfigProvider = YamlConfigurationSource()
-): KatalystApplicationBuilder =
+): KatalystFeaturesBuilder =
     configuration(source).feature(YamlConfigurationFeature(source))

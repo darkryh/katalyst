@@ -43,11 +43,11 @@ object KatalystConventions {
     const val KTOR_MODULE: String = "io.github.darkryh.katalyst.ktor.KtorModule"
     const val KATALYST_MIGRATION: String = "io.github.darkryh.katalyst.migrations.KatalystMigration"
     const val APPLICATION_INITIALIZER: String =
-        "io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer"
+        "io.github.darkryh.katalyst.di.lifecycle.StartupHook"
     const val APPLICATION_READY_INITIALIZER: String =
-        "io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer"
-    const val AUTOMATIC_SERVICE_CONFIG_LOADER: String =
-        "io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader"
+        "io.github.darkryh.katalyst.di.lifecycle.ReadyHook"
+    const val CONFIG_BINDING: String =
+        "io.github.darkryh.katalyst.config.provider.ConfigBinding"
 
     /**
      * A method returning this type (on a discovered [SERVICE]) is a scheduler entrypoint.
@@ -85,7 +85,7 @@ object KatalystConventions {
         KATALYST_MIGRATION,
         APPLICATION_INITIALIZER,
         APPLICATION_READY_INITIALIZER,
-        AUTOMATIC_SERVICE_CONFIG_LOADER,
+        CONFIG_BINDING,
     )
 
     // ---------------------------------------------------------------------------------

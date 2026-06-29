@@ -9,7 +9,7 @@ plugins {
 group = "io.github.darkryh.katalyst"
 // The released version comes from the `plugin-v*` git tag (set by the release workflow via
 // PLUGIN_VERSION); falls back to a dev version for local builds.
-version = (System.getenv("PLUGIN_VERSION") ?: "0.2.0").removePrefix("plugin-v").removePrefix("v")
+version = (System.getenv("PLUGIN_VERSION") ?: "0.2.2").removePrefix("plugin-v").removePrefix("v")
 
 repositories {
     mavenCentral()

@@ -67,28 +67,8 @@ public abstract interface class io/github/darkryh/katalyst/core/persistence/Tabl
 	public abstract fun getMapping ()Lio/github/darkryh/katalyst/core/persistence/EntityMapping;
 }
 
-public final class io/github/darkryh/katalyst/database/DatabaseFactory : java/lang/AutoCloseable {
-	public static final field Companion Lio/github/darkryh/katalyst/database/DatabaseFactory$Companion;
-	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lcom/zaxxer/hikari/HikariDataSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun close ()V
-	public final fun createSchema ([Lorg/jetbrains/exposed/v1/core/Schema;Z)V
-	public static synthetic fun createSchema$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;[Lorg/jetbrains/exposed/v1/core/Schema;ZILjava/lang/Object;)V
-	public final fun createSqlExecutor ()Lio/github/darkryh/katalyst/database/SqlExecutor;
-	public final fun createTable ([Lorg/jetbrains/exposed/v1/core/Table;Z)V
-	public static synthetic fun createTable$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;[Lorg/jetbrains/exposed/v1/core/Table;ZILjava/lang/Object;)V
-	public final fun getDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
-	public final fun poolSnapshot ()Lio/github/darkryh/katalyst/database/DatabasePoolSnapshot;
-}
-
 public final class io/github/darkryh/katalyst/database/DatabaseFactory$Companion {
 	public final fun create (Lio/github/darkryh/katalyst/config/DatabaseConfig;)Lio/github/darkryh/katalyst/database/DatabaseFactory;
-}
-
-public final class io/github/darkryh/katalyst/database/DatabaseFactoryStatementExtensionsKt {
-	public static final fun withStatement (Lio/github/darkryh/katalyst/database/DatabaseFactory;Lorg/slf4j/Logger;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun withStatement (Lio/github/darkryh/katalyst/database/DatabaseFactory;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun withStatement$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;Lorg/slf4j/Logger;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun withStatement$default (Lio/github/darkryh/katalyst/database/DatabaseFactory;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/darkryh/katalyst/database/DatabasePoolSnapshot {
@@ -196,6 +176,7 @@ public abstract interface class io/github/darkryh/katalyst/repositories/CrudRepo
 	public abstract fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
 	public fun map (Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/github/darkryh/katalyst/repositories/Identifiable;
 	public fun save (Lio/github/darkryh/katalyst/repositories/Identifiable;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public fun saveAll (Ljava/util/List;)Ljava/util/List;
 }
 
 public final class io/github/darkryh/katalyst/repositories/CrudRepository$DefaultImpls {
@@ -206,35 +187,11 @@ public final class io/github/darkryh/katalyst/repositories/CrudRepository$Defaul
 	public static fun findById (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/lang/Object;)Lio/github/darkryh/katalyst/repositories/Identifiable;
 	public static fun map (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lorg/jetbrains/exposed/v1/core/ResultRow;)Lio/github/darkryh/katalyst/repositories/Identifiable;
 	public static fun save (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lio/github/darkryh/katalyst/repositories/Identifiable;)Lio/github/darkryh/katalyst/repositories/Identifiable;
+	public static fun saveAll (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/util/List;)Ljava/util/List;
 }
 
 public abstract interface class io/github/darkryh/katalyst/repositories/Identifiable {
 	public abstract fun getId ()Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/implementation/OperationLogRepository : io/github/darkryh/katalyst/transactions/workflow/OperationLog {
-	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;)V
-	public fun deleteOldOperations (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getAllOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getFailedOperations (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getPendingOperations (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun logOperation (Ljava/lang/String;ILio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun markAllAsCommitted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun markAsCommitted (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun markAsFailed (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun markAsUndone (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/implementation/WorkflowStateRepository : io/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager {
-	public fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;)V
-	public fun commitWorkflow (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun deleteOldWorkflows (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun failWorkflow (Ljava/lang/String;ILjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getFailedWorkflows (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getFailedWorkflowsPage (ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun getWorkflowState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun markAsUndone (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun startWorkflow (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/github/darkryh/katalyst/repositories/model/PageInfo {
@@ -280,79 +237,5 @@ public final class io/github/darkryh/katalyst/repositories/model/SortOrder : jav
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/repositories/model/SortOrder;
 	public static fun values ()[Lio/github/darkryh/katalyst/repositories/model/SortOrder;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/APICallUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
-	public fun <init> ()V
-	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
-	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/DeleteUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
-	public fun <init> ()V
-	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
-	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/EnhancedUndoEngine : io/github/darkryh/katalyst/transactions/workflow/UndoEngine {
-	public fun <init> ()V
-	public fun <init> (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;)V
-	public synthetic fun <init> (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun undoWorkflow (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/InsertUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
-	public fun <init> ()V
-	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
-	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/RetryPolicy {
-	public static final field Companion Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy$Companion;
-	public fun <init> ()V
-	public fun <init> (IJJDLkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (IJJDLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun execute (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun getBackoffMultiplier ()D
-	public final fun getInitialDelayMs ()J
-	public final fun getMaxDelayMs ()J
-	public final fun getMaxRetries ()I
-	public final fun getRetryPredicate ()Lkotlin/jvm/functions/Function1;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/RetryPolicy$Companion {
-	public final fun aggressive ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
-	public final fun conservative ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
-	public final fun retryAll ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
-	public final fun retryTransient ()Lio/github/darkryh/katalyst/repositories/undo/RetryPolicy;
-	public final fun transientOnly (Ljava/lang/Exception;)Z
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/SimpleUndoEngine : io/github/darkryh/katalyst/transactions/workflow/UndoEngine {
-	public fun <init> ()V
-	public fun undoWorkflow (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
-	public abstract fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
-	public abstract fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry {
-	public static final field Companion Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry$Companion;
-	public fun <init> ()V
-	public final fun findStrategy (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/repositories/undo/UndoStrategy;
-	public final fun getStrategies ()Ljava/util/List;
-	public final fun register (Lio/github/darkryh/katalyst/repositories/undo/UndoStrategy;)Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry$Companion {
-	public final fun createDefault ()Lio/github/darkryh/katalyst/repositories/undo/UndoStrategyRegistry;
-}
-
-public final class io/github/darkryh/katalyst/repositories/undo/UpdateUndoStrategy : io/github/darkryh/katalyst/repositories/undo/UndoStrategy {
-	public fun <init> ()V
-	public fun canHandle (Ljava/lang/String;Ljava/lang/String;)Z
-	public fun undo (Lio/github/darkryh/katalyst/transactions/workflow/TransactionOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

@@ -30,10 +30,10 @@ fun Route.katalystWebSockets(block: Route.() -> Unit) {
                 Please call features { enableWebSockets() } in your katalystApplication block:
 
                 fun main(args: Array<String>) = katalystApplication(args) {
-                    enableYamlConfiguration()
                     database { fromConfiguration() }
                     scanPackages("com.example.app")
                     features {
+                        enableYamlConfiguration()
                         enableWebSockets()
                     }
                 }

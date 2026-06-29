@@ -1,6 +1,6 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
-import io.github.darkryh.katalyst.di.lifecycle.test.TestApplicationInitializer
+import io.github.darkryh.katalyst.di.lifecycle.test.TestStartupHook
 import io.github.darkryh.katalyst.di.config.ServerDeploymentConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  * Unit tests for application lifecycle initialization.
  *
  * Tests individual components of the lifecycle system:
- * 1. ApplicationInitializer interface contract
+ * 1. StartupHook interface contract
  * 2. Initializer ordering logic
  * 3. Fail-fast error handling behavior
  * 4. Exception hierarchy and proper propagation
@@ -25,18 +25,18 @@ import kotlin.test.assertTrue
 class LifecycleIntegrationTest {
 
     /**
-     * Test 1: TestApplicationInitializer properly implements interface
+     * Test 1: TestStartupHook properly implements interface
      */
     @Test
-    fun `test initializer implements ApplicationInitializer interface`() {
-        val testInit = TestApplicationInitializer(
+    fun `test initializer implements StartupHook interface`() {
+        val testInit = TestStartupHook(
             id = "TestInit",
             order = 5
         )
 
-        assertEquals("TestInit", testInit.initializerId)
+        assertEquals("TestInit", testInit.id)
         assertEquals(5, testInit.order)
-        assertTrue(testInit is ApplicationInitializer)
+        assertTrue(testInit is StartupHook)
     }
 
     /**
@@ -44,42 +44,42 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `initializers can be created with different order values`() {
-        val init1 = TestApplicationInitializer("First", order = -100)
-        val init2 = TestApplicationInitializer("Second", order = 0)
-        val init3 = TestApplicationInitializer("Third", order = 10)
+        val init1 = TestStartupHook("First", order = -100)
+        val init2 = TestStartupHook("Second", order = 0)
+        val init3 = TestStartupHook("Third", order = 10)
 
         val initializers = listOf(init3, init1, init2)
         val sorted = initializers.sortedBy { it.order }
 
-        assertEquals("First", sorted[0].initializerId)
-        assertEquals("Second", sorted[1].initializerId)
-        assertEquals("Third", sorted[2].initializerId)
+        assertEquals("First", sorted[0].id)
+        assertEquals("Second", sorted[1].id)
+        assertEquals("Third", sorted[2].id)
     }
 
     /**
-     * Test 3: TestApplicationInitializer executes onReady block
+     * Test 3: TestStartupHook executes onReady block
      */
     @Test
     fun `test initializer executes onReady callback`() {
         var executed = false
 
-        val testInit = TestApplicationInitializer(
+        val testInit = TestStartupHook(
             id = "TestInit",
             order = 0,
             onReady = { executed = true }
         )
 
         // Just verify the object was created correctly
-        assertEquals("TestInit", testInit.initializerId)
+        assertEquals("TestInit", testInit.id)
         assertTrue(!executed)  // Hasn't been called yet
     }
 
     /**
-     * Test 4: TestApplicationInitializer propagates exceptions
+     * Test 4: TestStartupHook propagates exceptions
      */
     @Test
     fun `test initializer propagates exceptions from onReady block`() {
-        val testInit = TestApplicationInitializer(
+        val testInit = TestStartupHook(
             id = "FailingInit",
             order = 0,
             onReady = {
@@ -88,7 +88,7 @@ class LifecycleIntegrationTest {
         )
 
         // Just verify it was created correctly with exception behavior
-        assertEquals("FailingInit", testInit.initializerId)
+        assertEquals("FailingInit", testInit.id)
         assertEquals(0, testInit.order)
     }
 
@@ -143,21 +143,21 @@ class LifecycleIntegrationTest {
      */
     @Test
     fun `multiple test initializers maintain independent state`() {
-        val init1 = TestApplicationInitializer(
+        val init1 = TestStartupHook(
             id = "Init1",
             order = 0,
             onReady = { }
         )
 
-        val init2 = TestApplicationInitializer(
+        val init2 = TestStartupHook(
             id = "Init2",
             order = 0,
             onReady = { }
         )
 
         // Verify they are independent instances
-        assertEquals("Init1", init1.initializerId)
-        assertEquals("Init2", init2.initializerId)
+        assertEquals("Init1", init1.id)
+        assertEquals("Init2", init2.id)
         assertEquals(0, init1.order)
         assertEquals(0, init2.order)
     }
@@ -168,16 +168,16 @@ class LifecycleIntegrationTest {
     @Test
     fun `initializers sort correctly by order field`() {
         val inits = listOf(
-            TestApplicationInitializer("Order10", order = 10),
-            TestApplicationInitializer("Order-50", order = -50),
-            TestApplicationInitializer("Order0", order = 0),
-            TestApplicationInitializer("Order5", order = 5)
+            TestStartupHook("Order10", order = 10),
+            TestStartupHook("Order-50", order = -50),
+            TestStartupHook("Order0", order = 0),
+            TestStartupHook("Order5", order = 5)
         )
 
         val sorted = inits.sortedBy { it.order }
 
         assertEquals(listOf("Order-50", "Order0", "Order5", "Order10"),
-            sorted.map { it.initializerId })
+            sorted.map { it.id })
     }
 
     /**

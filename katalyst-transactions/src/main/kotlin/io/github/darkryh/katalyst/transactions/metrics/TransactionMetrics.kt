@@ -15,7 +15,7 @@ import kotlin.time.toDuration
  * - TIMEOUT: Transaction exceeded timeout duration
  * - FAILED: Transaction failed with exception
  */
-enum class TransactionStatus {
+internal enum class TransactionStatus {
     RUNNING,
     COMMITTED,
     ROLLED_BACK,
@@ -40,7 +40,7 @@ enum class TransactionStatus {
  * metricsCollector.completeTransaction("tx-123", TransactionStatus.COMMITTED)
  * ```
  */
-data class TransactionMetrics(
+internal data class TransactionMetrics(
     /**
      * Unique identifier for this transaction.
      */
@@ -116,7 +116,7 @@ data class TransactionMetrics(
  * - Duration: 45ms
  * - Success: true
  */
-data class AdapterMetrics(
+internal data class AdapterMetrics(
     /**
      * Name/identifier of the adapter.
      */
@@ -176,7 +176,7 @@ data class AdapterMetrics(
  * - Retryable: true
  * - Stack trace for debugging
  */
-data class TransactionError(
+internal data class TransactionError(
     /**
      * Timestamp when error occurred.
      */
@@ -215,7 +215,7 @@ data class TransactionError(
  *
  * Used for reporting and monitoring transaction health.
  */
-data class TransactionMetricsSummary(
+internal data class TransactionMetricsSummary(
     /**
      * Total number of transactions tracked.
      */

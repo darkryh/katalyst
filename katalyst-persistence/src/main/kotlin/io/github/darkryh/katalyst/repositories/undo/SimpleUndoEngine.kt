@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
  * - Catches and logs exceptions
  * - Returns summary of results
  */
-class SimpleUndoEngine : UndoEngine {
+internal class SimpleUndoEngine : UndoEngine {
 
     private val logger = LoggerFactory.getLogger(SimpleUndoEngine::class.java)
 

@@ -1,8 +1,8 @@
 public final class io/github/darkryh/katalyst/conventions/KatalystConventions {
 	public static final field APPLICATION_INITIALIZER Ljava/lang/String;
 	public static final field APPLICATION_READY_INITIALIZER Ljava/lang/String;
-	public static final field AUTOMATIC_SERVICE_CONFIG_LOADER Ljava/lang/String;
 	public static final field COMPONENT Ljava/lang/String;
+	public static final field CONFIG_BINDING Ljava/lang/String;
 	public static final field CRUD_REPOSITORY Ljava/lang/String;
 	public static final field DSL_EXCEPTION_HANDLER Ljava/lang/String;
 	public static final field DSL_MIDDLEWARE Ljava/lang/String;

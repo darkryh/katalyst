@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  * - Phase 3+: Will integrate with actual repository insert methods
  * - The undoData must contain the full record serialized as JSON
  */
-class DeleteUndoStrategy : UndoStrategy {
+internal class DeleteUndoStrategy : UndoStrategy {
     private val logger = LoggerFactory.getLogger(DeleteUndoStrategy::class.java)
 
     override fun canHandle(operationType: String, resourceType: String): Boolean {

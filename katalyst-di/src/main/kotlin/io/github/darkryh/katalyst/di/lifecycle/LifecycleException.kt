@@ -126,7 +126,7 @@ class SchemaInitializationException(
 /**
  * Thrown when an initializer hook fails during application startup.
  *
- * This occurs when a registered ApplicationInitializer fails. These hooks
+ * This occurs when a registered StartupHook fails. These hooks
  * run after all components are instantiated and the database is ready.
  * Common causes:
  * - Scheduler configuration errors

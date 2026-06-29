@@ -33,7 +33,7 @@ import kotlinx.serialization.json.longOrNull
  *
  * **Async Behavior**: Writes are intentionally async to avoid blocking the main transaction.
  */
-class OperationLogRepository(private val database: Database) : OperationLog {
+internal class OperationLogRepository(private val database: Database) : OperationLog {
 
     private val logger = LoggerFactory.getLogger(OperationLogRepository::class.java)
 

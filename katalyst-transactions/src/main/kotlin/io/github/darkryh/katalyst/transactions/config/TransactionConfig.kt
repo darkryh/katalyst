@@ -186,7 +186,7 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
      * Kept as FQCN strings to avoid cross-module compile/runtime coupling from transactions module.
      */
     private val knownKatalystExpectedExceptionNames = setOf(
-        "io.github.darkryh.katalyst.events.bus.validation.EventValidationException",
+        "io.github.darkryh.katalyst.events.bus.validation.EventPublishingException",
         "io.github.darkryh.katalyst.events.exception.EventValidationException",
         "io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException"
     )

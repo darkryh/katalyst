@@ -1,103 +1,30 @@
-public final class io/github/darkryh/katalyst/config/provider/AutomaticConfigLoaderDiscovery {
-	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/AutomaticConfigLoaderDiscovery;
-	public final fun discoverLoaders ([Ljava/lang/String;)Ljava/util/Map;
-	public final fun getConfigType (Lio/github/darkryh/katalyst/config/provider/AutomaticServiceConfigLoader;)Lkotlin/reflect/KClass;
+public final class io/github/darkryh/katalyst/config/provider/ConfigBinder {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/ConfigBinder;
+	public final fun bind (Lkotlin/reflect/KClass;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/lang/Object;
+	public final fun bindAll ([Ljava/lang/String;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/util/Map;
+	public final fun bindBinding (Lkotlin/reflect/KClass;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Lio/github/darkryh/katalyst/config/provider/ConfigBinding;
+	public final fun discoverConfigTypes ([Ljava/lang/String;)Ljava/util/Set;
 }
 
-public abstract interface class io/github/darkryh/katalyst/config/provider/AutomaticServiceConfigLoader {
-	public abstract fun getConfigType ()Lkotlin/reflect/KClass;
-	public abstract fun loadConfig (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/lang/Object;
-	public fun validate (Ljava/lang/Object;)V
+public abstract interface class io/github/darkryh/katalyst/config/provider/ConfigBinding {
 }
 
-public final class io/github/darkryh/katalyst/config/provider/AutomaticServiceConfigLoader$DefaultImpls {
-	public static fun validate (Lio/github/darkryh/katalyst/config/provider/AutomaticServiceConfigLoader;Ljava/lang/Object;)V
+public abstract interface annotation class io/github/darkryh/katalyst/config/provider/ConfigKey : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
 }
 
-public final class io/github/darkryh/katalyst/config/provider/ConfigBootstrapHelper {
-	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/ConfigBootstrapHelper;
-	public final fun getConfigProviderFromContainer ()Lio/github/darkryh/katalyst/core/config/ConfigProvider;
-	public final fun loadConfig (Ljava/lang/Class;)Lio/github/darkryh/katalyst/core/config/ConfigProvider;
-	public final fun loadDatabaseConfigMap (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/util/Map;
-	public final fun loadServiceConfig (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Lio/github/darkryh/katalyst/config/provider/ServiceConfigLoader;)Ljava/lang/Object;
-	public final fun validateConfiguration (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)V
+public abstract interface annotation class io/github/darkryh/katalyst/config/provider/ConfigPrefix : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
 }
 
-public final class io/github/darkryh/katalyst/config/provider/ConfigLoaders {
-	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;
-	public final fun loadBoolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Z)Z
-	public static synthetic fun loadBoolean$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
-	public final fun loadDuration (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/time/Duration;)Ljava/time/Duration;
-	public final fun loadIntOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/Integer;
-	public final fun loadIntRange (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;II)Lkotlin/Pair;
-	public static synthetic fun loadIntRange$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lkotlin/Pair;
-	public final fun loadList (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
-	public static synthetic fun loadList$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Ljava/util/List;
-	public final fun loadLongOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/Long;
-	public final fun loadOptionalBoolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Z)Z
-	public static synthetic fun loadOptionalBoolean$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
-	public final fun loadOptionalInt (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;I)I
-	public static synthetic fun loadOptionalInt$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;IILjava/lang/Object;)I
-	public final fun loadOptionalLong (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;J)J
-	public static synthetic fun loadOptionalLong$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;JILjava/lang/Object;)J
-	public final fun loadOptionalString (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public static synthetic fun loadOptionalString$default (Lio/github/darkryh/katalyst/config/provider/ConfigLoaders;Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
-	public final fun loadRequiredBoolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Z
-	public final fun loadRequiredInt (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)I
-	public final fun loadRequiredLong (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)J
-	public final fun loadRequiredString (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/String;
-	public final fun loadStringOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/String;
-	public final fun validateRequiredKeys (Lio/github/darkryh/katalyst/core/config/ConfigProvider;[Ljava/lang/String;)V
-}
-
-public final class io/github/darkryh/katalyst/config/provider/ConfigLoadersKt {
-	public static final fun boolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Z)Z
-	public static synthetic fun boolean$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
+public final class io/github/darkryh/katalyst/config/provider/ConfigReadsKt {
+	public static final fun booleanOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/Boolean;
 	public static final fun intOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/Integer;
 	public static final fun longOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/Long;
-	public static final fun optionalBoolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Z)Z
-	public static synthetic fun optionalBoolean$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;ZILjava/lang/Object;)Z
-	public static final fun optionalInt (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;I)I
-	public static synthetic fun optionalInt$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;IILjava/lang/Object;)I
-	public static final fun optionalLong (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;J)J
-	public static synthetic fun optionalLong$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;JILjava/lang/Object;)J
-	public static final fun optionalString (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public static synthetic fun optionalString$default (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
 	public static final fun requiredBoolean (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Z
 	public static final fun requiredInt (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)I
 	public static final fun requiredLong (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)J
 	public static final fun requiredString (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/String;
 	public static final fun stringOrNull (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/lang/String;)Ljava/lang/String;
-}
-
-public final class io/github/darkryh/katalyst/config/provider/ConfigMetadata {
-	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/ConfigMetadata;
-	public final fun discoverLoaders ([Ljava/lang/String;)Ljava/util/List;
-	public final fun getLoaderMetadata (Lio/github/darkryh/katalyst/config/provider/ServiceConfigLoader;)Lio/github/darkryh/katalyst/config/provider/ConfigMetadata$LoaderMetadata;
-	public final fun validateLoaders (Lio/github/darkryh/katalyst/core/config/ConfigProvider;Ljava/util/List;)V
-}
-
-public final class io/github/darkryh/katalyst/config/provider/ConfigMetadata$LoaderMetadata {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/config/provider/ConfigMetadata$LoaderMetadata;
-	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/config/provider/ConfigMetadata$LoaderMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/config/provider/ConfigMetadata$LoaderMetadata;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getClassName ()Ljava/lang/String;
-	public final fun getLoadedType ()Ljava/lang/String;
-	public final fun getPackageName ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/github/darkryh/katalyst/config/provider/ServiceConfigLoader {
-	public abstract fun loadConfig (Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/lang/Object;
-	public fun validate (Ljava/lang/Object;)V
-}
-
-public final class io/github/darkryh/katalyst/config/provider/ServiceConfigLoader$DefaultImpls {
-	public static fun validate (Lio/github/darkryh/katalyst/config/provider/ServiceConfigLoader;Ljava/lang/Object;)V
 }
 

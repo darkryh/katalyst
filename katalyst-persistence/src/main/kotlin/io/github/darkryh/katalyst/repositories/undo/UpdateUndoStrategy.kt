@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  * - Phase 3+: Will integrate with actual repository update methods
  * - The undoData must contain the original field values as JSON
  */
-class UpdateUndoStrategy : UndoStrategy {
+internal class UpdateUndoStrategy : UndoStrategy {
     private val logger = LoggerFactory.getLogger(UpdateUndoStrategy::class.java)
 
     override fun canHandle(operationType: String, resourceType: String): Boolean {

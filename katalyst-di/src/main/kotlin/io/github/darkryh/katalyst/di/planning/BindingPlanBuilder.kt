@@ -5,7 +5,7 @@ import io.github.darkryh.katalyst.di.analysis.DependencyAnalyzer
 import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshot
 import kotlin.reflect.KClass
 
-class BindingPlanBuilder(
+internal class BindingPlanBuilder(
     private val container: KatalystContainer,
     private val scanPackages: Array<String>
 ) {

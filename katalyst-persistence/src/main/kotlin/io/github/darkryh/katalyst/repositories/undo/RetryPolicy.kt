@@ -24,7 +24,7 @@ import kotlin.math.min
  * policy.execute { riskyOperation() }
  * ```
  */
-class RetryPolicy(
+internal class RetryPolicy(
     val maxRetries: Int = 3,
     val initialDelayMs: Long = 100,
     val maxDelayMs: Long = 5000,

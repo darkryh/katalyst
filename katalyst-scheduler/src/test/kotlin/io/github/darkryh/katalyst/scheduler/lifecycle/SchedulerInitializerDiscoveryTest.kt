@@ -90,7 +90,7 @@ class SchedulerInitializerDiscoveryTest {
         val service = DefaultParameterJobService()
         ServiceRegistry.register(service)
 
-        SchedulerInitializer().onRuntimeReady()
+        SchedulerInitializer().onReady()
 
         assertEquals(
             listOf("scheduler.test.default-parameter.60"),
@@ -103,7 +103,7 @@ class SchedulerInitializerDiscoveryTest {
         val service = ConfigParameterJobService()
         ServiceRegistry.register(service)
 
-        SchedulerInitializer().onRuntimeReady()
+        SchedulerInitializer().onReady()
 
         assertEquals(
             listOf("scheduler.test.config-parameter.config-value"),
@@ -117,7 +117,7 @@ class SchedulerInitializerDiscoveryTest {
         ServiceRegistry.register(service)
 
         val error = assertFailsWith<SchedulerInvocationException> {
-            SchedulerInitializer().onRuntimeReady()
+            SchedulerInitializer().onReady()
         }
 
         assertEquals(

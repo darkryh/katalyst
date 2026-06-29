@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  *
  * **Display**: ASCII table with warning count, category, and helpful hints
  */
-class StartupWarningsAggregator {
+internal class StartupWarningsAggregator {
     private val logger = LoggerFactory.getLogger("StartupWarningsAggregator")
     private val warnings = mutableListOf<Warning>()
 
@@ -121,7 +121,7 @@ class StartupWarningsAggregator {
 object StartupWarnings {
     private val aggregator = StartupWarningsAggregator()
 
-    fun add(
+    internal fun add(
         category: String,
         message: String,
         severity: StartupWarningsAggregator.WarningSeverity = StartupWarningsAggregator.WarningSeverity.INFO,
@@ -130,7 +130,7 @@ object StartupWarnings {
 
     fun display() = aggregator.displayIfPresent()
 
-    fun get(): List<StartupWarningsAggregator.Warning> = aggregator.getWarnings()
+    internal fun get(): List<StartupWarningsAggregator.Warning> = aggregator.getWarnings()
 
     fun clear() = aggregator.clear()
 

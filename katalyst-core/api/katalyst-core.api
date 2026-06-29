@@ -1,3 +1,6 @@
+public abstract interface annotation class io/github/darkryh/katalyst/core/annotation/KatalystInternalApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface class io/github/darkryh/katalyst/core/component/Component {
 }
 

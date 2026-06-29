@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
  * val strategy = registry.findStrategy("UPDATE", "User")
  * ```
  */
-class UndoStrategyRegistry {
+internal class UndoStrategyRegistry {
     private val logger = LoggerFactory.getLogger(UndoStrategyRegistry::class.java)
     private val strategies = mutableListOf<UndoStrategy>()
     private val defaultStrategy = NoOpUndoStrategy()

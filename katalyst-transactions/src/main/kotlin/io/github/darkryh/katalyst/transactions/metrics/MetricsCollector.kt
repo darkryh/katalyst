@@ -27,7 +27,7 @@ import kotlin.time.toDuration
  * **Memory Management:**
  * Implementations should implement cleanup/purging to prevent unbounded growth.
  */
-interface MetricsCollector {
+internal interface MetricsCollector {
     /**
      * Start tracking metrics for a new transaction.
      *
@@ -155,7 +155,7 @@ interface MetricsCollector {
  * }, 1, 1, TimeUnit.MINUTES)
  * ```
  */
-class DefaultMetricsCollector(
+internal class DefaultMetricsCollector(
     private val maxTransactions: Int = 10_000,
     private val maxAdapterExecutionsPerTransaction: Int = 128,
     private val maxErrorsPerTransaction: Int = 32,
@@ -313,7 +313,7 @@ class DefaultMetricsCollector(
  * All methods do nothing. Useful for testing when metrics collection
  * overhead should be eliminated.
  */
-class NoOpMetricsCollector : MetricsCollector {
+internal class NoOpMetricsCollector : MetricsCollector {
     override fun startTransaction(transactionId: String, workflowId: String?): TransactionMetrics {
         return TransactionMetrics(transactionId, workflowId)
     }

@@ -10,10 +10,10 @@ import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManage
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
+import io.github.darkryh.katalyst.di.lifecycle.StartupHook
+import io.github.darkryh.katalyst.di.lifecycle.StartupHookRegistry
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRegistry
 import io.github.darkryh.katalyst.di.invocation.CallableInvoker
 import io.github.darkryh.katalyst.di.invocation.ParameterResolver
 import io.github.darkryh.katalyst.di.invocation.getFromContainerOrNull
@@ -577,8 +577,8 @@ class AutoBindingRegistrar(
      * If a secondary type is already bound to a different primary type, this method
      * throws a [DependencyInjectionException] to fail-fast on ambiguous bindings.
      *
-     * Selected lifecycle extension points (such as [ApplicationInitializer] and
-     * [ApplicationReadyInitializer]) are treated as multibinding types and are
+     * Selected lifecycle extension points (such as [StartupHook] and
+     * [ReadyHook]) are treated as multibinding types and are
      * tracked via dedicated registries instead of Koin secondary key mappings.
      *
      * @param instance The component instance to register
@@ -626,11 +626,11 @@ class AutoBindingRegistrar(
             secondaryTypeOwners[type] = primaryType
         }
 
-        if (instance is ApplicationInitializer) {
-            ApplicationInitializerRegistry.register(instance)
+        if (instance is StartupHook) {
+            StartupHookRegistry.register(instance)
         }
-        if (instance is ApplicationReadyInitializer) {
-            ApplicationReadyInitializerRegistry.register(instance)
+        if (instance is ReadyHook) {
+            ReadyHookRegistry.register(instance)
         }
 
         beanEngine.registerInstance(instance, primaryType, singleBindingTypes)
@@ -655,8 +655,8 @@ private val schedulerServiceKClass: KClass<*>? = runCatching {
 }.getOrNull()
 
 private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
-    ApplicationInitializer::class,
-    ApplicationReadyInitializer::class
+    StartupHook::class,
+    ReadyHook::class
 )
 
 /**

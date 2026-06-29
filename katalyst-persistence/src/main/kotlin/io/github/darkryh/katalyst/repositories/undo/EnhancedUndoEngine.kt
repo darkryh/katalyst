@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
  * - Detailed error tracking for each operation
  * - Continues with remaining operations even if some fail (best-effort)
  */
-class EnhancedUndoEngine(
+internal class EnhancedUndoEngine(
     private val strategyRegistry: UndoStrategyRegistry = UndoStrategyRegistry.createDefault(),
     private val retryPolicy: RetryPolicy = RetryPolicy.aggressive()
 ) : UndoEngine {

@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  *
  *     override val eventType = UserCreatedEvent::class
  *
- *     override suspend fun validate(event: UserCreatedEvent): ValidationResult {
+ *     override suspend fun validate(event: UserCreatedEvent): EventValidationResult {
  *         val errors = mutableListOf<String>()
  *
  *         if (event.email.isBlank()) {
@@ -33,9 +33,9 @@ import kotlin.reflect.KClass
  *         }
  *
  *         return if (errors.isEmpty()) {
- *             ValidationResult.Valid
+ *             EventValidationResult.Valid
  *         } else {
- *             ValidationResult.Invalid(errors)
+ *             EventValidationResult.Invalid(errors)
  *         }
  *     }
  * }
@@ -68,9 +68,9 @@ interface EventValidator<T : DomainEvent> {
      * Implement to check business invariants and constraints.
      *
      * @param event The event to validate
-     * @return ValidationResult.Valid or ValidationResult.Invalid
+     * @return EventValidationResult.Valid or EventValidationResult.Invalid
      */
-    suspend fun validate(event: T): ValidationResult
+    suspend fun validate(event: T): EventValidationResult
 }
 
 /**
@@ -78,18 +78,18 @@ interface EventValidator<T : DomainEvent> {
  *
  * Can be Valid (no errors) or Invalid (with error messages).
  */
-sealed class ValidationResult {
+sealed class EventValidationResult {
     /**
      * Event is valid and can be published.
      */
-    object Valid : ValidationResult()
+    object Valid : EventValidationResult()
 
     /**
      * Event failed validation.
      *
      * @param errors List of validation error messages
      */
-    data class Invalid(private val errors: List<String>) : ValidationResult() {
+    data class Invalid(private val errors: List<String>) : EventValidationResult() {
         /**
          * Get the list of validation errors.
          *
@@ -129,12 +129,12 @@ sealed class ValidationResult {
  * class OrderCreatedValidator : BaseEventValidator<OrderCreatedEvent>(
  *     OrderCreatedEvent::class
  * ) {
- *     override suspend fun validate(event: OrderCreatedEvent): ValidationResult {
+ *     override suspend fun validate(event: OrderCreatedEvent): EventValidationResult {
  *         val errors = mutableListOf<String>()
  *         if (event.orderId.isBlank()) errors.add("Order ID required")
  *         if (event.items.isEmpty()) errors.add("Order must have items")
- *         return if (errors.isEmpty()) ValidationResult.Valid
- *                else ValidationResult.Invalid(errors)
+ *         return if (errors.isEmpty()) EventValidationResult.Valid
+ *                else EventValidationResult.Invalid(errors)
  *     }
  * }
  * ```
@@ -170,7 +170,7 @@ class CompositeEventValidator<T : DomainEvent>(
     override val eventType: KClass<T>,
     private val validators: List<EventValidator<T>>
 ) : EventValidator<T> {
-    override suspend fun validate(event: T): ValidationResult {
+    override suspend fun validate(event: T): EventValidationResult {
         val allErrors = mutableListOf<String>()
 
         for (validator in validators) {
@@ -181,9 +181,9 @@ class CompositeEventValidator<T : DomainEvent>(
         }
 
         return if (allErrors.isEmpty()) {
-            ValidationResult.Valid
+            EventValidationResult.Valid
         } else {
-            ValidationResult.Invalid(allErrors)
+            EventValidationResult.Invalid(allErrors)
         }
     }
 }
@@ -199,5 +199,5 @@ class CompositeEventValidator<T : DomainEvent>(
 class NoOpEventValidator<T : DomainEvent>(
     override val eventType: KClass<T>
 ) : EventValidator<T> {
-    override suspend fun validate(event: T): ValidationResult = ValidationResult.Valid
+    override suspend fun validate(event: T): EventValidationResult = EventValidationResult.Valid
 }

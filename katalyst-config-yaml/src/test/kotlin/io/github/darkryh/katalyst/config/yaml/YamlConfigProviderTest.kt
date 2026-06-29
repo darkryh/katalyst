@@ -1,9 +1,6 @@
 package io.github.darkryh.katalyst.config.yaml
 
-import io.github.darkryh.katalyst.config.provider.optionalBoolean
-import io.github.darkryh.katalyst.config.provider.optionalInt
-import io.github.darkryh.katalyst.config.provider.optionalLong
-import io.github.darkryh.katalyst.config.provider.boolean
+import io.github.darkryh.katalyst.config.provider.booleanOrNull
 import io.github.darkryh.katalyst.config.provider.intOrNull
 import io.github.darkryh.katalyst.config.provider.longOrNull
 import io.github.darkryh.katalyst.config.provider.requiredBoolean
@@ -383,14 +380,14 @@ class YamlConfigurationSourceTest {
     }
 
     @Test
-    fun `optionalInt should keep default fallback for malformed yaml values`() {
+    fun `intOrNull should fail fast for malformed yaml values`() {
         // Given
         val provider = TestYamlConfigurationSource(
             mapOf("server" to mapOf("port" to "eighty"))
         )
 
         // Then
-        assertEquals(8080, provider.optionalInt("server.port", 8080))
+        assertFailsWith<ConfigException> { provider.intOrNull("server.port") }
     }
 
     @Test
@@ -468,14 +465,14 @@ class YamlConfigurationSourceTest {
     }
 
     @Test
-    fun `optionalLong should keep default fallback for malformed yaml values`() {
+    fun `longOrNull should fail fast for malformed yaml values`() {
         // Given
         val provider = TestYamlConfigurationSource(
             mapOf("timeouts" to mapOf("shutdown" to "30s"))
         )
 
         // Then
-        assertEquals(30_000L, provider.optionalLong("timeouts.shutdown", 30_000L))
+        assertFailsWith<ConfigException> { provider.longOrNull("timeouts.shutdown") }
     }
 
     @Test
@@ -593,28 +590,16 @@ class YamlConfigurationSourceTest {
     }
 
     @Test
-    fun `optionalBoolean should keep default fallback for malformed yaml values`() {
-        // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("features" to mapOf("analytics" to "sometimes"))
-        )
-
-        // Then
-        assertTrue(provider.optionalBoolean("features.analytics", true))
-        assertFalse(provider.optionalBoolean("features.analytics", false))
-    }
-
-    @Test
-    fun `boolean should return false for missing YAML values`() {
+    fun `booleanOrNull should return null for missing YAML values`() {
         // Given
         val provider = TestYamlConfigurationSource(emptyMap())
 
         // Then
-        assertFalse(provider.boolean("features.analytics"))
+        assertNull(provider.booleanOrNull("features.analytics"))
     }
 
     @Test
-    fun `boolean should fail fast for malformed YAML values`() {
+    fun `booleanOrNull should fail fast for malformed YAML values`() {
         // Given
         val provider = TestYamlConfigurationSource(
             mapOf("features" to mapOf("analytics" to "sometimes"))
@@ -622,7 +607,7 @@ class YamlConfigurationSourceTest {
 
         // Then
         assertFailsWith<ConfigException> {
-            provider.boolean("features.analytics")
+            provider.booleanOrNull("features.analytics")
         }
     }
 

@@ -106,7 +106,12 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
             ?: error("Entity with id=$persistedId could not be loaded after persistence")
     }
 
-
+    /**
+     * Persists every entity in [entities] with [save] semantics (create-or-update
+     * by primary key), returning the reloaded entities in the same order.
+     */
+    fun saveAll(entities: List<IdentifiableEntityId>): List<IdentifiableEntityId> =
+        entities.map { save(it) }
 
     /**
      * Finds an entity by ID.
@@ -166,6 +171,12 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
 
     private fun entityId(id: Id): EntityID<Id> = EntityID(id, table)
 
+    private fun writableMapping(): WritableEntityMapping<Id, IdentifiableEntityId> {
+        val mapping = table.asKatalystTable<Id, IdentifiableEntityId>().mapping.asWritable()
+        mapping.validate(table)
+        return mapping
+    }
+
     private fun resolveSortColumn(name: String?): Column<*>? {
         if (name.isNullOrBlank()) return null
         return table.columns.firstOrNull {
@@ -174,9 +185,7 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
     }
 
     private fun insertEntity(entity: IdentifiableEntityId): Id {
-        val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
-        val mapping = katalystTable.mapping.asWritable()
-        mapping.validate(table)
+        val mapping = writableMapping()
         val generatedId = table.insertAndGetId { insertStatement ->
             mapping.writeInsert(insertStatement, entity)
         }.value
@@ -184,9 +193,7 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
     }
 
     private fun updateEntity(id: Id, entity: IdentifiableEntityId): Int {
-        val katalystTable = table.asKatalystTable<Id, IdentifiableEntityId>()
-        val mapping = katalystTable.mapping.asWritable()
-        mapping.validate(table)
+        val mapping = writableMapping()
         return table.update({ table.id eq entityId(id) }) { updateStatement ->
             mapping.writeUpdate(updateStatement, entity)
         }

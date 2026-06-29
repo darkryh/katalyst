@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  * Used automatically in EventsTransactionAdapter during BEFORE_COMMIT_VALIDATION phase
  *
  * **Error Handling:**
- * If validation fails, throws EventValidationException which will rollback the transaction
+ * If validation fails, throws EventPublishingException which will rollback the transaction
  */
 interface EventPublishingValidator {
 
@@ -23,16 +23,16 @@ interface EventPublishingValidator {
      * Validate that an event can be published.
      *
      * @param event The event to validate
-     * @return ValidationResult with isValid flag and optional error message
-     * @throws EventValidationException if validation fails
+     * @return EventPublishingResult with isValid flag and optional error message
+     * @throws EventPublishingException if validation fails
      */
-    suspend fun validate(event: DomainEvent): ValidationResult
+    suspend fun validate(event: DomainEvent): EventPublishingResult
 }
 
 /**
  * Result of event validation
  */
-data class ValidationResult(
+data class EventPublishingResult(
     val isValid: Boolean,
     val eventId: String = "",
     val eventType: String = "",
@@ -48,12 +48,12 @@ class DefaultEventPublishingValidator(
 
     private val logger = LoggerFactory.getLogger(DefaultEventPublishingValidator::class.java)
 
-    override suspend fun validate(event: DomainEvent): ValidationResult {
+    override suspend fun validate(event: DomainEvent): EventPublishingResult {
         // Check if handlers exist for this event type
         if (!hasHandlersCheck(event)) {
             val errorMsg = "No handlers registered for event: ${event::class.simpleName} (type: ${event.eventType()})"
             logger.error("Event validation failed: $errorMsg")
-            return ValidationResult(
+            return EventPublishingResult(
                 isValid = false,
                 eventId = event.eventId,
                 eventType = event.eventType(),
@@ -62,7 +62,7 @@ class DefaultEventPublishingValidator(
         }
 
         logger.debug("Event validation passed: {} (type: {})", event::class.simpleName, event.eventType())
-        return ValidationResult(
+        return EventPublishingResult(
             isValid = true,
             eventId = event.eventId,
             eventType = event.eventType()
@@ -74,7 +74,7 @@ class DefaultEventPublishingValidator(
  * Exception thrown when event validation fails.
  * This is caught by the transaction system and causes the transaction to rollback.
  */
-class EventValidationException(
+class EventPublishingException(
     val event: DomainEvent,
     message: String,
     cause: Exception? = null

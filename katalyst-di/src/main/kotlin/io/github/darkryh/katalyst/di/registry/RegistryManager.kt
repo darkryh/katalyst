@@ -41,7 +41,7 @@ private val logger = LoggerFactory.getLogger("RegistryManager")
  *
  * @see ResettableRegistry The interface implemented by all managed registries
  */
-object RegistryManager : ResettableRegistry {
+internal object RegistryManager : ResettableRegistry {
     private val registries = CopyOnWriteArrayList<ResettableRegistry>()
 
     /**

@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.di.module
 
 import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.database.DatabaseFactory
+import io.github.darkryh.katalyst.database.SqlExecutor
 import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
@@ -43,6 +44,9 @@ internal fun coreDIModule(config: DatabaseConfig): KatalystBeanModule = katalyst
     logger.info("Initializing Core DI Module with database and transaction management")
     single<DatabaseConfig> { config }
     single<DatabaseFactory> { DatabaseFactory.create(config) }
+    // The one injectable raw-SQL escape hatch. Transaction-aware: reuses the active Exposed
+    // transaction connection when present, else a pooled connection.
+    single<SqlExecutor> { get<DatabaseFactory>().createSqlExecutor() }
     single<DatabaseTransactionManager> {
         DatabaseTransactionManager(
             database = get<DatabaseFactory>().database,

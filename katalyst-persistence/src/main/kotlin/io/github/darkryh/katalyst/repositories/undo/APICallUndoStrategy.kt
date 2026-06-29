@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
  * - The undoData should contain: undo_endpoint, resource_id_on_remote_system, etc.
  * - Includes retry logic for transient failures
  */
-class APICallUndoStrategy : UndoStrategy {
+internal class APICallUndoStrategy : UndoStrategy {
     private val logger = LoggerFactory.getLogger(APICallUndoStrategy::class.java)
 
     override fun canHandle(operationType: String, resourceType: String): Boolean {

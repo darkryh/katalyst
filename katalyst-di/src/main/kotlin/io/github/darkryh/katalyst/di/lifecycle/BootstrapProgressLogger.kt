@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
  * ✓  Completed in 234ms
  * ```
  */
-class BootstrapProgressLogger {
+internal class BootstrapProgressLogger {
     private val logger = LoggerFactory.getLogger("BootstrapProgressLogger")
 
     data class LifecycleInfo(
@@ -216,16 +216,16 @@ class BootstrapProgressLogger {
 object BootstrapProgress {
     private val logger = BootstrapProgressLogger()
 
-    fun startLifecycle(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle)
-    fun startLifecycleCompact(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle, compact = true)
+    internal fun startLifecycle(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle)
+    internal fun startLifecycleCompact(lifecycle: BootstrapLifecycle) = logger.startLifecycle(lifecycle, compact = true)
 
-    fun completeLifecycle(lifecycle: BootstrapLifecycle, message: String? = null) =
+    internal fun completeLifecycle(lifecycle: BootstrapLifecycle, message: String? = null) =
         logger.completeLifecycle(lifecycle, message)
 
-    fun failLifecycle(lifecycle: BootstrapLifecycle, error: Throwable? = null) =
+    internal fun failLifecycle(lifecycle: BootstrapLifecycle, error: Throwable? = null) =
         logger.failLifecycle(lifecycle, error)
 
-    fun skipLifecycle(lifecycle: BootstrapLifecycle, reason: String? = null) =
+    internal fun skipLifecycle(lifecycle: BootstrapLifecycle, reason: String? = null) =
         logger.skipLifecycle(lifecycle, reason)
 
     fun displayProgressSummary(includePending: Boolean = true) =
@@ -233,14 +233,14 @@ object BootstrapProgress {
 
     fun getTotalBootstrapTime(): Long = logger.getTotalBootstrapTime()
 
-    fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long = logger.getLifecycleDuration(lifecycle)
+    internal fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long = logger.getLifecycleDuration(lifecycle)
 
-    fun getLifecycles(): List<BootstrapProgressLogger.LifecycleInfo> = logger.getLifecycles()
+    internal fun getLifecycles(): List<BootstrapProgressLogger.LifecycleInfo> = logger.getLifecycles()
 
     fun clear() = logger.clear()
 }
 
-enum class BootstrapLifecycle(
+internal enum class BootstrapLifecycle(
     val lifecycleRef: String,
     val displayName: String,
     val description: String

@@ -5,7 +5,7 @@ import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.di.invocation.CallableInvoker
 import io.github.darkryh.katalyst.di.invocation.ParameterResolver
 import io.github.darkryh.katalyst.di.internal.ServiceRegistry
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
 import io.github.darkryh.katalyst.scheduler.exception.SchedulerInvocationException
 import io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle
 import org.objectweb.asm.ClassReader
@@ -30,13 +30,13 @@ private data class SchedulerMethodCandidate(
  * - the scheduler method returns [SchedulerJobHandle]
  * - the method schedules through `requireScheduler()`
  */
-internal class SchedulerInitializer : ApplicationReadyInitializer {
+internal class SchedulerInitializer : ReadyHook {
     private val logger = LoggerFactory.getLogger("SchedulerInitializer")
 
-    override val initializerId: String = "SchedulerInitializer"
+    override val id: String = "SchedulerInitializer"
     override val order: Int = -50
 
-    override suspend fun onRuntimeReady() {
+    override suspend fun onReady() {
         try {
             val allServices = ServiceRegistry.getAll()
             logger.info("Scheduler runtime-ready initialization started")

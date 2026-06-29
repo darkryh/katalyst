@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory
  * fun main(args: Array<String>) = katalystApplication(args) {
  *     enableYamlConfiguration()
  *     features {
- *         enableServerConfiguration()  // Enable server deployment loading from installed config
+ *         enableServerTuning()  // Enable server deployment loading from installed config
  *     }
  *     scanPackages("com.example.app")
  * }
@@ -89,7 +89,7 @@ private fun serverConfigurationModule(): KatalystBeanModule = katalystBeanModule
  * fun main(args: Array<String>) = katalystApplication(args) {
  *     enableYamlConfiguration()
  *     features {
- *         enableServerConfiguration()  // Loads from ktor.deployment.* in application.yaml
+ *         enableServerTuning()  // Loads from ktor.deployment.* in application.yaml
  *     }
  *     scanPackages("com.example.app")
  * }
@@ -114,9 +114,9 @@ private fun serverConfigurationModule(): KatalystBeanModule = katalystBeanModule
  *
  * @return This builder for method chaining
  */
-fun KatalystFeaturesBuilder.enableServerConfiguration(): KatalystFeaturesBuilder =
+fun KatalystFeaturesBuilder.enableServerTuning(): KatalystFeaturesBuilder =
     feature(ServerConfigurationFeature).also {
-        logger.debug("Server configuration feature enabled - will load from application.yaml")
+        logger.debug("Server tuning feature enabled - will load ktor.deployment.* from application.yaml")
     }
 
 private val logger = LoggerFactory.getLogger("ServerConfigurationFeatureKt")

@@ -155,7 +155,7 @@ data class EventHandlerNode(
 data class InitializerNode(
     override val symbol: KatalystSymbol,
     override val reason: DiscoveryReason,
-    /** True for ApplicationReadyInitializer, false for ApplicationInitializer. */
+    /** True for ReadyHook, false for StartupHook. */
     val runsAfterStartup: Boolean,
 ) : KatalystNode
 

@@ -9,7 +9,7 @@ import kotlin.coroutines.CoroutineContext
  * This context tracks the lifetime of a single root database transaction and
  * enables safe nested-join behavior without forcing explicit IDs in user code.
  */
-class TransactionScopeContext(
+internal class TransactionScopeContext(
     val transactionId: String,
     val workflowId: String?,
     var depth: Int = 1,
@@ -18,7 +18,7 @@ class TransactionScopeContext(
     companion object Key : CoroutineContext.Key<TransactionScopeContext>
 }
 
-enum class TransactionScopeState {
+internal enum class TransactionScopeState {
     ACTIVE,
     COMPLETED,
     ROLLED_BACK,

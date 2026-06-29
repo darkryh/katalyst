@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * - DatadogMetricsExporter - Export to Datadog
  * - ElasticsearchMetricsExporter - Export to Elasticsearch
  */
-interface MetricsExporter {
+internal interface MetricsExporter {
     /**
      * Export transaction metrics.
      *
@@ -41,7 +41,7 @@ interface MetricsExporter {
  *   - PersistenceTransactionAdapter: SUCCESS (78ms)
  * ```
  */
-class LoggingMetricsExporter : MetricsExporter {
+internal class LoggingMetricsExporter : MetricsExporter {
     companion object {
         private val logger = LoggerFactory.getLogger(LoggingMetricsExporter::class.java)
     }
@@ -126,7 +126,7 @@ class LoggingMetricsExporter : MetricsExporter {
  * registry.exportMetrics(metrics)
  * ```
  */
-class MetricsExporterRegistry {
+internal class MetricsExporterRegistry {
     private val exporters = CopyOnWriteArrayList<MetricsExporter>()
 
     /**
@@ -189,7 +189,7 @@ class MetricsExporterRegistry {
  *
  * Suitable for centralized logging systems like ELK Stack, Splunk, etc.
  */
-class JsonMetricsExporter : MetricsExporter {
+internal class JsonMetricsExporter : MetricsExporter {
     companion object {
         private val logger = LoggerFactory.getLogger(JsonMetricsExporter::class.java)
     }

@@ -311,6 +311,32 @@ class CrudRepositoryTest {
     }
 
     @Test
+    fun `saveAll should persist every entity and return them with generated IDs`() = runTest {
+        // Given
+        val users = listOf(
+            TestUser(name = "Alice", email = "alice@example.com", age = 30),
+            TestUser(name = "Bob", email = "bob@example.com", age = 25),
+            TestUser(name = "Carol", email = "carol@example.com", age = 41),
+        )
+
+        // When
+        val saved = repository.saveAll(users)
+
+        // Then
+        assertEquals(3, saved.size)
+        assertTrue(saved.all { it.id != null }, "every saved entity should have a generated ID")
+        assertEquals(listOf("Alice", "Bob", "Carol"), saved.map { it.name })
+        assertEquals(3, repository.findAll().size)
+    }
+
+    @Test
+    fun `saveAll on empty list returns empty and persists nothing`() = runTest {
+        val saved = repository.saveAll(emptyList())
+        assertTrue(saved.isEmpty())
+        assertEquals(0, repository.findAll().size)
+    }
+
+    @Test
     fun `mapping should allow entity property names to differ from table column names`() = runTest {
         transaction(database) {
             SchemaUtils.create(RenamedUsersTable)

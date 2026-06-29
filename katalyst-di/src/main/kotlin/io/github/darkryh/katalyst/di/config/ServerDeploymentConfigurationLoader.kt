@@ -1,7 +1,9 @@
 package io.github.darkryh.katalyst.di.config
 
-import io.github.darkryh.katalyst.config.provider.ConfigLoaders
-import io.github.darkryh.katalyst.config.provider.ServiceConfigLoader
+import io.github.darkryh.katalyst.config.provider.requiredInt
+import io.github.darkryh.katalyst.config.provider.requiredLong
+import io.github.darkryh.katalyst.config.provider.requiredString
+import io.github.darkryh.katalyst.config.provider.stringOrNull
 import io.github.darkryh.katalyst.core.config.ConfigException
 import io.github.darkryh.katalyst.core.config.ConfigProvider
 import org.slf4j.LoggerFactory
@@ -9,35 +11,38 @@ import org.slf4j.LoggerFactory
 /**
  * Loads ktor.deployment.* into [ServerDeploymentConfiguration] from a ConfigProvider.
  * Kept in DI module to avoid circular dependency with config-provider.
+ *
+ * Invoked reflectively by [ServerConfigurationResolver]; the `loadConfig`/`validate`
+ * method names and signatures must remain stable.
  */
-object ServerDeploymentConfigurationLoader : ServiceConfigLoader<ServerDeploymentConfiguration> {
+object ServerDeploymentConfigurationLoader {
     private val log = LoggerFactory.getLogger(ServerDeploymentConfigurationLoader::class.java)
 
-    override fun loadConfig(provider: ConfigProvider): ServerDeploymentConfiguration {
+    fun loadConfig(provider: ConfigProvider): ServerDeploymentConfiguration {
         log.debug("Loading server deployment configuration...")
 
-        val host = ConfigLoaders.loadRequiredString(provider, "ktor.deployment.host")
-        val port = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.port")
+        val host = provider.requiredString("ktor.deployment.host")
+        val port = provider.requiredInt("ktor.deployment.port")
         val sslPort = provider.getString("ktor.deployment.sslPort")?.toIntOrNull()
 
-        val shutdownGracePeriod = ConfigLoaders.loadRequiredLong(provider, "ktor.deployment.shutdownGracePeriod")
-        val shutdownTimeout = ConfigLoaders.loadRequiredLong(provider, "ktor.deployment.shutdownTimeout")
+        val shutdownGracePeriod = provider.requiredLong("ktor.deployment.shutdownGracePeriod")
+        val shutdownTimeout = provider.requiredLong("ktor.deployment.shutdownTimeout")
         val shutdownUrl = provider.getString("ktor.deployment.shutdownUrl")
 
-        val rootPath = ConfigLoaders.loadOptionalString(provider, "ktor.deployment.rootPath", "/")
+        val rootPath = provider.stringOrNull("ktor.deployment.rootPath") ?: "/"
         val watchPaths: List<String> = runCatching { provider.getList("ktor.deployment.watchPaths") ?: emptyList() }
             .getOrElse { emptyList() }
             .map { it.toString() }
 
-        val connectionGroupSize = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.connectionGroupSize")
-        val workerGroupSize = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.workerGroupSize")
-        val callGroupSize = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.callGroupSize")
+        val connectionGroupSize = provider.requiredInt("ktor.deployment.connectionGroupSize")
+        val workerGroupSize = provider.requiredInt("ktor.deployment.workerGroupSize")
+        val callGroupSize = provider.requiredInt("ktor.deployment.callGroupSize")
 
-        val maxInitialLineLength = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.maxInitialLineLength")
-        val maxHeaderSize = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.maxHeaderSize")
-        val maxChunkSize = ConfigLoaders.loadRequiredInt(provider, "ktor.deployment.maxChunkSize")
+        val maxInitialLineLength = provider.requiredInt("ktor.deployment.maxInitialLineLength")
+        val maxHeaderSize = provider.requiredInt("ktor.deployment.maxHeaderSize")
+        val maxChunkSize = provider.requiredInt("ktor.deployment.maxChunkSize")
 
-        val connectionIdleTimeoutMs = ConfigLoaders.loadRequiredLong(provider, "ktor.deployment.connectionIdleTimeoutMs")
+        val connectionIdleTimeoutMs = provider.requiredLong("ktor.deployment.connectionIdleTimeoutMs")
         val requestTimeoutMs = provider.getString("ktor.deployment.requestTimeoutMs")?.toLongOrNull()
 
         val maxThreads = provider.getString("ktor.deployment.maxThreads")?.toIntOrNull()
@@ -73,7 +78,7 @@ object ServerDeploymentConfigurationLoader : ServiceConfigLoader<ServerDeploymen
         }
     }
 
-    override fun validate(config: ServerDeploymentConfiguration) {
+    fun validate(config: ServerDeploymentConfiguration) {
         if (config.sslPort != null && config.sslPort > 0) {
             config.sslConfig ?: throw ConfigException("sslPort is set but no SSL configuration was provided")
             config.sslConfig?.validate()
@@ -91,9 +96,9 @@ object ServerDeploymentConfigurationLoader : ServiceConfigLoader<ServerDeploymen
         return try {
             val keyStore = provider.getString("ktor.security.ssl.keyStore").ifBlank { null }
             if (keyStore != null) {
-                val keyAlias = ConfigLoaders.loadRequiredString(provider, "ktor.security.ssl.keyAlias")
-                val keyStorePassword = ConfigLoaders.loadRequiredString(provider, "ktor.security.ssl.keyStorePassword")
-                val privateKeyPassword = ConfigLoaders.loadRequiredString(provider, "ktor.security.ssl.privateKeyPassword")
+                val keyAlias = provider.requiredString("ktor.security.ssl.keyAlias")
+                val keyStorePassword = provider.requiredString("ktor.security.ssl.keyStorePassword")
+                val privateKeyPassword = provider.requiredString("ktor.security.ssl.privateKeyPassword")
                 val providerName = provider.getString("ktor.security.ssl.provider")
                 val keyManagerFactory = provider.getString("ktor.security.ssl.keyManagerFactory")
                 val trustManagerFactory = provider.getString("ktor.security.ssl.trustManagerFactory")

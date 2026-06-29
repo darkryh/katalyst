@@ -40,7 +40,7 @@ class KatalystAnalyzerTest {
         assertEquals(setOf("GreetingsTable"), simpleNames(graph.tables.map { it.symbol.fqName }))
         assertEquals(setOf("GreetingCreatedHandler"), simpleNames(graph.eventHandlers.map { it.symbol.fqName }))
         assertEquals(setOf("V1AddGreeting"), simpleNames(graph.migrations.map { it.symbol.fqName }))
-        assertEquals(setOf("GreetingConfigLoader"), simpleNames(graph.configLoaders.map { it.symbol.fqName }))
+        assertEquals(setOf("GreetingConfig"), simpleNames(graph.configLoaders.map { it.symbol.fqName }))
         assertEquals(setOf("GreetingInitializer"), simpleNames(graph.initializers.map { it.symbol.fqName }))
     }
 

@@ -1,10 +1,10 @@
 package io.github.darkryh.katalyst.di.internal
 
 import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializerRegistry
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer
-import io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializerRegistry
+import io.github.darkryh.katalyst.di.lifecycle.StartupHook
+import io.github.darkryh.katalyst.di.lifecycle.StartupHookRegistry
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRegistry
 import io.github.darkryh.katalyst.di.registry.RegistryManager
 import io.github.darkryh.katalyst.di.test.TestBeanEngine
 import kotlin.test.AfterTest
@@ -30,24 +30,24 @@ class AutoBindingRegistrarInitializerMultibindingTest {
     }
 
     @Test
-    fun `allows multiple ApplicationInitializer implementations without collision`() {
+    fun `allows multiple StartupHook implementations without collision`() {
         val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
-        registrar.registerInstance(FirstInitializer(), FirstInitializer::class, listOf(ApplicationInitializer::class))
-        registrar.registerInstance(SecondInitializer(), SecondInitializer::class, listOf(ApplicationInitializer::class))
+        registrar.registerInstance(FirstInitializer(), FirstInitializer::class, listOf(StartupHook::class))
+        registrar.registerInstance(SecondInitializer(), SecondInitializer::class, listOf(StartupHook::class))
 
-        val discovered = ApplicationInitializerRegistry.getAll().map { it::class }.toSet()
+        val discovered = StartupHookRegistry.getAll().map { it::class }.toSet()
         assertEquals(setOf(FirstInitializer::class, SecondInitializer::class), discovered)
     }
 
     @Test
-    fun `allows multiple ApplicationReadyInitializer implementations without collision`() {
+    fun `allows multiple ReadyHook implementations without collision`() {
         val registrar = AutoBindingRegistrar(engine.container, engine, emptyArray())
 
-        registrar.registerInstance(FirstRuntimeReadyInitializer(), FirstRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
-        registrar.registerInstance(SecondRuntimeReadyInitializer(), SecondRuntimeReadyInitializer::class, listOf(ApplicationReadyInitializer::class))
+        registrar.registerInstance(FirstRuntimeReadyInitializer(), FirstRuntimeReadyInitializer::class, listOf(ReadyHook::class))
+        registrar.registerInstance(SecondRuntimeReadyInitializer(), SecondRuntimeReadyInitializer::class, listOf(ReadyHook::class))
 
-        val discovered = ApplicationReadyInitializerRegistry.getAll().map { it::class }.toSet()
+        val discovered = ReadyHookRegistry.getAll().map { it::class }.toSet()
         assertEquals(setOf(FirstRuntimeReadyInitializer::class, SecondRuntimeReadyInitializer::class), discovered)
     }
 
@@ -69,22 +69,22 @@ private class FirstFooImpl : FooContract
 
 private class SecondFooImpl : FooContract
 
-private class FirstInitializer : ApplicationInitializer {
-    override val initializerId: String = "FirstInitializer"
-    override suspend fun onApplicationReady() = Unit
+private class FirstInitializer : StartupHook {
+    override val id: String = "FirstInitializer"
+    override suspend fun onStartup() = Unit
 }
 
-private class SecondInitializer : ApplicationInitializer {
-    override val initializerId: String = "SecondInitializer"
-    override suspend fun onApplicationReady() = Unit
+private class SecondInitializer : StartupHook {
+    override val id: String = "SecondInitializer"
+    override suspend fun onStartup() = Unit
 }
 
-private class FirstRuntimeReadyInitializer : ApplicationReadyInitializer {
-    override val initializerId: String = "FirstRuntimeReadyInitializer"
-    override suspend fun onRuntimeReady() = Unit
+private class FirstRuntimeReadyInitializer : ReadyHook {
+    override val id: String = "FirstRuntimeReadyInitializer"
+    override suspend fun onReady() = Unit
 }
 
-private class SecondRuntimeReadyInitializer : ApplicationReadyInitializer {
-    override val initializerId: String = "SecondRuntimeReadyInitializer"
-    override suspend fun onRuntimeReady() = Unit
+private class SecondRuntimeReadyInitializer : ReadyHook {
+    override val id: String = "SecondRuntimeReadyInitializer"
+    override suspend fun onReady() = Unit
 }

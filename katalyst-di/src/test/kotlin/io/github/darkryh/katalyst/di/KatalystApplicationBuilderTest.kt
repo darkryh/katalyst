@@ -53,6 +53,20 @@ class KatalystApplicationBuilderTest {
     }
 
     @Test
+    fun `configuration installed inside features block feeds server resolution`() {
+        // Change F: enableYamlConfiguration() now lives inside features { }; it routes through
+        // KatalystFeaturesBuilder.configuration(), which installs the source on the builder
+        // synchronously (before resolution) so Phase-0 ordering is preserved.
+        val builder = KatalystApplicationBuilder()
+            .engine(testEmbeddedServer())
+        builder.features { configuration(testConfigProvider("ktor.deployment.port" to 9999)) }
+
+        val config = builder.resolveServerConfiguration()
+
+        assertEquals(9999, config.deployment.port)
+    }
+
+    @Test
     fun `engine selection is mandatory before initializeDI`() {
         val builder = KatalystApplicationBuilder()
 

@@ -19,7 +19,7 @@ import io.github.darkryh.katalyst.transactions.workflow.TransactionOperation
  * - Support for both synchronous and asynchronous undo operations
  * - Detailed error tracking and recovery
  */
-interface UndoStrategy {
+internal interface UndoStrategy {
     /**
      * Check if this strategy can handle the given operation type.
      *

@@ -2,7 +2,6 @@ package io.github.darkryh.katalyst.example.routes
 
 import io.github.darkryh.katalyst.example.api.dto.DetailedHealthResponse
 import io.github.darkryh.katalyst.example.api.dto.HealthStatusResponse
-import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.LifecycleStatusReport
 import io.github.darkryh.katalyst.ktor.builder.katalystRouting
 import io.ktor.http.*
@@ -86,12 +85,13 @@ fun Route.healthCheckRoutes() = katalystRouting {
                     ),
                     lifecycle = mapOf(
                         "bootstrap.totalMs" to lifecycle.totalBootstrapTimeMs.toString(),
+                        // Match on the public lifecycleRef strings exposed by LifecycleStatusReport.
                         "lifecycle.ktorStartup" to lifecycle.lifecycles
-                            .firstOrNull { it.lifecycleRef == BootstrapLifecycle.KTOR_ENGINE_STARTUP.lifecycleRef }
+                            .firstOrNull { it.lifecycleRef == "LIFECYCLE_KTOR_ENGINE_STARTUP" }
                             ?.status
                             .orEmpty(),
                         "lifecycle.runtimeReady" to lifecycle.lifecycles
-                            .firstOrNull { it.lifecycleRef == BootstrapLifecycle.RUNTIME_READY_INITIALIZERS.lifecycleRef }
+                            .firstOrNull { it.lifecycleRef == "LIFECYCLE_RUNTIME_READY_INITIALIZERS" }
                             ?.status
                             .orEmpty(),
                         "warnings.critical" to lifecycle.warningCounts.critical.toString(),

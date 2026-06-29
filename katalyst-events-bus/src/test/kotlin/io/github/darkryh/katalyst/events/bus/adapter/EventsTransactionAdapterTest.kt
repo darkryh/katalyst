@@ -8,7 +8,7 @@ import io.github.darkryh.katalyst.events.bus.EventHandlerConfig
 import io.github.darkryh.katalyst.events.bus.EventHandlingMode
 import io.github.darkryh.katalyst.events.bus.deduplication.EventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.validation.DefaultEventPublishingValidator
-import io.github.darkryh.katalyst.events.bus.validation.EventValidationException
+import io.github.darkryh.katalyst.events.bus.validation.EventPublishingException
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import kotlinx.coroutines.test.runTest
@@ -125,7 +125,7 @@ class EventsTransactionAdapterTest {
     }
 
     @Test
-    @DisplayName("Should throw EventValidationException on validation failure")
+    @DisplayName("Should throw EventPublishingException on validation failure")
     fun testThrowOnValidationFailure() = runTest {
         // Arrange
         val event = TestEvent()
@@ -137,8 +137,8 @@ class EventsTransactionAdapterTest {
         // Act & Assert
         try {
             strictAdapter.onPhase(TransactionPhase.BEFORE_COMMIT_VALIDATION, context.asTransactionEventContext())
-            fail("Should have thrown EventValidationException")
-        } catch (e: EventValidationException) {
+            fail("Should have thrown EventPublishingException")
+        } catch (e: EventPublishingException) {
             assertTrue(e.message!!.contains("validation", ignoreCase = true))
         }
     }
@@ -421,7 +421,7 @@ class EventsTransactionAdapterTest {
             // Validation happens in BEFORE_COMMIT_VALIDATION phase
             strictAdapter.onPhase(TransactionPhase.BEFORE_COMMIT_VALIDATION, context.asTransactionEventContext())
             fail("Should have thrown during validation")
-        } catch (e: EventValidationException) {
+        } catch (e: EventPublishingException) {
             // Expected - validation failed before any publish attempt
             assertEquals(0, eventBus.publishedEvents.size)
         }

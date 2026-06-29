@@ -7,6 +7,16 @@
 
     <!-- Shown on the Marketplace listing and in the IDE's plugin update dialog. -->
     <change-notes><![CDATA[
+        <b>0.2.2</b>
+        <ul>
+            <li>Scheduler: cron validation and inline English descriptions now recognize mixed
+                named and positional arguments.</li>
+            <li>Scheduler: cron hints stay available for <code>ScheduleConfig(...)</code> based jobs,
+                <code>CronExpression("...")</code> wrappers, named <code>expression = ...</code>
+                arguments, and trailing-comma call layouts.</li>
+            <li>Scheduler: duplicate job-name validation now also reads
+                <code>ScheduleConfig(taskName = "...")</code>.</li>
+        </ul>
         <b>0.2.0</b>
         <ul>
             <li>Scheduler: cron expressions are now shown in plain English inline
