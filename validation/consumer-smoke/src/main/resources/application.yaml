@@ -1,0 +1,11 @@
+ktor:
+  deployment:
+    host: ${SERVER_HOST:0.0.0.0}
+    port: ${SERVER_PORT:8099}
+
+# In-memory H2 so the app boots on a real engine via `./gradlew run` with no external database.
+database:
+  url: ${DB_URL:jdbc:h2:mem:smoke;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}
+  driver: ${DB_DRIVER:org.h2.Driver}
+  username: ${DB_USERNAME:sa}
+  password: ${DB_PASSWORD:}

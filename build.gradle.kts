@@ -21,6 +21,8 @@ apiValidation {
     // Exclude non-published / test-helper / sample modules from the public API surface.
     ignoredProjects += listOf(
         "memory-validation",
+        // The terminal-UI inspector is a runnable application, not a published library.
+        "katalyst-tui",
         "katalyst-testing-core",
         "katalyst-testing-ktor",
         "katalyst-starter-test",
@@ -31,6 +33,10 @@ apiValidation {
         "katalyst-starter-migrations",
         "katalyst-starter-scheduler",
         "katalyst-starter-websockets",
+        "katalyst-starter-engine-netty",
+        "katalyst-starter-engine-jetty",
+        "katalyst-starter-engine-cio",
+        "katalyst-gradle-plugin",
     )
 }
 
@@ -47,6 +53,20 @@ val starterBoundaries = mapOf(
     ":katalyst-starter-migrations" to setOf("katalyst-scheduler", "katalyst-websockets"),
     ":katalyst-starter-scheduler" to setOf("katalyst-migrations", "katalyst-websockets"),
     ":katalyst-starter-websockets" to setOf("katalyst-migrations", "katalyst-scheduler"),
+    // Engine starters must carry exactly one engine — neither the other two Ktor engine
+    // artifacts nor any optional feature module may leak in.
+    ":katalyst-starter-engine-netty" to setOf(
+        "ktor-server-jetty-jakarta-jvm", "ktor-server-cio-jvm",
+        "katalyst-migrations", "katalyst-scheduler", "katalyst-websockets",
+    ),
+    ":katalyst-starter-engine-jetty" to setOf(
+        "ktor-server-netty-jvm", "ktor-server-cio-jvm",
+        "katalyst-migrations", "katalyst-scheduler", "katalyst-websockets",
+    ),
+    ":katalyst-starter-engine-cio" to setOf(
+        "ktor-server-netty-jvm", "ktor-server-jetty-jakarta-jvm",
+        "katalyst-migrations", "katalyst-scheduler", "katalyst-websockets",
+    ),
 )
 
 val starterBoundaryChecks = starterBoundaries.map { (projectPath, forbiddenModules) ->

@@ -7,6 +7,12 @@ dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
+        // The Dispatch terminal-UI framework (io.github.darkryh:dispatch-*) is consumed by
+        // katalyst-tui from the local Maven repo where it is published.
+        mavenLocal()
+        // Dispatch runs on the Compose runtime, which pulls androidx.compose.*/androidx.savedstate.*
+        // transitive artifacts hosted on Google's Maven repository.
+        google()
     }
 }
 
@@ -58,6 +64,12 @@ include(":katalyst-transactions")
 // Semantic analysis layer consumed by Gradle tooling, CLIs, tests and the IDE plugin
 include(":katalyst-analysis")
 
+// Observability: bounded in-process telemetry capture + the terminal-UI inspector that reads it.
+// -model is the zero-dependency wire contract shared by the backend feature and the TUI.
+include(":katalyst-telemetry-model")
+include(":katalyst-telemetry")
+include(":katalyst-tui")
+
 include(":katalyst-testing-core")
 include(":katalyst-testing-ktor")
 include(":katalyst-bom")
@@ -68,6 +80,9 @@ include(":katalyst-starter-migrations")
 include(":katalyst-starter-scheduler")
 include(":katalyst-starter-websockets")
 include(":katalyst-starter-test")
+include(":katalyst-starter-engine-netty")
+include(":katalyst-starter-engine-jetty")
+include(":katalyst-starter-engine-cio")
 
 listOf(
     "katalyst-starter-core",
@@ -77,6 +92,9 @@ listOf(
     "katalyst-starter-scheduler",
     "katalyst-starter-websockets",
     "katalyst-starter-test",
+    "katalyst-starter-engine-netty",
+    "katalyst-starter-engine-jetty",
+    "katalyst-starter-engine-cio",
 ).forEach { starter ->
     project(":$starter").projectDir = file("starter/$starter")
 }
@@ -85,3 +103,7 @@ include(":katalyst-ktor-engine-netty")
 include(":katalyst-ktor-engine-jetty")
 include(":katalyst-ktor-engine-cio")
 include(":memory-validation")
+
+// Consumer-facing Gradle plugin (id "io.github.darkryh.katalyst"). Applies kotlin.jvm +
+// serialization + application so consumer builds never wire third-party plugins themselves.
+include(":katalyst-gradle-plugin")
