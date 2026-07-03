@@ -1,0 +1,74 @@
+name: Release IntelliJ plugin
+
+# Publishes katalyst-intellij-plugin to the JetBrains Marketplace.
+#
+# Ships ONLY on an explicit plugin release, never on unrelated framework changes:
+#   - push a tag matching `plugin-v*` (e.g. plugin-v0.1.0) — the tag drives the published version.
+#   - or trigger manually (workflow_dispatch) with an explicit version.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   PUBLISH_TOKEN      JetBrains Marketplace permanent token (plugins.jetbrains.com/author/me/tokens)
+#   CERTIFICATE_CHAIN  PEM content of the signing certificate chain
+#   PRIVATE_KEY        PEM content of the (unencrypted) signing private key
+on:
+  push:
+    tags:
+      - "plugin-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version to publish (e.g. 0.1.0)"
+        required: true
+      channel:
+        description: "Marketplace channel (default | beta | eap)"
+        required: false
+        default: "default"
+
+concurrency:
+  group: release-plugin-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, sign & publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: katalyst-intellij-plugin
+    env:
+      # From the tag (plugin-v0.1.0 -> 0.1.0) or the manual input. build.gradle.kts strips the prefix.
+      PLUGIN_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Build + test first so a compile/test/packaging failure is caught before we touch the Marketplace.
+      - name: Build & test plugin
+        run: ./gradlew buildPlugin test --stacktrace
+
+      # Signs with the certificate/key from secrets, then uploads to the Marketplace.
+      - name: Sign & publish
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          PUBLISH_CHANNEL: ${{ github.event.inputs.channel || 'default' }}
+        run: ./gradlew publishPlugin --stacktrace
+
+      - name: Upload built plugin artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katalyst-intellij-plugin
+          path: katalyst-intellij-plugin/build/distributions/*.zip
+          if-no-files-found: warn

@@ -22,10 +22,13 @@ object PluginConventions {
     const val EVENT_HANDLER = "io.github.darkryh.katalyst.events.EventHandler"
     const val KTOR_MODULE = "io.github.darkryh.katalyst.ktor.KtorModule"
     const val KATALYST_MIGRATION = "io.github.darkryh.katalyst.migrations.KatalystMigration"
-    const val APPLICATION_INITIALIZER = "io.github.darkryh.katalyst.di.lifecycle.ApplicationInitializer"
-    const val APPLICATION_READY_INITIALIZER = "io.github.darkryh.katalyst.di.lifecycle.ApplicationReadyInitializer"
-    const val AUTOMATIC_SERVICE_CONFIG_LOADER = "io.github.darkryh.katalyst.config.provider.AutomaticServiceConfigLoader"
+    const val APPLICATION_INITIALIZER = "io.github.darkryh.katalyst.di.lifecycle.StartupHook"
+    const val APPLICATION_READY_INITIALIZER = "io.github.darkryh.katalyst.di.lifecycle.ReadyHook"
+    const val CONFIG_BINDING = "io.github.darkryh.katalyst.config.provider.ConfigBinding"
     const val SCHEDULER_JOB_HANDLE = "io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle"
+
+    /** Marker annotation (applied to a plain class), recognised in addition to [markerInterfaces]. */
+    const val CONFIG_PREFIX = "io.github.darkryh.katalyst.config.provider.ConfigPrefix"
 
     /** Marker interfaces whose implementations are Katalyst-managed (never "unused"). */
     val markerInterfaces: List<String> = listOf(
@@ -38,7 +41,12 @@ object PluginConventions {
         KATALYST_MIGRATION,
         APPLICATION_INITIALIZER,
         APPLICATION_READY_INITIALIZER,
-        AUTOMATIC_SERVICE_CONFIG_LOADER,
+        CONFIG_BINDING,
+    )
+
+    /** Marker annotations whose presence makes a class Katalyst-managed (never "unused"). */
+    val markerAnnotations: Set<String> = setOf(
+        CONFIG_PREFIX,
     )
 
     const val DSL_ROUTING = "katalystRouting"

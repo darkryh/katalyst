@@ -1,0 +1,77 @@
+name: Plugin CI
+
+# Validates katalyst-intellij-plugin, but ONLY when plugin-related code changes — so unrelated
+# framework commits don't pay the cost of downloading the IntelliJ Platform SDK, and a plugin change
+# is always built/verified before it can be released.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "katalyst-intellij-plugin/**"
+      - "katalyst-conventions/**"        # the plugin mirrors these discovery constants
+      - ".github/workflows/plugin-ci.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "katalyst-intellij-plugin/**"
+      - "katalyst-conventions/**"
+      - ".github/workflows/plugin-ci.yml"
+
+concurrency:
+  group: plugin-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, test & verify plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: katalyst-intellij-plugin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Compiles the plugin and assembles the distributable ZIP; fails the check on any error.
+      - name: Build plugin
+        run: ./gradlew buildPlugin --stacktrace
+
+      # Recognition regression tests: expression-body DSL detection, the light-element unwrap that
+      # drives "never used" suppression, DSL classification, and the signature inspection.
+      - name: Run tests
+        run: ./gradlew test --stacktrace
+
+      # Structural validation of plugin.xml and the distribution layout.
+      - name: Verify plugin structure
+        run: ./gradlew verifyPluginStructure --stacktrace
+
+      # Full IntelliJ Plugin Verifier against recommended IDEs — catches K2/API-compatibility
+      # regressions before a release can ship. Downloads IDE builds, so it is the slow step.
+      - name: Verify plugin (K2 / API compatibility)
+        run: ./gradlew verifyPlugin --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-test-reports
+          path: katalyst-intellij-plugin/build/reports/tests/
+          if-no-files-found: warn
+
+      - name: Upload built plugin artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katalyst-intellij-plugin-ci
+          path: katalyst-intellij-plugin/build/distributions/*.zip
+          if-no-files-found: warn

@@ -21,8 +21,8 @@ enum class EntrypointKind(val label: String) {
     TABLE("Katalyst table"),
     EVENT_HANDLER("Katalyst event handler"),
     MIGRATION("Katalyst migration"),
-    INITIALIZER("Katalyst application initializer"),
-    CONFIG_LOADER("Katalyst config loader"),
+    INITIALIZER("Katalyst startup/ready hook"),
+    CONFIG_BINDING("Katalyst config"),
     KTOR_MODULE("Katalyst Ktor module"),
     ROUTE("Katalyst route"),
     MIDDLEWARE("Katalyst middleware"),
@@ -45,10 +45,14 @@ object KatalystPsi {
     fun classKind(klass: KtClassOrObject): EntrypointKind? {
         if (klass.isAbstractOrInterface()) return null
         val light: PsiClass = runCatching { klass.toLightClass() }.getOrNull() ?: return null
-        val marker = PluginConventions.markerInterfaces.firstOrNull { fqn ->
+        PluginConventions.markerInterfaces.firstOrNull { fqn ->
             runCatching { InheritanceUtil.isInheritor(light, fqn) }.getOrDefault(false)
-        } ?: return null
-        return markerKind(marker)
+        }?.let { return markerKind(it) }
+        // Annotation-driven entrypoints (e.g. an @ConfigPrefix config class with no marker interface).
+        PluginConventions.markerAnnotations.firstOrNull { fqn ->
+            runCatching { light.hasAnnotation(fqn) }.getOrDefault(false)
+        }?.let { return annotationKind(it) }
+        return null
     }
 
     /** The entrypoint kind for a top-level function, or null if it is not a Katalyst entrypoint. */
@@ -105,8 +109,13 @@ object KatalystPsi {
         PluginConventions.KATALYST_MIGRATION -> EntrypointKind.MIGRATION
         PluginConventions.APPLICATION_INITIALIZER,
         PluginConventions.APPLICATION_READY_INITIALIZER -> EntrypointKind.INITIALIZER
-        PluginConventions.AUTOMATIC_SERVICE_CONFIG_LOADER -> EntrypointKind.CONFIG_LOADER
+        PluginConventions.CONFIG_BINDING -> EntrypointKind.CONFIG_BINDING
         PluginConventions.KTOR_MODULE -> EntrypointKind.KTOR_MODULE
+        else -> EntrypointKind.COMPONENT
+    }
+
+    private fun annotationKind(markerAnnotationFqn: String): EntrypointKind = when (markerAnnotationFqn) {
+        PluginConventions.CONFIG_PREFIX -> EntrypointKind.CONFIG_BINDING
         else -> EntrypointKind.COMPONENT
     }
 

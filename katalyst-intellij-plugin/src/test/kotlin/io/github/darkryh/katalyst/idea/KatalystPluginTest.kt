@@ -7,6 +7,7 @@ import io.github.darkryh.katalyst.idea.psi.EntrypointKind
 import io.github.darkryh.katalyst.idea.psi.KatalystPsi
 import io.github.darkryh.katalyst.idea.usage.KatalystImplicitUsageProvider
 import org.jetbrains.kotlin.asJava.toLightMethods
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
@@ -27,6 +28,41 @@ class KatalystPluginTest : BasePlatformTestCase() {
     private fun functionNamed(code: String, name: String): KtNamedFunction {
         val file = myFixture.configureByText("Sample.kt", code) as KtFile
         return PsiTreeUtil.findChildrenOfType(file, KtNamedFunction::class.java).first { it.name == name }
+    }
+
+    private fun classNamed(code: String, name: String): KtClassOrObject {
+        val file = myFixture.configureByText("Sample.kt", code) as KtFile
+        return PsiTreeUtil.findChildrenOfType(file, KtClassOrObject::class.java).first { it.name == name }
+    }
+
+    // --- Class recognition (marker interface + marker annotation; needs the FQNs to resolve) ---
+
+    fun testStartupHookImplementationIsRecognized() {
+        myFixture.addFileToProject(
+            "StartupHook.kt",
+            "package io.github.darkryh.katalyst.di.lifecycle\n\ninterface StartupHook",
+        )
+        val klass = classNamed(
+            "class BootHook : io.github.darkryh.katalyst.di.lifecycle.StartupHook",
+            "BootHook",
+        )
+        assertEquals(EntrypointKind.INITIALIZER, KatalystPsi.classKind(klass))
+    }
+
+    fun testConfigPrefixAnnotatedClassIsRecognized() {
+        myFixture.addFileToProject(
+            "ConfigPrefix.kt",
+            "package io.github.darkryh.katalyst.config.provider\n\nannotation class ConfigPrefix(val value: String)",
+        )
+        val klass = classNamed(
+            """
+            import io.github.darkryh.katalyst.config.provider.ConfigPrefix
+            @ConfigPrefix("mail")
+            data class MailConfig(val host: String)
+            """.trimIndent(),
+            "MailConfig",
+        )
+        assertEquals(EntrypointKind.CONFIG_BINDING, KatalystPsi.classKind(klass))
     }
 
     // --- DSL detection (expression-body regression) ---
