@@ -52,6 +52,7 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
     private val initializer = marker(KatalystConventions.APPLICATION_INITIALIZER)
     private val readyInitializer = marker(KatalystConventions.APPLICATION_READY_INITIALIZER)
     private val configBinding = marker(KatalystConventions.CONFIG_BINDING)
+    private val configPrefix = marker(KatalystConventions.CONFIG_PREFIX)
     private val schedulerHandle = marker(KatalystConventions.SCHEDULER_JOB_HANDLE)
     private val ktorApplication = marker(KatalystConventions.KTOR_APPLICATION)
     private val ktorRoute = marker(KatalystConventions.KTOR_ROUTE)
@@ -102,6 +103,18 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
                         symbol(clazz, KatalystNodeKind.CONFIG_LOADER),
                         markerReason(KatalystConventions.CONFIG_BINDING),
                         // A ConfigBinding implementor is registered by its own type.
+                        configType = clazz.name,
+                    )
+
+                isAnnotatedWith(clazz, configPrefix) ->
+                    configLoaders += ConfigLoaderNode(
+                        symbol(clazz, KatalystNodeKind.CONFIG_LOADER),
+                        DiscoveryReason(
+                            DiscoveryRule.ANNOTATED_MARKER,
+                            "Annotated with @${KatalystConventions.CONFIG_PREFIX.substringAfterLast('.')}",
+                            KatalystConventions.CONFIG_PREFIX,
+                        ),
+                        // An @ConfigPrefix class is bound reflectively by its own type.
                         configType = clazz.name,
                     )
 
@@ -296,6 +309,11 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
 
     private fun implementsMarker(clazz: Class<*>, marker: Class<*>?): Boolean =
         marker != null && marker.isAssignableFrom(clazz)
+
+    @Suppress("UNCHECKED_CAST")
+    private fun isAnnotatedWith(clazz: Class<*>, annotation: Class<*>?): Boolean =
+        annotation != null && annotation.isAnnotation &&
+            clazz.isAnnotationPresent(annotation as Class<out Annotation>)
 
     private fun isInstantiable(clazz: Class<*>): Boolean =
         !clazz.isInterface && !Modifier.isAbstract(clazz.modifiers)

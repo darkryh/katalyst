@@ -298,6 +298,7 @@ public final class io/github/darkryh/katalyst/analysis/model/DiscoveryReason {
 }
 
 public final class io/github/darkryh/katalyst/analysis/model/DiscoveryRule : java/lang/Enum {
+	public static final field ANNOTATED_MARKER Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
 	public static final field CALLS_ROUTING_DSL Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
 	public static final field DUAL_BOUND_TABLE Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;
 	public static final field IMPLEMENTS_MARKER Lio/github/darkryh/katalyst/analysis/model/DiscoveryRule;

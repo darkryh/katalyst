@@ -41,6 +41,9 @@ enum class DiscoveryRule {
 
     /** A class that extends Exposed's Table and also implements the Katalyst Table marker. */
     DUAL_BOUND_TABLE,
+
+    /** A class carrying a Katalyst marker annotation (e.g. @ConfigPrefix). */
+    ANNOTATED_MARKER,
 }
 
 /**

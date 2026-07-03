@@ -1,6 +1,7 @@
 package io.github.darkryh.katalyst.analysis.fixtures.app
 
 import io.github.darkryh.katalyst.config.provider.ConfigBinding
+import io.github.darkryh.katalyst.config.provider.ConfigPrefix
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.core.config.ConfigProvider
@@ -74,6 +75,14 @@ class V1AddGreeting : KatalystMigration {
 class GreetingConfig(provider: ConfigProvider) : ConfigBinding {
     val prefix: String = provider.getString("greeting.prefix", "hello")
 }
+
+// Annotation-driven config: the common path — a plain data class with no interface, bound
+// reflectively by the runtime's ConfigBinder. Discovered via the @ConfigPrefix marker annotation.
+@ConfigPrefix("mail")
+data class MailConfig(
+    val host: String,
+    val port: Int,
+)
 
 class GreetingInitializer : StartupHook {
     override val id: String = "greeting-initializer"

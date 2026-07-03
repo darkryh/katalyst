@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.analysis
 import io.github.darkryh.katalyst.analysis.export.KatalystGraphJson
 import io.github.darkryh.katalyst.analysis.fixtures.app.GreetingService
 import io.github.darkryh.katalyst.analysis.model.DiagnosticKind
+import io.github.darkryh.katalyst.analysis.model.DiscoveryRule
 import io.github.darkryh.katalyst.analysis.model.DiagnosticSeverity
 import io.github.darkryh.katalyst.analysis.model.KatalystApplicationGraph
 import java.io.File
@@ -40,7 +41,8 @@ class KatalystAnalyzerTest {
         assertEquals(setOf("GreetingsTable"), simpleNames(graph.tables.map { it.symbol.fqName }))
         assertEquals(setOf("GreetingCreatedHandler"), simpleNames(graph.eventHandlers.map { it.symbol.fqName }))
         assertEquals(setOf("V1AddGreeting"), simpleNames(graph.migrations.map { it.symbol.fqName }))
-        assertEquals(setOf("GreetingConfig"), simpleNames(graph.configLoaders.map { it.symbol.fqName }))
+        // Both config discovery paths: the ConfigBinding interface and the @ConfigPrefix annotation.
+        assertEquals(setOf("GreetingConfig", "MailConfig"), simpleNames(graph.configLoaders.map { it.symbol.fqName }))
         assertEquals(setOf("GreetingInitializer"), simpleNames(graph.initializers.map { it.symbol.fqName }))
     }
 
@@ -65,7 +67,10 @@ class KatalystAnalyzerTest {
 
         assertEquals("Greeting", graph.repositories.single().entityType?.substringAfterLast('.'))
         assertEquals("GreetingCreatedEvent", graph.eventHandlers.single().eventType?.substringAfterLast('.'))
-        assertEquals("GreetingConfig", graph.configLoaders.single().configType?.substringAfterLast('.'))
+        // @ConfigPrefix class is discovered via the annotation rule and registered by its own type.
+        val mailConfig = graph.configLoaders.single { it.symbol.simpleName == "MailConfig" }
+        assertEquals(DiscoveryRule.ANNOTATED_MARKER, mailConfig.reason.rule)
+        assertEquals("MailConfig", mailConfig.configType?.substringAfterLast('.'))
         assertEquals(listOf("scheduleDigest"), graph.schedulers.map { it.symbol.simpleName })
     }
 

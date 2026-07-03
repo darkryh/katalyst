@@ -50,6 +50,15 @@ object KatalystConventions {
         "io.github.darkryh.katalyst.config.provider.ConfigBinding"
 
     /**
+     * Annotation marking an automatically-bound configuration class. Unlike [CONFIG_BINDING]
+     * (an interface), `@ConfigPrefix` is applied to a plain data class that the runtime's
+     * `ConfigBinder` discovers and binds reflectively — it is the common configuration path, so a
+     * class carrying it is Katalyst-managed and must never be reported as "unused".
+     */
+    const val CONFIG_PREFIX: String =
+        "io.github.darkryh.katalyst.config.provider.ConfigPrefix"
+
+    /**
      * A method returning this type (on a discovered [SERVICE]) is a scheduler entrypoint.
      * See `katalyst-scheduler`'s `SchedulerInitializer.discoverCandidateMethods`.
      */
@@ -86,6 +95,14 @@ object KatalystConventions {
         APPLICATION_INITIALIZER,
         APPLICATION_READY_INITIALIZER,
         CONFIG_BINDING,
+    )
+
+    /**
+     * Marker annotations whose presence on a concrete class makes it Katalyst-managed (and so it
+     * must never be reported as "unused"), recognised in addition to [markerInterfaces].
+     */
+    val markerAnnotations: Set<String> = setOf(
+        CONFIG_PREFIX,
     )
 
     // ---------------------------------------------------------------------------------
