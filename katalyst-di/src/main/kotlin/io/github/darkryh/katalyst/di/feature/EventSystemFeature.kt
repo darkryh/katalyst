@@ -9,6 +9,7 @@ import io.github.darkryh.katalyst.events.bus.EventTopology
 import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
 import io.github.darkryh.katalyst.events.bus.InMemoryEventHandlerRegistry
 import io.github.darkryh.katalyst.events.bus.TransactionAwareEventBus
+import io.github.darkryh.katalyst.events.bus.telemetry.TelemetryEventBusInterceptor
 import org.slf4j.LoggerFactory
 
 /**
@@ -24,7 +25,11 @@ class EventSystemFeature : KatalystFeature {
         logger.info("Loading local event system feature")
         return listOf(
             katalystBeanModule {
-                single<ApplicationEventBus> { ApplicationEventBus() }
+                single<ApplicationEventBus> {
+                    // Always-on telemetry interceptor: captures the publish firehose (per-type counts,
+                    // handler success/failure, dead events) with zero user setup. Observation-only.
+                    ApplicationEventBus(interceptors = listOf(TelemetryEventBusInterceptor))
+                }
                 single<EventBus> { TransactionAwareEventBus(get()) }
                 single<EventHandlerRegistry> { InMemoryEventHandlerRegistry() }
                 single<EventTopology> { EventTopology(get(), get()) }

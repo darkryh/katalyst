@@ -1,0 +1,218 @@
+public final class io/github/darkryh/katalyst/telemetry/TelemetryConfig {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/TelemetryConfig$Companion;
+	public static final field DEFAULT_HOST Ljava/lang/String;
+	public static final field DEFAULT_MEMORY_BUDGET_BYTES J
+	public fun <init> (ZLjava/lang/String;IJZZ)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun copy (ZLjava/lang/String;IJZZ)Lio/github/darkryh/katalyst/telemetry/TelemetryConfig;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/TelemetryConfig;ZLjava/lang/String;IJZZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/TelemetryConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getMemoryBudgetBytes ()J
+	public final fun getPort ()I
+	public final fun getQuiet ()Z
+	public final fun getSnapshotSpillEnabled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/TelemetryConfig$Companion {
+	public final fun fromEnvironment ()Lio/github/darkryh/katalyst/telemetry/TelemetryConfig;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/TelemetryFeature : io/github/darkryh/katalyst/di/feature/KatalystFeature {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/TelemetryFeature;
+	public fun getId ()Ljava/lang/String;
+	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun provideBeanModules ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/BootCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/ConfigCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/EventsCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/HttpCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/MigrationCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/PersistenceCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/SchedulerCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public abstract interface class io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/TransactionCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/WebSocketCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/capture/WiringCapturer : io/github/darkryh/katalyst/telemetry/capture/SubsystemCapturer {
+	public fun <init> ()V
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/BoundedCardinalityMap {
+	public fun <init> (ILjava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (ILjava/lang/String;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public final fun get (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun getMaxKeys ()I
+	public final fun getOverflowKey ()Ljava/lang/String;
+	public final fun hasOverflowed ()Z
+	public final fun keyCount ()I
+	public final fun snapshot ()Ljava/util/Map;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/JvmMemorySampler {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/store/JvmMemorySampler;
+	public final fun sample ()Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/LatencyHistogram {
+	public fun <init> ()V
+	public fun <init> (IDD)V
+	public synthetic fun <init> (IDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun count ()J
+	public final fun max ()D
+	public final fun mean ()D
+	public final fun p50 ()D
+	public final fun p95 ()D
+	public final fun p99 ()D
+	public final fun percentile (D)D
+	public final fun record (D)V
+	public final fun record (J)V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/RingBuffer {
+	public fun <init> (I)V
+	public final fun add (Ljava/lang/Object;)V
+	public final fun clear ()V
+	public final fun droppedCount ()J
+	public final fun getCapacity ()I
+	public final fun latest (I)Ljava/util/List;
+	public final fun size ()I
+	public final fun snapshot ()Ljava/util/List;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/TelemetryIdentity {
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;J)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()J
+	public final fun copy (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;J)Lio/github/darkryh/katalyst/telemetry/store/TelemetryIdentity;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/store/TelemetryIdentity;Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/store/TelemetryIdentity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppName ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getKatalystVersion ()Ljava/lang/String;
+	public final fun getMemoryBudgetBytes ()J
+	public final fun getPid ()J
+	public final fun getPort ()I
+	public final fun getSnapshotPath ()Ljava/lang/String;
+	public final fun getStartedAtEpochMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/TelemetryStore {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore$Companion;
+	public fun <init> (Lio/github/darkryh/katalyst/telemetry/store/TelemetryIdentity;)V
+	public final fun getBootProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getConfigProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getEventsProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getHealthProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getHttpProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getMigrationProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getPersistenceProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getSchedulerProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getTransactionProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getWebSocketProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun getWiringProvider ()Lkotlin/jvm/functions/Function0;
+	public final fun ring (Ljava/lang/String;I)Lio/github/darkryh/katalyst/telemetry/store/RingBuffer;
+	public final fun setBootProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setConfigProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setEventsProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setHealthProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setHttpProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setMigrationProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setPersistenceProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setSchedulerProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setTransactionProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setWebSocketProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun setWiringProvider (Lkotlin/jvm/functions/Function0;)V
+	public final fun snapshot ()Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/store/TelemetryStore$Companion {
+	public final fun activate (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;)Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;
+	public final fun clearActive ()V
+	public final fun getActive ()Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/transport/RunDescriptorWriter {
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;J)V
+	public final fun markReady ()V
+	public final fun writeBooting ()V
+}
+
+public final class io/github/darkryh/katalyst/telemetry/transport/TelemetryServer {
+	public fun <init> (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;Ljava/lang/String;ILjava/lang/String;J)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/telemetry/store/TelemetryStore;Ljava/lang/String;ILjava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBoundPort ()I
+	public final fun start ()Ljava/lang/Integer;
+	public final fun stop ()V
+}
+

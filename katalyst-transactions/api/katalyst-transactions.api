@@ -525,6 +525,17 @@ public abstract interface class io/github/darkryh/katalyst/transactions/sideeffe
 	public abstract fun isTransient (Ljava/lang/Exception;)Z
 }
 
+public final class io/github/darkryh/katalyst/transactions/telemetry/TransactionTelemetry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/transactions/telemetry/TransactionTelemetry;
+	public final fun getCommitted ()Ljava/util/concurrent/atomic/AtomicLong;
+	public final fun getRolledBack ()Ljava/util/concurrent/atomic/AtomicLong;
+	public final fun getTimedOut ()Ljava/util/concurrent/atomic/AtomicLong;
+	public final fun percentiles ()Lkotlin/Triple;
+	public final fun recordCommit (J)V
+	public final fun recordRollback (J)V
+	public final fun recordTimeout (J)V
+}
+
 public final class io/github/darkryh/katalyst/transactions/workflow/ComposedWorkflow {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
 	public final fun execute (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

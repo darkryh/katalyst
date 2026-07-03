@@ -10,6 +10,7 @@ import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
+import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import kotlin.system.measureTimeMillis
 
 private const val STATUS_SUCCESS = "SUCCESS"
@@ -65,11 +66,13 @@ class MigrationRunner(
 
             logger.info("{} Starting migration (tags={}, blocking={})", context, migration.tags, migration.blocking)
 
+            MigrationTelemetry.begin(migration.id)
             val duration = try {
                 measureTimeMillis {
                     executeMigration(migration)
                 }
             } catch (error: Exception) {
+                MigrationTelemetry.recordFailure(migration.id, error.message)
                 logger.error("{} Migration failed: {}", context, error.message)
                 if (migration.blocking && options.stopOnFailure) {
                     throw error
@@ -81,6 +84,7 @@ class MigrationRunner(
             }
 
             recordSuccess(historyTable, migration, duration)
+            MigrationTelemetry.end()
             applied[migration.id] = AppliedMigration(migration.checksum)
             logger.info("{} Completed in {} ms", context, duration)
         }

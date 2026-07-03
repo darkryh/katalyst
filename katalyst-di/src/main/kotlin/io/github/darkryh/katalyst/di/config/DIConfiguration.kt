@@ -165,7 +165,7 @@ fun bootstrapKatalystContainer(
 
     modules += additionalModules
 
-    BootstrapProgress.startLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP)
+    BootstrapProgress.startLifecycle(BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP)
     val container = try {
         selectedBeanEngine.currentOrNull()?.also {
             logger.info("Loading Katalyst modules into existing bean container")
@@ -175,11 +175,11 @@ fun bootstrapKatalystContainer(
             selectedBeanEngine.start(modules, allowOverrides = allowOverrides)
         }
     } catch (e: Exception) {
-        BootstrapProgress.failLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP, e)
+        BootstrapProgress.failLifecycle(BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP, e)
         throw e
     }
     BootstrapProgress.completeLifecycle(
-        BootstrapLifecycle.KOIN_DI_BOOTSTRAP,
+        BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP,
         "Bean container ready with ${modules.size} module(s)"
     )
     KatalystContainerProvider.set(container)

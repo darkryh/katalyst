@@ -184,6 +184,18 @@ class KatalystApplicationBuilder(
         // Always include server configuration feature (part of DI module)
         loadOptionalFeature("io.github.darkryh.katalyst.di.feature.ServerConfigurationFeature")
             ?.also { features += it; logger.debug("Registered feature: {}", it.id) }
+
+        // Auto-attach the observability telemetry feature when katalyst-telemetry is on the classpath.
+        // Purely reflective (runCatching-guarded) so katalyst-di keeps NO compile edge to telemetry.
+        loadOptionalFeature("io.github.darkryh.katalyst.telemetry.TelemetryFeature")
+            ?.also { features += it; logger.debug("Registered feature: {}", it.id) }
+
+        // Auto-attach the embedded TUI inspector when katalyst-tui is on the classpath. Must come
+        // after TelemetryFeature: its bean-module pass starts the loopback transport and writes the
+        // BOOTING descriptor the TUI discovers. Real TTY -> the inspector takes the console at boot
+        // start (bootstrap progress view); no TTY -> a one-time how-to warning after boot.
+        loadOptionalFeature("io.github.darkryh.katalyst.tui.embedded.EmbeddedTuiFeature")
+            ?.also { features += it; logger.debug("Registered feature: {}", it.id) }
     }
 
     private fun loadOptionalFeature(className: String): KatalystFeature? =
@@ -347,6 +359,11 @@ class KatalystApplicationBuilder(
     internal fun configureApplication(application: Application) {
         logger.info("Configuring Ktor application with Katalyst modules")
 
+        // Always-on HTTP telemetry: a Monitoring-phase interceptor recording in-flight/throughput/
+        // status/latency for every request (a pure read-only side-channel). Installed first so it
+        // wraps the whole pipeline. Only active when katalyst-telemetry is present to read it.
+        io.github.darkryh.katalyst.ktor.telemetry.installKatalystHttpTelemetry(application)
+
         val container = KatalystContainerProvider.current()
 
         runCatching { container.getAll<Component>().size }
@@ -466,11 +483,13 @@ fun katalystApplication(
     val logger = LoggerFactory.getLogger("katalystApplication")
     val bootStart = System.nanoTime()
 
-    printKatalystBanner()
-
     val bootstrapArgs = BootstrapArgs.parse(args).also { it.applyProfileOverride() }
     BootstrapArgsHolder.set(bootstrapArgs)
+    // Constructing the builder loads optional features; a feature that takes over the console
+    // (the embedded TUI) claims the banner too, so print only after they have had that chance.
     val builder = KatalystApplicationBuilder(bootstrapArgs)
+
+    printKatalystBanner()
 
     try {
         logger.info("Starting Katalyst application")
@@ -487,7 +506,7 @@ fun katalystApplication(
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
             // PHASE 6: Ktor Engine Startup
-            BootstrapProgress.startLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP)
+            BootstrapProgress.startLifecycle(BootstrapLifecycle.HTTP_SERVER_STARTUP)
             logger.info(
                 "LIFECYCLE_RUNTIME_READY_INITIALIZERS pending: will execute on ServerReady"
             )
@@ -497,7 +516,7 @@ fun katalystApplication(
                 builder.configureApplication(wrappedApplication)
             }.onFailure { error ->
                 logger.error("Failed to configure Ktor application", error)
-                BootstrapProgress.failLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP, error)
+                BootstrapProgress.failLifecycle(BootstrapLifecycle.HTTP_SERVER_STARTUP, error)
                 throw error
             }
         }
@@ -506,7 +525,7 @@ fun katalystApplication(
             val elapsedSeconds = (System.nanoTime() - bootStart) / 1_000_000_000.0
             logger.info("Katalyst started in {} s (actual)", String.format("%.3f", elapsedSeconds))
 
-            BootstrapProgress.completeLifecycle(BootstrapLifecycle.KTOR_ENGINE_STARTUP, "Ktor server is listening")
+            BootstrapProgress.completeLifecycle(BootstrapLifecycle.HTTP_SERVER_STARTUP, "HTTP server is listening")
 
             val runtimeReadyResult = runCatching {
                 runRuntimeReadyInitializers()
@@ -551,6 +570,9 @@ fun katalystApplication(
 }
 
 private fun printKatalystBanner() {
+    // "false" means a console-owning feature (the embedded TUI) renders the banner itself —
+    // inside its bootstrap splash — so printing it here would just duplicate it in scrollback.
+    if (System.getProperty("katalyst.console.banner").equals("false", ignoreCase = true)) return
     val blue = "\u001B[94m"
     val reset = "\u001B[0m"
     val banner = """

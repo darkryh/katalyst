@@ -17,15 +17,15 @@ class LifecycleStatusReportTest {
     fun `snapshot includes lifecycle statuses and warning counters`() {
         BootstrapProgress.clear()
         StartupWarnings.clear()
-        BootstrapProgress.startLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP)
-        BootstrapProgress.completeLifecycle(BootstrapLifecycle.KOIN_DI_BOOTSTRAP, "bootstrapped")
+        BootstrapProgress.startLifecycle(BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP)
+        BootstrapProgress.completeLifecycle(BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP, "bootstrapped")
         StartupWarnings.add("scheduler", "none", StartupWarningsAggregator.WarningSeverity.INFO)
 
         val report = LifecycleStatusReport.snapshot()
 
         assertTrue(
             report.lifecycles.any {
-                it.lifecycleRef == BootstrapLifecycle.KOIN_DI_BOOTSTRAP.lifecycleRef &&
+                it.lifecycleRef == BootstrapLifecycle.BEAN_CONTAINER_BOOTSTRAP.lifecycleRef &&
                     it.status == "COMPLETED"
             }
         )

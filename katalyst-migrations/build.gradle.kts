@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.katalystCore)
     implementation(projects.katalystDi)
     implementation(projects.katalystPersistence)
 

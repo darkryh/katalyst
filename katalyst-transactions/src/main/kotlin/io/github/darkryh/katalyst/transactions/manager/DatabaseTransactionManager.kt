@@ -12,6 +12,7 @@ import io.github.darkryh.katalyst.transactions.context.TransactionScopeState
 import io.github.darkryh.katalyst.transactions.exception.DeadlockException
 import io.github.darkryh.katalyst.transactions.exception.TransactionFailedException
 import io.github.darkryh.katalyst.transactions.exception.TransactionTimeoutException
+import io.github.darkryh.katalyst.transactions.telemetry.TransactionTelemetry
 import io.github.darkryh.katalyst.transactions.exception.isTransient
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import io.github.darkryh.katalyst.transactions.workflow.CurrentWorkflowContext
@@ -219,6 +220,7 @@ class DatabaseTransactionManager(
         CurrentWorkflowContext.set(resolvedWorkflowId)
 
         try {
+            val txStart = System.currentTimeMillis()
             // Retry loop with backoff
             var lastException: Exception? = null
             val maxAttempts = activeConfig.retryPolicy.maxRetries + 1
@@ -234,7 +236,7 @@ class DatabaseTransactionManager(
 
                     // Use exception-based timeout detection so nullable transaction results
                     // are not misclassified as timeouts.
-                    return withContext(CurrentWorkflowContext.asContextElement(resolvedWorkflowId)) {
+                    val result = withContext(CurrentWorkflowContext.asContextElement(resolvedWorkflowId)) {
                         withTimeout(activeConfig.timeout) {
                             executeTransactionBlock(
                                 txId = resolvedWorkflowId,
@@ -245,6 +247,8 @@ class DatabaseTransactionManager(
                             )
                         }
                     }
+                    TransactionTelemetry.recordCommit(System.currentTimeMillis() - txStart)
+                    return result
                 } catch (e: TimeoutCancellationException) {
                     val timeoutException = TransactionTimeoutException(
                         message = "Transaction timeout after ${activeConfig.timeout}",
@@ -276,6 +280,7 @@ class DatabaseTransactionManager(
                             exception = timeoutException,
                             config = activeConfig
                         )
+                        TransactionTelemetry.recordTimeout(System.currentTimeMillis() - txStart)
                         throw timeoutException
                     }
                 } catch (e: Exception) {
@@ -302,12 +307,19 @@ class DatabaseTransactionManager(
                             exception = e,
                             config = activeConfig
                         )
+                        TransactionTelemetry.recordRollback(System.currentTimeMillis() - txStart)
                         throw e
                     }
                 }
             }
 
             // All retries exhausted
+            val exhaustedElapsed = System.currentTimeMillis() - txStart
+            if (lastException is TransactionTimeoutException) {
+                TransactionTelemetry.recordTimeout(exhaustedElapsed)
+            } else {
+                TransactionTelemetry.recordRollback(exhaustedElapsed)
+            }
             throw when (lastException) {
                 is TransactionTimeoutException -> lastException
                 else -> TransactionFailedException(

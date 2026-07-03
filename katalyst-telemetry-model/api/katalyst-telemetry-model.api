@@ -1,0 +1,1709 @@
+public final class io/github/darkryh/katalyst/telemetry/model/AdapterEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry$Companion;
+	public fun <init> (Ljava/lang/String;IZ)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;IZ)Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry;Ljava/lang/String;IZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCritical ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPriority ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/AdapterEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/AdapterEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/AdapterEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/AuditDistribution {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCounts ()Ljava/util/Map;
+	public final fun getTable ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/AuditDistribution$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/AuditDistribution;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/AuditDistribution$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/BootPhase {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/BootPhase$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/BootPhase;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/BootPhase;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/BootPhase;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()Ljava/lang/Long;
+	public final fun getEndedAtEpochMs ()Ljava/lang/Long;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRef ()Ljava/lang/String;
+	public final fun getStartedAtEpochMs ()Ljava/lang/Long;
+	public final fun getStatus ()Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/BootPhase$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/BootPhase$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/BootPhase;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/BootPhase;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/BootPhase$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/BootTimeline {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/BootTimeline$Companion;
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;III)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;III)Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;IIIILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActualWallClockMs ()Ljava/lang/Long;
+	public final fun getCriticalCount ()I
+	public final fun getElapsedInPhaseMs ()Ljava/lang/Long;
+	public final fun getInfoCount ()I
+	public final fun getPhases ()Ljava/util/List;
+	public final fun getRunningPhaseRef ()Ljava/lang/String;
+	public final fun getTotalBootstrapTimeMs ()Ljava/lang/Long;
+	public final fun getWarningCount ()I
+	public final fun getWarnings ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/BootTimeline$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/BootTimeline$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/BootTimeline$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ConfigEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getMasked ()Z
+	public final fun getMaskedValue ()Ljava/lang/String;
+	public final fun getProvenance ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/ConfigEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/ConfigEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ConfigEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ConfigSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ZLjava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/util/List;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ZLjava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ZLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveProfile ()Ljava/lang/String;
+	public final fun getBindingActive ()Z
+	public final fun getBindingErrors ()Ljava/util/List;
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getEnvLedger ()Ljava/util/List;
+	public final fun getFilesLoaded ()Ljava/util/Map;
+	public final fun getProfileSource ()Ljava/lang/String;
+	public final fun getRequiredKeys ()Ljava/util/List;
+	public final fun getTotalKeys ()I
+	public final fun getUnresolvedEnvVars ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/ConfigSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ConfigSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/DescriptorStatus : java/lang/Enum {
+	public static final field BOOTING Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus$Companion;
+	public static final field READY Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public static final field STOPPED Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public static final field STOPPING Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/DescriptorStatus$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;ILjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/Map;ILjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Ljava/util/Map;ILjava/util/List;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;Ljava/util/Map;ILjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEmptyDiscoveries ()Ljava/util/List;
+	public final fun getPerCategoryCounts ()Ljava/util/Map;
+	public final fun getScans ()Ljava/util/List;
+	public final fun getTotalTypes ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaskedValue ()Ljava/lang/String;
+	public final fun getOutcome ()Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public final fun getVariable ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EnvLedgerEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EnvOutcome : java/lang/Enum {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome$Companion;
+	public static final field FROM_ENV Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public static final field USED_DEFAULT Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public static final field USED_EMPTY Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/EnvOutcome;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EnvOutcome$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EventTypeStats {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats$Companion;
+	public fun <init> (Ljava/lang/String;JDD)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy (Ljava/lang/String;JDD)Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats;Ljava/lang/String;JDDILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getP50Ms ()D
+	public final fun getP95Ms ()D
+	public final fun getPublished ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/EventTypeStats$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/EventTypeStats;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EventTypeStats$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EventsSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;IZLjava/lang/String;JLjava/util/List;JJJJJJI)V
+	public synthetic fun <init> (Ljava/util/List;IZLjava/lang/String;JLjava/util/List;JJJJJJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component10 ()J
+	public final fun component11 ()J
+	public final fun component12 ()J
+	public final fun component13 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Ljava/util/List;IZLjava/lang/String;JLjava/util/List;JJJJJJI)Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;Ljava/util/List;IZLjava/lang/String;JLjava/util/List;JJJJJJIILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsyncFailures ()J
+	public final fun getDeadEvents ()J
+	public final fun getDedupStoreType ()Ljava/lang/String;
+	public final fun getDeduplicationDisabled ()Z
+	public final fun getDroppedEmits ()J
+	public final fun getHandlerCount ()I
+	public final fun getHandlersFailed ()J
+	public final fun getHandlersInvoked ()J
+	public final fun getHandlersSucceeded ()J
+	public final fun getPerType ()Ljava/util/List;
+	public final fun getSubscriberCount ()I
+	public final fun getSubscriptions ()Ljava/util/List;
+	public final fun getTotalPublished ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/EventsSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/EventsSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HealthLevel : java/lang/Enum {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/HealthLevel$Companion;
+	public static final field DEGRADED Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public static final field ERROR Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public static final field OK Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HealthLevel$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HealthSummary {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/HealthSummary$Companion;
+	public fun <init> (Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;ZLjava/lang/String;ZLjava/lang/String;IILio/github/darkryh/katalyst/telemetry/model/JvmMemory;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;ZLjava/lang/String;ZLjava/lang/String;IILio/github/darkryh/katalyst/telemetry/model/JvmMemory;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;ZLjava/lang/String;ZLjava/lang/String;IILio/github/darkryh/katalyst/telemetry/model/JvmMemory;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;ZLjava/lang/String;ZLjava/lang/String;IILio/github/darkryh/katalyst/telemetry/model/JvmMemory;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveEngineId ()Ljava/lang/String;
+	public final fun getBootComplete ()Z
+	public final fun getBootFailedPhase ()Ljava/lang/String;
+	public final fun getContainerReady ()Z
+	public final fun getCriticalCount ()I
+	public final fun getJvm ()Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+	public final fun getLevel ()Lio/github/darkryh/katalyst/telemetry/model/HealthLevel;
+	public final fun getNotes ()Ljava/util/List;
+	public final fun getWarningCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/HealthSummary$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/HealthSummary$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HealthSummary$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HttpSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Integer;ZZILjava/util/List;Ljava/util/List;Ljava/util/List;IJLjava/util/Map;JJLjava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Integer;ZZILjava/util/List;Ljava/util/List;Ljava/util/List;IJLjava/util/Map;JJLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component11 ()I
+	public final fun component12 ()J
+	public final fun component13 ()Ljava/util/Map;
+	public final fun component14 ()J
+	public final fun component15 ()J
+	public final fun component16 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()I
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Integer;ZZILjava/util/List;Ljava/util/List;Ljava/util/List;IJLjava/util/Map;JJLjava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Integer;ZZILjava/util/List;Ljava/util/List;Ljava/util/List;IJLjava/util/Map;JJLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAbortedByMiddleware ()J
+	public final fun getDroppedDuplicateModules ()Ljava/util/List;
+	public final fun getEngineId ()Ljava/lang/String;
+	public final fun getExceptionHandlerCount ()I
+	public final fun getExceptionsHandled ()J
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getInFlight ()I
+	public final fun getInstallPlan ()Ljava/util/List;
+	public final fun getPerRoute ()Ljava/util/List;
+	public final fun getPort ()I
+	public final fun getRoutes ()Ljava/util/List;
+	public final fun getSslPort ()Ljava/lang/Integer;
+	public final fun getStatusClassCounts ()Ljava/util/Map;
+	public final fun getStatusPagesInstalled ()Z
+	public final fun getTotalRequests ()J
+	public final fun getWebSocketsPluginInstalled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/HttpSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/HttpSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/InFlightTransaction {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJII)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJII)Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJIIILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgeMs ()J
+	public final fun getDeferredSideEffects ()I
+	public final fun getDepth ()I
+	public final fun getPendingEvents ()I
+	public final fun getScopeState ()Ljava/lang/String;
+	public final fun getTransactionId ()Ljava/lang/String;
+	public final fun getWorkflowId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/InFlightTransaction$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/InFlightTransaction;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/InFlightTransaction$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/JobEntry$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/JobKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;JJJJILjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;DDDZLjava/lang/Long;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/JobKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;JJJJILjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;DDDZLjava/lang/Long;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()J
+	public final fun component11 ()J
+	public final fun component12 ()I
+	public final fun component13 ()Ljava/lang/String;
+	public final fun component14 ()Ljava/lang/Long;
+	public final fun component15 ()Ljava/lang/Long;
+	public final fun component16 ()D
+	public final fun component17 ()D
+	public final fun component18 ()D
+	public final fun component19 ()Z
+	public final fun component2 ()Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public final fun component20 ()Ljava/lang/Long;
+	public final fun component21 ()Ljava/util/List;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun component7 ()Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/JobKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;JJJJILjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;DDDZLjava/lang/Long;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/JobEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/JobEntry;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/JobKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;JJJJILjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;DDDZLjava/lang/Long;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/JobEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveFailures ()I
+	public final fun getCurrentRunElapsedMs ()Ljava/lang/Long;
+	public final fun getCurrentlyRunning ()Z
+	public final fun getFailureCount ()J
+	public final fun getKind ()Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public final fun getLastDurationMs ()Ljava/lang/Long;
+	public final fun getLastOutcome ()Ljava/lang/String;
+	public final fun getLastRunEpochMs ()Ljava/lang/Long;
+	public final fun getLiveness ()Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public final fun getMaxMs ()D
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNextFireEpochMs ()Ljava/lang/Long;
+	public final fun getP50Ms ()D
+	public final fun getP95Ms ()D
+	public final fun getRecentRuns ()Ljava/util/List;
+	public final fun getRunCount ()J
+	public final fun getScheduleDescriptor ()Ljava/lang/String;
+	public final fun getSuccessCount ()J
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTimeZone ()Ljava/lang/String;
+	public final fun getTimeoutCount ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/JobEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/JobEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/JobEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/JobEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobKind : java/lang/Enum {
+	public static final field CRON Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/JobKind$Companion;
+	public static final field FIXED_DELAY Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static final field FIXED_RATE Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static final field ONE_TIME Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static final field UNKNOWN Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/JobKind;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobKind$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobLiveness : java/lang/Enum {
+	public static final field ACTIVE Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static final field CANCELLED Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static final field COMPLETED Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/JobLiveness$Companion;
+	public static final field UNKNOWN Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static final field WAITING_INITIAL_DELAY Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/JobLiveness;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobLiveness$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobRunEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry$Companion;
+	public fun <init> (JJLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (JJLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (JJLjava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry;JJLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getError ()Ljava/lang/String;
+	public final fun getOutcome ()Ljava/lang/String;
+	public final fun getStartedAtEpochMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/JobRunEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/JobRunEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JobRunEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JvmMemory {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/JvmMemory$Companion;
+	public fun <init> (JJJJJJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun copy (JJJJJJ)Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;JJJJJJILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGcCount ()J
+	public final fun getGcTimeMs ()J
+	public final fun getHeapCommittedBytes ()J
+	public final fun getHeapMaxBytes ()J
+	public final fun getHeapUsedBytes ()J
+	public final fun getNonHeapUsedBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/JvmMemory$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/JvmMemory$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/JvmMemory;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/JvmMemory$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/LiveRegistries {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries$Companion;
+	public fun <init> (ZLjava/lang/String;IIIIIILjava/util/List;)V
+	public synthetic fun <init> (ZLjava/lang/String;IIIIIILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (ZLjava/lang/String;IIIIIILjava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;ZLjava/lang/String;IIIIIILjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveEngineId ()Ljava/lang/String;
+	public final fun getBeanCount ()I
+	public final fun getContainerReady ()Z
+	public final fun getFeatures ()Ljava/util/List;
+	public final fun getKtorModuleCount ()I
+	public final fun getReadyHooks ()I
+	public final fun getServiceCount ()I
+	public final fun getStartupHooks ()I
+	public final fun getTableCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/LiveRegistries$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/LiveRegistries$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry$Companion;
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ZZ)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ZZ)Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/MigrationState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecksumCode ()Ljava/lang/String;
+	public final fun getChecksumDb ()Ljava/lang/String;
+	public final fun getChecksumDrift ()Z
+	public final fun getDurationMs ()Ljava/lang/Long;
+	public final fun getExecutedAtEpochMs ()Ljava/lang/Long;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getState ()Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public final fun getTransactional ()Z
+	public final fun getVersionKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/MigrationEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/MigrationEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;IZZ)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;IZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()I
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun copy (Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;IZZ)Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;IZZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getHistoryReadable ()Z
+	public final fun getRunAtStartup ()Z
+	public final fun getRunningElapsedMs ()Ljava/lang/Long;
+	public final fun getRunningId ()Ljava/lang/String;
+	public final fun getSchemaDriftStatements ()I
+	public final fun getTallies ()Ljava/util/Map;
+	public final fun getValidationErrors ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/MigrationSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationState : java/lang/Enum {
+	public static final field APPLIED Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static final field BASELINED Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/MigrationState$Companion;
+	public static final field FILTERED Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static final field PENDING Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static final field UNKNOWN_APPLIED Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/MigrationState;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/MigrationState$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IZ)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;IZ)Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry;Ljava/lang/String;Ljava/lang/String;IZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstalled ()Z
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getModule ()Ljava/lang/String;
+	public final fun getOrder ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ModuleInstallEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;ZJJJJJJJJJLjava/util/List;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;ZJJJJJJJJJLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;
+	public final fun component10 ()J
+	public final fun component11 ()J
+	public final fun component12 ()Ljava/util/List;
+	public final fun component2 ()Z
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;ZJJJJJJJJJLjava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;ZJJJJJJJJJLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAudit ()Ljava/util/List;
+	public final fun getDatabaseConfigured ()Z
+	public final fun getDeleteCount ()J
+	public final fun getFindByIdHits ()J
+	public final fun getFindByIdMisses ()J
+	public final fun getInsertBranch ()J
+	public final fun getMappingValidationFailures ()J
+	public final fun getPool ()Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;
+	public final fun getSaveCount ()J
+	public final fun getSqlFailures ()J
+	public final fun getUpdateBranch ()J
+	public final fun getUpdateToInsertFallback ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PhaseStatus : java/lang/Enum {
+	public static final field COMPLETED Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus$Companion;
+	public static final field FAILED Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static final field PENDING Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static final field RUNNING Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static final field SKIPPED Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/PhaseStatus;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PhaseStatus$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PoolSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (IIIIIIZIJJ)V
+	public synthetic fun <init> (IIIIIIZIJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()J
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()Z
+	public final fun component8 ()I
+	public final fun component9 ()J
+	public final fun copy (IIIIIIZIJJ)Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;IIIIIIZIJJILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActive ()I
+	public final fun getClosed ()Z
+	public final fun getConnectionTimeouts ()J
+	public final fun getHeadroom ()I
+	public final fun getIdle ()I
+	public final fun getLeakAlarms ()J
+	public final fun getLiveDataSourceCount ()I
+	public final fun getMaxPoolSize ()I
+	public final fun getMinIdle ()I
+	public final fun getPending ()I
+	public final fun getTotal ()I
+	public final fun getUtilization ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/PoolSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/PoolSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/PoolSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RequiredKey {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/RequiredKey$Companion;
+	public fun <init> (Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lio/github/darkryh/katalyst/telemetry/model/RequiredKey;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/RequiredKey;Ljava/lang/String;ZILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/RequiredKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getPresent ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/RequiredKey$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/RequiredKey$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/RequiredKey;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/RequiredKey;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RequiredKey$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RouteEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/RouteEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/RouteEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/RouteEntry;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/RouteEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/RouteEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/RouteEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/RouteEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/RouteEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RouteEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RouteStats {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/RouteStats$Companion;
+	public fun <init> (Ljava/lang/String;JDDD)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun copy (Ljava/lang/String;JDDD)Lio/github/darkryh/katalyst/telemetry/model/RouteStats;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/RouteStats;Ljava/lang/String;JDDDILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/RouteStats;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()J
+	public final fun getMaxMs ()D
+	public final fun getP50Ms ()D
+	public final fun getP95Ms ()D
+	public final fun getTemplate ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/RouteStats$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/RouteStats$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/RouteStats;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/RouteStats;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RouteStats$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RunDescriptor {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor$Companion;
+	public fun <init> (ILjava/lang/String;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JLio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;)V
+	public synthetic fun <init> (ILjava/lang/String;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JLio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()J
+	public final fun copy (ILjava/lang/String;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JLio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;)Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor;ILjava/lang/String;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JLio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppName ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getKatalystVersion ()Ljava/lang/String;
+	public final fun getPid ()J
+	public final fun getSchemaVersion ()I
+	public final fun getSnapshotPath ()Ljava/lang/String;
+	public final fun getStartedAtEpochMs ()J
+	public final fun getStatus ()Lio/github/darkryh/katalyst/telemetry/model/DescriptorStatus;
+	public final fun getTelemetryPort ()I
+	public final fun getWsToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/RunDescriptor$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/RunDescriptor;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/RunDescriptor$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ScanEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/ScanEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;JI)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;JIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()J
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/String;Ljava/util/List;JI)Lio/github/darkryh/katalyst/telemetry/model/ScanEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/ScanEntry;Ljava/lang/String;Ljava/util/List;JIILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/ScanEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaseType ()Ljava/lang/String;
+	public final fun getDurationMs ()J
+	public final fun getMatchCount ()I
+	public final fun getPackages ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/ScanEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/ScanEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/ScanEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/ScanEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ScanEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;IILjava/util/Map;II)V
+	public synthetic fun <init> (Ljava/util/List;IILjava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (Ljava/util/List;IILjava/util/Map;II)Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;Ljava/util/List;IILjava/util/Map;IIILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDiscoveredCount ()I
+	public final fun getDispatcherInFlight ()I
+	public final fun getDispatcherParallelism ()I
+	public final fun getJobs ()Ljava/util/List;
+	public final fun getRegisteredCount ()I
+	public final fun getRejectedCandidates ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/Severity : java/lang/Enum {
+	public static final field CRITICAL Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/Severity$Companion;
+	public static final field INFO Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public static final field WARNING Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public static fun values ()[Lio/github/darkryh/katalyst/telemetry/model/Severity;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/Severity$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/StartupWarning {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/StartupWarning$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/Severity;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/Severity;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/Severity;Ljava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/StartupWarning;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/StartupWarning;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/katalyst/telemetry/model/Severity;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/StartupWarning;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ljava/lang/String;
+	public final fun getHint ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSeverity ()Lio/github/darkryh/katalyst/telemetry/model/Severity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/StartupWarning$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/StartupWarning$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/StartupWarning;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/StartupWarning;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/StartupWarning$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/StreamMessage {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/StreamMessage$Companion;
+	public fun <init> (Ljava/lang/String;JJLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;JJLjava/lang/String;)Lio/github/darkryh/katalyst/telemetry/model/StreamMessage;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/StreamMessage;Ljava/lang/String;JJLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/StreamMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapturedAtEpochMs ()J
+	public final fun getPayloadJson ()Ljava/lang/String;
+	public final fun getSeq ()J
+	public final fun getStream ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/StreamMessage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/StreamMessage$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/StreamMessage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/StreamMessage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/StreamMessage$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/SubscriptionEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeadEventRisk ()Z
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getHandlers ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/SubscriptionEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/SubscriptionEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/SubscriptionEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TelemetryMeta {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta$Companion;
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JLjava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JLjava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/Map;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()J
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JLjava/util/Map;Ljava/util/Map;)Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;Ljava/lang/String;JLjava/lang/String;JLjava/lang/String;ILjava/lang/String;JLjava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppName ()Ljava/lang/String;
+	public final fun getDroppedRecords ()Ljava/util/Map;
+	public final fun getKatalystVersion ()Ljava/lang/String;
+	public final fun getMemoryBudgetBytes ()J
+	public final fun getPid ()J
+	public final fun getRingOccupancy ()Ljava/util/Map;
+	public final fun getSnapshotPath ()Ljava/lang/String;
+	public final fun getStartedAtEpochMs ()J
+	public final fun getTelemetryHost ()Ljava/lang/String;
+	public final fun getTelemetryPort ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/TelemetryMeta$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TelemetryMeta$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TelemetryProtocolKt {
+	public static final field TELEMETRY_SCHEMA_VERSION I
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot$Companion;
+	public fun <init> (IJLio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;)V
+	public synthetic fun <init> (IJLio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;
+	public final fun component11 ()Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;
+	public final fun component12 ()Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;
+	public final fun component13 ()Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;
+	public final fun component14 ()Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;
+	public final fun component2 ()J
+	public final fun component3 ()Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;
+	public final fun component4 ()Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;
+	public final fun component5 ()Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;
+	public final fun component6 ()Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;
+	public final fun component7 ()Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;
+	public final fun component8 ()Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;
+	public final fun component9 ()Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;
+	public final fun copy (IJLio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;)Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;IJLio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBoot ()Lio/github/darkryh/katalyst/telemetry/model/BootTimeline;
+	public final fun getCapturedAtEpochMs ()J
+	public final fun getConfig ()Lio/github/darkryh/katalyst/telemetry/model/ConfigSnapshot;
+	public final fun getEvents ()Lio/github/darkryh/katalyst/telemetry/model/EventsSnapshot;
+	public final fun getHealth ()Lio/github/darkryh/katalyst/telemetry/model/HealthSummary;
+	public final fun getHttp ()Lio/github/darkryh/katalyst/telemetry/model/HttpSnapshot;
+	public final fun getMeta ()Lio/github/darkryh/katalyst/telemetry/model/TelemetryMeta;
+	public final fun getMigrations ()Lio/github/darkryh/katalyst/telemetry/model/MigrationSnapshot;
+	public final fun getPersistence ()Lio/github/darkryh/katalyst/telemetry/model/PersistenceSnapshot;
+	public final fun getScheduler ()Lio/github/darkryh/katalyst/telemetry/model/SchedulerSnapshot;
+	public final fun getSchemaVersion ()I
+	public final fun getTransactions ()Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;
+	public final fun getWebSockets ()Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;
+	public final fun getWiring ()Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TelemetrySnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TransactionSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;JJJJDDDLjava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;JJJJDDDLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component10 ()J
+	public final fun component11 ()D
+	public final fun component12 ()D
+	public final fun component13 ()D
+	public final fun component14 ()Ljava/util/List;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;JJJJDDDLjava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;JJJJDDDLjava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdapters ()Ljava/util/List;
+	public final fun getCommitted ()J
+	public final fun getFailed ()J
+	public final fun getInFlight ()Ljava/util/List;
+	public final fun getIsolationConfigured ()Ljava/lang/String;
+	public final fun getIsolationEffective ()Ljava/lang/String;
+	public final fun getMaxRetries ()Ljava/lang/Integer;
+	public final fun getMetricsCollectorAttached ()Z
+	public final fun getP50Ms ()D
+	public final fun getP95Ms ()D
+	public final fun getP99Ms ()D
+	public final fun getRolledBack ()J
+	public final fun getTimedOut ()J
+	public final fun getTimeoutMs ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/TransactionSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/TransactionSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/TransactionSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponent ()Ljava/lang/String;
+	public final fun getCyclePath ()Ljava/util/List;
+	public final fun getKind ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRequiredType ()Ljava/lang/String;
+	public final fun getSuggestion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/ValidationErrorEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WebSocketSession {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJJJ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJJJ)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJJJILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytesIn ()J
+	public final fun getBytesOut ()J
+	public final fun getFramesIn ()J
+	public final fun getFramesOut ()J
+	public final fun getId ()Ljava/lang/String;
+	public final fun getOpenedAtEpochMs ()J
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPrincipal ()Ljava/lang/String;
+	public final fun getRemote ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/WebSocketSession$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSession;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WebSocketSession$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (ZZLjava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZZZLjava/util/List;ILjava/util/Map;JJJLjava/util/Map;Ljava/util/List;)V
+	public synthetic fun <init> (ZZLjava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZZZLjava/util/List;ILjava/util/Map;JJJLjava/util/Map;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component10 ()I
+	public final fun component11 ()Ljava/util/Map;
+	public final fun component12 ()J
+	public final fun component13 ()J
+	public final fun component14 ()J
+	public final fun component15 ()Ljava/util/Map;
+	public final fun component16 ()Ljava/util/List;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (ZZLjava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZZZLjava/util/List;ILjava/util/Map;JJJLjava/util/Map;Ljava/util/List;)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;ZZLjava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZZZLjava/util/List;ILjava/util/Map;JJJLjava/util/Map;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveSessions ()I
+	public final fun getCloseCodeCounts ()Ljava/util/Map;
+	public final fun getClosed ()J
+	public final fun getEnabledFlag ()Z
+	public final fun getFrameSizeUnbounded ()Z
+	public final fun getHandlerErrors ()J
+	public final fun getKeepaliveDisabled ()Z
+	public final fun getMasking ()Z
+	public final fun getMaxFrameSizeBytes ()Ljava/lang/Long;
+	public final fun getOpened ()J
+	public final fun getPingPeriodMs ()Ljava/lang/Long;
+	public final fun getPluginInstalled ()Z
+	public final fun getRoutePaths ()Ljava/util/List;
+	public final fun getSessions ()Ljava/util/List;
+	public final fun getSessionsPerRoute ()Ljava/util/Map;
+	public final fun getTimeoutMs ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WebSocketSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WiringSnapshot {
+	public static final field Companion Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot$Companion;
+	public fun <init> ()V
+	public fun <init> (IIIIZILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;)V
+	public synthetic fun <init> (IIIIZILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()Ljava/lang/Long;
+	public final fun component11 ()Ljava/lang/Long;
+	public final fun component12 ()Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;
+	public final fun component13 ()Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/util/Map;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (IIIIZILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;)Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;IIIIZILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;ILjava/lang/Object;)Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnalysisMs ()Ljava/lang/Long;
+	public final fun getDiscovery ()Lio/github/darkryh/katalyst/telemetry/model/DiscoverySnapshot;
+	public final fun getEdgeCount ()I
+	public final fun getErrorsByKind ()Ljava/util/Map;
+	public final fun getInstantiationOrder ()Ljava/util/List;
+	public final fun getKoinProvidedTypes ()I
+	public final fun getNodeCount ()I
+	public final fun getRegistries ()Lio/github/darkryh/katalyst/telemetry/model/LiveRegistries;
+	public final fun getSecondaryBindings ()I
+	public final fun getTotalErrors ()I
+	public final fun getValidationErrors ()Ljava/util/List;
+	public final fun getValidationMs ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public final fun isValid ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class io/github/darkryh/katalyst/telemetry/model/WiringSnapshot$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/github/darkryh/katalyst/telemetry/model/WiringSnapshot;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/github/darkryh/katalyst/telemetry/model/WiringSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+

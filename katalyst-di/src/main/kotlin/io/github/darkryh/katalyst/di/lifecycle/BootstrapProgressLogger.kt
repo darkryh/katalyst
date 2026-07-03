@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory
  * **Display Format**:
  * ```
  * ╔════════════════════════════════════════════════════════════╗
- * ║ LIFECYCLE: Koin DI Bootstrap                               ║
- * ║ Reference: LIFECYCLE_KOIN_DI_BOOTSTRAP                     ║
+ * ║ LIFECYCLE: Bean Container Bootstrap                        ║
+ * ║ Reference: LIFECYCLE_BEAN_CONTAINER_BOOTSTRAP              ║
  * ╚════════════════════════════════════════════════════════════╝
  * ⏳ Scanning packages...
  * ✓  Completed in 234ms
@@ -245,39 +245,42 @@ internal enum class BootstrapLifecycle(
     val displayName: String,
     val description: String
 ) {
-    KOIN_DI_BOOTSTRAP(
-        lifecycleRef = "LIFECYCLE_KOIN_DI_BOOTSTRAP",
-        displayName = "Koin DI Bootstrap",
-        description = "Loading modules and starting DI context"
+    // Names are ENGINE-NEUTRAL on purpose: the bean container is an abstraction
+    // (KatalystBeanEngine — Koin is only the default implementation), and the HTTP engine is
+    // selectable (Netty/Jetty/CIO). Phase wording must survive an engine swap unchanged.
+    BEAN_CONTAINER_BOOTSTRAP(
+        lifecycleRef = "LIFECYCLE_BEAN_CONTAINER_BOOTSTRAP",
+        displayName = "Bean Container Bootstrap",
+        description = "Starting the dependency-injection engine and loading core bean modules"
     ),
     COMPONENT_DISCOVERY_REGISTRATION(
         lifecycleRef = "LIFECYCLE_COMPONENT_DISCOVERY_REGISTRATION",
         displayName = "Component Discovery & Registration",
-        description = "Auto-discovering and validating components"
+        description = "Scanning packages, validating the dependency graph, and registering components"
     ),
     DATABASE_SCHEMA_INITIALIZATION(
         lifecycleRef = "LIFECYCLE_DATABASE_SCHEMA_INITIALIZATION",
         displayName = "Database Schema Initialization",
-        description = "Creating database schema"
+        description = "Connecting to the database and applying the configured schema policy"
     ),
     TRANSACTION_ADAPTER_REGISTRATION(
         lifecycleRef = "LIFECYCLE_TRANSACTION_ADAPTER_REGISTRATION",
         displayName = "Transaction Adapter Registration",
-        description = "Registering transaction adapters"
+        description = "Wiring transaction adapters for persistence and events"
     ),
     PRE_START_INITIALIZERS(
         lifecycleRef = "LIFECYCLE_PRE_START_INITIALIZERS",
         displayName = "Pre-Start Initializers",
         description = "Running startup validators and pre-start hooks"
     ),
-    KTOR_ENGINE_STARTUP(
-        lifecycleRef = "LIFECYCLE_KTOR_ENGINE_STARTUP",
-        displayName = "Ktor Engine Startup",
-        description = "Starting HTTP server"
+    HTTP_SERVER_STARTUP(
+        lifecycleRef = "LIFECYCLE_HTTP_SERVER_STARTUP",
+        displayName = "HTTP Server Startup",
+        description = "Starting the HTTP engine and binding the configured host and port"
     ),
     RUNTIME_READY_INITIALIZERS(
         lifecycleRef = "LIFECYCLE_RUNTIME_READY_INITIALIZERS",
         displayName = "Runtime-Ready Initializers",
-        description = "Activating scheduler and background runtime hooks"
+        description = "Activating the scheduler and runtime hooks now that the server accepts traffic"
     )
 }

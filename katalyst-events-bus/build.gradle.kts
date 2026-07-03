@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     // Core events module
+    implementation(projects.katalystCore)
     implementation(projects.katalystEvents)
 
     // Transaction module for event deferral

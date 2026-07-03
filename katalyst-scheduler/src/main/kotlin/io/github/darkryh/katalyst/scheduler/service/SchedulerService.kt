@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.scheduler.config.ScheduleConfig
 import io.github.darkryh.katalyst.scheduler.cron.CronExpression
 import io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle
 import io.github.darkryh.katalyst.scheduler.job.asSchedulerHandle
+import io.github.darkryh.katalyst.scheduler.telemetry.SchedulerTelemetry
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -43,10 +44,19 @@ class SchedulerService(
         logger.debug("Scheduling task '{}' with initial delay: {}, fixed rate: {}, tags: {}",
             config.taskName, config.initialDelay, fixedRate, config.tags)
 
-        return launch {
+        val oneShot = fixedRate == Duration.Companion.ZERO
+        SchedulerTelemetry.register(
+            config.taskName,
+            if (oneShot) "ONE_TIME" else "FIXED_RATE",
+            if (oneShot) "one-time" else "every $fixedRate",
+            config.tags.toList(),
+            config.timeZone.id,
+        )
+
+        val handle = launch {
             delay(config.initialDelay)
 
-            if (fixedRate == Duration.Companion.ZERO) {
+            if (oneShot) {
                 // One-time execution
                 executeTaskOnce(config, task)
             } else {
@@ -55,10 +65,15 @@ class SchedulerService(
                 logger.debug("Starting repeating task '{}'", config.taskName)
                 while (isActive) {
                     executeTask(config, task, ++executionCount)
+                    SchedulerTelemetry.setNextFire(
+                        config.taskName, System.currentTimeMillis() + fixedRate.inWholeMilliseconds,
+                    )
                     delay(fixedRate)
                 }
             }
         }.asSchedulerHandle()
+        SchedulerTelemetry.attachJob(config.taskName, handle)
+        return handle
     }
 
     /**
@@ -84,7 +99,12 @@ class SchedulerService(
         logger.info("Scheduling fixed delay task '{}' with initial delay: {}, fixed delay: {}, tags: {}",
             config.taskName, config.initialDelay, fixedDelay, config.tags)
 
-        return launch {
+        SchedulerTelemetry.register(
+            config.taskName, "FIXED_DELAY", "every $fixedDelay (fixed delay)",
+            config.tags.toList(), config.timeZone.id,
+        )
+
+        val handle = launch {
             delay(config.initialDelay)
 
             var executionCount = 0L
@@ -95,10 +115,15 @@ class SchedulerService(
                 // Delay after execution before next run (this is the key difference from fixed rate)
                 if (isActive) {
                     logger.debug("Delaying fixed delay task '{}' for {}", config.taskName, fixedDelay)
+                    SchedulerTelemetry.setNextFire(
+                        config.taskName, System.currentTimeMillis() + fixedDelay.inWholeMilliseconds,
+                    )
                     delay(fixedDelay)
                 }
             }
         }.asSchedulerHandle()
+        SchedulerTelemetry.attachJob(config.taskName, handle)
+        return handle
     }
 
     /**
@@ -120,7 +145,12 @@ class SchedulerService(
         logger.info("Scheduling cron task '{}' with expression '{}', timezone: {}, tags: {}",
             config.taskName, cronExpression, config.timeZone, config.tags)
 
-        return launch {
+        SchedulerTelemetry.register(
+            config.taskName, "CRON", cronExpression.toString(),
+            config.tags.toList(), config.timeZone.id,
+        )
+
+        val handle = launch {
             delay(config.initialDelay)
 
             var executionCount = 0L
@@ -131,6 +161,10 @@ class SchedulerService(
                 if (isActive) {
                     val now = LocalDateTime.now()
                     val nextExecution = cronExpression.nextExecutionAfter(now)
+                    SchedulerTelemetry.setNextFire(
+                        config.taskName,
+                        nextExecution.atZone(config.timeZone).toInstant().toEpochMilli(),
+                    )
                     val delayMillis = java.time.Duration.between(now, nextExecution).toMillis()
 
                     if (delayMillis > 0) {
@@ -140,6 +174,8 @@ class SchedulerService(
                 }
             }
         }.asSchedulerHandle()
+        SchedulerTelemetry.attachJob(config.taskName, handle)
+        return handle
     }
 
     /**
@@ -150,10 +186,11 @@ class SchedulerService(
         task: suspend () -> Unit,
         executionCount: Long
     ) {
+        SchedulerTelemetry.markRunning(config.taskName)
+        val startTime = System.currentTimeMillis()
         try {
             logger.debug("Starting task '{}' (execution #{})", config.taskName, executionCount)
 
-            val startTime = System.currentTimeMillis()
             val result = if (config.maxExecutionTime != null) {
                 withTimeoutOrNull(config.maxExecutionTime) {
                     task()
@@ -166,17 +203,25 @@ class SchedulerService(
             // Null result means timeout occurred
             if (result == null && config.maxExecutionTime != null) {
                 val error = Exception("Task '${config.taskName}' exceeded max execution time: ${config.maxExecutionTime}")
+                SchedulerTelemetry.recordOutcome(
+                    config.taskName, "timeout", System.currentTimeMillis() - startTime, error.message,
+                )
                 logger.error("Task '{}' timed out after {}", config.taskName, config.maxExecutionTime, error)
                 config.onError(config.taskName, error, executionCount)
             } else {
                 val executionTime = (System.currentTimeMillis() - startTime).milliseconds
+                SchedulerTelemetry.recordOutcome(config.taskName, "success", executionTime.inWholeMilliseconds)
                 logger.debug("Completed task '{}' in {} (execution #{})", config.taskName, executionTime, executionCount)
                 config.onSuccess(config.taskName, executionTime)
             }
         } catch (e: CancellationException) {
-            // Don't log cancellations, they're expected
+            // Don't log cancellations, they're expected — clear running without counting a failure.
+            SchedulerTelemetry.markStopped(config.taskName)
             throw e
         } catch (e: Exception) {
+            SchedulerTelemetry.recordOutcome(
+                config.taskName, "failure", System.currentTimeMillis() - startTime, e.stackTraceToString(),
+            )
             logger.error("Error running task '{}' (execution #{})", config.taskName, executionCount, e)
             config.onError(config.taskName, e, executionCount)
         }
@@ -189,10 +234,11 @@ class SchedulerService(
         config: ScheduleConfig,
         task: suspend () -> Unit
     ) {
+        SchedulerTelemetry.markRunning(config.taskName)
+        val startTime = System.currentTimeMillis()
         try {
             logger.debug("Starting one-time task '{}'", config.taskName)
 
-            val startTime = System.currentTimeMillis()
             val result = if (config.maxExecutionTime != null) {
                 withTimeoutOrNull(config.maxExecutionTime) {
                     task()
@@ -204,16 +250,24 @@ class SchedulerService(
 
             if (result == null && config.maxExecutionTime != null) {
                 val error = Exception("Task '${config.taskName}' exceeded max execution time: ${config.maxExecutionTime}")
+                SchedulerTelemetry.recordOutcome(
+                    config.taskName, "timeout", System.currentTimeMillis() - startTime, error.message,
+                )
                 logger.error("One-time task '{}' timed out after {}", config.taskName, config.maxExecutionTime, error)
                 config.onError(config.taskName, error, 1)
             } else {
                 val executionTime = (System.currentTimeMillis() - startTime).milliseconds
+                SchedulerTelemetry.recordOutcome(config.taskName, "success", executionTime.inWholeMilliseconds)
                 logger.info("Completed one-time task '{}' in {}", config.taskName, executionTime)
                 config.onSuccess(config.taskName, executionTime)
             }
         } catch (e: CancellationException) {
+            SchedulerTelemetry.markStopped(config.taskName)
             throw e
         } catch (e: Exception) {
+            SchedulerTelemetry.recordOutcome(
+                config.taskName, "failure", System.currentTimeMillis() - startTime, e.stackTraceToString(),
+            )
             logger.error("Error running one-time task '{}'", config.taskName, e)
             config.onError(config.taskName, e, 1)
         }

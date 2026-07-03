@@ -122,6 +122,7 @@ class MiddlewareBuilder(val application: Application) {
                     when (val result = middleware.process(currentCall.request)) {
                         MiddlewareResult.Continue -> Unit
                         is MiddlewareResult.Abort -> {
+                            io.github.darkryh.katalyst.ktor.telemetry.HttpTelemetry.recordAbort()
                             currentCall.respondText(
                                 text = result.message,
                                 status = HttpStatusCode.fromValue(result.statusCode)
