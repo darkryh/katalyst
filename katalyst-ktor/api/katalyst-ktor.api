@@ -84,6 +84,11 @@ public final class io/github/darkryh/katalyst/ktor/middleware/MiddlewareResult$C
 	public static final field INSTANCE Lio/github/darkryh/katalyst/ktor/middleware/MiddlewareResult$Continue;
 }
 
+public final class io/github/darkryh/katalyst/ktor/websocket/KatalystWebSocketRoutes {
+	public final fun getRoute ()Lio/ktor/server/routing/Route;
+	public final fun webSocket (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+}
+
 public final class io/github/darkryh/katalyst/ktor/websocket/WebSocketBuilderKt {
 	public static final fun katalystWebSockets (Lio/ktor/server/routing/Route;Lkotlin/jvm/functions/Function1;)V
 }
