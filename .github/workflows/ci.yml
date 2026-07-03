@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-coverage:
+    name: Build, test & coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The default `check`/`test` gate excludes @Tag("benchmark") and @Tag("load") suites
+      # (see BaseConventionPlugin) so it stays fast and deterministic.
+      - name: Build & test (default gate)
+        run: ./gradlew check --stacktrace
+
+      # Fail the build if the public/binary API changed without an intentional `apiDump`.
+      - name: Binary-compatibility gate
+        run: ./gradlew apiCheck --stacktrace
+
+      # Enforce the aggregated coverage floor (ratchet defined in root build.gradle.kts).
+      - name: Coverage gate (Kover)
+        run: ./gradlew koverVerify koverXmlReport --stacktrace
+
+      # Mutation-testing quality gate (ratchet floor). Pitest's jar task is not config-cache
+      # compatible, so it runs in its own invocation with the cache disabled.
+      - name: Mutation testing (Pitest)
+        run: ./gradlew :katalyst-scheduler:pitest --no-configuration-cache --stacktrace
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-report
+          path: '**/build/reports/pitest/'
+          if-no-files-found: warn
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kover-coverage-report
+          path: build/reports/kover/
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/'
+          if-no-files-found: warn
+
+  benchmarks:
+    name: Microbenchmarks (non-gating)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Benchmarks are timing-sensitive and tracked, not pass/fail gated: never block a PR on them.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Runs only @Tag("benchmark") suites across all modules. Informational signal for
+      # regressions; replaced by a proper JMH harness in Phase 4 (see TESTING_STRATEGY.md).
+      - name: Run benchmark suites
+        run: ./gradlew benchmarkTest --stacktrace
+
+      - name: Upload benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports
+          path: '**/build/reports/tests/benchmarkTest/'
+          if-no-files-found: warn
