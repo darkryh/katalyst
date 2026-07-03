@@ -104,11 +104,14 @@ kotlin {
 // IntelliJ platform tests (BasePlatformTestCase) run on JUnit4, not the JUnit Platform.
 tasks.test {
     useJUnit()
-    // Hand the parity test the canonical conventions jar to load in an isolated classloader. Captured
-    // as a Provider (not the Configuration object) so it stays configuration-cache compatible.
-    val conventionsJarPath = katalystConventions.elements.map { it.single().asFile.absolutePath }
-    inputs.files(katalystConventions).withPropertyName("katalystConventions")
+    // Hand the parity test the canonical conventions jar to load in an isolated classloader.
+    // Captured as a ConfigurableFileCollection: a Provider derived from Configuration.elements
+    // still drags the Configuration object into the cached closure and fails configuration-cache
+    // serialization ("error writing value of type DefaultLegacyConfiguration"); a file collection
+    // is the documented cache-safe carrier and resolves lazily at execution time.
+    val conventionsJar = objects.fileCollection().from(katalystConventions)
+    inputs.files(conventionsJar).withPropertyName("katalystConventions")
     jvmArgumentProviders.add(CommandLineArgumentProvider {
-        listOf("-Dkatalyst.conventions.jar=${conventionsJarPath.get()}")
+        listOf("-Dkatalyst.conventions.jar=${conventionsJar.singleFile.absolutePath}")
     })
 }
