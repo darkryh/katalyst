@@ -87,7 +87,7 @@ fun Route.healthCheckRoutes() = katalystRouting {
                         "bootstrap.totalMs" to lifecycle.totalBootstrapTimeMs.toString(),
                         // Match on the public lifecycleRef strings exposed by LifecycleStatusReport.
                         "lifecycle.ktorStartup" to lifecycle.lifecycles
-                            .firstOrNull { it.lifecycleRef == "LIFECYCLE_KTOR_ENGINE_STARTUP" }
+                            .firstOrNull { it.lifecycleRef == "LIFECYCLE_HTTP_SERVER_STARTUP" }
                             ?.status
                             .orEmpty(),
                         "lifecycle.runtimeReady" to lifecycle.lifecycles
