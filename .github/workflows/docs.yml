@@ -1,12 +1,17 @@
-name: Deploy documentation
+name: Deploy site (docs + initializr)
 
+# A repository has a single GitHub Pages site, so the documentation (MkDocs) and the browser project
+# generator (Kotlin/Wasm) are built together and deployed as ONE artifact:
+#   - the docs at the site root  → https://darkryh.github.io/katalyst/
+#   - the initializr under /new/ → https://darkryh.github.io/katalyst/new/
+#
+# The live site publishes ONLY when a GitHub release is published — so the initializr never goes live
+# pinned to a version that is not yet on Maven Central, and generated projects always resolve. Pushes
+# to master do NOT deploy; use the manual `workflow_dispatch` to republish between releases (it pins to
+# the most recent existing release).
 on:
-  push:
-    branches: [master]
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - ".github/workflows/docs.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 # Allow one concurrent deployment; cancel in-progress runs for the same ref.
@@ -22,9 +27,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
+      # ---- Documentation (MkDocs Material) → site/ ----
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -32,8 +39,42 @@ jobs:
       - name: Install MkDocs Material
         run: pip install "mkdocs-material>=9.5"
 
-      - name: Build site
+      - name: Build docs
         run: mkdocs build --strict
+
+      # ---- Initializr (Kotlin/Wasm + Compose Multiplatform) → site/new/ ----
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Pin the generated projects (and the header version) to the released Katalyst version, so the
+      # live generator tracks whatever tag was cut. On a release it is the release tag; otherwise the
+      # most recent release (incl. pre-releases). Empty falls back to the build default in
+      # initializr/build.gradle.kts.
+      - name: Resolve Katalyst version to pin
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            V="${{ github.event.release.tag_name }}"
+          else
+            V="$(gh release list --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || true)"
+          fi
+          V="${V#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Pinning generated projects to Katalyst version: ${V:-<build default>}"
+
+      - name: Build initializr Wasm distribution
+        run: ./gradlew -p initializr wasmJsBrowserDistribution -PkatalystVersion="${{ steps.ver.outputs.version }}" --stacktrace
+
+      - name: Place the initializr under /new
+        run: |
+          mkdir -p site/new
+          cp -R initializr/build/dist/wasmJs/productionExecutable/. site/new/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
