@@ -1,3 +1,6 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
+
 plugins {
     kotlin("jvm")
     // Dispatch runs on the Jetpack Compose runtime, so the Compose compiler plugin is required to
@@ -7,16 +10,56 @@ plugins {
     // serializers so the Dispatch back stack can save/restore and content-key each route.
     kotlin("plugin.serialization") version "2.4.0"
     application
+    // Published so `katalyst-starter-core` can carry the embedded inspector as a default
+    // runtimeOnly dependency — external (Central-only) consumers need the artifact to resolve.
+    id("com.vanniktech.maven.publish")
 }
 
 // Explicit coordinates (the convention plugin is not applied here) so composite builds can
 // substitute `io.github.darkryh.katalyst:katalyst-tui` with this project — that is how a backend
 // gets the embedded inspector on its runtime classpath.
 group = "io.github.darkryh.katalyst"
-version = "1.0.0-alpha02"
+version = "1.0.0-alpha03"
 
 kotlin {
     jvmToolchain(21)
+}
+
+val moduleName = project.name
+
+mavenPublishing {
+    configure(KotlinJvm(javadocJar = JavadocJar.Empty(), sourcesJar = true))
+    publishToMavenCentral(automaticRelease = true)
+    signAllPublications()
+
+    coordinates(groupId = group.toString(), artifactId = moduleName, version = version.toString())
+
+    pom {
+        name.set("Katalyst - $moduleName")
+        description.set("Katalyst module: $moduleName")
+        url.set("https://github.com/darkryh/katalyst")
+
+        licenses {
+            license {
+                name.set("Apache License 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/darkryh/katalyst")
+            connection.set("scm:git:git://github.com/darkryh/katalyst.git")
+            developerConnection.set("scm:git:ssh://github.com/darkryh/katalyst.git")
+        }
+
+        developers {
+            developer {
+                id.set("Darkryh")
+                name.set("Xavier Alexander Torres Calderón")
+                email.set("alex_torres-xc@hotmail.com")
+            }
+        }
+    }
 }
 
 application {
