@@ -33,6 +33,8 @@ dependencies {
     }
 }
 
+val moduleName = project.name
+
 mavenPublishing {
     // java-platform has no main artifact; vanniktech needs to be told to publish the platform.
     configure(JavaPlatform())
@@ -42,12 +44,12 @@ mavenPublishing {
 
     coordinates(
         groupId = group.toString(),
-        artifactId = name,
+        artifactId = moduleName,
         version = version.toString(),
     )
 
     pom {
-        name.set("Katalyst - $name")
+        name.set("Katalyst - $moduleName")
         description.set("Katalyst bill of materials: aligned versions for all katalyst-* modules")
         url.set("https://github.com/darkryh/katalyst")
 

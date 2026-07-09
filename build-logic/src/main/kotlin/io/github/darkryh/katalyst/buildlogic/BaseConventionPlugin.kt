@@ -78,19 +78,21 @@ class BaseConventionPlugin : Plugin<Project> {
                 useJUnitPlatform { includeTags("load") }
             }
 
+            val moduleName = target.name
+
             extensions.configure<MavenPublishBaseExtension> {
                 publishToMavenCentral(automaticRelease = true)
                 signAllPublications()
 
                 coordinates(
                     groupId = group.toString(),
-                    artifactId = name,
+                    artifactId = moduleName,
                     version = version.toString()
                 )
 
                 pom {
-                    name.set("Katalyst - $name")
-                    description.set("Katalyst module: $name")
+                    name.set("Katalyst - $moduleName")
+                    description.set("Katalyst module: $moduleName")
                     url.set("https://github.com/darkryh/katalyst")
 
                     licenses {
