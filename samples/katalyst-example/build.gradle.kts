@@ -1,7 +1,7 @@
 plugins {
     // The single Katalyst plugin applies Kotlin JVM, kotlinx.serialization and the application
     // plugin. No version: it is resolved from the composite build (see settings.gradle.kts).
-    // A published consumer would write: id("io.github.darkryh.katalyst") version "1.0.0-alpha02"
+    // A published consumer would write: id("io.github.darkryh.katalyst") version "1.0.0-alpha03"
     id("io.github.darkryh.katalyst")
 }
 
@@ -13,7 +13,7 @@ application { mainClass = "io.github.darkryh.katalyst.example.ApplicationKt" }
 // Only katalyst-* artifacts — Ktor, Exposed, Koin, serialization, etc. all arrive transitively
 // through the starters. Pick the server engine by adding exactly one katalyst-starter-engine-*.
 dependencies {
-    val katalyst = "1.0.0-alpha02"
+    val katalyst = "1.0.0-alpha03"
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")
     implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")
@@ -21,22 +21,30 @@ dependencies {
     implementation("io.github.darkryh.katalyst:katalyst-starter-migrations")
     implementation("io.github.darkryh.katalyst:katalyst-starter-scheduler")
     implementation("io.github.darkryh.katalyst:katalyst-starter-websockets")
-    // Zero-config observability: having katalyst-telemetry on the runtime classpath makes the app
-    // auto-attach the bounded in-process telemetry layer (loopback /snapshot + /stream) that the
-    // katalyst-tui inspector reads. Resolved to the local project via the composite build. Opt out
-    // with -Dkatalyst.telemetry.enabled=false. (Not in the BOM, so no version.)
-    runtimeOnly("io.github.darkryh.katalyst:katalyst-telemetry")
-    // Embedded inspector: with katalyst-tui on the runtime classpath the Dispatch TUI becomes the
-    // default console when the app runs in a real terminal (java -jar, installDist binary, ssh);
-    // without a TTY (IDE Run window, services) it logs a one-time how-to warning and falls back to
-    // normal logs. Opt out with -Dkatalyst.tui.enabled=false.
-    runtimeOnly("io.github.darkryh.katalyst:katalyst-tui")
+    // Zero-config observability in one line: bounded in-process telemetry + the embedded Dispatch
+    // TUI inspector. Real terminal -> becomes the default console; no TTY (services, IDE run
+    // windows) -> falls back to plain logs. Opt out with -Dkatalyst.telemetry.enabled=false /
+    // -Dkatalyst.tui.enabled=false.
+    implementation("io.github.darkryh.katalyst:katalyst-starter-observability")
     testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Thin jar with a Class-Path manifest so `java -jar` works standalone (run from build/install/
+// katalyst-example/lib, where installDist already copies every dependency jar by plain filename).
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "io.github.darkryh.katalyst.example.ApplicationKt",
+            "Class-Path" to provider {
+                configurations.runtimeClasspath.get().files.joinToString(" ") { it.name }
+            }
+        )
+    }
 }
 
 // IntelliJ/Tooling may request this task as a project-scoped path.

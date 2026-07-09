@@ -18,7 +18,10 @@ apiValidation {
     // `public` for cross-module visibility but are excluded from the committed public API surface.
     nonPublicMarkers += "io.github.darkryh.katalyst.core.annotation.KatalystInternalApi"
 
-    // Exclude non-published / test-helper / sample modules from the public API surface.
+    // Exclude aggregator / test-helper / sample modules from public API tracking — most of these
+    // ARE published to Maven Central (starters, testing-core/ktor, the BOM, the plugin marker);
+    // they're just thin dependency bundles or non-library artifacts with no meaningful API surface
+    // to snapshot. katalyst-tui and memory-validation are the only modules NOT published at all.
     ignoredProjects += listOf(
         "memory-validation",
         // The terminal-UI inspector is a runnable application, not a published library.
@@ -33,6 +36,7 @@ apiValidation {
         "katalyst-starter-migrations",
         "katalyst-starter-scheduler",
         "katalyst-starter-websockets",
+        "katalyst-starter-observability",
         "katalyst-starter-engine-netty",
         "katalyst-starter-engine-jetty",
         "katalyst-starter-engine-cio",

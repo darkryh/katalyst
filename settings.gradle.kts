@@ -80,6 +80,7 @@ include(":katalyst-starter-migrations")
 include(":katalyst-starter-scheduler")
 include(":katalyst-starter-websockets")
 include(":katalyst-starter-test")
+include(":katalyst-starter-observability")
 include(":katalyst-starter-engine-netty")
 include(":katalyst-starter-engine-jetty")
 include(":katalyst-starter-engine-cio")
@@ -92,6 +93,7 @@ listOf(
     "katalyst-starter-scheduler",
     "katalyst-starter-websockets",
     "katalyst-starter-test",
+    "katalyst-starter-observability",
     "katalyst-starter-engine-netty",
     "katalyst-starter-engine-jetty",
     "katalyst-starter-engine-cio",
