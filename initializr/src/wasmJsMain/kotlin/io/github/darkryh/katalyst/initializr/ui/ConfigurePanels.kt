@@ -1,6 +1,5 @@
 package io.github.darkryh.katalyst.initializr.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,315 +11,290 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.darkryh.katalyst.initializr.model.Capability
 import io.github.darkryh.katalyst.initializr.model.ConfigField
 import io.github.darkryh.katalyst.initializr.model.Engine
 import io.github.darkryh.katalyst.initializr.model.Feature
 import io.github.darkryh.katalyst.initializr.model.FeatureSelection
 import io.github.darkryh.katalyst.initializr.model.FieldError
 import io.github.darkryh.katalyst.initializr.model.FormState
-import io.github.darkryh.katalyst.initializr.model.ProjectConfig
 import io.github.darkryh.katalyst.initializr.model.deriveArtifactId
 import io.github.darkryh.katalyst.initializr.model.deriveGroupId
+import io.github.darkryh.katalyst.initializr.model.isCapabilityOn
+import io.github.darkryh.katalyst.initializr.model.toggleCapability
 
-private data class Preset(val name: String, val caption: String, val features: Set<Feature>)
-
-private val PRESETS =
-    listOf(
-        Preset("Minimal", "web only", emptySet()),
-        Preset("Standard", "data + insight", setOf(Feature.PERSISTENCE, Feature.MIGRATIONS, Feature.OBSERVABILITY)),
-        Preset("Full-stack", "everything", Feature.entries.toSet()),
-    )
+// ---------------- simple screen: capability cards ----------------
 
 @Composable
-fun IdentityCard(
-    form: FormState,
-    config: ProjectConfig,
-    errors: List<FieldError>,
-    onForm: (FormState) -> Unit,
-) {
-    val p = palette()
-    fun errorFor(field: ConfigField) = errors.firstOrNull { it.field == field }?.message
-
-    SectionCard(index = "01", title = "Identity", hint = "coordinates & package") {
-        FieldRow(
-            label = "Project name",
-            value = form.projectName,
-            onValueChange = { onForm(form.copy(projectName = it)) },
-            error = errorFor(ConfigField.PROJECT_NAME),
-        )
-        VGap(11)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.weight(1f)) {
-                FieldRow(
-                    label = "Package",
-                    value = form.packageName,
-                    onValueChange = { onForm(form.copy(packageName = it)) },
-                    error = errorFor(ConfigField.PACKAGE_NAME),
-                    mono = true,
-                )
-            }
-            Box(Modifier.weight(1f)) {
-                FieldRow(
-                    label = "Version",
-                    value = form.appVersion,
-                    onValueChange = { onForm(form.copy(appVersion = it)) },
-                    error = errorFor(ConfigField.APP_VERSION),
-                    mono = true,
-                )
-            }
-        }
-        VGap(8)
-        Text(
-            "↳ group ${config.groupId.ifEmpty { "—" }} · artifact ${config.artifactId.ifEmpty { "—" }}",
-            color = p.muted,
-            fontSize = 12.sp,
-            fontFamily = LocalMono.current,
-        )
-
-        VGap(10)
-        val advOpen = form.advancedOpen
-        Text(
-            text = "${if (advOpen) "▾" else "▸"}  Advanced — override group & artifact id",
-            color = p.ink2,
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.clickable { onForm(form.copy(advancedOpen = !advOpen)) },
-        )
-        AnimatedVisibility(visible = advOpen) {
-            Column {
-                VGap(10)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.weight(1f)) {
-                        FieldRow(
-                            label = "Group id",
-                            value = form.groupIdOverride ?: "",
-                            onValueChange = { onForm(form.copy(groupIdOverride = it.ifEmpty { null })) },
-                            error = errorFor(ConfigField.GROUP_ID),
-                            mono = true,
-                            placeholder = deriveGroupId(form.packageName),
-                        )
-                    }
-                    Box(Modifier.weight(1f)) {
-                        FieldRow(
-                            label = "Artifact id",
-                            value = form.artifactIdOverride ?: "",
-                            onValueChange = { onForm(form.copy(artifactIdOverride = it.ifEmpty { null })) },
-                            error = errorFor(ConfigField.ARTIFACT_ID),
-                            mono = true,
-                            placeholder = deriveArtifactId(form.projectName, form.packageName),
-                        )
-                    }
-                }
-            }
-        }
-
-        VGap(14)
-        ValidationStrip(errors)
-    }
-}
-
-@Composable
-private fun ValidationStrip(errors: List<FieldError>) {
-    val p = palette()
-    fun bad(vararg fields: ConfigField) = errors.any { it.field in fields }
-    Row(
-        Modifier.fillMaxWidth().padding(top = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        Text("VALIDATION", color = p.muted, fontSize = 10.5.sp, fontWeight = FontWeight.Medium)
-        vchip("name", bad(ConfigField.PROJECT_NAME), p)
-        vchip("package", bad(ConfigField.PACKAGE_NAME), p)
-        vchip("version", bad(ConfigField.APP_VERSION), p)
-        vchip("coordinates", bad(ConfigField.GROUP_ID, ConfigField.ARTIFACT_ID), p)
-    }
-}
-
-@Composable
-private fun vchip(label: String, bad: Boolean, p: Palette) {
-    Pill(
-        text = (if (bad) "✗ " else "✓ ") + label,
-        fg = if (bad) p.bad else p.good,
-        bg = if (bad) p.badSoft else p.goodSoft,
-        border = (if (bad) p.bad else p.good).copy(alpha = 0.4f),
-    )
-}
-
-@Composable
-fun EngineCard(
+fun CapabilityGrid(
     selection: FeatureSelection,
-    onSelect: (Engine) -> Unit,
+    onToggle: (Capability) -> Unit,
 ) {
-    val p = palette()
-    SectionCard(index = "02", title = "Server engine", hint = "exactly one") {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Engine.entries.forEach { engine ->
-                val on = selection.engine == engine
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .background(if (on) p.accentSoft else p.well, RoundedCornerShape(7.dp))
-                        .border(1.dp, if (on) p.accent else p.line, RoundedCornerShape(7.dp))
-                        .clickable { onSelect(engine) }
-                        .padding(horizontal = 12.dp, vertical = 11.dp),
-                ) {
-                    Text(engine.id, color = if (on) p.accent else p.ink, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                    VGap(2)
-                    Text(engine.summary, color = p.muted, fontSize = 11.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FeaturesCard(
-    selection: FeatureSelection,
-    onSelection: (FeatureSelection) -> Unit,
-) {
-    val p = palette()
-    val onCount = selection.enabled.size
-    SectionCard(
-        index = "03",
-        title = "Feature starters",
-        hint = "",
-        trailing = { Text("$onCount of ${Feature.entries.size} on", color = p.muted, fontSize = 12.sp) },
-    ) {
-        // Presets.
-        val active = PRESETS.firstOrNull { it.features == selection.features }
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            PRESETS.forEach { preset ->
-                val on = active == preset
-                Box(
-                    Modifier
-                        .background(if (on) p.accent else p.well, RoundedCornerShape(100.dp))
-                        .border(1.dp, if (on) p.accent else p.line, RoundedCornerShape(100.dp))
-                        .clickable { onSelection(selection.copy(features = preset.features)) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(preset.name, color = if (on) p.onAccent else p.ink2, fontSize = 12.5.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
-                        Spacer(Modifier.width(5.dp))
-                        Text(preset.caption, color = if (on) p.onAccent.copy(alpha = 0.8f) else p.muted, fontSize = 10.5.sp, fontFamily = LocalMono.current)
-                    }
-                }
-            }
-            if (active == null) {
-                Box(
-                    Modifier.background(p.accent, RoundedCornerShape(100.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
-                ) { Text("Custom", color = p.onAccent, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold) }
-            }
-        }
-        VGap(14)
-
-        // Core (always-on) card.
-        CoreRow()
-        VGap(10)
-        // Feature toggle cards, two per row.
-        Feature.entries.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                pair.forEach { f ->
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Capability.entries.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                pair.forEach { cap ->
                     Box(Modifier.weight(1f)) {
-                        FeatureToggle(
-                            feature = f,
-                            selection = selection,
-                            onToggle = { onSelection(selection.toggled(f)) },
-                        )
+                        CapabilityCard(cap, selection.isCapabilityOn(cap)) { onToggle(cap) }
                     }
                 }
                 if (pair.size == 1) Box(Modifier.weight(1f)) {}
             }
-            VGap(10)
         }
     }
 }
 
 @Composable
-private fun CoreRow() {
+private fun CapabilityCard(capability: Capability, on: Boolean, onToggle: () -> Unit) {
     val p = palette()
     Row(
         Modifier
             .fillMaxWidth()
-            .background(p.well, RoundedCornerShape(7.dp))
-            .border(1.dp, p.line, RoundedCornerShape(7.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(if (on) p.accentSoft else p.surface, RoundedCornerShape(14.dp))
+            .border(1.dp, if (on) p.accent else p.line, RoundedCornerShape(14.dp))
+            .clickable { onToggle() }
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        SwitchGlyph(on = true, locked = true)
-        Spacer(Modifier.width(9.dp))
-        Column {
-            Text("Web + config + events", color = p.ink2, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-            Text("REST routing, YAML config, event bus — the core runtime.", color = p.muted, fontSize = 11.5.sp)
+        Box(
+            Modifier.size(38.dp).background(if (on) p.accent else p.well, RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            KIcon(capIcon(capability), 20.dp, if (on) p.onAccent else p.ink2)
+        }
+        HGap(13)
+        Column(Modifier.weight(1f)) {
+            Text(capability.title, color = p.ink, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold)
+            VGap(2)
+            Text(capability.summary, color = p.muted, fontSize = 12.5.sp)
+        }
+        HGap(10)
+        Box(
+            Modifier
+                .size(20.dp)
+                .background(if (on) p.accent else p.surface, RoundedCornerShape(7.dp))
+                .border(1.5.dp, if (on) p.accent else p.line, RoundedCornerShape(7.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (on) KIcon(KIcons.Check, 13.dp, p.onAccent)
+        }
+    }
+}
+
+private fun capIcon(capability: Capability): IconSpec = when (capability) {
+    Capability.DATABASE -> KIcons.Database
+    Capability.SCHEDULED_JOBS -> KIcons.Clock
+    Capability.REALTIME -> KIcons.Broadcast
+    Capability.MONITORING -> KIcons.Bars
+}
+
+// ---------------- advanced: engine ----------------
+
+@Composable
+fun EnginePanel(selected: Engine, onSelect: (Engine) -> Unit) {
+    val p = palette()
+    Panel(icon = KIcons.ServerPanel, title = "Server engine", sub = "pick exactly one") {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Engine.entries.forEach { engine ->
+                val on = engine == selected
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .background(if (on) p.accentSoft else p.surface, RoundedCornerShape(12.dp))
+                        .border(1.dp, if (on) p.accent else p.line, RoundedCornerShape(12.dp))
+                        .clickable { onSelect(engine) }
+                        .padding(13.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        KIcon(KIcons.Server, 22.dp, if (on) p.accent else p.ink2)
+                        Spacer(Modifier.weight(1f))
+                        if (on) KIcon(KIcons.CheckBold, 16.dp, p.accent)
+                    }
+                    VGap(9)
+                    Text(engineName(engine), color = p.ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    VGap(2)
+                    Text(engine.summary, color = p.muted, fontSize = 11.5.sp, fontFamily = LocalMono.current)
+                }
+            }
+        }
+    }
+}
+
+private fun engineName(engine: Engine): String = if (engine == Engine.CIO) "CIO" else engine.id.replaceFirstChar { it.uppercase() }
+
+// ---------------- advanced: fine-grained starters ----------------
+
+@Composable
+fun StartersPanel(selection: FeatureSelection, onSelection: (FeatureSelection) -> Unit) {
+    Panel(icon = KIcons.Sliders, title = "Starters", sub = "stay in sync with the cards above") {
+        val persistenceOn = Feature.PERSISTENCE in selection.features
+        StarterRow(
+            title = "Persistence",
+            desc = featureDesc(Feature.PERSISTENCE),
+            checked = persistenceOn,
+            enabled = true,
+            child = false,
+            showRequires = false,
+            first = true,
+        ) { onSelection(selection.toggled(Feature.PERSISTENCE)) }
+        StarterRow(
+            title = "Migrations",
+            desc = featureDesc(Feature.MIGRATIONS),
+            checked = Feature.MIGRATIONS in selection.features,
+            enabled = persistenceOn,
+            child = true,
+            showRequires = !persistenceOn,
+            first = false,
+        ) { onSelection(selection.toggled(Feature.MIGRATIONS)) }
+        StarterRow("Scheduler", featureDesc(Feature.SCHEDULER), Feature.SCHEDULER in selection.features, true, false, false, false) {
+            onSelection(selection.toggled(Feature.SCHEDULER))
+        }
+        StarterRow("WebSockets", featureDesc(Feature.WEBSOCKETS), Feature.WEBSOCKETS in selection.features, true, false, false, false) {
+            onSelection(selection.toggled(Feature.WEBSOCKETS))
+        }
+        StarterRow("Observability", featureDesc(Feature.OBSERVABILITY), Feature.OBSERVABILITY in selection.features, true, false, false, false) {
+            onSelection(selection.toggled(Feature.OBSERVABILITY))
         }
     }
 }
 
 @Composable
-private fun FeatureToggle(
-    feature: Feature,
-    selection: FeatureSelection,
+private fun StarterRow(
+    title: String,
+    desc: String,
+    checked: Boolean,
+    enabled: Boolean,
+    child: Boolean,
+    showRequires: Boolean,
+    first: Boolean,
     onToggle: () -> Unit,
 ) {
     val p = palette()
-    val blocked = feature.requires != null && !selection.isEnabled(feature.requires)
-    val on = selection.isEnabled(feature)
-    val border = if (on) p.accent else p.line
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(if (on) p.surface else p.well, RoundedCornerShape(7.dp))
-            .border(1.dp, border, RoundedCornerShape(7.dp))
-            .then(if (blocked) Modifier else Modifier.clickable { onToggle() })
-            .padding(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SwitchGlyph(on = on, locked = false)
-            Spacer(Modifier.width(9.dp))
-            Text(feature.display, color = if (on) p.ink else p.ink2, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-            if (feature.requires != null) {
-                Spacer(Modifier.weight(1f))
-                Text("needs ${feature.requires!!.id}", color = p.amber, fontSize = 10.sp)
+    Column {
+        if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(p.line))
+        Row(
+            Modifier.fillMaxWidth().padding(start = if (child) 22.dp else 0.dp, top = 13.dp, bottom = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, color = p.ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                VGap(1)
+                Text(desc, color = p.muted, fontSize = 12.sp)
+                if (showRequires) {
+                    VGap(5)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        KIcon(KIcons.WarnTriangle, 13.dp, p.amber)
+                        Text("Requires Persistence", color = p.amber, fontSize = 11.5.sp)
+                    }
+                }
+            }
+            HGap(14)
+            ToggleSwitch(checked = checked && enabled, enabled = enabled, onToggle = onToggle)
+        }
+    }
+}
+
+private fun featureDesc(feature: Feature): String = when (feature) {
+    Feature.PERSISTENCE -> "Exposed + HikariCP; repositories by interface."
+    Feature.MIGRATIONS -> "Versioned, checksum-verified schema changes."
+    Feature.SCHEDULER -> "Cron & fixed-rate background jobs."
+    Feature.WEBSOCKETS -> "Live sockets with built-in instrumentation."
+    Feature.OBSERVABILITY -> "Telemetry + embedded TUI inspector (adds run.sh)."
+}
+
+// ---------------- advanced: coordinates ----------------
+
+@Composable
+fun CoordinatesPanel(
+    form: FormState,
+    errors: List<FieldError>,
+    onForm: (FormState) -> Unit,
+) {
+    fun errorFor(field: ConfigField) = errors.firstOrNull { it.field == field }?.message
+    Panel(icon = KIcons.Lines, title = "Coordinates", sub = "group & artifact are derived") {
+        KField(
+            label = "Package",
+            value = form.packageName,
+            onValueChange = { onForm(form.copy(packageName = it)) },
+            error = errorFor(ConfigField.PACKAGE_NAME),
+            mono = true,
+        )
+        VGap(14)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.weight(1f)) {
+                KField(
+                    label = "Group id",
+                    value = form.groupIdOverride ?: "",
+                    onValueChange = { onForm(form.copy(groupIdOverride = it.ifEmpty { null })) },
+                    error = errorFor(ConfigField.GROUP_ID),
+                    mono = true,
+                    placeholder = deriveGroupId(form.packageName),
+                    labelTrailing = if (form.groupIdOverride == null) ({ AutoPill() }) else null,
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                KField(
+                    label = "Artifact id",
+                    value = form.artifactIdOverride ?: "",
+                    onValueChange = { onForm(form.copy(artifactIdOverride = it.ifEmpty { null })) },
+                    error = errorFor(ConfigField.ARTIFACT_ID),
+                    mono = true,
+                    placeholder = deriveArtifactId(form.projectName, form.packageName),
+                    labelTrailing = if (form.artifactIdOverride == null) ({ AutoPill() }) else null,
+                )
             }
         }
-        VGap(5)
-        Text(featureDesc(feature), color = p.ink2, fontSize = 11.5.sp)
-        VGap(6)
-        Text("…-${feature.starter.removePrefix("katalyst-starter-")}", color = p.muted, fontSize = 10.5.sp, fontFamily = LocalMono.current)
+        VGap(14)
+        Box(Modifier.fillMaxWidth(0.5f)) {
+            KField(
+                label = "Version",
+                value = form.appVersion,
+                onValueChange = { onForm(form.copy(appVersion = it)) },
+                error = errorFor(ConfigField.APP_VERSION),
+                mono = true,
+            )
+        }
     }
 }
 
 @Composable
-private fun SwitchGlyph(on: Boolean, locked: Boolean) {
+private fun AutoPill() {
     val p = palette()
-    val track = if (on) (if (locked) p.accent.copy(alpha = 0.35f) else p.accent) else p.line
-    Box(
-        Modifier.width(34.dp).height(19.dp).background(track, RoundedCornerShape(100.dp)),
-        contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
+    Row(
+        Modifier.background(p.well, RoundedCornerShape(999.dp)).padding(horizontal = 7.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(
-            Modifier
-                .padding(horizontal = 2.dp)
-                .width(15.dp)
-                .height(15.dp)
-                .background(if (on && locked) p.accent else p.surface, RoundedCornerShape(100.dp)),
-        )
+        KIcon(KIcons.Refresh, 11.dp, p.muted)
+        Text("auto", color = p.muted, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
-private fun featureDesc(f: Feature): String =
-    when (f) {
-        Feature.PERSISTENCE -> "Exposed + HikariCP, repositories by interface."
-        Feature.MIGRATIONS -> "Versioned, checksum-verified schema changes."
-        Feature.SCHEDULER -> "Cron & fixed-rate background jobs."
-        Feature.WEBSOCKETS -> "Live sockets with built-in instrumentation."
-        Feature.OBSERVABILITY -> "Telemetry + embedded TUI inspector (adds run.sh)."
+// ---------------- advanced: toolchain ----------------
+
+@Composable
+fun ToolchainPanel(katalystVersion: String) {
+    Panel(icon = KIcons.Tag, title = "Toolchain", sub = "read-only") {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Chip("Katalyst", katalystVersion)
+            Chip("JDK", "21")
+            Chip("Kotlin", "2.4.0")
+        }
+        VGap(9)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Chip("Ktor", "3.5.0")
+            Chip("Gradle", "9.5.0")
+        }
     }
+}
