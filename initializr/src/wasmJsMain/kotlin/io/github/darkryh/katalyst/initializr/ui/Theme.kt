@@ -35,6 +35,13 @@ data class Palette(
     val edgeCat: Color,
     val graphBg: Color,
     val onAccent: Color,
+    // Syntax colors for the Advanced live-preview code panes.
+    val codeKw: Color,
+    val codeStr: Color,
+    val codeCmt: Color,
+    val codeFn: Color,
+    val codeNum: Color,
+    val codeKey: Color,
 )
 
 val LightPalette =
@@ -62,6 +69,12 @@ val LightPalette =
         edgeCat = Color(0xB8DB8636),
         graphBg = Color(0xFFF0F3FB),
         onAccent = Color(0xFFFFFFFF),
+        codeKw = Color(0xFF6E5AD8),
+        codeStr = Color(0xFF2E9E5B),
+        codeCmt = Color(0xFF868DA3),
+        codeFn = Color(0xFF3A45B8),
+        codeNum = Color(0xFFDB8636),
+        codeKey = Color(0xFF4B57D6),
     )
 
 val DarkPalette =
@@ -89,6 +102,12 @@ val DarkPalette =
         edgeCat = Color(0xC7F0A45C),
         graphBg = Color(0xFF0E111B),
         onAccent = Color(0xFF0B0D14),
+        codeKw = Color(0xFFA8B0FF),
+        codeStr = Color(0xFF5FCB8C),
+        codeCmt = Color(0xFF6C7389),
+        codeFn = Color(0xFF97A2FF),
+        codeNum = Color(0xFFF0A45C),
+        codeKey = Color(0xFF8FA0FF),
     )
 
 val LocalPalette = staticCompositionLocalOf { LightPalette }

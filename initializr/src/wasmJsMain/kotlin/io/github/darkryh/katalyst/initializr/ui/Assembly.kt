@@ -21,160 +21,225 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.darkryh.katalyst.initializr.model.FeatureSelection
 import io.github.darkryh.katalyst.initializr.model.ProjectConfig
 import io.github.darkryh.katalyst.initializr.template.TemplateFile
 
 enum class Tab(val label: String) {
-    APPLICATION("Application.kt"),
-    BUILD("build.gradle.kts"),
-    TREE("tree"),
+    APP("Application.kt"),
+    GRADLE("build.gradle.kts"),
     YAML("application.yaml"),
+    TREE("Files"),
 }
 
+/** The Advanced "Live preview" panel — tabs + the generated file for the active tab (or the tree). */
 @Composable
-fun AssemblyPane(
+fun PreviewPanel(
     config: ProjectConfig,
-    valid: Boolean,
     files: List<TemplateFile>,
     activeTab: Tab,
-    buildOverlay: (@Composable () -> Unit)?,
     onTab: (Tab) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val p = palette()
-    val nodeCount = config.selection.enabled.size + 4 + 1
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(p.surface, RoundedCornerShape(10.dp))
-            .border(1.dp, p.line, RoundedCornerShape(10.dp))
-            .clip(RoundedCornerShape(10.dp)),
-    ) {
-        // Graph.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(290.dp)
-                .background(p.graphBg),
-        ) {
-            WiringGraph(selection = config.selection, valid = valid, modifier = Modifier)
-            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("katalystApplication", color = p.accent, fontSize = 11.sp, fontFamily = LocalMono.current)
-                Text(" · $nodeCount nodes wired", color = p.muted, fontSize = 11.sp, fontFamily = LocalMono.current)
-            }
-            Row(
-                Modifier.align(Alignment.BottomEnd).padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                LegendDot("core", p.node, filled = true)
-                LegendDot("optional", p.node, filled = false)
-                LegendDot("depends-on", p.edgeCat, filled = true)
-            }
-        }
-
-        // Tabs.
-        Row(
-            Modifier.fillMaxWidth().background(p.surface).padding(start = 12.dp, end = 12.dp, top = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Panel(icon = KIcons.Code, title = "Live preview", sub = "reflects your selection") {
+        // Tab strip.
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             Tab.entries.forEach { tab ->
-                val on = activeTab == tab
-                Box(
+                val on = tab == activeTab
+                Row(
                     Modifier
                         .clickable { onTab(tab) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         tab.label,
                         color = if (on) p.accent else p.muted,
-                        fontSize = 12.5.sp,
-                        fontFamily = LocalMono.current,
-                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 13.sp,
+                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
                     )
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            Text("${files.size} files", color = p.muted, fontSize = 11.5.sp, fontFamily = LocalMono.current)
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.line))
-
-        // Preview (or the build overlay while generating).
-        Box(Modifier.fillMaxWidth().heightIn(max = 430.dp)) {
-            if (buildOverlay != null) {
-                Box(Modifier.padding(16.dp)) { buildOverlay() }
-            } else {
-                val text = previewText(config, files, activeTab)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    Box(Modifier.horizontalScroll(rememberScrollState()).padding(16.dp)) {
-                        Text(
-                            text,
-                            color = p.ink,
-                            fontSize = 12.5.sp,
-                            fontFamily = LocalMono.current,
-                            lineHeight = 20.sp,
-                        )
+                    if (tab == Tab.TREE) {
+                        HGap(5)
+                        Box(
+                            Modifier.background(p.accentSoft, RoundedCornerShape(999.dp)).padding(horizontal = 6.dp, vertical = 1.dp),
+                        ) {
+                            Text("${files.size}", color = p.accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = LocalMono.current)
+                        }
                     }
                 }
             }
         }
-    }
-}
+        Box(Modifier.fillMaxWidth().height(1.dp).background(p.line))
+        VGap(14)
 
-@Composable
-private fun LegendDot(label: String, color: androidx.compose.ui.graphics.Color, filled: Boolean) {
-    val p = palette()
-    Row(verticalAlignment = Alignment.CenterVertically) {
+        // Content.
         Box(
             Modifier
-                .width(9.dp)
-                .height(9.dp)
-                .background(if (filled) color else p.graphBg, RoundedCornerShape(100.dp))
-                .border(if (filled) 0.dp else 1.5.dp, color, RoundedCornerShape(100.dp)),
-        )
-        Spacer(Modifier.width(5.dp))
-        Text(label, color = p.muted, fontSize = 11.sp)
+                .fillMaxWidth()
+                .background(p.well, RoundedCornerShape(12.dp))
+                .border(1.dp, p.line, RoundedCornerShape(12.dp))
+                .heightIn(max = 420.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Box(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 14.dp)) {
+                if (activeTab == Tab.TREE) {
+                    TreeView(config.artifactId, files.map { it.path })
+                } else {
+                    val raw = previewText(config, files, activeTab)
+                    val text = if (activeTab == Tab.YAML) highlightYaml(raw, p) else highlightKotlin(raw, p)
+                    Text(text, fontSize = 12.75.sp, fontFamily = LocalMono.current, lineHeight = 21.sp, color = p.ink2)
+                }
+            }
+        }
     }
 }
 
 private fun previewText(config: ProjectConfig, files: List<TemplateFile>, tab: Tab): String {
     fun content(path: String) = files.firstOrNull { it.path == path }?.content ?: ""
-    val pkgPath = config.packagePath
     return when (tab) {
-        Tab.APPLICATION -> content("src/main/kotlin/$pkgPath/Application.kt")
-        Tab.BUILD -> content("build.gradle.kts")
+        Tab.APP -> content("src/main/kotlin/${config.packagePath}/Application.kt")
+        Tab.GRADLE -> content("build.gradle.kts")
         Tab.YAML -> content("src/main/resources/application.yaml")
-        Tab.TREE -> renderTree(config.artifactId, files.map { it.path })
+        Tab.TREE -> ""
     }
 }
 
-/** A box-drawing file tree from the generated paths. */
-private fun renderTree(root: String, paths: List<String>): String {
-    // Build a nested structure keyed by path segments.
-    data class Node(val name: String, val kids: LinkedHashMap<String, Node> = LinkedHashMap())
-    val rootNode = Node(root)
+// ---- file tree (icon rows, no box-drawing glyphs) ----
+
+private class TNode(val name: String, val kids: LinkedHashMap<String, TNode> = LinkedHashMap())
+
+@Composable
+private fun TreeView(root: String, paths: List<String>) {
+    val rootNode = TNode(root)
     for (path in paths) {
         var node = rootNode
-        for (seg in path.split('/')) node = node.kids.getOrPut(seg) { Node(seg) }
+        for (seg in path.split('/')) node = node.kids.getOrPut(seg) { TNode(seg) }
     }
-    val sb = StringBuilder("$root/\n")
-    fun walk(node: Node, prefix: String) {
-        val entries = node.kids.values.toList()
-        entries.forEachIndexed { i, child ->
-            val last = i == entries.lastIndex
+    val rows = ArrayList<Triple<Int, String, Boolean>>()
+    rows.add(Triple(0, "$root/", true))
+    fun walk(node: TNode, depth: Int) {
+        node.kids.values.forEach { child ->
             val isDir = child.kids.isNotEmpty()
-            sb.append(prefix).append(if (last) "└─ " else "├─ ").append(child.name).append(if (isDir) "/" else "").append('\n')
-            walk(child, prefix + if (last) "   " else "│  ")
+            rows.add(Triple(depth, child.name, isDir))
+            if (isDir) walk(child, depth + 1)
         }
     }
-    walk(rootNode, "")
-    return sb.toString().trimEnd('\n')
+    walk(rootNode, 1)
+    Column {
+        rows.forEach { (depth, name, isDir) -> TreeRow(depth, name, isDir) }
+    }
+}
+
+@Composable
+private fun TreeRow(depth: Int, name: String, isDir: Boolean) {
+    val p = palette()
+    Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.width((depth * 16).dp))
+        KIcon(if (isDir) KIcons.Folder else KIcons.File, 15.dp, if (isDir) p.accent else p.muted)
+        HGap(8)
+        Text(
+            name,
+            color = if (isDir) p.ink else p.ink2,
+            fontSize = 12.75.sp,
+            fontFamily = LocalMono.current,
+            fontWeight = if (isDir) FontWeight.SemiBold else FontWeight.Normal,
+        )
+    }
+}
+
+// ---- lightweight syntax highlighting ----
+
+private val KOTLIN_KEYWORDS = setOf(
+    "package", "import", "fun", "val", "var", "class", "object", "data", "override", "private",
+    "public", "internal", "protected", "return", "for", "while", "do", "if", "else", "when",
+    "true", "false", "null", "by", "in", "is", "as", "enum", "interface", "sealed", "companion",
+    "this", "super", "const", "vararg", "out",
+)
+
+private fun highlightKotlin(code: String, p: Palette): AnnotatedString = buildAnnotatedString {
+    var i = 0
+    val n = code.length
+    while (i < n) {
+        val c = code[i]
+        when {
+            c == '/' && i + 1 < n && code[i + 1] == '/' -> {
+                val start = i
+                while (i < n && code[i] != '\n') i++
+                withStyle(SpanStyle(color = p.codeCmt)) { append(code.substring(start, i)) }
+            }
+            c == '/' && i + 1 < n && code[i + 1] == '*' -> {
+                val start = i
+                i += 2
+                while (i < n && !(code[i] == '*' && i + 1 < n && code[i + 1] == '/')) i++
+                if (i < n) i += 2
+                withStyle(SpanStyle(color = p.codeCmt)) { append(code.substring(start, i)) }
+            }
+            c == '*' && atLineStart(code, i) -> {
+                val start = i
+                while (i < n && code[i] != '\n') i++
+                withStyle(SpanStyle(color = p.codeCmt)) { append(code.substring(start, i)) }
+            }
+            c == '"' -> {
+                val start = i
+                i++
+                while (i < n && code[i] != '"') {
+                    if (code[i] == '\\' && i + 1 < n) i++
+                    i++
+                }
+                if (i < n) i++
+                withStyle(SpanStyle(color = p.codeStr)) { append(code.substring(start, i)) }
+            }
+            c.isLetter() || c == '_' -> {
+                val start = i
+                while (i < n && (code[i].isLetterOrDigit() || code[i] == '_')) i++
+                val word = code.substring(start, i)
+                if (word in KOTLIN_KEYWORDS) {
+                    withStyle(SpanStyle(color = p.codeKw, fontWeight = FontWeight.SemiBold)) { append(word) }
+                } else {
+                    append(word)
+                }
+            }
+            c.isDigit() -> {
+                val start = i
+                while (i < n && (code[i].isDigit() || code[i] == '.')) i++
+                withStyle(SpanStyle(color = p.codeNum)) { append(code.substring(start, i)) }
+            }
+            else -> {
+                append(c)
+                i++
+            }
+        }
+    }
+}
+
+private fun atLineStart(code: String, index: Int): Boolean {
+    var j = index - 1
+    while (j >= 0 && (code[j] == ' ' || code[j] == '\t')) j--
+    return j < 0 || code[j] == '\n'
+}
+
+private fun highlightYaml(code: String, p: Palette): AnnotatedString = buildAnnotatedString {
+    code.split('\n').forEachIndexed { idx, line ->
+        if (idx > 0) append("\n")
+        val trimmed = line.trimStart()
+        when {
+            trimmed.startsWith("#") -> withStyle(SpanStyle(color = p.codeCmt)) { append(line) }
+            else -> {
+                val colon = line.indexOf(':')
+                val keyPart = if (colon >= 0) line.substring(0, colon) else ""
+                if (colon >= 0 && keyPart.isNotBlank() && !keyPart.trimStart().startsWith("-")) {
+                    withStyle(SpanStyle(color = p.codeKey, fontWeight = FontWeight.SemiBold)) { append(line.substring(0, colon)) }
+                    append(line.substring(colon))
+                } else {
+                    append(line)
+                }
+            }
+        }
+    }
 }
