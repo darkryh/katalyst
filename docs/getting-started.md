@@ -39,7 +39,7 @@ plugins {
 repositories { mavenCentral() }
 
 dependencies {
-    val katalyst = "1.0.0-alpha03"
+    val katalyst = "1.0.0-alpha04"
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")
     implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")

@@ -2,11 +2,11 @@
 
 Katalyst is published as a set of focused modules under the group
 `io.github.darkryh.katalyst`. Depend only on what you use. All modules share the same
-version (current line: `1.0.0-alpha03`). Applications should consume the BOM and feature
+version (current line: `1.0.0-alpha04`). Applications should consume the BOM and feature
 starters; the lower-level modules below remain useful for advanced integrations.
 
 ```kotlin
-val katalyst = "1.0.0-alpha03"
+val katalyst = "1.0.0-alpha04"
 implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
 implementation("io.github.darkryh.katalyst:katalyst-starter-web")
 implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")
@@ -96,7 +96,7 @@ Pull all three in at once with the `katalyst-starter-observability` starter.
 A full-featured service usually pulls in:
 
 ```kotlin
-val katalyst = "1.0.0-alpha03"
+val katalyst = "1.0.0-alpha04"
 implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
 implementation("io.github.darkryh.katalyst:katalyst-starter-web")
 implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")

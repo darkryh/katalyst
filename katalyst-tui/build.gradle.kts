@@ -19,7 +19,7 @@ plugins {
 // substitute `io.github.darkryh.katalyst:katalyst-tui` with this project — that is how a backend
 // gets the embedded inspector on its runtime classpath.
 group = "io.github.darkryh.katalyst"
-version = "1.0.0-alpha03"
+version = providers.gradleProperty("katalystVersion").get()
 
 kotlin {
     jvmToolchain(21)
