@@ -7,6 +7,15 @@
 
     <!-- Shown on the Marketplace listing and in the IDE's plugin update dialog. -->
     <change-notes><![CDATA[
+        <b>0.3.0</b>
+        <ul>
+            <li>Scheduler: cron descriptions now include a non-wildcard seconds field
+                (e.g. <code>10-20 15 10 * * ?</code> &rarr; <i>At 10:15 AM, at seconds 10 through 20</i>)
+                instead of silently dropping the seconds.</li>
+            <li>Aligned the vendored Katalyst discovery contract with framework
+                <code>1.0.0-alpha04</code>.</li>
+            <li>Internal: configuration-cache-safe build and tightened internal API visibility.</li>
+        </ul>
         <b>0.2.2</b>
         <ul>
             <li>Scheduler: cron validation and inline English descriptions now recognize mixed
