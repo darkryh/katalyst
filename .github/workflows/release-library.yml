@@ -17,6 +17,11 @@ name: Release library
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run — publish to the runner's local Maven repo only (validates the build, signing and secret wiring WITHOUT touching Maven Central). Uncheck to publish for real."
+        type: boolean
+        default: true
   push:
     tags:
       - 'v*'
@@ -44,12 +49,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Publish to Maven Central
+      - name: Publish
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
-        # --no-configuration-cache: publishing tasks are not configuration-cache compatible.
-        run: ./gradlew publishToMavenCentral --no-configuration-cache --stacktrace
+        # A manual run defaults to DRY RUN (publishToMavenLocal on the runner — validates the build,
+        # signing and secret wiring without touching Central). Uncheck `dry_run`, or push a `v*` tag,
+        # to publish for real. --no-configuration-cache: publishing tasks aren't config-cache compatible.
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "::notice::DRY RUN — publishing to the runner's local Maven repo only (no Central upload)."
+            ./gradlew publishToMavenLocal --no-configuration-cache --stacktrace
+          else
+            echo "::notice::REAL PUBLISH — uploading to Maven Central."
+            ./gradlew publishToMavenCentral --no-configuration-cache --stacktrace
+          fi
