@@ -1,0 +1,55 @@
+name: Release library
+
+# Publishes ALL katalyst-* artifacts (+ the BOM and the io.github.darkryh.katalyst Gradle plugin)
+# to Maven Central via vanniktech (publishToMavenCentral(automaticRelease = true)). The published
+# version is whatever `katalystVersion` is in gradle.properties — bump and commit that FIRST.
+#
+# Trigger: manually (Actions -> "Release library" -> Run workflow) or by pushing a tag `v*`
+# (e.g. `v1.0.0-alpha04`). Publishing is IRREVERSIBLE — a version cannot be re-published, so make
+# sure CI on the same commit is green before triggering.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   MAVEN_CENTRAL_USERNAME          Central Portal token username
+#   MAVEN_CENTRAL_PASSWORD          Central Portal token password
+#   SIGNING_IN_MEMORY_KEY           ASCII-armored GPG private key (the whole -----BEGIN...END----- block)
+#   SIGNING_IN_MEMORY_KEY_ID        short key id (optional; only if your key has subkeys)
+#   SIGNING_IN_MEMORY_KEY_PASSWORD  the GPG key passphrase
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+# Never run two publishes at once, and never cancel one mid-upload.
+concurrency:
+  group: release-library
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+        # --no-configuration-cache: publishing tasks are not configuration-cache compatible.
+        run: ./gradlew publishToMavenCentral --no-configuration-cache --stacktrace
