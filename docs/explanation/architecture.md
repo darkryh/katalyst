@@ -38,8 +38,8 @@ Phase 2  Dependency analysis      build the dependency graph from constructor pa
 Phase 3  Dependency validation    check every dependency is resolvable; fail fast
 Phase 4  Order computation        topological sort for safe instantiation order
 ─────────────────────────────────────────────────────────────────────────────
-Phase 5a Configuration loading    discover AutomaticServiceConfigLoaders, load,
-                                  validate, and register their config objects
+Phase 5a Configuration loading    discover `@ConfigPrefix` and `ConfigBinding` types via
+                                  `ConfigBinder`, bind, validate, and register them
 Phase 5b Component registration   instantiate components in the computed order
 Phase 6  Schema/table handling    apply the schema policy; run migrations if enabled
 Phase 7  Route registration       install routes, middleware, WebSockets, handlers
@@ -49,9 +49,9 @@ Two things follow directly from this ordering:
 
 - **Infrastructure config must exist in Phase 0.** The database is needed before the
   container can build anything that touches it, so it is configured in the DSL
-  (`database { … }`), not injected. This is why the database cannot use
-  `AutomaticServiceConfigLoader`, which only runs in Phase 5a.
-- **Service config is injected.** A loader's output is registered in Phase 5a, just before
+  (`database { … }`), not injected. This is why the database cannot use a `ConfigBinder`-bound
+  `@ConfigPrefix`/`ConfigBinding` type, which is only bound in Phase 5a.
+- **Service config is injected.** A bound config object is registered in Phase 5a, just before
   components are built in Phase 5b, so any component can receive it by constructor parameter.
 
 ## Discovery and the dependency graph

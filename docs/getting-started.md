@@ -39,9 +39,10 @@ plugins {
 repositories { mavenCentral() }
 
 dependencies {
-    val katalyst = "1.0.0-alpha01"
+    val katalyst = "1.0.0-alpha03"
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")
+    implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")
     implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")
 }
 
@@ -50,13 +51,14 @@ application {
 }
 ```
 
-You declare two things: the **BOM** and the **starters** you need. The BOM
+You declare three things: the **BOM** and the **starters** you need. The BOM
 (`platform(...)`) pins every Katalyst artifact to one version, so the starter coordinates
 below carry no version of their own. Each starter then brings its external dependencies
 transitively — you never list Ktor, Exposed, HikariCP, or a JDBC driver yourself:
 
-- `katalyst-starter-web` pulls in Ktor (server, content negotiation, JSON serialization)
-  and the Netty engine.
+- `katalyst-starter-web` pulls in Ktor (server, content negotiation, JSON serialization).
+  It is engine-agnostic, so you also add exactly one engine starter —
+  `katalyst-starter-engine-netty` here pulls in the Netty engine.
 - `katalyst-starter-persistence` pulls in Exposed, HikariCP, and the H2 and PostgreSQL
   drivers.
 
@@ -92,7 +94,6 @@ Create `app/src/main/kotlin/com/example/Application.kt`:
 package com.example
 
 import io.github.darkryh.katalyst.config.yaml.enableYamlConfiguration
-import io.github.darkryh.katalyst.di.feature.enableServerConfiguration
 import io.github.darkryh.katalyst.di.katalystApplication
 import io.github.darkryh.katalyst.koin.KoinBeanEngine
 import io.github.darkryh.katalyst.ktor.engine.netty.NettyServer
@@ -100,11 +101,12 @@ import io.github.darkryh.katalyst.ktor.engine.netty.NettyServer
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(NettyServer)
     beanEngine(KoinBeanEngine)
-    enableYamlConfiguration()
+    features {
+        enableYamlConfiguration()        // installs the YAML source; must run before database { }
+    }
     database { fromConfiguration() }
     scanPackages("com.example")
     schema { createMissing() }          // create tables that don't exist yet
-    features { enableServerConfiguration() }
 }
 ```
 

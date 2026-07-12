@@ -9,7 +9,7 @@ option set behind any task, follow the links into the [reference](../reference/i
 - [Configure your application with YAML](configure-yaml.md) — profiles, environment
   variables, database keys, server deployment.
 - [Add typed service configuration](add-service-config.md) — load and inject your own
-  config objects with `AutomaticServiceConfigLoader`.
+  config objects with `ConfigBinder`, `@ConfigPrefix`, and `ConfigBinding`.
 
 ## Persistence
 

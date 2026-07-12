@@ -14,16 +14,16 @@ their schema lifecycle, validate on startup and let migrations apply changes:
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(NettyServer)
     beanEngine(KoinBeanEngine)
-    enableYamlConfiguration()
-    database { fromConfiguration() }
-    scanPackages("com.example")
-    schema { validateOnStartup() }
     features {
+        enableYamlConfiguration()
         enableMigrations {
             runAtStartup = true
             schemaTable = "katalyst_schema_migrations"
         }
     }
+    database { fromConfiguration() }
+    scanPackages("com.example")
+    schema { validateOnStartup() }
 }
 ```
 

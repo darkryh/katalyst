@@ -32,15 +32,37 @@ beanEngine(KoinBeanEngine)
 `katalyst-koin-bean`) is the only adapter in this alpha. Startup fails fast if no bean engine
 is selected, so a missing adapter is caught immediately rather than at first injection.
 
-## enableYamlConfiguration
+## features
 
 ```kotlin
-enableYamlConfiguration()
+features {
+    enableYamlConfiguration()
+    enableServerTuning()
+    enableEvents()
+    enableMigrations { runAtStartup = true }
+    enableScheduler()
+    enableWebSockets()
+}
 ```
 
-Installs the YAML configuration source (from `katalyst-config-yaml`). Required for
-YAML-backed database, server-deployment, and runtime config. Call it once. To use a custom
-source instead, register a configuration feature — see [Configuration](configuration.md#custom-providers).
+Opts into non-core features. Each toggle comes from its module and is a no-op if you do not
+call it.
+
+| Toggle | Module | Effect |
+|--------|--------|--------|
+| `enableYamlConfiguration()` | `katalyst-config-yaml` | Install the YAML configuration source. Because `database { fromConfiguration() }` reads it synchronously, put this `features { }` block *before* `database { }`. |
+| `enableServerTuning()` | `katalyst-di` | Load `ktor.deployment.*` from the installed config source and make `ServerDeploymentConfiguration` available for injection |
+| `enableEvents()` | `katalyst-di` | Enable the in-process transactional `EventBus` |
+| `enableMigrations { … }` | `katalyst-migrations` | Run discovered migrations; accepts `MigrationOptions` fields |
+| `enableScheduler()` | `katalyst-scheduler` | Register discovered scheduler jobs |
+| `enableWebSockets { … }` | `katalyst-websockets` | Install the Ktor WebSockets plugin; accepts option fields |
+
+`enableMigrations` and `enableWebSockets` take optional configuration lambdas; see
+[Migrations](migrations.md#migrationoptions) and [Ktor integration](ktor.md#websocket-options).
+
+Katalyst does not auto-select a configuration source or engine deployment values from the
+classpath — call `enableYamlConfiguration()` (or register a custom source, see
+[Configuration](configuration.md#custom-providers)) explicitly.
 
 ## database
 
@@ -96,32 +118,6 @@ Sets the schema-management policy. Omitting the block is equivalent to `validate
 | `createMissing()` | Create any discovered table not present in the database. For local development and tests. |
 | `none()` | Do nothing; migrations or operations own the schema. |
 
-## features
-
-```kotlin
-features {
-    enableServerConfiguration()
-    enableEvents()
-    enableMigrations { runAtStartup = true }
-    enableScheduler()
-    enableWebSockets()
-}
-```
-
-Opts into non-core features. Each toggle comes from its module and is a no-op if you do not
-call it.
-
-| Toggle | Module | Effect |
-|--------|--------|--------|
-| `enableServerConfiguration()` | `katalyst-di` | Load `ktor.deployment.*` from config |
-| `enableEvents()` | `katalyst-di` | Enable the in-process transactional `EventBus` |
-| `enableMigrations { … }` | `katalyst-migrations` | Run discovered migrations; accepts `MigrationOptions` fields |
-| `enableScheduler()` | `katalyst-scheduler` | Register discovered scheduler jobs |
-| `enableWebSockets { … }` | `katalyst-websockets` | Install the Ktor WebSockets plugin; accepts option fields |
-
-`enableMigrations` and `enableWebSockets` take optional configuration lambdas; see
-[Migrations](migrations.md#migrationoptions) and [Ktor integration](ktor.md#websocket-options).
-
 ## Custom features
 
 Register a custom `KatalystFeature` with `feature(...)` to extend bootstrap — for example, a
@@ -134,17 +130,40 @@ katalystApplication(args) {
 }
 ```
 
-## Application initializers
+## Application lifecycle hooks
 
-Run startup work in `ApplicationInitializer` implementations discovered under your packages.
-Multiple are allowed and execute in deterministic order (`order` ascending, then class-name
-tie-break):
+Katalyst has two lifecycle hook interfaces. Implement one on a class that is otherwise
+discovered by the framework (for example, also implementing `Component` or `Service`) and it
+is picked up automatically — a class implementing only `StartupHook`/`ReadyHook` with no other
+discovery marker is never scanned.
+
+- **`StartupHook`** — runs before the server binds, after all components are instantiated and
+  the database schema is initialized. A built-in `StartupValidator` (`order = -100`) always
+  runs first to verify database connectivity and schema.
+- **`ReadyHook`** — runs once the HTTP server is up and accepting traffic. Use it for runtime
+  activations such as scheduler registration or background consumers.
+
+Multiple hooks of each kind are allowed and run in deterministic order (`order` ascending,
+ties broken by qualified class name):
 
 ```kotlin
-class CacheWarmupInitializer : ApplicationInitializer {
-    override val initializerId = "cacheWarmup"
+class CacheWarmupService(
+    private val cache: CacheClient
+) : Service, ReadyHook {
+    override val id = "cacheWarmup"
     override val order = 50
-    override suspend fun onApplicationReady() { /* … */ }
+    override suspend fun onReady() {
+        cache.warm()
+    }
+}
+```
+
+```kotlin
+class SchemaWarmupCheck : Component, StartupHook {
+    override val order = 10
+    override suspend fun onStartup() {
+        // pre-start validation/setup, runs after StartupValidator
+    }
 }
 ```
 
@@ -160,4 +179,3 @@ source; other configs (database, services) still load normally.
 - [Configuration](configuration.md) — the config source and keys.
 - [Architecture & bootstrap lifecycle](../explanation/architecture.md) — what each block
   triggers at runtime.
-

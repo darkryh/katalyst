@@ -108,17 +108,21 @@ eventBus.eventsOf<UserRegisteredEvent>().collect { event -> /* … */ }
 ## Transaction-aware publishing
 
 When you publish inside `transactionManager.transaction { … }`, delivery is deferred until the
-transaction commits; a rollback discards the pending events. This is implemented by
-`TransactionAwareEventBus`, which registers a transaction adapter so the bus participates in
-commit/rollback. The `publishPendingEvents` helper flushes events queued during a transaction.
+transaction commits; a rollback discards the pending events. `TransactionAwareEventBus` queues
+events published inside a transaction; `EventsTransactionAdapter` — a `TransactionAdapter` the
+framework registers automatically once `enableEvents()` is on — flushes them at commit
+(`SYNC_BEFORE_COMMIT`, before commit; a handler failure rolls back the transaction) or after
+commit (`ASYNC_AFTER_COMMIT`), and discards them on rollback. The `publishPendingEvents`
+helper flushes events queued during a transaction.
 
 This is what makes handlers safe: they never react to state that was rolled back.
 
 ## Side effects
 
-`EventSideEffect` and `EventSideEffectAdapter` model post-publish side effects coordinated
-with the event lifecycle — for example, dispatching to an external system after a successful
-publish. They integrate with the same transaction-aware machinery.
+`EventSideEffect` wraps a `DomainEvent` for the generic transactional side-effect framework
+(`TransactionalSideEffect`), so publishing can be scheduled as a `SYNC_BEFORE_COMMIT` or
+`ASYNC_AFTER_COMMIT` side effect alongside other transactional work. It is a thin wrapper that
+delegates to the event bus for the actual publish.
 
 ## Deduplication
 

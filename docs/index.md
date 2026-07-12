@@ -13,17 +13,17 @@ package — it discovers, validates, orders, and injects everything at startup.
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(NettyServer)
     beanEngine(KoinBeanEngine)
-    enableYamlConfiguration()
-    database { fromConfiguration() }
-    scanPackages("com.example")
-    schema { validateOnStartup() }
     features {
-        enableServerConfiguration()
+        enableYamlConfiguration()
+        enableServerTuning()
         enableEvents()
         enableMigrations()
         enableScheduler()
         enableWebSockets()
     }
+    database { fromConfiguration() }
+    scanPackages("com.example")
+    schema { validateOnStartup() }
 }
 ```
 

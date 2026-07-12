@@ -2,7 +2,8 @@
 
 Katalyst's configuration system loads settings from YAML, validates them in code, and injects
 strongly typed values without hand-written wiring. This page documents the `ConfigProvider`
-interface, the two loader patterns, the `ConfigLoaders` helpers, and every recognized key.
+interface, the typed configuration binding patterns, the `ConfigProvider` read extensions, and
+every recognized key.
 
 For task-oriented help, see [Configure with YAML](../how-to/configure-yaml.md) and
 [Add typed service configuration](../how-to/add-service-config.md).
@@ -27,64 +28,73 @@ class JwtSettingsService(config: ConfigProvider) : Service {
 | `getAllKeys()` | `Set<String>` — every known key |
 
 Keys are dotted paths into the YAML tree (`jwt.secret`, `database.pool.maxSize`). For
-anything beyond a few ad-hoc reads, prefer a typed config object loaded by a loader and the
-`ConfigLoaders` helpers below.
+anything beyond a few ad-hoc reads, prefer a typed config object bound by `ConfigBinder` and
+the read extensions below.
 
-## The two loader patterns
+## Typed configuration binding
 
-Katalyst has two configuration loader interfaces. They are **not** alternatives — each
-solves a different problem.
-
-| | `ServiceConfigLoader<T>` | `AutomaticServiceConfigLoader<T>` |
-|---|---|---|
-| Discovery | Manual | Automatic via classpath scan |
-| Registration | Manual | Automatic in the container |
-| Timing | Before DI (bootstrap) | During DI bootstrap |
-| Injection | Manual call | Constructor parameter |
-| Use case | Infrastructure config | Service/component config |
+`katalyst-config-provider` supports two binding styles for typed config classes, both
+discovered automatically during component scanning by `ConfigBinder`. They are **not**
+alternatives to the application DSL's `database { … }` block — that block still owns
+infrastructure config needed before DI starts.
 
 ### Choosing a pattern
 
-- Need the config **before DI can start** (database, ports)? Use the application DSL's
-  `database { … }` block, or a `ServiceConfigLoader` for other infrastructure.
-- Need the config **injected into components** (API keys, feature flags, messaging)? Use
-  `AutomaticServiceConfigLoader`.
+- Need the config **before DI can start** (database, server port)? Use the application DSL's
+  `database { … }` block. `ConfigBinder` types are not bound yet at that point.
+- Need the config **injected into a component** (API keys, feature flags, messaging
+  endpoints)? Use `@ConfigPrefix`/`@ConfigKey`, or `ConfigBinding` for imperative logic.
 
-You cannot use `AutomaticServiceConfigLoader` for the database, because it loads during DI —
-too late for infrastructure the container itself depends on.
+| | Annotation-driven (`@ConfigPrefix`) | Code escape hatch (`ConfigBinding`) |
+|---|---|---|
+| Discovery | `@ConfigPrefix`-annotated class | `ConfigBinding` implementor |
+| Binding | Each primary-constructor property reads a derived key (`prefix.kebab-case(name)`), or an explicit `@ConfigKey` override | Imperative — the constructor reads whatever it needs from the injected `ConfigProvider` |
+| Constructor shape | One parameter per bound property (`String`, `Int`, `Long`, `Boolean`) | Single `ConfigProvider` parameter |
+| Validation | `init { require(...) }` on the data class | Whatever the constructor body does |
+| Use case | Straightforward key-per-property config | Derived defaults, cross-key validation, or custom parsing |
 
-### AutomaticServiceConfigLoader
+Both styles are discovered by `ConfigBinder.discoverConfigTypes(scanPackages)`, bound by
+`ConfigBinder.bindAll(...)`, and registered as a singleton in the container — inject the
+config type as a constructor parameter like any other dependency.
+
+### Annotation-driven: @ConfigPrefix / @ConfigKey
 
 ```kotlin
-interface AutomaticServiceConfigLoader<T : Any> {
-    val configType: KClass<T>
-    fun loadConfig(provider: ConfigProvider): T
-    fun validate(config: T) {}        // optional; throw to fail fast
+@ConfigPrefix("notification")
+data class NotificationApiConfig(
+    val baseUrl: String,
+    val apiKey: String,
+    @ConfigKey("notification.timeout-seconds") val timeoutSeconds: Int = 30
+) {
+    init {
+        require(baseUrl.isNotBlank()) { "notification.base-url is required" }
+    }
 }
 ```
 
-An implementation under a scanned package is discovered, loaded, validated, and registered as
-a singleton during bootstrap, then injected by constructor type. Full walkthrough:
-[Add typed service configuration](../how-to/add-service-config.md).
+Each property binds to `notification.<kebab-case(property)>` (`baseUrl` becomes
+`notification.base-url`) unless overridden with `@ConfigKey` on that parameter. A missing
+required key, or a failed `init` `require`, throws `ConfigException` and fails bootstrap.
 
-### ServiceConfigLoader
+### Code escape hatch: ConfigBinding
 
 ```kotlin
-interface ServiceConfigLoader<T : Any> {
-    fun loadConfig(provider: ConfigProvider): T
+class SmtpConfig(provider: ConfigProvider) : ConfigBinding {
+    val host: String = provider.requiredString("smtp.host")
+    val port: Int = provider.intOrNull("smtp.port") ?: 25
 }
 ```
 
-A manual loader for infrastructure config you load and register yourself in the bootstrap
-phase, before DI. Use it when a config must exist before the container starts and the
-`database { … }` block does not cover it.
+Implementors must declare a primary constructor taking a single `ConfigProvider` parameter.
+Use this when keys map to values through logic a declarative annotation cannot express.
 
-## ConfigLoaders helpers
+Full walkthrough: [Add typed service configuration](../how-to/add-service-config.md).
 
-The `katalyst-config-provider` module supplies type-safe extraction helpers. Two equivalent
-styles exist: Kotlin extensions on `ConfigProvider`, and static `ConfigLoaders` methods.
+## ConfigProvider read extensions
 
-### Kotlin extensions
+`katalyst-config-provider` supplies nullable-first Kotlin extensions on `ConfigProvider` —
+used internally by `ConfigBinder` and available for imperative reads (for example, inside a
+`ConfigBinding`):
 
 ```kotlin
 provider.requiredString("notification.baseUrl")   // throws ConfigException if missing/blank
@@ -92,34 +102,15 @@ provider.requiredInt("notification.port")
 provider.requiredLong("notification.windowMs")
 provider.requiredBoolean("notification.strict")
 
-provider.stringOrNull("notification.region")       // null if missing; throws if malformed
+provider.stringOrNull("notification.region")       // null if missing; throws if present but malformed
 provider.intOrNull("notification.timeoutSeconds")
 provider.longOrNull("notification.windowMs")
-
-provider.boolean("notification.enabled")           // false if missing; throws if malformed
-
-provider.optionalString("notification.region", "us-east")  // concrete fallback
-provider.optionalInt("notification.timeoutSeconds", 30)
-provider.optionalLong("notification.windowMs", 1000L)
-provider.optionalBoolean("notification.enabled", true)
+provider.booleanOrNull("notification.enabled")
 ```
 
-### Static ConfigLoaders
-
-`ConfigLoaders` mirrors the extensions for Java/object-style usage and adds richer types:
-
-```kotlin
-ConfigLoaders.loadRequiredString(provider, "notification.baseUrl")
-ConfigLoaders.loadIntOrNull(provider, "notification.retryCount")
-ConfigLoaders.loadBoolean(provider, "notification.enabled")
-ConfigLoaders.loadOptionalDuration(provider, "request.timeout", Duration.ofSeconds(30))
-ConfigLoaders.loadOptionalList(provider, "allowed.hosts", emptyList())
-ConfigLoaders.loadOptionalEnum(provider, "log.level", LogLevel.INFO)
-```
-
-Prefer `required*` and `*OrNull` for clarity; reach for `optional*` only when a concrete
-fallback is part of the domain. Required helpers throw `ConfigException` on missing or blank
-values, which fails the bootstrap with the offending key named.
+`requiredX` fails fast with a `ConfigException` naming the key when it is missing (or blank,
+for strings) or malformed. `xOrNull` returns `null` when the key is absent, but still throws
+when the key is present with a malformed value — combine it with `?:` to supply a default.
 
 ## Profiles and interpolation
 
@@ -168,7 +159,7 @@ through the `database { … }` block.
 
 ## Server deployment keys
 
-Read when `enableServerConfiguration()` is set. All live under `ktor.deployment`.
+Read when `enableServerTuning()` is set. All live under `ktor.deployment`.
 
 | Key | Type | Notes |
 |-----|------|-------|
@@ -203,5 +194,5 @@ TLS settings live under `ktor.security.ssl` (`keyStore`, `keyAlias`, `keyStorePa
 - [Configure with YAML](../how-to/configure-yaml.md)
 - [Add typed service configuration](../how-to/add-service-config.md)
 - [Application DSL](application-dsl.md) — `enableYamlConfiguration`, `database`,
-  `enableServerConfiguration`.
+  `enableServerTuning`.
 

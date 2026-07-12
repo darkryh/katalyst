@@ -14,10 +14,12 @@ Katalyst does not install a configuration source from the classpath automaticall
 fun main(args: Array<String>) = katalystApplication(args) {
     engine(NettyServer)
     beanEngine(KoinBeanEngine)
-    enableYamlConfiguration()          // installs the YAML source
-    database { fromConfiguration() }   // reads database.* from it
+    features {
+        enableYamlConfiguration()       // installs the YAML source
+        enableServerTuning()
+    }
+    database { fromConfiguration() }    // reads database.* from it
     scanPackages("com.example")
-    features { enableServerConfiguration() }
 }
 ```
 
@@ -94,10 +96,10 @@ src/main/resources/
 ## Load the server deployment block
 
 To configure the Ktor engine (host, port, thread pools, timeouts, TLS) from YAML, enable
-the server configuration feature and add a `ktor.deployment` block:
+server tuning and add a `ktor.deployment` block:
 
 ```kotlin
-features { enableServerConfiguration() }
+features { enableServerTuning() }
 ```
 
 ```yaml
@@ -133,6 +135,7 @@ For anything beyond a handful of ad-hoc reads, prefer a typed config object — 
 ## Related
 
 - [Configuration reference](../reference/configuration.md) — every key and helper.
-- [Add typed service configuration](add-service-config.md) — `AutomaticServiceConfigLoader`.
+- [Add typed service configuration](add-service-config.md) — `ConfigBinder`, `@ConfigPrefix`,
+  and `ConfigBinding`.
 - [Choose a server engine](choose-an-engine.md) — how the deployment block maps to engines.
 

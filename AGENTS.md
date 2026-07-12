@@ -1,22 +1,63 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Katalyst is a multi-module Kotlin/Gradle project. The root `build.gradle.kts` wires modules such as `katalyst-core`, `katalyst-persistence`, `katalyst-scheduler`, `katalyst-ktor-support`, `scanner`, and `dependency-injection`. Each module keeps Kotlin sources under `src/main/kotlin` and tests in `src/test/kotlin`; shared assets sit in matching `resources` folders. The executable Ktor host lives in `src/main/kotlin` at the root, with runtime configuration in `src/main/resources/application.yaml`. A ready-to-run reference app is under `io.github.darkryh.katalyst.example`, broken into `infra`, `repositories`, `services`, `routes`, and `scheduler` packages so you can see how the modules plug together. Refer to `KATALYST_LOGIC_CODE.md` when you need deeper architectural context.
+Katalyst is a multi-module Kotlin/Gradle **library** — there is no root application or
+`src/` directory; the root `build.gradle.kts` only configures shared plugins and public-API
+tracking. Each `katalyst-*` module keeps sources under `src/main/kotlin` and tests under
+`src/test/kotlin`, mirroring its package (`io.github.darkryh.katalyst.<feature>`). See
+`settings.gradle.kts` for the authoritative module list; the main groups are:
+
+- **Core:** `katalyst-core`, `katalyst-di`, `katalyst-koin-bean`, `katalyst-scanner`
+- **HTTP/engines:** `katalyst-ktor`, `katalyst-ktor-engine-{netty,jetty,cio}`, `katalyst-websockets`
+- **Data:** `katalyst-persistence`, `katalyst-transactions`, `katalyst-migrations`
+- **Configuration:** `katalyst-config-provider`, `katalyst-config-spi`, `katalyst-config-yaml`
+- **Events:** `katalyst-events`, `katalyst-events-bus`
+- **Observability:** `katalyst-telemetry-model`, `katalyst-telemetry`, `katalyst-tui`
+- **Testing:** `katalyst-testing-core`, `katalyst-testing-ktor`
+- **Starters** (dependency bundles, under `starter/`): `katalyst-starter-{core,web,persistence,
+  migrations,scheduler,websockets,test,observability,engine-netty,engine-jetty,engine-cio}`
+- **Packaging:** `katalyst-bom`, `katalyst-gradle-plugin`, `katalyst-conventions`
+
+A runnable reference application lives in the separate `samples` composite build
+(`samples/katalyst-example`). The IntelliJ plugin (`katalyst-intellij-plugin`) and the
+Kotlin/Wasm project generator (`initializr`) are each their own standalone Gradle builds —
+opt into the samples/plugin composites with `-PincludeSamplesComposite=true` /
+`-PincludeIntellijPluginComposite=true`, or build the generator directly with
+`./gradlew -p initializr wasmJsBrowserDistribution`.
 
 ## Build, Test, and Development Commands
-- `./gradlew build` — compiles all modules, runs checks, and assembles the Ktor server.
-- `./gradlew test` — executes the full test suite across modules.
-- `./gradlew :katalyst-scheduler:test` (or any `:module:test`) — targets a single module while iterating.
-- `./gradlew run` — boots the local Ktor server using the active `application.yaml`.
+- `./gradlew build` — compiles every module and runs checks (tests, public-API compatibility).
+- `./gradlew test` — runs the full test suite across modules.
+- `./gradlew :katalyst-scheduler:test` (or any `:module:test`) — targets a single module.
+- `./gradlew apiDump` — re-snapshots a module's public API into `<module>/api/*.api` after an
+  intentional signature change; CI's `apiCheck` fails the build on undeclared drift.
+- `cd samples && ./gradlew :katalyst-example:koverHtmlReport` — coverage report for the
+  reference app.
 
 ## Coding Style & Naming Conventions
-We follow `kotlin.code.style=official` (four-space indents, trailing commas where idiomatic). Keep packages under `io.github.darkryh.katalyst.<feature>` and match directory layout to package paths. Public APIs should carry KDoc summaries; complex flows can link back to the conceptual docs in `docs/` or the top-level guides. Prefer immutable data classes for configuration (see `katalyst-persistence/DatabaseConfig.kt`) and surface asynchronous work with `suspend` functions.
+`kotlin.code.style=official` (four-space indents, trailing commas where idiomatic). Keep
+packages under `io.github.darkryh.katalyst.<feature>` and match directory layout to package
+paths. Public APIs should carry KDoc summaries; complex flows can link back to the conceptual
+docs under `docs/`. Prefer immutable data classes for configuration, and surface asynchronous
+work with `suspend` functions.
 
 ## Testing Guidelines
-Unit tests rely on `kotlin-test` with JUnit; Ktor components use `ktor-server-test-host` for pipeline verification. Name files with `*Test.kt` for unit coverage and `*IntegrationTest.kt` for multi-module or I/O flows, mirroring the scheduler suite. Keep fixtures small and deterministic; mock external services via in-memory doubles before reaching for embedded infrastructure. Run `./gradlew test` before publishing changes and add new cases whenever you touch core discovery, DI wiring, or transaction management.
+Unit tests use `kotlin-test`/JUnit; Ktor-facing code uses `ktor-server-test-host` for pipeline
+verification. Name unit-test files `*Test.kt`; a handful of multi-module or I/O suites use
+`*IntegrationTests.kt`. Keep fixtures small and deterministic; prefer in-memory fakes over
+embedded infrastructure. Run `./gradlew test` before publishing changes, and add cases
+whenever you touch discovery, DI wiring, or transaction management.
 
 ## Commit & Pull Request Guidelines
-Use imperative, scope-prefixed commit messages (e.g., `scheduler: tighten cron validation`). Group related work into focused commits and avoid mixing refactors with feature delivery. Pull requests should outline motivation, summarize module-level impacts, link to issues, and include any configuration updates or new endpoints. Attach screenshots or logs if the change alters runtime behavior. Confirm tests pass locally and note any follow-up tasks so reviewers can verify quickly.
+Use imperative, scope-prefixed commit messages (e.g., `scheduler: tighten cron validation`).
+Group related work into focused commits and avoid mixing refactors with feature delivery.
+Pull requests should outline motivation, summarize module-level impacts, link to issues, and
+include any configuration updates. Confirm tests pass locally and note follow-up tasks so
+reviewers can verify quickly.
 
 ## Configuration & Security Notes
-Keep secrets and environment-specific values outside the repo; `application.yaml` should load overrides from environment variables or external files when deployed. When adding new configuration blocks, document defaults inline and thread them through the `database` and `dependency-injection` modules so the scanner can detect them automatically.
+Keep secrets and environment-specific values outside the repo; YAML config should read
+overrides from environment variables (`${VAR:default}`) or external files at deploy time. New
+configuration keys belong in `docs/reference/configuration.md` and should bind through
+`katalyst-config-provider` (`@ConfigPrefix`/`ConfigBinding`) so the scanner registers them
+automatically instead of being read ad hoc.

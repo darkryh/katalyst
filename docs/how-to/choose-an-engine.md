@@ -70,10 +70,10 @@ engine module for non-default engines).
 ## Configure the engine
 
 Engine-level settings (host, port, thread pools, timeouts, TLS) come from the
-`ktor.deployment` block when you enable server configuration:
+`ktor.deployment` block when you enable server tuning:
 
 ```kotlin
-features { enableServerConfiguration() }
+features { enableServerTuning() }
 ```
 
 The deployment keys, including which are engine-specific, are documented in the

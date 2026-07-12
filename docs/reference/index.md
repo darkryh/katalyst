@@ -16,8 +16,8 @@ learning or task-oriented help, see the [tutorial](../getting-started.md) and
 
 ## Configuration
 
-- [Configuration](configuration.md) — `ConfigProvider`, the loader patterns, `ConfigLoaders`
-  helpers, and every recognized key.
+- [Configuration](configuration.md) — `ConfigProvider`, the typed configuration binding
+  patterns (`ConfigBinder`, `@ConfigPrefix`, `ConfigBinding`), and every recognized key.
 
 ## Data
 

@@ -14,9 +14,9 @@ Constructor parameters are resolved by type at instantiation.
 | A class implementing `CrudRepository<Id, Entity>` | A repository | `katalyst-persistence` |
 | An `object`/class implementing `Table<Id, Entity>` | A table | `katalyst-persistence` |
 | A class implementing `EventHandler<T>` | An event handler | `katalyst-events` |
-| A class implementing `ApplicationInitializer` | A startup initializer | `katalyst-di` |
+| A `Component`/`Service` that also implements `StartupHook` or `ReadyHook` | A lifecycle hook (runs at startup, or once the server is ready) | `katalyst-di` |
 | A class implementing `KatalystMigration` | A migration | `katalyst-migrations` |
-| An object implementing `AutomaticServiceConfigLoader<T>` | A config loader | `katalyst-config-provider` |
+| A class annotated `@ConfigPrefix`, or a class implementing `ConfigBinding` | A typed config binding | `katalyst-config-provider` |
 | `fun Route.xxx() = katalystRouting { … }` | A route module | `katalyst-ktor` |
 | `fun Application.xxx() = katalystMiddleware { … }` | Middleware | `katalyst-ktor` |
 | `fun Route.xxx() = katalystWebSockets { … }` | A WebSocket route | `katalyst-ktor` |
