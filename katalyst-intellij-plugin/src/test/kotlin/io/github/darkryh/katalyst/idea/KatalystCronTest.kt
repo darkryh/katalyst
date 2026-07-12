@@ -101,6 +101,21 @@ class KatalystCronTest {
     }
 
     @Test
+    fun describesNonWildcardSecondsWhenMinuteAndHourAreExact() {
+        // Exact seconds: folded straight into the leading time (all of second/minute/hour pinned).
+        assertEquals("Every day at 9:00:30 AM", KatalystCron.describe("30 0 9 * * ?"))
+
+        // Listed seconds must still be mentioned, not silently dropped as if they were ":00".
+        assertEquals("At 10:15 AM, at seconds 0 and 30", KatalystCron.describe("0,30 15 10 * * ?"))
+
+        // Range seconds must also still be mentioned.
+        assertEquals("At 10:15 AM, at seconds 10 through 20", KatalystCron.describe("10-20 15 10 * * ?"))
+
+        // Wildcard seconds is unrelated to this fix and must remain unchanged.
+        assertEquals("Every second", KatalystCron.describe("* 15 10 * * ?"))
+    }
+
+    @Test
     fun describeReturnsNullForInvalid() {
         assertNull(KatalystCron.describe("nonsense"))
         assertNull(KatalystCron.describe("0 0 25 * * ?"))

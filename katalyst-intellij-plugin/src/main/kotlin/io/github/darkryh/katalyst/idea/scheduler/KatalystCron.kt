@@ -14,7 +14,7 @@ package io.github.darkryh.katalyst.idea.scheduler
  * Parity-critical detail: day-of-week is `0=Sunday .. 6=Saturday` (the engine matches
  * `DayOfWeek.value % 7`), so the describer must use that mapping.
  */
-object KatalystCron {
+internal object KatalystCron {
 
     /** A parsed cron field, retained only as far as the describer needs it. */
     private sealed interface Field {
@@ -217,7 +217,10 @@ object KatalystCron {
             is Field.Step -> "At minute ${min.value}, every ${units(hour.step, "hour")}"
             is Field.Range -> "At minute ${min.value}, between ${clock(hour.from)} and ${clock(hour.to)}"
             is Field.Listed -> "At minute ${min.value}, during ${joinNatural(hour.values.map { clock(it) })}"
-            is Field.Exact -> "At ${formatTime(hour.value, min.value, 0)}" // sec was Range/Listed
+            // sec here is necessarily Range/Listed (Exact would have hit the all-exact branch
+            // above; Step/Every are matched earlier in this `when`): it must still be reflected,
+            // not silently dropped.
+            is Field.Exact -> "At ${formatTime(hour.value, min.value, 0)}${secondsSuffix(sec)}"
         }
 
         min is Field.Range -> "Every minute from minute ${min.from} through ${min.to}${hourWindow(hour)}"
@@ -303,6 +306,17 @@ object KatalystCron {
         is Field.Listed -> "only in ${joinNatural(mon.values.map { monthNames[it - 1] })}"
         is Field.Step -> "every ${ordinal(mon.step)} month"
         Field.Every -> null
+    }
+
+    /**
+     * Trailing clause for a seconds sub-pattern that couldn't be folded into the leading
+     * "hh:mm" time (i.e. it is a Range or Listed restriction, not a single exact value), e.g.
+     * ", at seconds 10 through 20".
+     */
+    private fun secondsSuffix(sec: Field): String = when (sec) {
+        is Field.Range -> ", at seconds ${sec.from} through ${sec.to}"
+        is Field.Listed -> ", at seconds ${joinNatural(sec.values.map(Int::toString))}"
+        else -> ""
     }
 
     private fun minuteList(min: Field): String = when (min) {

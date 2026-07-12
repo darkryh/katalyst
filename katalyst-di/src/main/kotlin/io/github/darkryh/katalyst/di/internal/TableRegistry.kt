@@ -52,17 +52,6 @@ internal object TableRegistry : ResettableRegistry {
     }
 
     /**
-     * Clear all registered tables.
-     *
-     * Used for testing and reinitialization scenarios.
-     */
-    fun clear() {
-        synchronized(lock) {
-            tables.clear()
-        }
-    }
-
-    /**
      * Resets the registry to its initial empty state.
      *
      * Implements [ResettableRegistry.reset] for test isolation.
@@ -70,15 +59,6 @@ internal object TableRegistry : ResettableRegistry {
     override fun reset() {
         synchronized(lock) {
             tables.clear()
-        }
-    }
-
-    /**
-     * Get count of registered tables.
-     */
-    fun size(): Int {
-        synchronized(lock) {
-            return tables.size
         }
     }
 }

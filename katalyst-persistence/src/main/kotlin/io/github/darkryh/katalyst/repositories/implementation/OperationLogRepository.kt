@@ -32,6 +32,11 @@ import kotlinx.serialization.json.longOrNull
  * **Thread Safety**: Safe for concurrent access via Exposed transaction management.
  *
  * **Async Behavior**: Writes are intentionally async to avoid blocking the main transaction.
+ *
+ * **Error Handling**: Every persistence failure is logged with its real cause and then
+ * rethrown rather than swallowed. Returning a default (empty list, silently skipping a
+ * write) on failure would be indistinguishable from a genuinely empty/successful result,
+ * which is unsafe for a subsystem whose whole purpose is tracking what needs to be undone.
  */
 internal class OperationLogRepository(private val database: Database) : OperationLog {
 
@@ -43,6 +48,9 @@ internal class OperationLogRepository(private val database: Database) : Operatio
      * @param workflowId Workflow ID
      * @param operationIndex Sequential index (0-based)
      * @param operation Operation details
+     * @throws Exception if the log entry cannot be persisted. Silently swallowing this
+     * would mean the operation cannot later be undone during recovery without anyone
+     * knowing the log entry is missing, so the real cause is logged and rethrown.
      */
     override suspend fun logOperation(
         workflowId: String,
@@ -72,7 +80,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
                 "Failed to log operation for workflow: {} ({}/{})",
                 workflowId, operation.resourceType, operation.resourceId, e
             )
-            // Don't throw - operation already succeeded
+            throw e
         }
     }
 
@@ -106,7 +114,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
             }
         } catch (e: Exception) {
             logger.error("Failed to get pending operations for workflow: {}", workflowId, e)
-            emptyList()
+            throw e
         }
     }
 
@@ -137,7 +145,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
             }
         } catch (e: Exception) {
             logger.error("Failed to get all operations for workflow: {}", workflowId, e)
-            emptyList()
+            throw e
         }
     }
 
@@ -169,6 +177,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
                 "Failed to mark operation as committed: workflow={}, index={}",
                 workflowId, operationIndex, e
             )
+            throw e
         }
     }
 
@@ -190,6 +199,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
             logger.debug("Marked all operations as committed for workflow: {}", workflowId)
         } catch (e: Exception) {
             logger.error("Failed to mark all operations as committed for workflow: {}", workflowId, e)
+            throw e
         }
     }
 
@@ -221,6 +231,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
                 "Failed to mark operation as undone: workflow={}, index={}",
                 workflowId, operationIndex, e
             )
+            throw e
         }
     }
 
@@ -253,6 +264,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
                 "Failed to mark operation as failed: workflow={}, index={}",
                 workflowId, operationIndex, e
             )
+            throw e
         }
     }
 
@@ -282,7 +294,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
             }
         } catch (e: Exception) {
             logger.error("Failed to get failed operations", e)
-            emptyList()
+            throw e
         }
     }
 
@@ -303,7 +315,7 @@ internal class OperationLogRepository(private val database: Database) : Operatio
             }
         } catch (e: Exception) {
             logger.error("Failed to delete old operations", e)
-            0
+            throw e
         }
     }
 

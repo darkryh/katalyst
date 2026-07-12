@@ -104,6 +104,27 @@ class ConfigBinderTest {
     }
 
     @Test
+    fun `throws ConfigException naming the key when a present String key resolves to null`() {
+        // hasKey() reports "db.url" as present (the map contains the key), but get() resolves
+        // to null. Int/Long/Boolean already fail fast on this via requireRaw(); the String path
+        // must now do the same instead of silently binding null into a non-nullable parameter.
+        val data: Map<String, Any?> = mapOf("db.url" to null, "custom.timeout.ms" to 42L)
+        val ex = assertFailsWith<ConfigException> {
+            ConfigBinder.bind(DbConfig::class, FakeConfigProvider(data))
+        }
+        assertTrue(ex.message.orEmpty().contains("db.url"), "message should name the key: ${ex.message}")
+    }
+
+    @Test
+    fun `still accepts a legitimately blank required String value`() {
+        // The null-guard added for the case above must not reject genuine empty/blank strings -
+        // only an actual null raw value is a failure.
+        val provider = FakeConfigProvider(mapOf("mail.webhook-secret" to "", "mail.replay-secret" to ""))
+        val config = ConfigBinder.bind(MailConfig::class, provider) as MailConfig
+        assertEquals("", config.webhookSecret)
+    }
+
+    @Test
     fun `runs data class init validation and surfaces failure as ConfigException`() {
         val provider = FakeConfigProvider(mapOf("v.port" to 70000))
         val ex = assertFailsWith<ConfigException> { ConfigBinder.bind(ValidatedConfig::class, provider) }
@@ -135,5 +156,38 @@ class ConfigBinderTest {
         val beta = bound[BetaBinding::class] as? BetaBinding
         assertEquals(AlphaConfig(name = "x", size = 99), alpha)
         assertEquals(true, beta?.flag)
+    }
+
+    @Test
+    fun `bindAll(types, provider) produces identical bindings to bindAll(scanPackages, provider)`() {
+        val provider = FakeConfigProvider(
+            mapOf("alpha.name" to "x", "alpha.size" to 99, "beta.flag" to true)
+        )
+        val scanPackages = arrayOf("io.github.darkryh.katalyst.config.provider.binderfixtures")
+
+        // Simulates a caller (e.g. DI bootstrap) that already ran discoverConfigTypes and hands
+        // the resulting Set straight to bindAll, instead of letting bindAll re-scan internally.
+        val preDiscoveredTypes = ConfigBinder.discoverConfigTypes(scanPackages)
+        val fromPreDiscoveredTypes = ConfigBinder.bindAll(preDiscoveredTypes, provider)
+        val fromScanPackages = ConfigBinder.bindAll(scanPackages, provider)
+
+        assertEquals(fromScanPackages.keys, fromPreDiscoveredTypes.keys)
+        assertEquals(fromScanPackages[AlphaConfig::class], fromPreDiscoveredTypes[AlphaConfig::class])
+        assertEquals(
+            (fromScanPackages[BetaBinding::class] as BetaBinding).flag,
+            (fromPreDiscoveredTypes[BetaBinding::class] as BetaBinding).flag,
+        )
+    }
+
+    @Test
+    fun `bindAll(types, provider) binds directly from the given set without its own classpath scan`() {
+        // MailConfig lives in this test's own package (not the binderfixtures package scanned by
+        // discoverConfigTypes above) and is handed in as a manually-assembled Set - not the
+        // result of any scan. This overload has no scanPackages parameter at all, so there is
+        // nothing for it to (re-)scan: it can only bind from what was passed in.
+        val provider = FakeConfigProvider(mapOf("mail.webhook-secret" to "ws", "mail.replay-secret" to "rs"))
+        val bound = ConfigBinder.bindAll(setOf(MailConfig::class), provider)
+        val mail = bound[MailConfig::class] as? MailConfig
+        assertEquals(MailConfig(webhookSecret = "ws", replaySecret = "rs", maxRetries = 3), mail)
     }
 }

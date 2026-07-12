@@ -25,11 +25,13 @@ internal class ServerConfigurationResolver(
         }
 
         val compositeProvider = CompositeConfigProvider(providers)
-        val loaderInstance = resolveLoaderInstance()
 
         return try {
-            val deployment = invokeLoad(loaderInstance, compositeProvider)
-            validate(loaderInstance, deployment)
+            val deployment = ServerDeploymentConfigurationLoader.loadConfig(compositeProvider)
+            runCatching { ServerDeploymentConfigurationLoader.validate(deployment) }
+                .onFailure { error ->
+                    logger.warn("Server deployment configuration validation reported an issue: {}", error.message)
+                }
             logger.info(
                 "✓ Server deployment configuration resolved (host={}, port={}, source={})",
                 deployment.host,
@@ -78,44 +80,6 @@ internal class ServerConfigurationResolver(
             return null
         }
         return configurationSource()
-    }
-
-    fun bootstrapConfigProvider(): ConfigProvider? = resolveBootstrapProvider()
-
-    private fun resolveLoaderInstance(): Any {
-        return runCatching {
-            val loaderClass = Class.forName("io.github.darkryh.katalyst.di.config.ServerDeploymentConfigurationLoader")
-            runCatching { loaderClass.getField("INSTANCE").get(null) }
-                .getOrElse { loaderClass.kotlin.objectInstance ?: loaderClass.getDeclaredConstructor().newInstance() }
-        }.onFailure { error ->
-            when (error) {
-                is ClassNotFoundException -> logger.warn(
-                    "ServerDeploymentConfigurationLoader not found. Include katalyst-config-provider to load ktor.deployment.* from config."
-                )
-                else -> logger.warn("Failed to load ServerDeploymentConfigurationLoader: {}", error.message)
-            }
-        }.getOrElse { error ->
-            throw IllegalStateException(
-                "ServerDeploymentConfigurationLoader is unavailable. Include katalyst-config-provider " +
-                    "and configure an explicit source with enableYamlConfiguration() or configuration(customSource).",
-                error
-            )
-        }
-    }
-
-    private fun invokeLoad(loader: Any, provider: ConfigProvider): ServerDeploymentConfiguration {
-        val loadMethod = loader.javaClass.getMethod("loadConfig", ConfigProvider::class.java)
-        @Suppress("UNCHECKED_CAST")
-        return loadMethod.invoke(loader, provider) as ServerDeploymentConfiguration
-    }
-
-    private fun validate(loader: Any, deployment: ServerDeploymentConfiguration) {
-        runCatching {
-            val validateMethod = loader.javaClass.getMethod("validate", ServerDeploymentConfiguration::class.java)
-            validateMethod.invoke(loader, deployment)
-        }.onFailure { error ->
-            logger.warn("Server deployment configuration validation reported an issue: {}", error.message)
-        }
     }
 
     private fun describeSources(providers: List<ConfigProvider>): String {

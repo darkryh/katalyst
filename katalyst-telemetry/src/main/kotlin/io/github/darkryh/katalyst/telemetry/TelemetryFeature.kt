@@ -63,6 +63,9 @@ object TelemetryFeature : KatalystFeature {
     @Volatile
     private var server: TelemetryServer? = null
 
+    @Volatile
+    private var shutdownHookInstalled = false
+
     override fun provideBeanModules(): List<KatalystBeanModule> {
         val config = TelemetryConfig.fromEnvironment()
         if (!config.enabled) {
@@ -112,6 +115,7 @@ object TelemetryFeature : KatalystFeature {
         val transport = TelemetryServer(store, config.host, chosenPort, wsToken)
         val boundPort = runCatching { transport.start() }.getOrNull() ?: chosenPort
         server = transport
+        installShutdownHook()
 
         val writer = RunDescriptorWriter(
             appName = appName,
@@ -130,6 +134,35 @@ object TelemetryFeature : KatalystFeature {
         logger.info("Telemetry attached: pid={} port={} token=****", pid, boundPort)
         return store
     }
+
+    /**
+     * Ensures the loopback transport is stopped when the JVM exits. `TelemetryFeature` is loaded
+     * reflectively, before any Ktor `Application` exists, so it has no direct line to
+     * `ApplicationStopping`/`ApplicationStopped` on the engine monitor and `KatalystFeature` has no
+     * teardown hook of its own (only [provideBeanModules] / [onReady]). A JVM shutdown hook is the
+     * self-contained lifecycle seam that works regardless: it mirrors the shutdown hook
+     * [RunDescriptorWriter] already installs in this same module, fires on both a clean exit and
+     * Ctrl+C, and is fully guarded so a stop failure can never break shutdown.
+     */
+    private fun installShutdownHook() {
+        if (shutdownHookInstalled) return
+        shutdownHookInstalled = true
+        runCatching {
+            Runtime.getRuntime().addShutdownHook(Thread { stopTransport() })
+        }.onFailure { logger.debug("Could not register telemetry transport shutdown hook: {}", it.message) }
+    }
+
+    /** Gracefully stops the currently attached transport (small grace/timeout), if any. Never throws. */
+    private fun stopTransport() {
+        runCatching { server?.stop() }
+            .onFailure { logger.debug("Telemetry transport stop failed: {}", it.message) }
+    }
+
+    /**
+     * Test-only seam: runs exactly the action the JVM shutdown hook installed by [installShutdownHook]
+     * would run, without forcing a real JVM exit. Internal — not part of this module's public API.
+     */
+    internal fun shutdownHookActionForTest() = stopTransport()
 
     /**
      * Quiet mode (`-Dkatalyst.telemetry.quiet=true`): the console flood is the pain the inspector

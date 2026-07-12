@@ -1,0 +1,5 @@
+server:
+  hosts:
+    - host-x
+    - host-y
+    - host-z

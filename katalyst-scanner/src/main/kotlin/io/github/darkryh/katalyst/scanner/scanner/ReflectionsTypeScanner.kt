@@ -9,6 +9,7 @@ import org.reflections.Reflections
 import org.reflections.util.ClasspathHelper
 import org.reflections.util.ConfigurationBuilder
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Generic implementation of TypeDiscovery using the Reflections library.
@@ -73,6 +74,52 @@ class ReflectionsTypeScanner<T>(
 
     private val logger = LoggerFactory.getLogger(ReflectionsTypeScanner::class.java)
 
+    internal companion object {
+        /**
+         * Cache of built [Reflections] indexes keyed by the set of packages scanned.
+         *
+         * Building a [Reflections] index performs a full classpath/package scan, which is
+         * expensive. Bootstrap typically discovers many marker interfaces (e.g. Service,
+         * Component, CrudRepository, Table, EventHandler, ...) against the same
+         * scan-package-set, each via its own [ReflectionsTypeScanner] instance. Caching the
+         * index here - shared across all instances - means the expensive scan happens once
+         * per distinct scan-package-set and is reused by every subsequent [discover] call,
+         * regardless of which marker type is being looked up.
+         */
+        private val reflectionsCache = ConcurrentHashMap<Set<String>, Reflections>()
+
+        /**
+         * Number of times a fresh classpath/package scan has actually been performed
+         * (i.e. cache misses). Exposed internally so tests can prove that repeated
+         * [discover] calls for the same scan-package-set reuse a single scan.
+         */
+        internal val scanBuildCount = java.util.concurrent.atomic.AtomicInteger(0)
+
+        /**
+         * Clears the cached indexes and resets [scanBuildCount]. Intended for test
+         * isolation only; not used by normal runtime code paths.
+         */
+        internal fun resetCache() {
+            reflectionsCache.clear()
+            scanBuildCount.set(0)
+        }
+
+        private fun reflectionsFor(scanPackages: List<String>): Reflections {
+            val packageSetKey = scanPackages.toSet()
+            return reflectionsCache.computeIfAbsent(packageSetKey) { packages ->
+                scanBuildCount.incrementAndGet()
+                if (packages.isEmpty()) {
+                    Reflections(
+                        ConfigurationBuilder()
+                            .setUrls(ClasspathHelper.forClassLoader())
+                    )
+                } else {
+                    Reflections(*packages.toTypedArray())
+                }
+            }
+        }
+    }
+
     override fun discover(): Set<Class<out T>> {
         return try {
             val startTime = System.currentTimeMillis()
@@ -83,17 +130,15 @@ class ReflectionsTypeScanner<T>(
             }
             logger.debug("🔍 Scanning {} for {} implementations", scanMessage, baseType.simpleName)
 
-            // Configure reflections based on scan packages
-            val reflections = if (config.scanPackages.isEmpty()) {
+            if (config.scanPackages.isEmpty()) {
                 logger.debug("No packages specified - scanning entire classpath")
-                Reflections(
-                    ConfigurationBuilder()
-                        .setUrls(ClasspathHelper.forClassLoader())
-                )
             } else {
                 logger.debug("Scanning specified packages: {}", config.scanPackages.joinToString(", "))
-                Reflections(*config.scanPackages.toTypedArray())
             }
+
+            // Reuse the cached index for this scan-package-set instead of performing a
+            // brand-new classpath scan on every call (see reflectionsCache above).
+            val reflections = reflectionsFor(config.scanPackages)
 
             // Get all subtypes of the base type
             var implementations = reflections.getSubTypesOf(baseType)

@@ -29,7 +29,7 @@ class KatalystGraphService(private val project: Project) {
     private data class Cached(val file: File, val lastModified: Long, val document: GraphDocument)
 
     /** The most recent graph document for this project, or null if none has been generated. */
-    fun document(): GraphDocument? {
+    internal fun document(): GraphDocument? {
         val file = locateGraphFile() ?: return null
         cache?.let { if (it.file == file && it.lastModified == file.lastModified()) return it.document }
         return runCatching { gson.fromJson(file.readText(), GraphDocument::class.java) }
@@ -39,11 +39,11 @@ class KatalystGraphService(private val project: Project) {
     }
 
     /** Diagnostics attached to a given fully-qualified symbol name. */
-    fun diagnosticsFor(fqName: String): List<DiagnosticRecord> =
+    internal fun diagnosticsFor(fqName: String): List<DiagnosticRecord> =
         document()?.diagnostics?.filter { it.symbolFqName == fqName } ?: emptyList()
 
     /** The node record for a fully-qualified symbol name, if present in the graph. */
-    fun nodeFor(fqName: String): NodeRecord? =
+    internal fun nodeFor(fqName: String): NodeRecord? =
         document()?.nodes?.firstOrNull { it.fqName == fqName }
 
     private fun locateGraphFile(): File? {

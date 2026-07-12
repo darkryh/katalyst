@@ -63,6 +63,7 @@ internal class SchedulerInitializer : ReadyHook {
             val resolver = container?.let(::ParameterResolver)
             var successCount = 0
             var failureCount = 0
+            val failureDetails = mutableListOf<String>()
 
             validatedMethods.forEach { candidate ->
                 val service = candidate.service
@@ -82,20 +83,22 @@ internal class SchedulerInitializer : ReadyHook {
                         logger.debug("Scheduler service method registered successfully: {}", signature)
                         successCount++
                     } else {
+                        val reason = "$signature returned ${result?.let { it::class.simpleName } ?: "null"} " +
+                            "instead of SchedulerJobHandle"
                         logger.error(
                             "Scheduler service method returned invalid type: {} -> {}",
                             signature,
                             result?.let { it::class.simpleName } ?: "null",
                         )
                         failureCount++
+                        failureDetails += reason
                     }
                 } catch (e: Exception) {
+                    // Isolate this candidate's failure: log it and keep registering the rest.
+                    // The aggregate failure is surfaced once, after all candidates are attempted, below.
                     logger.error("Scheduler service method failed: {} - {}", signature, e.message)
                     failureCount++
-                    throw SchedulerInvocationException(
-                        message = "Failed to invoke scheduler method $signature: ${e.message}",
-                        cause = e,
-                    )
+                    failureDetails += "$signature: ${e.message}"
                 }
             }
 
@@ -107,7 +110,8 @@ internal class SchedulerInitializer : ReadyHook {
 
             if (failureCount > 0) {
                 throw SchedulerInvocationException(
-                    message = "Scheduler invocation encountered $failureCount error(s). See logs above for details.",
+                    message = "Scheduler invocation encountered $failureCount error(s): " +
+                        failureDetails.joinToString("; "),
                 )
             }
         } catch (e: Exception) {

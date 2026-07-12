@@ -13,7 +13,7 @@ package io.github.darkryh.katalyst.idea.convention
  * canonical module remains the single source of truth, and `katalyst-analysis` carries a contract
  * test that fails if any of these FQNs stop resolving.
  */
-object PluginConventions {
+internal object PluginConventions {
 
     const val SERVICE = "io.github.darkryh.katalyst.core.component.Service"
     const val COMPONENT = "io.github.darkryh.katalyst.core.component.Component"

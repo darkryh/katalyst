@@ -2,26 +2,72 @@ package io.github.darkryh.katalyst.repositories.undo
 
 import io.github.darkryh.katalyst.transactions.workflow.SimpleTransactionOperation
 import kotlinx.coroutines.test.runTest
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.*
 
 /**
  * Comprehensive tests for UpdateUndoStrategy.
  *
- * Tests cover:
- * - canHandle() operation type matching
- * - undo() with valid undoData (original values)
- * - undo() with missing undoData
- * - Exception handling
- * - Case insensitivity
+ * `canHandle()` is pure logic and is tested without a database. `undo()` actually
+ * performs a compensating UPDATE (restoring captured original values) against a real H2
+ * in-memory database, proving the strategy performs the mutation rather than just
+ * claiming success.
  */
 class UpdateUndoStrategyTest {
 
-    private val strategy = UpdateUndoStrategy()
+    private lateinit var database: Database
+
+    private object TestUsersTable : Table("update_undo_test_users") {
+        val id = long("id")
+        val name = varchar("name", 100)
+        val status = varchar("status", 50)
+
+        override val primaryKey = PrimaryKey(id)
+    }
+
+    @BeforeTest
+    fun setup() {
+        database = Database.connect(
+            url = "jdbc:h2:mem:test_update_undo_${System.nanoTime()};DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+            user = "sa",
+            password = ""
+        )
+        transaction(database) { SchemaUtils.create(TestUsersTable) }
+    }
+
+    @AfterTest
+    fun teardown() {
+        transaction(database) { SchemaUtils.drop(TestUsersTable) }
+    }
+
+    private fun strategy() = UpdateUndoStrategy(database)
+
+    private fun insertRow(id: Long, name: String, status: String) {
+        transaction(database) {
+            TestUsersTable.insert {
+                it[TestUsersTable.id] = id
+                it[TestUsersTable.name] = name
+                it[TestUsersTable.status] = status
+            }
+        }
+    }
+
+    private fun rowFor(id: Long): Pair<String, String> = transaction(database) {
+        TestUsersTable.selectAll().first { it[TestUsersTable.id] == id }
+            .let { it[TestUsersTable.name] to it[TestUsersTable.status] }
+    }
+
     private fun createOperation(
         workflowId: String = "workflow-1",
         operationIndex: Int = 0,
         operationType: String = "UPDATE",
-        resourceType: String = "User",
+        resourceType: String = "update_undo_test_users",
         resourceId: String? = "123",
         undoData: Map<String, Any?>? = null,
         operationData: Map<String, Any?>? = null,
@@ -39,271 +85,171 @@ class UpdateUndoStrategyTest {
 
     @Test
     fun `canHandle should return true for UPDATE operation`() {
-        // When
-        val result = strategy.canHandle("UPDATE", "User")
-
-        // Then
-        assertTrue(result)
+        assertTrue(strategy().canHandle("UPDATE", "User"))
     }
 
     @Test
     fun `canHandle should return true for lowercase update`() {
-        // When
-        val result = strategy.canHandle("update", "User")
-
-        // Then
-        assertTrue(result)
+        assertTrue(strategy().canHandle("update", "User"))
     }
 
     @Test
     fun `canHandle should return true for mixed case UpDaTe`() {
-        // When
-        val result = strategy.canHandle("UpDaTe", "User")
-
-        // Then
-        assertTrue(result)
+        assertTrue(strategy().canHandle("UpDaTe", "User"))
     }
 
     @Test
     fun `canHandle should return false for INSERT operation`() {
-        // When
-        val result = strategy.canHandle("INSERT", "User")
-
-        // Then
-        assertFalse(result)
+        assertFalse(strategy().canHandle("INSERT", "User"))
     }
 
     @Test
     fun `canHandle should return false for DELETE operation`() {
-        // When
-        val result = strategy.canHandle("DELETE", "User")
-
-        // Then
-        assertFalse(result)
+        assertFalse(strategy().canHandle("DELETE", "User"))
     }
 
     @Test
     fun `canHandle should return false for API_CALL operation`() {
-        // When
-        val result = strategy.canHandle("API_CALL", "User")
-
-        // Then
-        assertFalse(result)
+        assertFalse(strategy().canHandle("API_CALL", "User"))
     }
 
     @Test
     fun `canHandle should ignore resourceType parameter`() {
-        // When
-        val result1 = strategy.canHandle("UPDATE", "User")
-        val result2 = strategy.canHandle("UPDATE", "Order")
-        val result3 = strategy.canHandle("UPDATE", "Payment")
-
-        // Then
-        assertTrue(result1)
-        assertTrue(result2)
-        assertTrue(result3)
+        val s = strategy()
+        assertTrue(s.canHandle("UPDATE", "User"))
+        assertTrue(s.canHandle("UPDATE", "Order"))
+        assertTrue(s.canHandle("UPDATE", "Payment"))
     }
 
-    // ========== undo() TESTS ==========
+    // ========== undo() TESTS - actually performs the compensating UPDATE ==========
 
     @Test
-    fun `undo should return true when undoData contains original values`() = runTest {
-        // Given - undoData contains the original values before update
+    fun `undo should actually restore the original values`() = runTest {
+        // Given - row currently holds the post-update value; undoData has the original
+        insertRow(1L, "John Doe", "ACTIVE")
         val operation = createOperation(
-            resourceType = "User",
-            resourceId = "123",
-            undoData = mapOf(
-                "name" to "John Doe",  // Original name
-                "email" to "john.old@example.com"  // Original email
-            ),
-            operationData = null
+            resourceId = "1",
+            undoData = mapOf("status" to "PENDING")
         )
 
         // When
-        val result = strategy.undo(operation)
+        val result = strategy().undo(operation)
 
-        // Then
+        // Then - the row's value is genuinely restored, not just a claimed success
         assertTrue(result)
+        assertEquals("John Doe" to "PENDING", rowFor(1L))
     }
 
     @Test
-    fun `undo should return false when undoData is null`() = runTest {
-        // Given
-        val operation = createOperation(undoData = null, operationData = null)
+    fun `undo should only affect the targeted row`() = runTest {
+        insertRow(1L, "Alice", "ACTIVE")
+        insertRow(2L, "Bob", "ACTIVE")
 
-        // When
-        val result = strategy.undo(operation)
+        val result = strategy().undo(createOperation(resourceId = "1", undoData = mapOf("status" to "INACTIVE")))
 
-        // Then
+        assertTrue(result)
+        assertEquals("Alice" to "INACTIVE", rowFor(1L))
+        assertEquals("Bob" to "ACTIVE", rowFor(2L))
+    }
+
+    @Test
+    fun `undo should restore multiple fields at once`() = runTest {
+        insertRow(1L, "Changed Name", "ACTIVE")
+
+        val result = strategy().undo(
+            createOperation(resourceId = "1", undoData = mapOf("name" to "Original Name", "status" to "PENDING"))
+        )
+
+        assertTrue(result)
+        assertEquals("Original Name" to "PENDING", rowFor(1L))
+    }
+
+    @Test
+    fun `undo should return false and change nothing when undoData is null`() = runTest {
+        insertRow(1L, "Alice", "ACTIVE")
+
+        val result = strategy().undo(createOperation(resourceId = "1", undoData = null))
+
+        assertFalse(result)
+        assertEquals("Alice" to "ACTIVE", rowFor(1L))
+    }
+
+    @Test
+    fun `undo should return false and change nothing when undoData is empty map`() = runTest {
+        insertRow(1L, "Alice", "ACTIVE")
+
+        val result = strategy().undo(createOperation(resourceId = "1", undoData = emptyMap()))
+
+        // Nothing captured to restore - this is missing data, not success.
+        assertFalse(result)
+        assertEquals("Alice" to "ACTIVE", rowFor(1L))
+    }
+
+    @Test
+    fun `undo should return false when resourceId is missing`() = runTest {
+        insertRow(1L, "Alice", "ACTIVE")
+
+        val result = strategy().undo(createOperation(resourceId = null, undoData = mapOf("status" to "PENDING")))
+
+        assertFalse(result)
+        assertEquals("Alice" to "ACTIVE", rowFor(1L))
+    }
+
+    @Test
+    fun `undo should return false when undoData contains non-scalar values`() = runTest {
+        insertRow(1L, "Alice", "ACTIVE")
+
+        val result = strategy().undo(
+            createOperation(
+                resourceId = "1",
+                undoData = mapOf("status" to "PENDING", "preferences" to mapOf("theme" to "dark"))
+            )
+        )
+
+        assertFalse(result)
+        assertEquals("Alice" to "ACTIVE", rowFor(1L))
+    }
+
+    @Test
+    fun `undo should return false for an invalid table identifier`() = runTest {
+        val result = strategy().undo(
+            createOperation(
+                resourceType = "bad; DROP TABLE update_undo_test_users; --",
+                resourceId = "1",
+                undoData = mapOf("status" to "PENDING")
+            )
+        )
+
         assertFalse(result)
     }
 
     @Test
-    fun `undo should return true when undoData is empty map`() = runTest {
-        // Given
-        val operation = createOperation(undoData = emptyMap(), operationData = null)
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        // Empty map is still considered "present"
-        assertTrue(result)
-    }
-
-    @Test
-    fun `undo should handle single field update`() = runTest {
-        // Given - Only one field was updated
-        val operation = createOperation(
-            resourceType = "User",
-            resourceId = "123",
-            undoData = mapOf("status" to "ACTIVE"),  // Original status
-            operationData = null
+    fun `undo should return false when the underlying table does not exist`() = runTest {
+        val result = strategy().undo(
+            createOperation(
+                resourceType = "does_not_exist_table",
+                resourceId = "1",
+                undoData = mapOf("status" to "PENDING")
+            )
         )
 
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
-    }
-
-    @Test
-    fun `undo should handle multiple field updates`() = runTest {
-        // Given - Multiple fields were updated
-        val operation = createOperation(
-            resourceType = "Order",
-            resourceId = "456",
-            undoData = mapOf(
-                "status" to "PENDING",  // Original status
-                "total" to 99.99,  // Original total
-                "lastUpdated" to "2025-01-01T10:00:00Z",  // Original timestamp
-                "notes" to "Initial notes"  // Original notes
-            ),
-            operationData = null
-        )
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
-    }
-
-    @Test
-    fun `undo should handle nested object updates`() = runTest {
-        // Given - Nested fields were updated
-        val operation = createOperation(
-            resourceType = "Profile",
-            resourceId = "789",
-            undoData = mapOf(
-                "preferences" to mapOf(
-                    "theme" to "light",  // Original theme
-                    "language" to "en"  // Original language
-                ),
-                "privacy" to mapOf(
-                    "profileVisible" to false  // Original privacy setting
-                )
-            ),
-            operationData = null
-        )
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
-    }
-
-    @Test
-    fun `undo should handle update with null original value`() = runTest {
-        // Given - Field was null before update
-        val operation = createOperation(
-            resourceType = "User",
-            resourceId = "123",
-            undoData = mapOf(
-                "middleName" to null,  // Was null before
-                "phoneNumber" to null  // Was null before
-            ),
-            operationData = null
-        )
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
-    }
-
-    @Test
-    fun `undo should handle operation with null resourceId`() = runTest {
-        // Given
-        val operation = createOperation(
-            resourceType = "User",
-            resourceId = null,
-            undoData = mapOf("name" to "John"),
-            operationData = null
-        )
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
     fun `undo should handle multiple updates sequentially`() = runTest {
-        // Given
-        val operations = listOf(
-            createOperation(
-                workflowId = "workflow-seq",
-                operationIndex = 0,
-                resourceId = "1",
-                undoData = mapOf("status" to "ACTIVE")
-            ),
-            createOperation(
-                workflowId = "workflow-seq",
-                operationIndex = 1,
-                resourceId = "2",
-                undoData = mapOf("status" to "PENDING")
-            ),
-            createOperation(
-                workflowId = "workflow-seq",
-                operationIndex = 2,
-                resourceId = "3",
-                undoData = mapOf("status" to "INACTIVE")
-            )
-        )
+        insertRow(1L, "User1", "ACTIVE")
+        insertRow(2L, "User2", "ACTIVE")
+        insertRow(3L, "User3", "ACTIVE")
+        val s = strategy()
 
-        // When
-        val results = operations.map { strategy.undo(it) }
+        val results = listOf("1", "2", "3").map { id ->
+            s.undo(createOperation(resourceId = id, undoData = mapOf("status" to "RESTORED")))
+        }
 
-        // Then
         assertTrue(results.all { it })
-    }
-
-    @Test
-    fun `undo should handle updates with different data types`() = runTest {
-        // Given
-        val operation = createOperation(
-            resourceType = "Product",
-            resourceId = "999",
-            undoData = mapOf(
-                "name" to "Original Product",  // String
-                "price" to 49.99,  // Double
-                "quantity" to 100,  // Int
-                "available" to true,  // Boolean
-                "tags" to listOf("tag1", "tag2"),  // List
-                "metadata" to mapOf("key" to "value")  // Map
-            ),
-            operationData = null
-        )
-
-        // When
-        val result = strategy.undo(operation)
-
-        // Then
-        assertTrue(result)
+        assertEquals("User1" to "RESTORED", rowFor(1L))
+        assertEquals("User2" to "RESTORED", rowFor(2L))
+        assertEquals("User3" to "RESTORED", rowFor(3L))
     }
 }

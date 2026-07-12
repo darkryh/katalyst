@@ -33,7 +33,6 @@ dependencies {
     implementation(libs.slf4j.api)
 
     // Diagnostics & reflection aids
-    implementation(libs.jansi)
     implementation(libs.reflections)
     implementation(libs.asm)
 

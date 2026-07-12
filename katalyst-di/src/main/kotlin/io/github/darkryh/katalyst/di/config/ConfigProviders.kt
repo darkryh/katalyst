@@ -47,7 +47,7 @@ class ApplicationConfigProvider(
 
     override fun hasKey(key: String): Boolean = config.propertyOrNull(key) != null
 
-    override fun getAllKeys(): Set<String> = emptySet()
+    override fun getAllKeys(): Set<String> = runCatching { config.keys() }.getOrElse { emptySet() }
 }
 
 /**

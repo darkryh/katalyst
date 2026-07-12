@@ -10,6 +10,7 @@ import io.github.darkryh.katalyst.migrations.runner.MigrationRunner
 import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import io.github.darkryh.katalyst.migrations.runner.MigrationStatus
 import io.github.darkryh.katalyst.telemetry.model.MigrationEntry
+import io.github.darkryh.katalyst.telemetry.model.MigrationFailure
 import io.github.darkryh.katalyst.telemetry.model.MigrationSnapshot
 import io.github.darkryh.katalyst.telemetry.model.MigrationState
 import io.github.darkryh.katalyst.telemetry.store.TelemetryStore
@@ -23,6 +24,10 @@ import io.github.darkryh.katalyst.migrations.runner.MigrationState as RunnerMigr
  * read-models are mapped into a [MigrationSnapshot]. Neither read applies migrations nor creates the
  * history table — `status()` swallows an unavailable/unreadable database into an empty applied map,
  * so this capturer works before boot completes and when the subsystem is disabled.
+ *
+ * [MigrationSnapshot.recentFailures] is also read live, straight from
+ * `MigrationTelemetry.failures()`'s bounded ring, independently of the DB-status cache below — so a
+ * recent failure is visible even before the next cached read.
  *
  * When the container or the runner bean is absent the provider returns `null`.
  */
@@ -46,11 +51,16 @@ class MigrationCapturer : SubsystemCapturer {
         // Live in-flight marker (NOT cached — it changes independently of the status TTL).
         val runningId = MigrationTelemetry.runningId
         val runningElapsed = MigrationTelemetry.runningElapsedMs()
+        // Also live (NOT cached): the bounded ring of recent failures the runner records as it goes.
+        val recentFailures = MigrationTelemetry.failures().map {
+            MigrationFailure(epochMs = it.epochMs, id = it.id, message = it.message)
+        }
         val base = cachedStatus()
         return when {
-            base != null -> base.copy(runningId = runningId, runningElapsedMs = runningElapsed)
-            // No DB status yet, but a migration may be executing right now (during boot).
-            runningId != null -> MigrationSnapshot(runningId = runningId, runningElapsedMs = runningElapsed)
+            base != null -> base.copy(runningId = runningId, runningElapsedMs = runningElapsed, recentFailures = recentFailures)
+            // No DB status yet, but a migration may be executing or have just failed (during boot).
+            runningId != null || recentFailures.isNotEmpty() ->
+                MigrationSnapshot(runningId = runningId, runningElapsedMs = runningElapsed, recentFailures = recentFailures)
             else -> null
         }
     }

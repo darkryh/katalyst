@@ -36,10 +36,16 @@ private class CompositeSchedulerJobHandle(
         delegate.invokeOnCompletion {
             handles.forEach { handle -> handle.cancel() }
         }
-        handles.forEach { handle ->
-            handle.invokeOnCompletion {
-                if (handles.all { it.isCompleted }) {
-                    delegate.complete()
+        if (handles.isEmpty()) {
+            // An empty jobs {} block has nothing to wait on: complete immediately so the
+            // returned handle isn't a no-op that never finishes.
+            delegate.complete()
+        } else {
+            handles.forEach { handle ->
+                handle.invokeOnCompletion {
+                    if (handles.all { it.isCompleted }) {
+                        delegate.complete()
+                    }
                 }
             }
         }

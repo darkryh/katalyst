@@ -431,7 +431,7 @@ open class TransactionalSideEffectAdapter<T>(
      *
      * @param config The configuration for a specific side-effect type
      */
-    fun configureeSideEffect(config: SideEffectConfig) {
+    fun configureSideEffect(config: SideEffectConfig) {
         configRegistry.register(config)
     }
 

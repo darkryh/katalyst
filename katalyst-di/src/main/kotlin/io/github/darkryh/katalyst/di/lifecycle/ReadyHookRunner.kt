@@ -16,8 +16,11 @@ internal class ReadyHookRunner(private val container: KatalystContainer) {
             container.getAll<ReadyHook>()
         }.getOrElse { emptyList() }
         val registryHooks = ReadyHookRegistry.getAll()
+        // Dedup by identity, not by runtime class: the same hook instance can be
+        // discovered through both the registry and the container, but two distinct
+        // instances that happen to share a class are both legitimate and must both run.
         val hooks = (registryHooks + containerHooks)
-            .distinctBy { it::class }
+            .distinctByIdentity()
             .sortedWith(readyHookOrderComparator)
 
         if (hooks.isEmpty()) {

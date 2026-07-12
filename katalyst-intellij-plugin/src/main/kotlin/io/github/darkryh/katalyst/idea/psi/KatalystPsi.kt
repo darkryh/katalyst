@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
 /** The kind of Katalyst entrypoint a PSI declaration represents. Drives gutter icons + tooltips. */
-enum class EntrypointKind(val label: String) {
+internal enum class EntrypointKind(val label: String) {
     SERVICE("Katalyst service"),
     COMPONENT("Katalyst component"),
     REPOSITORY("Katalyst repository"),
@@ -39,7 +39,7 @@ enum class EntrypointKind(val label: String) {
  * inheritance index; route functions are matched by their DSL call; scheduler methods by their
  * (possibly inferred) return type via light methods. Nothing here boots or instantiates anything.
  */
-object KatalystPsi {
+internal object KatalystPsi {
 
     /** The entrypoint kind for a class/object, or null if it is not Katalyst-managed. */
     fun classKind(klass: KtClassOrObject): EntrypointKind? {

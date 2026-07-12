@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.psi.KtStringTemplateExpression
  * Everything here is resolve-light: it matches the DSL by callee name and lexical nesting, never by
  * symbol resolution, so it works on a snippet without katalyst-scheduler on the classpath.
  */
-object SchedulerPsi {
+internal object SchedulerPsi {
 
     /** The job-builder functions inside a `jobs { }` block. */
     val builderNames: Set<String> = setOf("cron", "fixedDelay", "fixedRate", "oneTime")

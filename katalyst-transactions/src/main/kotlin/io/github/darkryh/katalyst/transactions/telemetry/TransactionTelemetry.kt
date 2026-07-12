@@ -20,9 +20,18 @@ object TransactionTelemetry {
 
     private const val RECENT = 256
 
-    val committed = AtomicLong(0)
-    val rolledBack = AtomicLong(0)
-    val timedOut = AtomicLong(0)
+    private val committedCount = AtomicLong(0)
+    private val rolledBackCount = AtomicLong(0)
+    private val timedOutCount = AtomicLong(0)
+
+    /** Snapshot of the current committed-transaction count. Read-only; does not expose internal state. */
+    val committed: Long get() = committedCount.get()
+
+    /** Snapshot of the current rolled-back-transaction count. Read-only; does not expose internal state. */
+    val rolledBack: Long get() = rolledBackCount.get()
+
+    /** Snapshot of the current timed-out-transaction count. Read-only; does not expose internal state. */
+    val timedOut: Long get() = timedOutCount.get()
 
     private val durations = LongArray(RECENT)
     private var index = 0
@@ -36,17 +45,17 @@ object TransactionTelemetry {
     }
 
     fun recordCommit(durationMs: Long) {
-        committed.incrementAndGet()
+        committedCount.incrementAndGet()
         record(durationMs)
     }
 
     fun recordRollback(durationMs: Long) {
-        rolledBack.incrementAndGet()
+        rolledBackCount.incrementAndGet()
         record(durationMs)
     }
 
     fun recordTimeout(durationMs: Long) {
-        timedOut.incrementAndGet()
+        timedOutCount.incrementAndGet()
         record(durationMs)
     }
 

@@ -1,6 +1,7 @@
 public final class io/github/darkryh/katalyst/config/provider/ConfigBinder {
 	public static final field INSTANCE Lio/github/darkryh/katalyst/config/provider/ConfigBinder;
 	public final fun bind (Lkotlin/reflect/KClass;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/lang/Object;
+	public final fun bindAll (Ljava/util/Set;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/util/Map;
 	public final fun bindAll ([Ljava/lang/String;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Ljava/util/Map;
 	public final fun bindBinding (Lkotlin/reflect/KClass;Lio/github/darkryh/katalyst/core/config/ConfigProvider;)Lio/github/darkryh/katalyst/config/provider/ConfigBinding;
 	public final fun discoverConfigTypes ([Ljava/lang/String;)Ljava/util/Set;

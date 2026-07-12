@@ -7,6 +7,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -449,6 +453,50 @@ class TransactionAdapterRegistryTest {
         // Assert
         assertEquals(1, adapter.executionCount)
         assertEquals(TransactionPhase.AFTER_BEGIN, adapter.lastPhaseExecuted)
+    }
+
+    @Test
+    @DisplayName("Should keep registrations atomic and fully sorted under concurrent register()")
+    fun testConcurrentRegistrationIsAtomicAndSorted() {
+        // Arrange: many threads racing to register() at the same time. Before the fix,
+        // adapters.add() and adapters.sortByDescending() were separate, non-atomic steps,
+        // so a reader could observe an unsorted/partial list while registrations were in flight.
+        val threadCount = 64
+        val executor: ExecutorService = Executors.newFixedThreadPool(16)
+        val startLatch = CountDownLatch(1)
+        val doneLatch = CountDownLatch(threadCount)
+
+        try {
+            repeat(threadCount) { i ->
+                executor.submit {
+                    startLatch.await()
+                    try {
+                        // Priorities intentionally out of registration order.
+                        registry.register(TestAdapter("adapter-$i", adapterPriority = (i * 37) % threadCount))
+                    } finally {
+                        doneLatch.countDown()
+                    }
+                }
+            }
+
+            // Release all threads at once to maximize interleaving of add()/sort().
+            startLatch.countDown()
+            assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "All registrations should complete")
+
+            // Assert: no registration lost, and the final order is fully sorted descending by
+            // priority - never a partially-sorted / append-only tail.
+            val adapters = registry.getAdapters()
+            assertEquals(threadCount, adapters.size)
+            for (i in 0 until adapters.size - 1) {
+                assertTrue(
+                    adapters[i].priority() >= adapters[i + 1].priority(),
+                    "Adapters must be sorted by priority descending at index $i: " +
+                        "${adapters[i].priority()} should be >= ${adapters[i + 1].priority()}"
+                )
+            }
+        } finally {
+            executor.shutdownNow()
+        }
     }
 
 }

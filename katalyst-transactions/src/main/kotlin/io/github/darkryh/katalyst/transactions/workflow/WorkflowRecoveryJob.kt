@@ -303,17 +303,6 @@ class WorkflowRecoveryJob(
     }
 
     /**
-     * Determine if an error is transient (retry-worthy).
-     */
-    private fun isTransientError(errorMessage: String?): Boolean {
-        if (errorMessage == null) return false
-        return errorMessage.contains("timeout", ignoreCase = true) ||
-               errorMessage.contains("connection", ignoreCase = true) ||
-               errorMessage.contains("temporarily unavailable", ignoreCase = true) ||
-               errorMessage.contains("try again", ignoreCase = true)
-    }
-
-    /**
      * Get current recovery metrics.
      */
     fun getMetrics(): RecoveryMetrics {

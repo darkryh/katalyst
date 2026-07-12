@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.events
 
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Base contract for all domain events in the system.
@@ -29,17 +30,6 @@ import java.lang.ref.WeakReference
  * ) : DomainEvent {
  *     override fun getMetadata(): EventMetadata = metadata
  * }
- * ```
- *
- * Or use BaseDomainEvent base class for convenience:
- *
- * ```kotlin
- * data class UserCreatedEvent(
- *     val userId: UUID,
- *     val email: String,
- *     val name: String,
- *     metadata: EventMetadata = EventMetadata(eventType = "user.created")
- * ) : BaseDomainEvent(metadata)
  * ```
  *
  * **Sealed Hierarchies:**
@@ -71,7 +61,7 @@ interface DomainEvent {
      *
      * NEW - P0 Critical Fix: Event Deduplication
      */
-    val eventId: String get() = DomainEventDefaults.metadata(this).eventId
+    val eventId: String get() = getMetadata().eventId
 
     /**
      * Get the metadata associated with this event.
@@ -102,13 +92,12 @@ interface DomainEvent {
 
 private object DomainEventDefaults {
     private val collectedEvents = ReferenceQueue<DomainEvent>()
-    private val metadataByEvent = mutableMapOf<IdentityWeakEventRef, EventMetadata>()
+    private val metadataByEvent = ConcurrentHashMap<IdentityWeakEventRef, EventMetadata>()
 
-    @Synchronized
     fun metadata(event: DomainEvent): EventMetadata {
         removeCollectedEvents()
         val key = IdentityWeakEventRef(event)
-        return metadataByEvent.getOrPut(key) {
+        return metadataByEvent.computeIfAbsent(key) {
             EventMetadata(eventType = event::class.simpleName ?: "UnknownEvent")
         }
     }

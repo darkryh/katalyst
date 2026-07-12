@@ -1,0 +1,7 @@
+server:
+  hosts:
+    - host-a
+    - host-b
+cors:
+  allowedOrigins:
+    - https://base.example.com

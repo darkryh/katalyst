@@ -171,18 +171,6 @@ internal class BootstrapProgressLogger {
     }
 
     /**
-     * Get lifecycle duration in milliseconds.
-     */
-    fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long {
-        val lifecycleInfo = lifecycles.firstOrNull { it.lifecycle == lifecycle } ?: return 0L
-        return if (lifecycleInfo.endTime > 0 && lifecycleInfo.startTime > 0) {
-            lifecycleInfo.endTime - lifecycleInfo.startTime
-        } else {
-            0L
-        }
-    }
-
-    /**
      * Get all lifecycles and their status.
      */
     fun getLifecycles(): List<LifecycleInfo> = lifecycles.toList()
@@ -232,8 +220,6 @@ object BootstrapProgress {
         logger.displayProgressSummary(includePending)
 
     fun getTotalBootstrapTime(): Long = logger.getTotalBootstrapTime()
-
-    internal fun getLifecycleDuration(lifecycle: BootstrapLifecycle): Long = logger.getLifecycleDuration(lifecycle)
 
     internal fun getLifecycles(): List<BootstrapProgressLogger.LifecycleInfo> = logger.getLifecycles()
 

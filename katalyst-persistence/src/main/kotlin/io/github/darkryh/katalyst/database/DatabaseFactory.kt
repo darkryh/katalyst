@@ -90,7 +90,9 @@ class DatabaseFactory private constructor(
          * @throws Exception if database connection fails
          */
         fun create(config: DatabaseConfig): DatabaseFactory {
-            logger.info("Initializing DatabaseFactory with URL: {}", config.url)
+            // Never log the raw JDBC URL: it can carry credentials (userinfo or
+            // password query params). Log a redacted form instead.
+            logger.info("Initializing DatabaseFactory with URL: {}", sanitizeJdbcUrl(config.url))
 
             // Configure HikariCP
             val hikariConfig = HikariConfig().apply {

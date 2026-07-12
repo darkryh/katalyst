@@ -126,6 +126,24 @@ class SchedulerInitializerDiscoveryTest {
         )
     }
 
+    @Test
+    fun `runtime ready isolates a failing scheduler method and still registers the rest`() = runTest {
+        val service = PartiallyFailingSchedulerService()
+        ServiceRegistry.register(service)
+
+        val error = assertFailsWith<SchedulerInvocationException> {
+            SchedulerInitializer().onReady()
+        }
+
+        assertEquals(true, error.message.orEmpty().contains("1 error"))
+        assertEquals(true, error.message.orEmpty().contains("intervalSeconds"))
+        assertEquals(
+            true,
+            service.secondJobRegistered,
+            "a later scheduler method must still register after an earlier one throws"
+        )
+    }
+
     private fun discoverCandidates(
         initializer: SchedulerInitializer,
         services: List<Service>
@@ -220,3 +238,25 @@ private class RequiredPrimitiveJobService : Service {
 }
 
 private class SchedulerInjectedConfig(val value: String)
+
+private class PartiallyFailingSchedulerService : Service {
+    private val scheduler = requireScheduler()
+    var secondJobRegistered = false
+
+    // Bytecode-valid scheduler candidate (it calls scheduler.jobs {...}, so it survives
+    // validateCandidatesByBytecode) that nonetheless fails during invocation because
+    // "intervalSeconds" cannot be resolved. Sorted before "secondJob" alphabetically, so it
+    // is attempted first and must not prevent "secondJob" from still registering.
+    fun failingJob(intervalSeconds: Int): SchedulerJobHandle {
+        return scheduler.jobs {
+            cron("scheduler.test.failing-job.$intervalSeconds", "0 0 * * * ?") {}
+        }
+    }
+
+    fun secondJob(): SchedulerJobHandle {
+        secondJobRegistered = true
+        return scheduler.jobs {
+            cron("scheduler.test.second-after-failure", "0 0 * * * ?") {}
+        }
+    }
+}

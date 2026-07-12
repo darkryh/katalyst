@@ -25,9 +25,11 @@ data class KatalystAnalysisOptions(
  * @property classpath the compiled classpath to analyse — the application's own output plus its
  * dependencies. Classes are loaded for reflection with `Class.forName(name, initialize = false)`,
  * so static initialisers never run.
- * @property sourceRoots optional source roots; when provided, nodes are annotated with file/line
- * [io.github.darkryh.katalyst.analysis.model.SourceLocation]s for nicer reports. The IDE plugin
- * uses PSI for this instead and can leave it empty.
+ * @property sourceRoots reserved for future use. The bytecode-based analyzer does not currently
+ * resolve source files/lines from this classpath-only pipeline, so every symbol's
+ * [io.github.darkryh.katalyst.analysis.model.SourceLocation] is always `null` regardless of what is
+ * passed here. The IDE plugin resolves source locations itself via PSI and does not depend on this
+ * property; non-IDE callers should not rely on it either until source-based resolution lands.
  */
 data class KatalystAnalysisConfig(
     val scanPackages: List<String>,

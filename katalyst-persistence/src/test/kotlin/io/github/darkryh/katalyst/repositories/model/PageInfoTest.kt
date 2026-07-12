@@ -167,4 +167,39 @@ class PageInfoTest {
         assertEquals(3, pageInfo.totalPages)
         assertFalse(pageInfo.hasNextPage)
     }
+
+    // ========== limit == 0 GUARD (no ArithmeticException) ==========
+
+    @Test
+    fun `limit of 0 with results should not throw and should report a single page`() {
+        // Given - limit=0 previously caused a division by zero (ArithmeticException)
+        val pageInfo = PageInfo(limit = 0, offset = 0, total = 42)
+
+        // When/Then
+        assertEquals(1, pageInfo.currentPage)
+        assertEquals(1, pageInfo.totalPages)
+        assertFalse(pageInfo.hasNextPage)
+    }
+
+    @Test
+    fun `limit of 0 with no results should report zero total pages`() {
+        // Given
+        val pageInfo = PageInfo(limit = 0, offset = 0, total = 0)
+
+        // When/Then
+        assertEquals(1, pageInfo.currentPage)
+        assertEquals(0, pageInfo.totalPages)
+        assertFalse(pageInfo.hasNextPage)
+    }
+
+    @Test
+    fun `negative limit should not throw and should behave like limit 0`() {
+        // Given - defensive guard should also cover negative limits
+        val pageInfo = PageInfo(limit = -5, offset = 10, total = 10)
+
+        // When/Then
+        assertEquals(1, pageInfo.currentPage)
+        assertEquals(1, pageInfo.totalPages)
+        assertFalse(pageInfo.hasNextPage)
+    }
 }

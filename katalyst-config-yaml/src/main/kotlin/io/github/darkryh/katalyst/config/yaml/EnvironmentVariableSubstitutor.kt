@@ -107,15 +107,15 @@ open class EnvironmentVariableSubstitutor(
 
             when {
                 envValue != null -> {
-                    log.debug("Substituted environment variable: $varName")
+                    log.debug("Substituted environment variable: {}", varName)
                     sanitizeEnvironmentValue(envValue)
                 }
                 defaultValue.isNotEmpty() -> {
-                    log.debug("Using default value for missing environment variable: $varName")
+                    log.debug("Using default value for missing environment variable: {}", varName)
                     defaultValue
                 }
                 else -> {
-                    log.debug("Using empty string for missing environment variable: $varName")
+                    log.debug("Using empty string for missing environment variable: {}", varName)
                     ""
                 }
             }

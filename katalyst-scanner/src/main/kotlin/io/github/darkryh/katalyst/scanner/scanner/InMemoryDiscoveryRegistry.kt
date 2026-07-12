@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.scanner.scanner
 
 import io.github.darkryh.katalyst.scanner.core.DiscoveryRegistry
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * In-memory implementation of DiscoveryRegistry.
@@ -32,7 +33,7 @@ class InMemoryDiscoveryRegistry<T>(
     private val baseType: Class<T>
 ) : DiscoveryRegistry<T> {
 
-    private val registry = LinkedHashMap<String, Class<out T>>()
+    private val registry = ConcurrentHashMap<String, Class<out T>>()
     private val logger = LoggerFactory.getLogger(InMemoryDiscoveryRegistry::class.java)
 
     override fun register(type: Class<out T>) {

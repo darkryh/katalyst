@@ -513,7 +513,7 @@ public final class io/github/darkryh/katalyst/transactions/sideeffects/Transacti
 public class io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffectAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
 	public fun <init> (Ljava/lang/String;IZLio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigRegistry;)V
 	public synthetic fun <init> (Ljava/lang/String;IZLio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfigRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun configureeSideEffect (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;)V
+	public final fun configureSideEffect (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectConfig;)V
 	protected fun getSideEffectsFromContext (Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;)Ljava/util/List;
 	public fun isCritical ()Z
 	public fun name ()Ljava/lang/String;
@@ -527,9 +527,9 @@ public abstract interface class io/github/darkryh/katalyst/transactions/sideeffe
 
 public final class io/github/darkryh/katalyst/transactions/telemetry/TransactionTelemetry {
 	public static final field INSTANCE Lio/github/darkryh/katalyst/transactions/telemetry/TransactionTelemetry;
-	public final fun getCommitted ()Ljava/util/concurrent/atomic/AtomicLong;
-	public final fun getRolledBack ()Ljava/util/concurrent/atomic/AtomicLong;
-	public final fun getTimedOut ()Ljava/util/concurrent/atomic/AtomicLong;
+	public final fun getCommitted ()J
+	public final fun getRolledBack ()J
+	public final fun getTimedOut ()J
 	public final fun percentiles ()Lkotlin/Triple;
 	public final fun recordCommit (J)V
 	public final fun recordRollback (J)V

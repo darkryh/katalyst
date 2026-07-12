@@ -158,12 +158,12 @@ class RecoveryJobScheduler(
             }
             result.workflowsFailed > 0 -> {
                 logger.warn(
-                    "Recovery scan #{}: Found {}, recovered {}, failed {}, rate={:.1f}%",
+                    "Recovery scan #{}: Found {}, recovered {}, failed {}, rate={}%",
                     result.scanNumber,
                     result.failedWorkflowsFound,
                     result.workflowsRecovered,
                     result.workflowsFailed,
-                    result.getRecoveryRate()
+                    String.format("%.1f", result.getRecoveryRate())
                 )
             }
             else -> {

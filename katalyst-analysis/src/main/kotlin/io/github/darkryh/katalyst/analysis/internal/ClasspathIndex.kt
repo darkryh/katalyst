@@ -20,9 +20,9 @@ import java.net.URLClassLoader
  */
 internal class ClasspathIndex private constructor(
     private val scanPackages: List<String>,
-    private val loader: ClassLoader,
+    private val loader: URLClassLoader,
     private val reflections: Reflections,
-) {
+) : AutoCloseable {
     /** Fully-qualified names of every type the store knows about, restricted to scan packages. */
     fun allTypeNames(): Set<String> =
         reflections.getAll(Scanners.SubTypes)
@@ -67,6 +67,17 @@ internal class ClasspathIndex private constructor(
     }
 
     fun classLoader(): ClassLoader = loader
+
+    /**
+     * Closes the isolated [URLClassLoader], releasing its open jar/file handles.
+     *
+     * Safe to call once the caller no longer needs to load classes through this index — no method
+     * here retains state that requires the loader afterwards; callers must not invoke [loadOrNull]
+     * or [classLoader] after closing.
+     */
+    override fun close() {
+        loader.close()
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(ClasspathIndex::class.java)

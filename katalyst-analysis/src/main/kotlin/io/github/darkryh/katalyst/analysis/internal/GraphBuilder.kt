@@ -61,7 +61,12 @@ internal class GraphBuilder(private val config: KatalystAnalysisConfig) {
 
     private val concrete: List<Class<*>> by lazy { index.concreteClasses() }
 
-    fun build(): KatalystApplicationGraph {
+    fun build(): KatalystApplicationGraph =
+        index.use { _ ->
+            buildGraph()
+        }
+
+    private fun buildGraph(): KatalystApplicationGraph {
 
         val services = mutableListOf<ServiceNode>()
         val components = mutableListOf<ComponentNode>()

@@ -95,7 +95,6 @@ public final class io/github/darkryh/katalyst/events/bus/EventTopology {
 
 public final class io/github/darkryh/katalyst/events/bus/GlobalEventHandlerRegistry {
 	public static final field INSTANCE Lio/github/darkryh/katalyst/events/bus/GlobalEventHandlerRegistry;
-	public final fun clear ()Ljava/util/List;
 	public final fun consumeAll ()Ljava/util/List;
 	public final fun register (Lio/github/darkryh/katalyst/events/EventHandler;)V
 	public final fun size ()I
@@ -178,15 +177,6 @@ public final class io/github/darkryh/katalyst/events/bus/TransactionAwareEventBu
 	public static final fun publishPendingEvents (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lorg/slf4j/Logger;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/github/darkryh/katalyst/events/bus/adapter/EventSideEffectAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
-	public fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;)V
-	public final fun configureEvent (Lio/github/darkryh/katalyst/events/bus/EventHandlerConfig;)V
-	public fun isCritical ()Z
-	public fun name ()Ljava/lang/String;
-	public fun onPhase (Lio/github/darkryh/katalyst/transactions/hooks/TransactionPhase;Lio/github/darkryh/katalyst/transactions/context/TransactionEventContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun priority ()I
-}
-
 public final class io/github/darkryh/katalyst/events/bus/adapter/EventsTransactionAdapter : io/github/darkryh/katalyst/transactions/adapter/TransactionAdapter {
 	public fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator;Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;)V
 	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/bus/ApplicationEventBus;Lio/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator;Lio/github/darkryh/katalyst/events/bus/deduplication/EventDeduplicationStore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -229,6 +219,7 @@ public final class io/github/darkryh/katalyst/events/bus/deduplication/NoOpEvent
 public final class io/github/darkryh/katalyst/events/bus/exception/EventPublishingException : java/lang/Exception {
 	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/util/List;)V
 	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
 	public final fun getFailures ()Ljava/util/List;
 }
 

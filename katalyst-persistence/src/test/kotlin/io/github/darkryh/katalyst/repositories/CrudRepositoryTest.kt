@@ -1,6 +1,8 @@
 package io.github.darkryh.katalyst.repositories
 
+import io.github.darkryh.katalyst.core.persistence.EntityMapping
 import io.github.darkryh.katalyst.core.persistence.Table
+import io.github.darkryh.katalyst.core.persistence.WritableEntityMapping
 import io.github.darkryh.katalyst.core.persistence.mapping
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.repositories.model.PageInfo
@@ -10,13 +12,16 @@ import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.time.Instant
 import kotlin.test.*
+import org.jetbrains.exposed.v1.core.Table as ExposedTable
 
 /**
  * Comprehensive tests for CrudRepository interface.
@@ -198,6 +203,64 @@ class CrudRepositoryTest {
 
         override fun save(entity: MissingWriteBindingEntity): MissingWriteBindingEntity =
             transaction(db) { super<CrudRepository>.save(entity) }
+    }
+
+    // ---- Entities/table used to prove mapping validation is cached per table ----
+
+    data class CountingEntity(
+        override val id: Long? = null,
+        val name: String
+    ) : Identifiable<Long>
+
+    /**
+     * Wraps a real [WritableEntityMapping], counting how many times [validate] is
+     * invoked so tests can assert it only runs once per table rather than on every
+     * save/insert/update call.
+     */
+    internal class CountingMapping<Id, Entity : Identifiable<Id>>(
+        private val delegate: WritableEntityMapping<Id, Entity>
+    ) : WritableEntityMapping<Id, Entity> where Id : Any, Id : Comparable<Id> {
+        var validateCallCount: Int = 0
+            private set
+
+        override fun read(row: ResultRow): Entity = delegate.read(row)
+
+        override fun validate(table: ExposedTable) {
+            validateCallCount++
+            delegate.validate(table)
+        }
+
+        override fun writeInsert(statement: UpdateBuilder<*>, entity: Entity) =
+            delegate.writeInsert(statement, entity)
+
+        override fun writeUpdate(statement: UpdateBuilder<*>, entity: Entity) =
+            delegate.writeUpdate(statement, entity)
+    }
+
+    object CountingValidationTable : LongIdTable("counting_validation"), Table<Long, CountingEntity> {
+        val name = varchar("name", 255)
+
+        internal val countingMapping = CountingMapping(
+            mapping<Long, CountingEntity> {
+                generatedId(id, CountingEntity::id)
+                field(name, CountingEntity::name)
+
+                construct {
+                    CountingEntity(id = this[id], name = this[name])
+                }
+            } as WritableEntityMapping<Long, CountingEntity>
+        )
+
+        override val mapping: EntityMapping<Long, CountingEntity> = countingMapping
+    }
+
+    class CountingValidationRepository(private val db: Database) : CrudRepository<Long, CountingEntity> {
+        override val table = CountingValidationTable
+
+        private fun <T> blockingTx(block: () -> T): T = transaction(db) { block() }
+
+        override fun save(entity: CountingEntity): CountingEntity =
+            blockingTx { super<CrudRepository>.save(entity) }
     }
 
     enum class AuditStatus {
@@ -399,6 +462,53 @@ class CrudRepositoryTest {
         } finally {
             transaction(database) {
                 SchemaUtils.drop(MissingWriteBindingTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping validation failure should not be cached as valid on subsequent calls`() = runTest {
+        // A bad mapping must keep failing loudly every time - caching validation only
+        // makes sense for mappings that actually passed.
+        transaction(database) {
+            SchemaUtils.create(MissingWriteBindingTable)
+        }
+        try {
+            val brokenRepository = MissingWriteBindingRepository(database)
+
+            assertFailsWith<IllegalArgumentException> {
+                brokenRepository.save(MissingWriteBindingEntity(requiredName = "first"))
+            }
+            assertFailsWith<IllegalArgumentException> {
+                brokenRepository.save(MissingWriteBindingEntity(requiredName = "second"))
+            }
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(MissingWriteBindingTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping validation should run once per table and not on every save`() = runTest {
+        transaction(database) {
+            SchemaUtils.create(CountingValidationTable)
+        }
+        try {
+            val repo = CountingValidationRepository(database)
+
+            repo.save(CountingEntity(name = "first"))
+            repo.save(CountingEntity(name = "second"))
+            repo.save(CountingEntity(name = "third"))
+
+            // Three inserts happened...
+            val count = transaction(database) { CountingValidationTable.selectAll().count() }
+            assertEquals(3, count)
+            // ...but validation only ran once for the table, not once per save.
+            assertEquals(1, CountingValidationTable.countingMapping.validateCallCount)
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(CountingValidationTable)
             }
         }
     }

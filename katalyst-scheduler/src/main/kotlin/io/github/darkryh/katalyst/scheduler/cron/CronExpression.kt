@@ -201,13 +201,11 @@ class CronExpression(private val expression: String) {
  * Supports extensible parsing through FieldParser strategy.
  */
 internal class CronField(
-    private val expression: String,
+    expression: String,
     internal val range: IntRange,
     private val fieldName: String = "field",
     private val allowQuestion: Boolean = false
 ) {
-    @Suppress("unused")
-    internal val rangeSize: Int = range.last - range.first + 1
     private val matcher: (Int) -> Boolean
     private val minValue: Int
     private val maxValue: Int
@@ -227,8 +225,6 @@ internal class CronField(
     }
 
     fun firstValidValue(): Int = minValue
-
-    fun isWildcard(): Boolean = expression == "*"
 
     fun isUnrestricted(): Boolean = unrestricted
 

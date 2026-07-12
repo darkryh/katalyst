@@ -70,6 +70,22 @@ class DomainEventTest {
         assertEquals(customId, eventId)
     }
 
+    @Test
+    fun `default eventId should honor an overridden getMetadata`() {
+        // Given - an event that overrides ONLY getMetadata() with a fixed eventId,
+        // relying on the default `eventId` getter to expose it.
+        val fixedId = "fixed-metadata-event-id-456"
+        val event = EventWithCustomMetadataId(fixedId)
+
+        // When
+        val eventId = event.eventId
+
+        // Then - eventId must delegate through getMetadata() rather than
+        // fabricating a separate identity-keyed EventMetadata.
+        assertEquals(fixedId, eventId)
+        assertEquals(fixedId, event.getMetadata().eventId)
+    }
+
     // ========== CUSTOM EVENT IMPLEMENTATION TESTS ==========
 
     @Test
@@ -383,6 +399,15 @@ class DomainEventTest {
         private val customEventId: String
     ) : DomainEvent {
         override val eventId: String get() = customEventId
+    }
+
+    private data class EventWithCustomMetadataId(
+        private val fixedEventId: String
+    ) : DomainEvent {
+        // Overrides ONLY getMetadata() - the default `eventId` getter must
+        // delegate through it rather than consulting the identity-keyed cache directly.
+        override fun getMetadata(): EventMetadata =
+            EventMetadata(eventId = fixedEventId, eventType = "custom.metadata.id")
     }
 
     private data class EventWithCustomMetadata(

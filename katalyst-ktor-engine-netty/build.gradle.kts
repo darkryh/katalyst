@@ -11,7 +11,4 @@ dependencies {
     // Ktor with Netty engine
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
-
-    // Kotlin
-    implementation(kotlin("reflect"))
 }

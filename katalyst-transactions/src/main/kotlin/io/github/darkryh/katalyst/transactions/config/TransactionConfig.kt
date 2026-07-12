@@ -244,7 +244,7 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
     private fun hasTransientSqlState(exception: Exception): Boolean =
         exception.causeChain().filterIsInstance<SQLException>().any { sqlException ->
             val state = sqlException.sqlState ?: return@any false
-            state == "08003" || state.startsWith("08") || state.startsWith("40")
+            state.startsWith("08") || state.startsWith("40")
         }
 
     private fun matchesAny(

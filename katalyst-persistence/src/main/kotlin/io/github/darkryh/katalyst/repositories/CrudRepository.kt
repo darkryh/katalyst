@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
+import java.util.concurrent.ConcurrentHashMap
 import io.github.darkryh.katalyst.core.persistence.Table as KatalystTable
 import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
 
@@ -171,9 +172,21 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
 
     private fun entityId(id: Id): EntityID<Id> = EntityID(id, table)
 
+    /**
+     * Resolves the writable mapping for [table], validating it at most once per table.
+     *
+     * The mapping shape (duplicate/missing-column checks) never changes for a given
+     * table instance, so re-running [io.github.darkryh.katalyst.core.persistence.EntityMapping.validate]
+     * on every [save]/[insertEntity]/[updateEntity] call is wasted work. Successful
+     * validations are cached process-wide by table identity; a validation failure is
+     * NOT cached, so a genuinely bad mapping keeps failing loudly on every call.
+     */
     private fun writableMapping(): WritableEntityMapping<Id, IdentifiableEntityId> {
         val mapping = table.asKatalystTable<Id, IdentifiableEntityId>().mapping.asWritable()
-        mapping.validate(table)
+        if (!validatedTables.contains(table)) {
+            mapping.validate(table)
+            validatedTables.add(table)
+        }
         return mapping
     }
 
@@ -204,6 +217,18 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
             SortOrder.ASCENDING -> ExposedSortOder.ASC
             SortOrder.DESCENDING -> ExposedSortOder.DESC
         }
+
+    private companion object {
+        /**
+         * Tables whose mapping has already passed
+         * [io.github.darkryh.katalyst.core.persistence.EntityMapping.validate].
+         *
+         * Shared process-wide (keyed by table identity) so validation runs once per
+         * table rather than on every [save]/[insertEntity]/[updateEntity] call.
+         */
+        val validatedTables: MutableSet<IdTable<*>> =
+            ConcurrentHashMap.newKeySet()
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

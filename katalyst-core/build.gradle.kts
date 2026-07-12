@@ -4,12 +4,10 @@ plugins {
 
 dependencies {
     // Kotlin runtime & DI infrastructure
-    implementation(projects.katalystEvents)
     implementation(projects.katalystTransactions)
 
     // Persistence (Exposed)
     implementation(libs.exposed.core)
-    implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
 
     testImplementation(libs.kotlinx.coroutines.test)

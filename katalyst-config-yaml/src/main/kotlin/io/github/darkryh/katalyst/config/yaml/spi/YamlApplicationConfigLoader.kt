@@ -47,8 +47,12 @@ class YamlApplicationConfigLoader : ProfileAwareConfigLoader {
                     val key = if (prefix.isEmpty()) "$k" else "$prefix.$k"
                     recurse(key, v)
                 }
-                is Iterable<*> -> value.filterNotNull().forEach { element ->
-                    pairs += prefix to element.toString()
+                is Iterable<*> -> {
+                    val elements = value.filterNotNull()
+                    elements.forEachIndexed { index, element ->
+                        recurse("$prefix.$index", element)
+                    }
+                    pairs += "$prefix.size" to elements.size.toString()
                 }
                 else -> pairs += prefix to value.toString()
             }

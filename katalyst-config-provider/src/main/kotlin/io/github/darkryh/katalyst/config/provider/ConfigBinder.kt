@@ -69,7 +69,13 @@ object ConfigBinder {
 
             val classifier = param.type.classifier
             val value: Any? = when (classifier) {
-                String::class -> provider.get<Any>(key)?.toString()
+                // requireRaw (not a plain get()?.toString()) so a key that hasKey() reports as
+                // present but resolves to a null value fails fast with the same "required
+                // configuration key is missing" ConfigException as Int/Long/Boolean below,
+                // instead of silently binding null into a non-nullable String parameter and
+                // blowing up later with an opaque Kotlin-reflection error. Empty/blank strings
+                // are untouched by this - only an actual null raw value is rejected.
+                String::class -> requireRaw(provider, key).toString()
                 Int::class -> parseInt(key, requireRaw(provider, key))
                 Long::class -> parseLong(key, requireRaw(provider, key))
                 Boolean::class -> parseBooleanValue(key, requireRaw(provider, key))
@@ -149,11 +155,28 @@ object ConfigBinder {
     /**
      * Discover, bind, and return every configuration instance keyed by its type.
      *
+     * Convenience overload that runs [discoverConfigTypes] itself. Callers that already scanned
+     * (e.g. DI bootstrap, which discovers config types once for dependency-graph pre-validation)
+     * should call [bindAll] with that pre-discovered [Set] instead, to avoid a second classpath
+     * scan.
+     *
      * Fails fast: any single type that cannot be bound aborts the whole operation with a
      * [ConfigException] naming the offending type.
      */
-    fun bindAll(scanPackages: Array<String>, provider: ConfigProvider): Map<KClass<*>, Any> {
-        val types = discoverConfigTypes(scanPackages)
+    fun bindAll(scanPackages: Array<String>, provider: ConfigProvider): Map<KClass<*>, Any> =
+        bindAll(discoverConfigTypes(scanPackages), provider)
+
+    /**
+     * Bind every configuration instance for an already-discovered set of types, keyed by type.
+     *
+     * Use this overload whenever the caller already has the result of [discoverConfigTypes] (or
+     * an equivalent scan) on hand, instead of triggering a second, redundant classpath/Reflections
+     * scan.
+     *
+     * Fails fast: any single type that cannot be bound aborts the whole operation with a
+     * [ConfigException] naming the offending type.
+     */
+    fun bindAll(types: Set<KClass<*>>, provider: ConfigProvider): Map<KClass<*>, Any> {
         if (types.isEmpty()) {
             return emptyMap()
         }

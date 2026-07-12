@@ -336,8 +336,9 @@ class ComponentRegistrationOrchestrator(
                 )
             }
 
-            // Bind every configuration (fail-fast inside ConfigBinder.bindAll).
-            val configs = bindAllReflectively(configProvider)
+            // Bind every configuration (fail-fast inside ConfigBinder.bindAll). Reuse the types
+            // discovered above instead of re-scanning the classpath inside ConfigBinder.
+            val configs = bindAllReflectively(configProvider, configTypes)
 
             // Register each bound instance by its type.
             val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
@@ -546,9 +547,13 @@ class ComponentRegistrationOrchestrator(
      * Uses reflection to call `ConfigBinder.bindAll()` because ConfigBinder is in a different
      * module (katalyst-config-provider) which may not be on the classpath.
      *
+     * Takes the already-discovered [types] (see [discoverConfigTypesReflectively]) and calls the
+     * `bindAll(Set<KClass<*>>, ConfigProvider)` overload so ConfigBinder reuses them instead of
+     * re-running its own classpath/Reflections scan - discovery happens exactly once per startup.
+     *
      * @return Map of config type to bound instance
      */
-    private fun bindAllReflectively(provider: ConfigProvider): Map<KClass<*>, Any> {
+    private fun bindAllReflectively(provider: ConfigProvider, types: Set<KClass<*>>): Map<KClass<*>, Any> {
         val binderClass = Class.forName(
             "io.github.darkryh.katalyst.config.provider.ConfigBinder"
         )
@@ -559,11 +564,11 @@ class ComponentRegistrationOrchestrator(
 
         val bindAllMethod = binderClass.getDeclaredMethod(
             "bindAll",
-            Array<String>::class.java,
+            Set::class.java,
             ConfigProvider::class.java
         ).apply { isAccessible = true }
 
         @Suppress("UNCHECKED_CAST")
-        return bindAllMethod.invoke(binderInstance, scanPackages, provider) as Map<KClass<*>, Any>
+        return bindAllMethod.invoke(binderInstance, types, provider) as Map<KClass<*>, Any>
     }
 }

@@ -437,7 +437,7 @@ class DatabaseTransactionManager(
             )
             transactionScopeContext.state = TransactionScopeState.COMPLETED
 
-            logger.info("Transaction succeeded for workflow: {}", txId)
+            logger.debug("Transaction succeeded for workflow: {}", txId)
             result
         } catch (e: Exception) {
             // Avoid duplicate ERROR logs. Final severity is logged by retry/finalization flow.

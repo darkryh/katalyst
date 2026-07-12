@@ -9,7 +9,6 @@ dependencies {
 
     implementation(kotlin("reflect"))
 
-    implementation(libs.exposed.migration.core)
     implementation(libs.exposed.migration.jdbc)
     implementation(libs.slf4j.api)
 

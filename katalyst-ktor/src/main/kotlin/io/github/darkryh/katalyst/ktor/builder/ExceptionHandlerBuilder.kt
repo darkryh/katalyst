@@ -3,13 +3,29 @@ package io.github.darkryh.katalyst.ktor.builder
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.http.HttpStatusCode
+import io.ktor.util.AttributeKey
 import io.ktor.utils.io.KtorDsl
 import org.slf4j.LoggerFactory
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
 private val logger = LoggerFactory.getLogger("ExceptionHandlerBuilder")
 
 /**
- * Thread-safe registry for collecting exception handlers across multiple files.
+ * Per-[Application] state backing [ExceptionHandlerRegistry].
+ *
+ * Stored in [Application.attributes] so it lives and dies with the [Application] it belongs
+ * to, instead of a process-global object shared by every [Application] in the JVM.
+ */
+private class ExceptionHandlerState {
+    val handlers: MutableList<StatusPagesConfig.() -> Unit> = CopyOnWriteArrayList()
+    val scheduled: AtomicBoolean = AtomicBoolean(false)
+}
+
+private val ExceptionHandlerStateKey = AttributeKey<ExceptionHandlerState>("KatalystExceptionHandlerState")
+
+/**
+ * Thread-safe, per-[Application] registry for collecting exception handlers across multiple files.
  *
  * This registry allows multiple `katalystExceptionHandler` calls from different files
  * to register their handlers, which are then installed together when the StatusPages
@@ -25,20 +41,27 @@ private val logger = LoggerFactory.getLogger("ExceptionHandlerBuilder")
  * Handlers are collected during module configuration, but StatusPages is installed
  * only once when the first request is about to be processed, ensuring all handlers
  * from all `katalystExceptionHandler` calls are included.
+ *
+ * **Per-Application Isolation:**
+ * State (the pending handler list and the "already scheduled" flag) is stored per
+ * [Application] in [Application.attributes], not in process-global state. Two different
+ * [Application] instances (e.g. two hosted apps in the same JVM, or two tests) never see
+ * each other's handlers, and the state is naturally released when the [Application] is
+ * garbage collected.
  */
 object ExceptionHandlerRegistry {
-    private val handlers = mutableListOf<StatusPagesConfig.() -> Unit>()
-    private val scheduledApplications = mutableSetOf<Int>()
-    private var installed = false
+    private fun stateFor(application: Application): ExceptionHandlerState =
+        application.attributes.computeIfAbsent(ExceptionHandlerStateKey) { ExceptionHandlerState() }
 
     /**
-     * Registers a handler configuration to be applied when StatusPages is installed.
+     * Registers a handler configuration to be applied when StatusPages is installed
+     * for the given [application].
      *
+     * @param application The Ktor application this handler belongs to
      * @param handler The StatusPagesConfig configuration block
      */
-    @Synchronized
-    fun register(handler: StatusPagesConfig.() -> Unit) {
-        handlers.add(handler)
+    fun register(application: Application, handler: StatusPagesConfig.() -> Unit) {
+        stateFor(application).handlers.add(handler)
     }
 
     /**
@@ -50,16 +73,14 @@ object ExceptionHandlerRegistry {
      *
      * @param application The Ktor application to install StatusPages into
      */
-    @Synchronized
     fun scheduleInstall(application: Application) {
-        val appId = System.identityHashCode(application)
+        val state = stateFor(application)
 
         // Only schedule once per application
-        if (appId in scheduledApplications) {
+        if (!state.scheduled.compareAndSet(false, true)) {
             logger.debug("Installation already scheduled for this application")
             return
         }
-        scheduledApplications.add(appId)
 
         // Use MonitoringReady phase which fires after all modules are loaded but before serving
         application.monitor.subscribe(ApplicationStarted) {
@@ -70,14 +91,13 @@ object ExceptionHandlerRegistry {
     }
 
     /**
-     * Installs StatusPages immediately with all registered handlers.
+     * Installs StatusPages immediately with all handlers registered for [application].
      *
      * This is called automatically when the application starts, but can also
      * be called manually in tests after all handlers are registered.
      *
      * @param application The Ktor application to install StatusPages into
      */
-    @Synchronized
     fun installNow(application: Application) {
         // Check if already installed in this specific application
         val isInstalled = application.pluginOrNull(StatusPages) != null
@@ -86,6 +106,7 @@ object ExceptionHandlerRegistry {
             return
         }
 
+        val handlers = stateFor(application).handlers
         if (handlers.isEmpty()) {
             logger.debug("No exception handlers registered, skipping StatusPages installation")
             return
@@ -97,25 +118,21 @@ object ExceptionHandlerRegistry {
             handlers.forEach { handler -> handler(this) }
         }
 
-        installed = true
         logger.info("StatusPages installed successfully with all registered handlers")
     }
 
     /**
-     * Resets the registry state. Call this in test setup to ensure clean state.
+     * Resets the registry state for the given [application]. Call this in test setup to
+     * ensure a clean per-application slate.
      */
-    @Synchronized
-    fun reset() {
-        handlers.clear()
-        scheduledApplications.clear()
-        installed = false
+    fun reset(application: Application) {
+        application.attributes.remove(ExceptionHandlerStateKey)
     }
 
     /**
-     * Returns the number of registered handlers. Useful for testing/debugging.
+     * Returns the number of handlers registered for [application]. Useful for testing/debugging.
      */
-    @Synchronized
-    fun handlerCount(): Int = handlers.size
+    fun handlerCount(application: Application): Int = stateFor(application).handlers.size
 }
 
 /**
@@ -200,8 +217,8 @@ class ExceptionHandlerBuilder {
  * `DuplicatePluginException`.
  *
  * **Test Usage:**
- * For tests, call [ExceptionHandlerRegistry.reset] before configuring the test
- * application to ensure clean state between test runs.
+ * For tests, call `ExceptionHandlerRegistry.reset(application)` before configuring the
+ * test application to ensure clean state between test runs.
  *
  * @param block Configuration block for exception handlers
  */
@@ -209,9 +226,9 @@ fun Application.katalystExceptionHandler(block: ExceptionHandlerBuilder.() -> Un
     val builder = ExceptionHandlerBuilder()
     builder.block()
 
-    // Register all handlers from this builder with the global registry
+    // Register all handlers from this builder with this application's own registry state
     builder.registrations.forEach { registration ->
-        ExceptionHandlerRegistry.register(registration)
+        ExceptionHandlerRegistry.register(this, registration)
     }
 
     logger.debug("Registered {} exception handler(s) from katalystExceptionHandler call", builder.registrations.size)

@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.migrations.util
 
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
 /**
@@ -167,6 +169,38 @@ class ChecksumsTest {
 
         threads.forEach { it.start() }
         threads.forEach { it.join() }
+    }
+
+    @Test
+    fun `hashStatements matches a known SHA-256 vector`() {
+        // sha256("hello") — a fixed, independently-verifiable vector guarding against a bad digest.
+        val hash = hashStatements(listOf("hello"))
+        assertEquals(
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+            hash,
+        )
+    }
+
+    @Test
+    fun `concurrent hashing of distinct inputs never yields a corrupted or cross-contaminated digest`() {
+        // Regression guard for a shared MessageDigest: each task hashes a *different* input and
+        // is checked against its own precomputed expected value, so any interleaving that corrupted
+        // or mixed up a shared digest state (or its lock/contention) would surface as a mismatch.
+        // A bounded pool much smaller than the task count guarantees real overlap: multiple tasks'
+        // hashStatements() calls genuinely execute concurrently rather than one-at-a-time.
+        val taskCount = 200
+        val inputs = (0 until taskCount).map { listOf("STATEMENT_$it", "col INT", it.toString()) }
+        val expected = inputs.map { hashStatements(it) }
+
+        val pool = Executors.newFixedThreadPool(16)
+        try {
+            val futures = inputs.map { statements -> pool.submit<String> { hashStatements(statements) } }
+            val results = futures.map { it.get(10, TimeUnit.SECONDS) }
+
+            assertEquals(expected, results)
+        } finally {
+            pool.shutdown()
+        }
     }
 
     // ========== WHITESPACE HANDLING TESTS ==========

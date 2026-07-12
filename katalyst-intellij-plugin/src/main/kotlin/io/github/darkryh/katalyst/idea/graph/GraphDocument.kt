@@ -9,7 +9,7 @@ package io.github.darkryh.katalyst.idea.graph
  * nullable-friendly data classes lets us parse it with the platform-bundled Gson, with no extra
  * dependency and tolerant of forward-compatible schema additions.
  */
-data class GraphDocument(
+internal data class GraphDocument(
     val schemaVersion: Int = 0,
     val scanPackages: List<String> = emptyList(),
     val nodes: List<NodeRecord> = emptyList(),
@@ -17,7 +17,7 @@ data class GraphDocument(
     val diagnostics: List<DiagnosticRecord> = emptyList(),
 )
 
-data class NodeRecord(
+internal data class NodeRecord(
     val fqName: String = "",
     val simpleName: String = "",
     val packageName: String = "",
@@ -28,7 +28,7 @@ data class NodeRecord(
     val attributes: Map<String, String> = emptyMap(),
 )
 
-data class EdgeRecord(
+internal data class EdgeRecord(
     val from: String = "",
     val to: String = "",
     val parameterName: String = "",
@@ -37,7 +37,7 @@ data class EdgeRecord(
     val source: String = "",
 )
 
-data class DiagnosticRecord(
+internal data class DiagnosticRecord(
     val severity: String = "",
     val kind: String = "",
     val message: String = "",

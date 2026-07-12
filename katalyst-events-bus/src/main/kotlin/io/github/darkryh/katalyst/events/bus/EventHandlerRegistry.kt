@@ -150,13 +150,4 @@ object GlobalEventHandlerRegistry {
      * @return Number of handlers
      */
     fun size(): Int = registry.size()
-
-    /**
-     * Clear all handlers (for testing).
-     *
-     * @return List of handlers that were cleared
-     */
-    fun clear(): List<EventHandler<*>> {
-        return consumeAll()
-    }
 }

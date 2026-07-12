@@ -64,7 +64,11 @@ class SchedulerService(
                 var executionCount = 0L
                 logger.debug("Starting repeating task '{}'", config.taskName)
                 while (isActive) {
-                    executeTask(config, task, ++executionCount)
+                    val shouldContinue = executeTask(config, task, ++executionCount)
+                    if (!shouldContinue) {
+                        logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
+                        break
+                    }
                     SchedulerTelemetry.setNextFire(
                         config.taskName, System.currentTimeMillis() + fixedRate.inWholeMilliseconds,
                     )
@@ -110,7 +114,11 @@ class SchedulerService(
             var executionCount = 0L
             logger.debug("Starting fixed delay task '{}'", config.taskName)
             while (isActive) {
-                executeTask(config, task, ++executionCount)
+                val shouldContinue = executeTask(config, task, ++executionCount)
+                if (!shouldContinue) {
+                    logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
+                    break
+                }
 
                 // Delay after execution before next run (this is the key difference from fixed rate)
                 if (isActive) {
@@ -155,7 +163,11 @@ class SchedulerService(
 
             var executionCount = 0L
             while (isActive) {
-                executeTask(config, task, ++executionCount)
+                val shouldContinue = executeTask(config, task, ++executionCount)
+                if (!shouldContinue) {
+                    logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
+                    break
+                }
 
                 // Calculate next execution time
                 if (isActive) {
@@ -180,12 +192,16 @@ class SchedulerService(
 
     /**
      * Executes a single task invocation with timeout, error handling, and callbacks.
+     *
+     * @return `true` if the caller's repeating loop should continue scheduling further runs,
+     *   `false` if [ScheduleConfig.onError] requested that scheduling stop (only consulted
+     *   when the execution failed or timed out).
      */
     private suspend fun executeTask(
         config: ScheduleConfig,
         task: suspend () -> Unit,
         executionCount: Long
-    ) {
+    ): Boolean {
         SchedulerTelemetry.markRunning(config.taskName)
         val startTime = System.currentTimeMillis()
         try {
@@ -201,7 +217,7 @@ class SchedulerService(
             }
 
             // Null result means timeout occurred
-            if (result == null && config.maxExecutionTime != null) {
+            return if (result == null && config.maxExecutionTime != null) {
                 val error = Exception("Task '${config.taskName}' exceeded max execution time: ${config.maxExecutionTime}")
                 SchedulerTelemetry.recordOutcome(
                     config.taskName, "timeout", System.currentTimeMillis() - startTime, error.message,
@@ -213,6 +229,7 @@ class SchedulerService(
                 SchedulerTelemetry.recordOutcome(config.taskName, "success", executionTime.inWholeMilliseconds)
                 logger.debug("Completed task '{}' in {} (execution #{})", config.taskName, executionTime, executionCount)
                 config.onSuccess(config.taskName, executionTime)
+                true
             }
         } catch (e: CancellationException) {
             // Don't log cancellations, they're expected — clear running without counting a failure.
@@ -223,7 +240,7 @@ class SchedulerService(
                 config.taskName, "failure", System.currentTimeMillis() - startTime, e.stackTraceToString(),
             )
             logger.error("Error running task '{}' (execution #{})", config.taskName, executionCount, e)
-            config.onError(config.taskName, e, executionCount)
+            return config.onError(config.taskName, e, executionCount)
         }
     }
 

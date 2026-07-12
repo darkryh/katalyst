@@ -47,7 +47,19 @@ class ParameterResolver(
         val request = parseDependencyRequest(parameter.type)
         val qualifierName = parameter.findAnnotation<InjectNamed>()?.value
 
-        val resolved = container.getFromContainerOrNull(request.targetType, qualifierName)
+        var resolutionFailure: Throwable? = null
+        val resolved = try {
+            @Suppress("UNCHECKED_CAST")
+            container.get(request.targetType as KClass<Any>, qualifier = qualifierName)
+        } catch (e: Exception) {
+            // The binding may genuinely be absent (fall back to default/null below), or the
+            // container may have failed while actually constructing/resolving the binding
+            // (a real DI failure). Either way we don't swallow it here: if resolution ends up
+            // required and non-nullable, this becomes the cause of the exception thrown below
+            // so the real failure surfaces instead of being masked by a generic message.
+            resolutionFailure = e
+            null
+        }
         if (resolved != null) return ResolvedParameter.supply(resolved)
 
         if (parameter.isOptional) {
@@ -61,7 +73,8 @@ class ParameterResolver(
         val parameterName = parameter.name?.let { " parameter '$it'" } ?: " parameter"
         val qualifierHint = qualifierName?.let { " with qualifier '$it'" } ?: ""
         throw DependencyInjectionException(
-            "Cannot resolve${parameterName} of type ${request.targetType.qualifiedName}$qualifierHint for $ownerDescription"
+            "Cannot resolve${parameterName} of type ${request.targetType.qualifiedName}$qualifierHint for $ownerDescription",
+            cause = resolutionFailure
         )
     }
 }

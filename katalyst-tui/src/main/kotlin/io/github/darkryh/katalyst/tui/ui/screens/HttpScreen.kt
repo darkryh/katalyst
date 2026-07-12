@@ -65,7 +65,13 @@ fun HttpScreen(snapshot: TelemetrySnapshot?, theme: DispatchTheme, onBack: () ->
 
         if (showContext) {
             val route = tableState.selectedItem
-            val all = http.perRoute.firstOrNull()
+            // The telemetry HttpCapturer has no dedicated top-level field for process-wide latency,
+            // so it surfaces the aggregate as a single RouteStats entry tagged with this sentinel
+            // template (see its own "(all requests)" comment). Match on that tag explicitly rather
+            // than assuming it is always the first entry — once real per-route stats land in this
+            // list, a positional lookup would silently mislabel one route's latency as the global
+            // rollup.
+            val all = http.perRoute.firstOrNull { it.template == ALL_REQUESTS_TEMPLATE }
             ContextPanel("Traffic", theme) {
                 FieldLine("selected", route?.let { "${it.method} ${it.path}" } ?: "—", theme, theme.accent)
                 FieldLine(
@@ -95,6 +101,13 @@ fun HttpScreen(snapshot: TelemetrySnapshot?, theme: DispatchTheme, onBack: () ->
 }
 
 private const val CONTEXT_ROWS = 7
+
+/**
+ * Must match the sentinel `io.github.darkryh.katalyst.telemetry.capture.HttpCapturer` tags the
+ * process-wide latency aggregate with (`RouteStats("(all requests)", ...)`), since katalyst-tui only
+ * depends on katalyst-telemetry-model and has no compile edge to the capturer that produces it.
+ */
+private const val ALL_REQUESTS_TEMPLATE = "(all requests)"
 
 private fun routeColumns(): List<TableColumn<RouteEntry>> = listOf(
     TableColumn("Method", TableColumnWidth.Fixed(8)) { it.method },

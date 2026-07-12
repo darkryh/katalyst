@@ -33,13 +33,32 @@ class ReadyHookRunnerTest {
         ReadyHookRegistry.register(RuntimeReadyInitializerB(probe))
         ReadyHookRegistry.register(RuntimeReadyInitializerA(probe))
         ReadyHookRunner(engine.container).invokeAll()
-        assertEquals(listOf("A", "B"), probe.executionOrder)
+
+        // setUp() already registers a *separate* RuntimeReadyInitializerA instance directly in the
+        // container, so this run combines: registry=[B, A], container=[A]. The two A instances are
+        // distinct objects that merely share a class, so both must execute (regression guard for
+        // finding B: dedup must be by identity, not by runtime class) - hence "A" appears twice,
+        // both ordered before "B".
+        assertEquals(listOf("A", "A", "B"), probe.executionOrder)
     }
 
     @Test
     fun `runtime-ready initializers support constructor injection`() = runBlocking {
         ReadyHookRunner(engine.container).invokeAll()
         assertTrue(probe.executed)
+    }
+
+    @Test
+    fun `two distinct instances of the same hook class both execute`() = runBlocking {
+        // setUp() registered one RuntimeReadyInitializerA instance directly into the container.
+        // Register a second, distinct instance of the *same* class through the registry.
+        val second = RuntimeReadyProbe()
+        ReadyHookRegistry.register(RuntimeReadyInitializerA(second))
+
+        ReadyHookRunner(engine.container).invokeAll()
+
+        assertTrue(probe.executed, "container-registered instance must run")
+        assertTrue(second.executed, "registry-registered instance of the same class must also run")
     }
 }
 

@@ -336,25 +336,29 @@ class DependencyValidator(private val graph: DependencyGraph) {
             for (dependency in node.dependencies) {
                 if (dependency.isOptional) continue
 
-                // Check if this is a secondary type that needs validation
+                // Check if this dependency is genuinely unresolvable as a secondary type binding:
+                // it isn't itself a discovered component, no discovered component provides it as a
+                // secondary interface, and no other resolution path (container/Koin/known platform
+                // types) makes it available either. Gating on `!dependency.isResolvable` (the same
+                // authoritative flag findMissingDependencies() relies on) avoids false positives for
+                // types that are resolvable through those other paths despite having no component
+                // provider.
                 val providers = graph.getProvidersOfSecondaryType(dependency.type)
 
-                if (providers.isNotEmpty() && dependency.type !in graph.nodes) {
-                    // This type is only provided as secondary binding
-                    // Make sure it's resolvable
-                    if (providers.isEmpty()) {
-                        errors.add(SecondaryTypeBindingError(
-                            component = componentType,
-                            requiredType = dependency.type,
-                            parameterName = dependency.parameterName,
-                            providingComponents = emptyList()
-                        ))
+                if (providers.isEmpty() && dependency.type !in graph.nodes && !dependency.isResolvable) {
+                    // This type is neither a discovered component nor provided as a secondary
+                    // binding by any discovered component, and no other resolution path applies.
+                    errors.add(SecondaryTypeBindingError(
+                        component = componentType,
+                        requiredType = dependency.type,
+                        parameterName = dependency.parameterName,
+                        providingComponents = emptyList()
+                    ))
 
-                        logger.debug(
-                            "Secondary type {} not provided by any component",
-                            dependency.type.simpleName
-                        )
-                    }
+                    logger.debug(
+                        "Secondary type {} not provided by any component",
+                        dependency.type.simpleName
+                    )
                 }
             }
         }

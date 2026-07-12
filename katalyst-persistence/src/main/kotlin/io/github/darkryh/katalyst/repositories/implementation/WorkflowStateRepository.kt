@@ -29,6 +29,11 @@ import org.slf4j.LoggerFactory
  * - FAILED: An operation failed, rollback needed
  * - UNDONE: All operations successfully undone
  * - FAILED_UNDO: Undo operation failed, manual intervention needed
+ *
+ * **Error Handling**: Every persistence failure is logged with its real cause and then
+ * rethrown. A workflow-state write or read that silently swallowed its exception would
+ * let callers (e.g. recovery jobs) mistake a failed lookup/update for "nothing to do" -
+ * so failures are surfaced instead of hidden behind a default return value.
  */
 internal class WorkflowStateRepository(private val database: Database) : WorkflowStateManager {
 
@@ -53,7 +58,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             logger.debug("Started workflow: {} ({})", workflowId, workflowName)
         } catch (e: Exception) {
             logger.error("Failed to start workflow: {}", workflowId, e)
-            // Don't throw - workflow can continue without state tracking
+            throw e
         }
     }
 
@@ -73,6 +78,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             logger.info("Committed workflow: {}", workflowId)
         } catch (e: Exception) {
             logger.error("Failed to commit workflow: {}", workflowId, e)
+            throw e
         }
     }
 
@@ -103,6 +109,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             )
         } catch (e: Exception) {
             logger.error("Failed to mark workflow as failed: {}", workflowId, e)
+            throw e
         }
     }
 
@@ -122,6 +129,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             logger.info("Marked workflow as undone: {}", workflowId)
         } catch (e: Exception) {
             logger.error("Failed to mark workflow as undone: {}", workflowId, e)
+            throw e
         }
     }
 
@@ -152,7 +160,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             }
         } catch (e: Exception) {
             logger.error("Failed to get workflow state: {}", workflowId, e)
-            null
+            throw e
         }
     }
 
@@ -186,7 +194,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             }
         } catch (e: Exception) {
             logger.error("Failed to get failed workflows", e)
-            emptyList()
+            throw e
         }
     }
 
@@ -214,7 +222,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             }
         } catch (e: Exception) {
             logger.error("Failed to get failed workflow page", e)
-            emptyList()
+            throw e
         }
     }
 
@@ -245,7 +253,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
             }
         } catch (e: Exception) {
             logger.error("Failed to delete old workflows", e)
-            0
+            throw e
         }
     }
 }

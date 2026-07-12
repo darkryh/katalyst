@@ -39,6 +39,11 @@ class TransactionAdapterRegistry {
     private val adapters = CopyOnWriteArrayList<TransactionAdapter>()
     private val logger = LoggerFactory.getLogger(TransactionAdapterRegistry::class.java)
 
+    // Guards register() so the add() + sortByDescending() pair is applied as a single atomic
+    // step; without this, concurrent registrations can interleave and leave the list observably
+    // unsorted or missing an in-flight addition.
+    private val registrationLock = Any()
+
     /**
      * Register a transaction adapter.
      *
@@ -48,9 +53,11 @@ class TransactionAdapterRegistry {
      * @param adapter The adapter to register
      */
     fun register(adapter: TransactionAdapter) {
-        adapters.add(adapter)
-        // Re-sort by priority (higher first)
-        adapters.sortByDescending { it.priority() }
+        synchronized(registrationLock) {
+            adapters.add(adapter)
+            // Re-sort by priority (higher first)
+            adapters.sortByDescending { it.priority() }
+        }
         logger.info("Registered transaction adapter: {} (priority: {})", adapter.name(), adapter.priority())
     }
 
@@ -158,7 +165,7 @@ class TransactionAdapterRegistry {
         }
 
         val executionResults = PhaseExecutionResults(phase, results)
-        if (phaseLoggingEnabled) {
+        if (phaseLoggingEnabled && logger.isDebugEnabled) {
             logger.debug("Phase execution summary: {}", executionResults.getSummary())
         }
         return executionResults

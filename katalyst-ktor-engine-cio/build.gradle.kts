@@ -11,7 +11,4 @@ dependencies {
     // Ktor with CIO engine
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)
-
-    // Kotlin
-    implementation(kotlin("reflect"))
 }

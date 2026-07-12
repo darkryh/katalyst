@@ -14,15 +14,18 @@ package io.github.darkryh.katalyst.scheduler.exception
  * **Error Hierarchy**:
  * ```
  * SchedulerException (base)
- * ├── SchedulerServiceNotAvailableException
- * ├── SchedulerDiscoveryException
- * ├── SchedulerValidationException
- * └── SchedulerInvocationException
+ * ├── SchedulerServiceNotAvailableException  (reserved, not currently thrown)
+ * ├── SchedulerDiscoveryException            (reserved, not currently thrown)
+ * ├── SchedulerValidationException           (reserved, not currently thrown)
+ * ├── SchedulerInvocationException           (thrown by SchedulerInitializer)
+ * └── SchedulerConfigurationException        (reserved, not currently thrown)
  * ```
  *
- * **Usage**:
- * SchedulerInitializer catches these exceptions and wraps them in
- * InitializerFailedException for lifecycle error handling.
+ * **Usage**: [io.github.darkryh.katalyst.scheduler.lifecycle.SchedulerInitializer.onReady]
+ * throws [SchedulerInvocationException] directly when one or more scheduler methods fail
+ * to register. The other subtypes are part of the public error-handling API but are not
+ * currently thrown anywhere in this module; they are kept for forward compatibility so
+ * callers can already catch/match on them.
  */
 sealed class SchedulerException(
     message: String,
@@ -30,19 +33,13 @@ sealed class SchedulerException(
 ) : RuntimeException(message, cause)
 
 /**
- * Thrown when SchedulerService is not available in the DI container.
+ * Represents a missing [io.github.darkryh.katalyst.scheduler.service.SchedulerService] in the
+ * DI container.
  *
- * This typically happens when the scheduler feature is not properly registered
- * in the active Katalyst container, or the SchedulerService bean is not instantiated.
- *
- * **Example scenario**:
- * ```
- * val scheduler = KatalystContainerProvider.current().get<SchedulerService>()
- * // throws if SchedulerService is not registered
- * // Wrapped as SchedulerServiceNotAvailableException
- * ```
- *
- * **Resolution**: Ensure scheduler module is properly included in DI setup.
+ * **Status**: reserved - not currently thrown by framework code. Today,
+ * [io.github.darkryh.katalyst.scheduler.extension.requireScheduler] raises a plain
+ * `IllegalStateException` for this scenario instead. Kept as part of the public API for
+ * callers that want a dedicated, catchable type.
  */
 class SchedulerServiceNotAvailableException(
     message: String = "SchedulerService is not available in the DI container",
@@ -50,24 +47,12 @@ class SchedulerServiceNotAvailableException(
 ) : SchedulerException(message, cause)
 
 /**
- * Thrown when scheduler method discovery fails.
+ * Represents a failure discovering scheduler methods (reflection-based candidate scanning).
  *
- * This occurs during STEP 1 (reflection-based discovery) or STEP 2 (bytecode validation)
- * when the scheduler cannot discover or validate scheduler methods.
- *
- * **Error scenarios**:
- * 1. ServiceRegistry not populated (component discovery issue)
- * 2. Reflection errors while scanning services
- * 3. Class loading errors during validation
- *
- * **Example scenario**:
- * ```
- * val services = ServiceRegistry.getAll()  // empty or throws exception
- * // Wrapped as SchedulerDiscoveryException
- * ```
- *
- * **Resolution**: Check that services are properly registered in ServiceRegistry
- * during component discovery phase.
+ * **Status**: reserved - not currently thrown by framework code. Discovery errors in
+ * [io.github.darkryh.katalyst.scheduler.lifecycle.SchedulerInitializer] currently propagate as
+ * whatever exception the underlying reflection call raised, or are aggregated into
+ * [SchedulerInvocationException]. Kept as part of the public API for forward compatibility.
  */
 class SchedulerDiscoveryException(
     message: String,
@@ -75,28 +60,13 @@ class SchedulerDiscoveryException(
 ) : SchedulerException(message, cause)
 
 /**
- * Thrown when scheduler method bytecode validation fails.
+ * Represents a failure validating scheduler method bytecode.
  *
- * During STEP 2, each candidate method is validated via bytecode analysis.
- * This exception is thrown when bytecode inspection encounters errors.
- *
- * **Error scenarios**:
- * 1. ASM library errors while analyzing bytecode
- * 2. Class file not found on classpath
- * 3. Invalid bytecode or corrupted class file
- *
- * **Note**: Methods that don't call scheduler methods are logged as failures
- * but do NOT throw this exception - they're simply filtered out.
- *
- * **Example scenario**:
- * ```
- * val classFile = classLoader.getResourceAsStream(className)  // throws exception
- * val reader = ClassReader(classFile)  // throws IOException
- * // Wrapped as SchedulerValidationException
- * ```
- *
- * **Resolution**: Ensure all service classes are compiled correctly and
- * available on the classpath.
+ * **Status**: reserved - not currently thrown by framework code.
+ * [io.github.darkryh.katalyst.scheduler.lifecycle.SchedulerMethodBytecodeValidator] swallows
+ * bytecode-inspection errors internally (logged at debug level, treated as "not a scheduler
+ * method") rather than throwing this exception. Kept as part of the public API for forward
+ * compatibility.
  */
 class SchedulerValidationException(
     message: String,
@@ -104,30 +74,21 @@ class SchedulerValidationException(
 ) : SchedulerException(message, cause)
 
 /**
- * Thrown when scheduler method invocation fails.
+ * Thrown when one or more scheduler method registrations fail.
  *
- * During STEP 3, validated methods are invoked. This exception is thrown when:
- * 1. The method throws an exception during execution
- * 2. The method returns an invalid type (not SchedulerJobHandle)
- * 3. Reflection invocation fails
- *
- * **Error scenarios**:
- * 1. NullPointerException in the scheduler method
- * 2. Method returns null instead of SchedulerJobHandle
- * 3. Method returns wrong type
- * 4. Reflection invocation security exception
- *
- * **Example scenario**:
- * ```
- * method.call(service)  // throws NullPointerException
- * // Wrapped as SchedulerInvocationException
- * ```
+ * **Status**: actively thrown, by
+ * [io.github.darkryh.katalyst.scheduler.lifecycle.SchedulerInitializer.onReady]. Each candidate
+ * scheduler method is invoked in isolation - a failing method (throws, or returns something other
+ * than [io.github.darkryh.katalyst.scheduler.job.SchedulerJobHandle]) is logged and counted, and
+ * does not stop the remaining candidates from registering. Once all candidates have been
+ * attempted, if any failed, a single aggregate `SchedulerInvocationException` is thrown
+ * summarizing the failure count; per-method causes are available in the logs, not chained onto
+ * this instance.
  *
  * **Resolution**:
- * 1. Check the scheduler method implementation for null values
- * 2. Ensure return type is exactly SchedulerJobHandle
- * 3. Verify method has no required parameters
- * 4. Check application logs for the underlying error
+ * 1. Check application logs for the specific method(s) that failed and why.
+ * 2. Ensure the scheduler method's return type is exactly `SchedulerJobHandle`.
+ * 3. Verify the method has no unresolvable required parameters.
  */
 class SchedulerInvocationException(
     message: String,
@@ -135,25 +96,10 @@ class SchedulerInvocationException(
 ) : SchedulerException(message, cause)
 
 /**
- * Thrown when scheduler configuration is invalid.
+ * Represents an invalid scheduler configuration.
  *
- * This occurs when scheduler initializer detects configuration issues
- * that prevent proper operation.
- *
- * **Error scenarios**:
- * 1. Scheduler settings invalid (e.g., negative thread count)
- * 2. Scheduler pool exhausted
- * 3. Incompatible configuration changes
- *
- * **Example scenario**:
- * ```
- * val threadCount = schedulerConfig.getThreadCount()  // returns invalid value
- * if (threadCount <= 0) {
- *     throw SchedulerConfigurationException("Invalid thread count: $threadCount")
- * }
- * ```
- *
- * **Resolution**: Review scheduler configuration and ensure all settings are valid.
+ * **Status**: reserved - not currently thrown by framework code. Kept as part of the public API
+ * for forward compatibility, e.g. future validation of scheduler settings.
  */
 class SchedulerConfigurationException(
     message: String,

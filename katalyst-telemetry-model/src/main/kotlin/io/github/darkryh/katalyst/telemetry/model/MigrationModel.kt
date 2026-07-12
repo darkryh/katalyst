@@ -21,6 +21,14 @@ data class MigrationEntry(
     val checksumDrift: Boolean = false,
 )
 
+/** One recorded migration failure from the live process — see `MigrationTelemetry.Failure`. */
+@Serializable
+data class MigrationFailure(
+    val epochMs: Long,
+    val id: String,
+    val message: String? = null,
+)
+
 /**
  * Migrations: which migration is running now, applied vs pending vs baselined vs orphaned, checksum
  * drift, and live schema drift. Fed from status()/validateMigrations()/dryRun() — already-free.
@@ -36,4 +44,6 @@ data class MigrationSnapshot(
     val schemaDriftStatements: Int = 0,
     val historyReadable: Boolean = true,
     val runAtStartup: Boolean = true,
+    /** Bounded ring of recent migration failures for this process — see `MigrationTelemetry.failures()`. */
+    val recentFailures: List<MigrationFailure> = emptyList(),
 )

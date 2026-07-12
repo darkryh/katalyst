@@ -364,7 +364,9 @@ class DependencyAnalyzer(
         runCatching { container.contains<DatabaseTransactionManager>() }
             .onFailure { logger.debug("DatabaseTransactionManager not available in container yet: {}", it.message) }
 
-        logger.debug("Container provides {} types: {}", types.size, types.map { it.simpleName })
+        if (logger.isDebugEnabled) {
+            logger.debug("Container provides {} types: {}", types.size, types.map { it.simpleName })
+        }
 
         return types
     }

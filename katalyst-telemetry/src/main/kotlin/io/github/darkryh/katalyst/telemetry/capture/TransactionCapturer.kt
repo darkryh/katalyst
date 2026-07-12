@@ -65,8 +65,8 @@ class TransactionCapturer : SubsystemCapturer {
             val defaults = TransactionConfig()
 
             val (p50, p95, p99) = TransactionTelemetry.percentiles()
-            val rolledBack = TransactionTelemetry.rolledBack.get()
-            val timedOut = TransactionTelemetry.timedOut.get()
+            val rolledBack = TransactionTelemetry.rolledBack
+            val timedOut = TransactionTelemetry.timedOut
 
             TransactionSnapshot(
                 adapters = adapters,
@@ -74,7 +74,7 @@ class TransactionCapturer : SubsystemCapturer {
                 isolationConfigured = defaults.isolationLevel.name,
                 timeoutMs = defaults.timeout.inWholeMilliseconds,
                 maxRetries = defaults.retryPolicy.maxRetries,
-                committed = TransactionTelemetry.committed.get(),
+                committed = TransactionTelemetry.committed,
                 rolledBack = rolledBack,
                 timedOut = timedOut,
                 failed = rolledBack + timedOut,

@@ -36,14 +36,14 @@ import io.github.darkryh.katalyst.tui.navigation.WebSocketsRoute
 import io.github.darkryh.katalyst.tui.navigation.WiringRoute
 
 /** One tile on the home grid: a subsystem entry that opens [route] on Enter. */
-data class TuiTile(val title: String, val description: String, val route: NavKey)
+private data class TuiTile(val title: String, val description: String, val route: NavKey)
 
 /**
  * The 10 subsystem tiles, in reading order. Copy rules: the title is the subsystem's plain name;
  * the description says exactly what you will see inside, in full words — no abbreviations, no
  * implementation names (engines are abstractions).
  */
-val homeTiles: List<TuiTile> = listOf(
+private val homeTiles: List<TuiTile> = listOf(
     TuiTile("Boot", "Every startup phase with its duration and warnings", BootRoute),
     TuiTile("Wiring", "Registered beans and the dependency graph", WiringRoute),
     TuiTile("HTTP", "Routes with request rates and latency percentiles", HttpRoute),

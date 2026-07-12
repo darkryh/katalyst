@@ -226,9 +226,104 @@ class DependencyValidatorTest {
         assertEquals(0, report.totalErrorCount)
     }
 
+    @Test
+    fun `should detect genuinely missing secondary type binding`() {
+        // A depends on TestInterface, but no discovered component provides it as a secondary
+        // type, it isn't itself a node, and it's not resolvable through any other path.
+        val nodeA = ComponentNode(
+            type = TestServiceA::class,
+            dependencies = listOf(
+                Dependency(
+                    type = TestInterface::class,
+                    parameterName = "dependency",
+                    isOptional = false,
+                    isResolvable = false
+                )
+            )
+        )
+
+        val graph = DependencyGraph(
+            nodes = mapOf(TestServiceA::class to nodeA),
+            edges = mapOf(TestServiceA::class to setOf(TestInterface::class))
+            // secondaryTypeBindings intentionally empty: nobody provides TestInterface
+        )
+
+        val validator = DependencyValidator(graph)
+        val errors = validator.validateSecondaryTypeBindings()
+
+        assertEquals(1, errors.size, "Should report the missing secondary type binding")
+        assertEquals(TestInterface::class, errors[0].requiredType)
+    }
+
+    @Test
+    fun `should not report secondary type binding error when a component provides the interface`() {
+        // A depends on TestInterface; TestInterfaceImpl provides it as a secondary type binding.
+        val nodeA = ComponentNode(
+            type = TestServiceA::class,
+            dependencies = listOf(
+                Dependency(
+                    type = TestInterface::class,
+                    parameterName = "dependency",
+                    isOptional = false,
+                    isResolvable = true
+                )
+            )
+        )
+        val nodeImpl = ComponentNode(
+            type = TestInterfaceImpl::class,
+            secondaryTypes = listOf(TestInterface::class)
+        )
+
+        val graph = DependencyGraph(
+            nodes = mapOf(
+                TestServiceA::class to nodeA,
+                TestInterfaceImpl::class to nodeImpl
+            ),
+            edges = mapOf(TestServiceA::class to setOf(TestInterface::class)),
+            secondaryTypeBindings = mapOf(TestInterface::class to setOf(TestInterfaceImpl::class))
+        )
+
+        val validator = DependencyValidator(graph)
+        val errors = validator.validateSecondaryTypeBindings()
+
+        assertEquals(0, errors.size, "Valid secondary type binding must not be reported as an error")
+    }
+
+    @Test
+    fun `should not report secondary type binding error when dependency is resolvable through another path`() {
+        // A depends on TestInterface. No discovered component provides it as a secondary type
+        // and it isn't a node itself, but the analyzer already determined it's resolvable
+        // through another path (e.g. the container/Koin or a known platform type). This must
+        // not be flagged as a false positive.
+        val nodeA = ComponentNode(
+            type = TestServiceA::class,
+            dependencies = listOf(
+                Dependency(
+                    type = TestInterface::class,
+                    parameterName = "dependency",
+                    isOptional = false,
+                    isResolvable = true
+                )
+            )
+        )
+
+        val graph = DependencyGraph(
+            nodes = mapOf(TestServiceA::class to nodeA),
+            edges = mapOf(TestServiceA::class to setOf(TestInterface::class))
+            // secondaryTypeBindings intentionally empty
+        )
+
+        val validator = DependencyValidator(graph)
+        val errors = validator.validateSecondaryTypeBindings()
+
+        assertEquals(0, errors.size, "Must not false-positive when otherwise resolvable")
+    }
+
     // Test helper classes
     private class TestServiceA
     private class TestServiceB
     private class TestServiceC
     private abstract class AbstractService
+    private interface TestInterface
+    private class TestInterfaceImpl : TestInterface
 }

@@ -19,10 +19,10 @@ public final class io/github/darkryh/katalyst/ktor/builder/ExceptionHandlerBuild
 
 public final class io/github/darkryh/katalyst/ktor/builder/ExceptionHandlerRegistry {
 	public static final field INSTANCE Lio/github/darkryh/katalyst/ktor/builder/ExceptionHandlerRegistry;
-	public final fun handlerCount ()I
+	public final fun handlerCount (Lio/ktor/server/application/Application;)I
 	public final fun installNow (Lio/ktor/server/application/Application;)V
-	public final fun register (Lkotlin/jvm/functions/Function1;)V
-	public final fun reset ()V
+	public final fun register (Lio/ktor/server/application/Application;Lkotlin/jvm/functions/Function1;)V
+	public final fun reset (Lio/ktor/server/application/Application;)V
 	public final fun scheduleInstall (Lio/ktor/server/application/Application;)V
 }
 

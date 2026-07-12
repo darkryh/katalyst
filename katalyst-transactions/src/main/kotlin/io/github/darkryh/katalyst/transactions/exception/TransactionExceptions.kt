@@ -73,12 +73,12 @@ class TransactionFailedException(
     val isRetryable: Boolean = cause?.let {
         when (it) {
             is java.sql.SQLException -> {
-                // Check for specific SQL error codes
-                it.errorCode.let { code ->
-                    // Deadlock: 1213 (MySQL), 40P01 (PostgreSQL)
-                    // Lock timeout: 1205 (MySQL)
-                    code in setOf(1213, 1205)
-                }
+                // MySQL identifies these conditions via vendor error code; PostgreSQL via SQLState.
+                // Deadlock: 1213 (MySQL), 40P01 (PostgreSQL deadlock_detected)
+                // Lock timeout: 1205 (MySQL)
+                // Serialization failure: 40001 (PostgreSQL serialization_failure)
+                it.errorCode in setOf(1213, 1205) ||
+                    it.sqlState in setOf("40P01", "40001")
             }
             is java.util.concurrent.TimeoutException -> true
             is java.io.IOException -> true

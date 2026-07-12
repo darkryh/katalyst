@@ -11,7 +11,4 @@ dependencies {
     // Ktor with Jetty engine
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.jetty.jakarta)
-
-    // Kotlin
-    implementation(kotlin("reflect"))
 }

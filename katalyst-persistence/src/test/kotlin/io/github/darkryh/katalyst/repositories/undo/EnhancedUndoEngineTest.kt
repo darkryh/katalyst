@@ -3,6 +3,11 @@ package io.github.darkryh.katalyst.repositories.undo
 import io.github.darkryh.katalyst.transactions.workflow.SimpleTransactionOperation
 import io.github.darkryh.katalyst.transactions.workflow.TransactionOperation
 import kotlinx.coroutines.test.runTest
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.*
 
 /**
@@ -47,26 +52,75 @@ class EnhancedUndoEngineTest {
         assertEquals(listOf(2, 1, 0), executionOrder)
     }
 
+    private object StrategyTestTable : Table("enhanced_engine_strategy_test") {
+        val id = long("id")
+        val name = varchar("name", 100)
+
+        override val primaryKey = PrimaryKey(id)
+    }
+
     @Test
     fun `undoWorkflow should use appropriate strategy for each operation type`() = runTest {
-        // Given
-        val registry = UndoStrategyRegistry.createDefault()
-        val engine = EnhancedUndoEngine(strategyRegistry = registry)
-
-        val operations = listOf(
-            createOperation(workflowId = "wf1", index = 0, type = "INSERT") { true },
-            createOperation(workflowId = "wf1", index = 1, type = "UPDATE") { true },
-            createOperation(workflowId = "wf1", index = 2, type = "DELETE") { true },
-            createOperation(workflowId = "wf1", index = 3, type = "API_CALL") { true }
+        // Given - a real backing table so the default INSERT/UPDATE/DELETE strategies
+        // can genuinely perform their compensating mutation (not just claim success).
+        val database = Database.connect(
+            url = "jdbc:h2:mem:test_enhanced_undo_engine_${System.nanoTime()};DB_CLOSE_DELAY=-1",
+            driver = "org.h2.Driver",
+            user = "sa",
+            password = ""
         )
+        transaction(database) { SchemaUtils.create(StrategyTestTable) }
+        try {
+            transaction(database) {
+                StrategyTestTable.insert {
+                    it[id] = 0L
+                    it[name] = "inserted-by-op-0"
+                }
+                StrategyTestTable.insert {
+                    it[id] = 1L
+                    it[name] = "changed-value"
+                }
+            }
 
-        // When
-        val result = engine.undoWorkflow("wf1", operations)
+            val registry = UndoStrategyRegistry()
+                .register(InsertUndoStrategy(database))
+                .register(DeleteUndoStrategy(database))
+                .register(UpdateUndoStrategy(database))
+                .register(APICallUndoStrategy())
+            val engine = EnhancedUndoEngine(strategyRegistry = registry)
 
-        // Then
-        assertEquals(4, result.succeededCount)
-        assertEquals(0, result.failedCount)
-        assertTrue(result.isFullySuccessful)
+            val operations = listOf(
+                SimpleTransactionOperation(
+                    workflowId = "wf1", operationIndex = 0, operationType = "INSERT",
+                    resourceType = "enhanced_engine_strategy_test", resourceId = "0"
+                ),
+                SimpleTransactionOperation(
+                    workflowId = "wf1", operationIndex = 1, operationType = "UPDATE",
+                    resourceType = "enhanced_engine_strategy_test", resourceId = "1",
+                    undoData = mapOf("name" to "original-value")
+                ),
+                SimpleTransactionOperation(
+                    workflowId = "wf1", operationIndex = 2, operationType = "DELETE",
+                    resourceType = "enhanced_engine_strategy_test", resourceId = "2",
+                    undoData = mapOf("id" to 2L, "name" to "re-inserted")
+                ),
+                SimpleTransactionOperation(
+                    workflowId = "wf1", operationIndex = 3, operationType = "API_CALL",
+                    resourceType = "EmailService", resourceId = "3",
+                    undoData = mapOf("undo_endpoint" to "https://example.com/undo")
+                )
+            )
+
+            // When
+            val result = engine.undoWorkflow("wf1", operations)
+
+            // Then
+            assertEquals(4, result.succeededCount)
+            assertEquals(0, result.failedCount)
+            assertTrue(result.isFullySuccessful)
+        } finally {
+            transaction(database) { SchemaUtils.drop(StrategyTestTable) }
+        }
     }
 
     // ========== RETRY POLICY INTEGRATION ==========

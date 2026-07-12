@@ -10,10 +10,8 @@ import org.slf4j.LoggerFactory
 
 /**
  * Loads ktor.deployment.* into [ServerDeploymentConfiguration] from a ConfigProvider.
- * Kept in DI module to avoid circular dependency with config-provider.
  *
- * Invoked reflectively by [ServerConfigurationResolver]; the `loadConfig`/`validate`
- * method names and signatures must remain stable.
+ * Invoked directly by [ServerConfigurationResolver] (same module/package).
  */
 object ServerDeploymentConfigurationLoader {
     private val log = LoggerFactory.getLogger(ServerDeploymentConfigurationLoader::class.java)

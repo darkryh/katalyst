@@ -109,4 +109,41 @@ class SchedulerServiceTest {
         job.cancelAndJoin()
     }
 
+    @Test
+    fun `schedule stops further runs when onError signals stop`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        scheduler = SchedulerService(dispatcher)
+
+        var executions = 0
+        var onErrorInvocations = 0
+        val config = ScheduleConfig(
+            taskName = "stop-on-error",
+            initialDelay = Duration.ZERO,
+            onError = { _, _, _ ->
+                onErrorInvocations++
+                false
+            }
+        )
+        val job = scheduler!!.schedule(
+            config = config,
+            task = {
+                executions++
+                throw RuntimeException("boom")
+            },
+            fixedRate = 50.milliseconds
+        )
+
+        runCurrent()
+        assertEquals(1, executions)
+        assertEquals(1, onErrorInvocations)
+        assertEquals(false, job.isActive)
+
+        // Further virtual time must not trigger any additional runs.
+        advanceTimeBy(500)
+        runCurrent()
+
+        assertEquals(1, executions, "task must not run again once onError requested stop")
+        assertEquals(1, onErrorInvocations)
+    }
+
 }

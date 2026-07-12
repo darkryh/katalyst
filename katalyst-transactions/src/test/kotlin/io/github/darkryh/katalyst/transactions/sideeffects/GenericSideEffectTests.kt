@@ -49,7 +49,7 @@ class GenericSideEffectTests {
             failOnHandlerError = true
         )
 
-        adapter.configureeSideEffect(config)
+        adapter.configureSideEffect(config)
 
         // Verify configuration stored
         assertTrue(true, "Configuration accepted without error")

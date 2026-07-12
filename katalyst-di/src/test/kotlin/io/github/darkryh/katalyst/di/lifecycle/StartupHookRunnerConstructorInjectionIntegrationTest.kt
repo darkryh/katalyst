@@ -40,6 +40,21 @@ class StartupHookRunnerConstructorInjectionIntegrationTest {
         StartupHookRunner(engine.container).invokeAll()
         assertTrue(probe.executed)
     }
+
+    @Test
+    fun `two distinct instances of the same hook class both execute`() = runBlocking {
+        // setUp() already registered one ProbeInitializer instance directly into the container.
+        // Register a second, distinct instance of the *same* class through the registry.
+        // Regression guard for finding B: dedup must be by identity, not by runtime class,
+        // so both instances must run rather than one being silently dropped.
+        val secondProbe = InitializerProbe()
+        StartupHookRegistry.register(ProbeInitializer(secondProbe))
+
+        StartupHookRunner(engine.container).invokeAll()
+
+        assertTrue(probe.executed, "container-registered instance must run")
+        assertTrue(secondProbe.executed, "registry-registered instance of the same class must also run")
+    }
 }
 
 private class InitializerProbe {
