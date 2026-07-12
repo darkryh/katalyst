@@ -2,7 +2,7 @@ plugins {
     // The single Katalyst plugin applies Kotlin JVM, kotlinx.serialization and the application
     // plugin. No version: it is resolved from the composite build (see settings.gradle.kts).
     // A published consumer would write: id("io.github.darkryh.katalyst") version "1.0.0-alpha03"
-    id("io.github.darkryh.katalyst")
+    id("io.github.darkryh.katalyst") version "1.0.0-alpha03"
 }
 
 group = "io.github.darkryh"

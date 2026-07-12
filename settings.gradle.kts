@@ -17,9 +17,13 @@ dependencyResolutionManagement {
 }
 
 includeBuild("build-logic")
-if (providers.gradleProperty("includeSamplesComposite").orNull == "true") {
-    includeBuild("samples")
-}
+
+// The samples are NOT part of this build. They are standalone consumer projects (under
+// samples/) that depend on the PUBLISHED katalyst-* artifacts + the io.github.darkryh.katalyst
+// plugin from a Maven repo — exactly like a real external app, and the same approach JetBrains
+// uses for Exposed's samples. Validate them against local changes with `samples/validate-samples.sh`
+// (publishToMavenLocal + build). Keeping them out of this build is what makes a single IDE sync of
+// the library clean (no nested composite, no "Missing ExternalProject").
 
 // The IntelliJ plugin is a separate composite build: it applies the (heavy,
 // version-sensitive) IntelliJ Platform Gradle plugin and is not published as a Maven
