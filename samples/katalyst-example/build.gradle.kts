@@ -1,8 +1,8 @@
 plugins {
     // The single Katalyst plugin applies Kotlin JVM, kotlinx.serialization and the application
     // plugin. No version: it is resolved from the composite build (see settings.gradle.kts).
-    // A published consumer would write: id("io.github.darkryh.katalyst") version "1.0.0-alpha04"
-    id("io.github.darkryh.katalyst") version "1.0.0-alpha04"
+    // A published consumer would write: id("io.github.darkryh.katalyst") version "1.0.0-alpha05"
+    id("io.github.darkryh.katalyst") version "1.0.0-alpha05"
 }
 
 group = "io.github.darkryh"
@@ -13,7 +13,7 @@ application { mainClass = "io.github.darkryh.katalyst.example.ApplicationKt" }
 // Only katalyst-* artifacts — Ktor, Exposed, Koin, serialization, etc. all arrive transitively
 // through the starters. Pick the server engine by adding exactly one katalyst-starter-engine-*.
 dependencies {
-    val katalyst = "1.0.0-alpha04"
+    val katalyst = "1.0.0-alpha05"
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")
     implementation("io.github.darkryh.katalyst:katalyst-starter-engine-netty")

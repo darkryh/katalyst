@@ -52,7 +52,7 @@ repositories {
 }
 
 dependencies {
-    val katalyst = "1.0.0-alpha04" // latest version — see the Maven Central badge above
+    val katalyst = "1.0.0-alpha05" // latest version — see the Maven Central badge above
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
 
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")

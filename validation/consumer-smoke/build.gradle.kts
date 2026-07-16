@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.Test
 plugins {
     // The ONLY plugin a Katalyst consumer applies. It pulls in Kotlin JVM, kotlinx.serialization
     // and the application plugin. Resolving it here proves the published plugin marker works.
-    id("io.github.darkryh.katalyst") version "1.0.0-alpha04"
+    id("io.github.darkryh.katalyst") version "1.0.0-alpha05"
 }
 
 group = "com.example"
@@ -29,7 +29,7 @@ sourceSets.named("main").configure {
 // CRITICAL: not a single Ktor or Exposed coordinate appears here. Both arrive transitively through
 // the katalyst-* starters — that is the property this harness exists to prove.
 dependencies {
-    val katalyst = "1.0.0-alpha04"
+    val katalyst = "1.0.0-alpha05"
     implementation(platform("io.github.darkryh.katalyst:katalyst-bom:$katalyst"))
     implementation("io.github.darkryh.katalyst:katalyst-starter-web")
     implementation("io.github.darkryh.katalyst:katalyst-starter-persistence")
