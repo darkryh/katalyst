@@ -7,11 +7,25 @@ package io.github.darkryh.katalyst.di.lifecycle
  * DI bootstrap before server bind, after services are instantiated and
  * database schema is initialized.
  *
+ * **Discovery:**
+ * Implementing this interface is sufficient. A hook is scanned, dependency-validated,
+ * and constructor-injected on its own — it does NOT need to also implement
+ * `Component` or `Service`:
+ *
+ * ```kotlin
+ * class WarmCachesHook(private val catalog: CatalogService) : StartupHook {
+ *     override suspend fun onStartup() = catalog.warm()
+ * }
+ * ```
+ *
+ * Hooks participate in the same dependency graph as components, so an unresolvable
+ * constructor dependency fails the bootstrap with a validation error rather than
+ * being skipped.
+ *
  * **Execution Order:**
  * 1. StartupValidator (order=-100) - Validates DB readiness
  * 2. User-defined hooks (order=0+) - Custom pre-start validation/setup logic
  *
- * **Component Discovery:**
  * Runtime activations (scheduler, background consumers) should use
  * [ReadyHook], not this interface.
  */

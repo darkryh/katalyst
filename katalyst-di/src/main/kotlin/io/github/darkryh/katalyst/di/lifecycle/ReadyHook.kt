@@ -6,6 +6,11 @@ package io.github.darkryh.katalyst.di.lifecycle
  * In Ktor applications this hook runs after `ApplicationStarted`.
  * Implementations should be used for background activations such as scheduler
  * jobs, consumers, and polling loops.
+ *
+ * **Discovery:**
+ * Implementing this interface is sufficient. A hook is scanned, dependency-validated,
+ * and constructor-injected on its own — it does NOT need to also implement
+ * `Component` or `Service`.
  */
 interface ReadyHook {
     /**

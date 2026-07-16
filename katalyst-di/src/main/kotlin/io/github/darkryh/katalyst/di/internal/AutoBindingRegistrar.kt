@@ -129,7 +129,9 @@ class AutoBindingRegistrar(
     private fun <T : Any> emptyDiscoverySeverity(baseType: Class<T>): EmptyDiscoverySeverity {
         return when (baseType) {
             KtorModule::class.java,
-            KatalystMigration::class.java -> EmptyDiscoverySeverity.INFO
+            KatalystMigration::class.java,
+            StartupHook::class.java,
+            ReadyHook::class.java -> EmptyDiscoverySeverity.INFO
 
             else -> EmptyDiscoverySeverity.WARN
         }

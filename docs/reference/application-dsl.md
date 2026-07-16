@@ -132,10 +132,9 @@ katalystApplication(args) {
 
 ## Application lifecycle hooks
 
-Katalyst has two lifecycle hook interfaces. Implement one on a class that is otherwise
-discovered by the framework (for example, also implementing `Component` or `Service`) and it
-is picked up automatically — a class implementing only `StartupHook`/`ReadyHook` with no other
-discovery marker is never scanned.
+Katalyst has two lifecycle hook interfaces. Implementing one is the only signal needed — a hook
+is scanned, dependency-validated and constructor-injected on its own, and does **not** need to
+also implement `Component` or `Service`.
 
 - **`StartupHook`** — runs before the server binds, after all components are instantiated and
   the database schema is initialized. A built-in `StartupValidator` (`order = -100`) always
@@ -147,9 +146,9 @@ Multiple hooks of each kind are allowed and run in deterministic order (`order` 
 ties broken by qualified class name):
 
 ```kotlin
-class CacheWarmupService(
+class CacheWarmup(
     private val cache: CacheClient
-) : Service, ReadyHook {
+) : ReadyHook {
     override val id = "cacheWarmup"
     override val order = 50
     override suspend fun onReady() {
@@ -159,13 +158,21 @@ class CacheWarmupService(
 ```
 
 ```kotlin
-class SchemaWarmupCheck : Component, StartupHook {
+class SchemaWarmupCheck : StartupHook {
     override val order = 10
     override suspend fun onStartup() {
         // pre-start validation/setup, runs after StartupValidator
     }
 }
 ```
+
+Hooks take part in the same dependency graph as components, so a hook whose constructor
+dependency cannot be resolved fails the bootstrap with a validation error naming the hook,
+rather than being skipped.
+
+Implementing `Component`/`Service` *alongside* a hook interface is also supported, and is the
+right choice when the class is genuinely both — for example a service that also warms its own
+cache once the server is ready.
 
 ## Command-line and force flag
 

@@ -11,6 +11,8 @@ import io.github.darkryh.katalyst.di.discovery.DiscoverySnapshotBuilder
 import io.github.darkryh.katalyst.di.exception.FatalDependencyValidationException
 import io.github.darkryh.katalyst.di.exception.KatalystDIException
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
+import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
+import io.github.darkryh.katalyst.di.lifecycle.StartupHook
 import io.github.darkryh.katalyst.di.planning.BindingPlan
 import io.github.darkryh.katalyst.di.planning.BindingPlanBuilder
 import io.github.darkryh.katalyst.di.validation.DependencyValidator
@@ -130,13 +132,18 @@ class ComponentRegistrationOrchestrator(
         val registrar = AutoBindingRegistrar(container, beanEngine, scanPackages)
 
         // Discover each component type (methods are now internal - no reflection needed)
+        // Lifecycle hooks are discovered as first-class categories: implementing
+        // StartupHook/ReadyHook alone is enough to be validated and constructor-injected,
+        // without also having to implement Component/Service.
         listOf(
             "repositories" to CrudRepository::class.java,
             "components" to Component::class.java,
             "services" to Service::class.java,
             "event handlers" to EventHandler::class.java,
             "ktor modules" to KtorModule::class.java,
-            "migrations" to KatalystMigration::class.java
+            "migrations" to KatalystMigration::class.java,
+            "startup hooks" to StartupHook::class.java,
+            "ready hooks" to ReadyHook::class.java
         ).forEach { (label, baseClass) ->
             val types = registrar.discoverConcreteTypes(baseClass)
             builder.category(label, types.map { it.kotlin }.toSet())
@@ -392,7 +399,10 @@ class ComponentRegistrationOrchestrator(
         componentType: KClass<*>,
         discovered: DiscoverySnapshot
     ) {
-        // Determine which base class this component implements
+        // Determine which base class this component implements.
+        // Hook categories are checked last so a type that is both a Component/Service and a
+        // lifecycle hook keeps its richer base class; registerInstance registers the hook
+        // side regardless, via its `is StartupHook` / `is ReadyHook` checks.
         val baseClass = when (componentType) {
             in discovered.types("services") -> Service::class
             in discovered.types("components") -> Component::class
@@ -400,6 +410,8 @@ class ComponentRegistrationOrchestrator(
             in discovered.types("event handlers") -> EventHandler::class
             in discovered.types("ktor modules") -> KtorModule::class
             in discovered.types("migrations") -> KatalystMigration::class
+            in discovered.types("startup hooks") -> StartupHook::class
+            in discovered.types("ready hooks") -> ReadyHook::class
             else -> {
                 logger.warn("Unknown component type: {}", componentType.simpleName)
                 return
