@@ -27,7 +27,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # The default `check`/`test` gate excludes @Tag("benchmark") and @Tag("load") suites
       # (see BaseConventionPlugin) so it stays fast and deterministic.
@@ -88,7 +88,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Runs only @Tag("benchmark") suites across all modules. Informational signal for
       # regressions; replaced by a proper JMH harness in Phase 4 (see TESTING_STRATEGY.md).

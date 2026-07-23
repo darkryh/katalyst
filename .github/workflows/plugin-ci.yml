@@ -40,7 +40,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Compiles the plugin and assembles the distributable ZIP; fails the check on any error.
       - name: Build plugin

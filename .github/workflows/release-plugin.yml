@@ -50,7 +50,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Build + test first so a compile/test/packaging failure is caught before we touch the Marketplace.
       - name: Build & test plugin

@@ -48,7 +48,7 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # Pin the generated projects (and the header version) to the released Katalyst version, so the
       # live generator tracks whatever tag was cut. On a release it is the release tag; otherwise the
