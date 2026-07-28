@@ -1,10 +1,67 @@
+# Scoped for a LIBRARY: one publishable unit, so there is no backend/frontend axis to group
+# along. Grouping follows blast radius on consumers instead — the build toolchain (Kotlin, AGP,
+# KSP, Compose, the Gradle wrapper, the publishing plugin, binary-compatibility-validator) can
+# change compilation output and ABI, so it is reviewed on its own; everything else rolls up.
+# Monthly, so at most 3 pull requests per month reach CI.
 version: 2
 updates:
   - package-ecosystem: gradle
-    directory: /
+    directory: "/"
     schedule:
-      interval: monthly
+      interval: monthly # Dependabot runs monthly updates on the 1st.
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 2 # One slot per group below.
+    rebase-strategy: disabled # An automatic rebase re-runs CI; rebase by hand when merging.
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "deps"
+    groups:
+      # Order matters: a dependency joins the FIRST group whose patterns it matches.
+      # Dependabot names a Gradle update after the version-catalog alias when a `[versions]`
+      # entry is shared (`kotlin`, `agp`, `gradle-wrapper`), and after the coordinate or plugin
+      # id otherwise — so both spellings are listed.
+      build-toolchain:
+        patterns:
+          - "kotlin"
+          - "agp"
+          - "ksp"
+          - "compose"
+          - "compose-runtime"
+          - "compose-multiplatform"
+          - "gradle-wrapper"
+          - "vanniktech-maven-publish"
+          - "maven-publish"
+          - "binary-compatibility*"
+          # `org.jetbrains.kotlin:*` keeps the colon on purpose: `org.jetbrains.kotlin*` would
+          # also swallow org.jetbrains.kotlinx coroutines/serialization, which belong below.
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlin.*"
+          - "org.jetbrains.compose*"
+          - "com.android.*"
+          - "com.google.devtools.ksp*"
+          - "com.vanniktech.maven.publish*"
+          - "org.jetbrains.kotlinx.binary-compatibility-validator*"
+      library-dependencies:
+        # Catch-all: anything not matched above rolls into one pull request rather than
+        # getting one of its own.
+        patterns:
+          - "*"
+
   - package-ecosystem: github-actions
-    directory: /
+    directory: "/"
     schedule:
       interval: monthly
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    rebase-strategy: disabled
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
