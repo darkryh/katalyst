@@ -41,16 +41,16 @@ jobs:
       PLUGIN_VERSION: ${{ github.event.inputs.version || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Build + test first so a compile/test/packaging failure is caught before we touch the Marketplace.
       - name: Build & test plugin
@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload built plugin artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: katalyst-intellij-plugin
           path: katalyst-intellij-plugin/build/distributions/*.zip
