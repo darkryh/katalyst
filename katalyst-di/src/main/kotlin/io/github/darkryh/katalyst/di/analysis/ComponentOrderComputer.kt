@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.analysis
 
+import io.github.darkryh.katalyst.di.extension.ExtensionPoints
+
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -62,17 +64,8 @@ class ComponentOrderComputer(private val graph: DependencyGraph) {
     fun validateOrder(order: List<KClass<*>>): Boolean {
         logger.debug("Validating instantiation order")
 
-        // Count non-migration components
-        var nonMigrationCount = 0
-        for (node in graph.nodes.keys) {
-            try {
-                if (!io.github.darkryh.katalyst.migrations.KatalystMigration::class.java.isAssignableFrom(node.java)) {
-                    nonMigrationCount++
-                }
-            } catch (_: Exception) {
-                nonMigrationCount++
-            }
-        }
+        // Count components that take part in dependency ordering (migrations do not).
+        val nonMigrationCount = graph.nodes.keys.count { ExtensionPoints.joinsDependencyGraph(it) }
 
         // Check: all components present (excluding migrations)
         if (order.size != nonMigrationCount) {

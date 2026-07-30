@@ -17,6 +17,9 @@ import io.github.darkryh.katalyst.di.planning.BindingPlan
 import io.github.darkryh.katalyst.di.planning.BindingPlanBuilder
 import io.github.darkryh.katalyst.di.validation.DependencyValidator
 import io.github.darkryh.katalyst.events.EventHandler
+import io.github.darkryh.katalyst.di.extension.ExtensionPoint
+import io.github.darkryh.katalyst.di.extension.ExtensionPoints
+import io.github.darkryh.katalyst.di.extension.RegistrationPhase
 import io.github.darkryh.katalyst.events.bus.GlobalEventHandlerRegistry
 import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.migrations.KatalystMigration
@@ -44,7 +47,12 @@ private val logger = LoggerFactory.getLogger("ComponentRegistrationOrchestrator"
 class ComponentRegistrationOrchestrator(
     private val container: KatalystContainer,
     private val beanEngine: KatalystBeanEngine,
-    private val scanPackages: Array<String>
+    private val scanPackages: Array<String>,
+    /**
+     * Ids of the features enabled for this boot, used to warn when implementations of an
+     * extension point are discovered but the feature that would execute them is switched off.
+     */
+    private val enabledFeatureIds: Set<String> = emptySet(),
 ) {
 
     /**
@@ -135,19 +143,11 @@ class ComponentRegistrationOrchestrator(
         // Lifecycle hooks are discovered as first-class categories: implementing
         // StartupHook/ReadyHook alone is enough to be validated and constructor-injected,
         // without also having to implement Component/Service.
-        listOf(
-            "repositories" to CrudRepository::class.java,
-            "components" to Component::class.java,
-            "services" to Service::class.java,
-            "event handlers" to EventHandler::class.java,
-            "ktor modules" to KtorModule::class.java,
-            "migrations" to KatalystMigration::class.java,
-            "startup hooks" to StartupHook::class.java,
-            "ready hooks" to ReadyHook::class.java
-        ).forEach { (label, baseClass) ->
-            val types = registrar.discoverConcreteTypes(baseClass)
-            builder.category(label, types.map { it.kotlin }.toSet())
-            logger.debug("Discovered {} {}", types.size, label)
+        ExtensionPoints.all.forEach { extensionPoint ->
+            val types = registrar.discoverConcreteTypes(extensionPoint.type.java)
+            builder.category(extensionPoint.id, types.map { it.kotlin }.toSet())
+            logger.debug("Discovered {} {}", types.size, extensionPoint.id)
+            warnIfFeatureDisabled(extensionPoint, types.size)
         }
 
         return builder.build()
@@ -241,9 +241,11 @@ class ComponentRegistrationOrchestrator(
         )
         allRegisteredComponents.addAll(order)
 
-        // Register migrations AFTER non-migration components
-        // Migrations were excluded from topological sort but still need to be registered
-        val migrations = discovered.types("migrations").toList()
+        // Extension points declared AFTER_COMPONENTS were excluded from the topological sort
+        // (they have their own lifecycle) but still need registering.
+        val deferred = ExtensionPoints.all
+            .filter { it.registrationPhase == RegistrationPhase.AFTER_COMPONENTS }
+        val migrations = deferred.flatMap { discovered.types(it.id) }.distinct()
         if (migrations.isNotEmpty()) {
             logger.info("Registering {} migrations after service components", migrations.size)
             registerComponentsInLoop(
@@ -388,6 +390,49 @@ class ComponentRegistrationOrchestrator(
     }
 
     /**
+     * Warns when an extension point has implementations on the classpath but the feature that
+     * would execute them is not enabled.
+     *
+     * This is the mirror image of issue #16: there, migrations were discovered and silently
+     * never executed. Discovering implementations and then doing nothing with them is always
+     * worth a warning — it is never what the author intended.
+     */
+    private fun warnIfFeatureDisabled(extensionPoint: ExtensionPoint, discoveredCount: Int) {
+        if (discoveredCount == 0) return
+        val featureId = extensionPoint.featureId ?: return
+        if (featureId in enabledFeatureIds) return
+
+        logger.warn(
+            "Found {} {} but the '{}' feature is not enabled - they will never run. Enable it with: {}",
+            discoveredCount,
+            extensionPoint.id,
+            featureId,
+            extensionPoint.enableHint ?: "features { feature($featureId) }"
+        )
+    }
+
+    /**
+     * Order in which a discovered type is matched to its base class.
+     *
+     * A class can legitimately land in several categories at once — a `Service` that is also
+     * a `StartupHook`, for instance. The first match wins, so lifecycle hooks are checked
+     * last and such a class keeps its richer base class. Its hook side is registered
+     * regardless, by [AutoBindingRegistrar.registerInstance].
+     */
+    private val baseClassResolutionOrder: List<ExtensionPoint> =
+        ExtensionPoints.all.sortedBy { extensionPoint ->
+            when (extensionPoint.id) {
+                "services" -> 0
+                "components" -> 1
+                "repositories" -> 2
+                "event handlers" -> 3
+                "ktor modules" -> 4
+                "migrations" -> 5
+                else -> 6 // lifecycle hooks last
+            }
+        }
+
+    /**
      * Registers a single component using the existing registrar logic.
      *
      * @param registrar The AutoBindingRegistrar instance
@@ -403,20 +448,13 @@ class ComponentRegistrationOrchestrator(
         // Hook categories are checked last so a type that is both a Component/Service and a
         // lifecycle hook keeps its richer base class; registerInstance registers the hook
         // side regardless, via its `is StartupHook` / `is ReadyHook` checks.
-        val baseClass = when (componentType) {
-            in discovered.types("services") -> Service::class
-            in discovered.types("components") -> Component::class
-            in discovered.types("repositories") -> CrudRepository::class
-            in discovered.types("event handlers") -> EventHandler::class
-            in discovered.types("ktor modules") -> KtorModule::class
-            in discovered.types("migrations") -> KatalystMigration::class
-            in discovered.types("startup hooks") -> StartupHook::class
-            in discovered.types("ready hooks") -> ReadyHook::class
-            else -> {
+        val baseClass = baseClassResolutionOrder
+            .firstOrNull { componentType in discovered.types(it.id) }
+            ?.type
+            ?: run {
                 logger.warn("Unknown component type: {}", componentType.simpleName)
                 return
             }
-        }
 
         // Call the registration methods directly (no reflection needed - methods are internal)
         try {

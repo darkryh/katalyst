@@ -196,7 +196,12 @@ fun bootstrapKatalystContainer(
     BootstrapProgress.startLifecycle(BootstrapLifecycle.COMPONENT_DISCOVERY_REGISTRATION)
     try {
         logger.info("Starting ComponentRegistrationOrchestrator with dependency validation...")
-        val orchestrator = ComponentRegistrationOrchestrator(container, selectedBeanEngine, scanPackages)
+        val orchestrator = ComponentRegistrationOrchestrator(
+            container,
+            selectedBeanEngine,
+            scanPackages,
+            enabledFeatureIds = features.map { it.id }.toSet(),
+        )
         orchestrator.registerAllWithValidation()
         logger.info("ComponentRegistrationOrchestrator completed with full validation")
         BootstrapProgress.completeLifecycle(

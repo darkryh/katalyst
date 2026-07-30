@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.analysis
 
+import io.github.darkryh.katalyst.di.extension.ExtensionPoints
+
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -137,21 +139,16 @@ data class DependencyGraph(
      * @throws IllegalStateException if graph contains cycles
      */
     fun topologicalSort(): List<KClass<*>> {
-        // Filter out KatalystMigration classes - they have different lifecycle
-        // and shouldn't be included in component instantiation order
+        // Extension points that declare joinsDependencyGraph = false (migrations) have their
+        // own lifecycle and must not take part in component instantiation order.
         val componentsToSort = mutableSetOf<KClass<*>>()
         val migrationsFound = mutableSetOf<KClass<*>>()
 
         for (componentType in nodes.keys) {
-            try {
-                if (!io.github.darkryh.katalyst.migrations.KatalystMigration::class.java.isAssignableFrom(componentType.java)) {
-                    componentsToSort.add(componentType)
-                } else {
-                    migrationsFound.add(componentType)
-                }
-            } catch (_: Exception) {
-                // KatalystMigration not available, include the component
+            if (ExtensionPoints.joinsDependencyGraph(componentType)) {
                 componentsToSort.add(componentType)
+            } else {
+                migrationsFound.add(componentType)
             }
         }
 

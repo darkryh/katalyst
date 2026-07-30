@@ -742,7 +742,8 @@ public final class io/github/darkryh/katalyst/di/internal/AutoBindingRegistrar$C
 }
 
 public final class io/github/darkryh/katalyst/di/internal/ComponentRegistrationOrchestrator {
-	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;)V
+	public fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/Set;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/core/di/KatalystContainer;Lio/github/darkryh/katalyst/di/feature/KatalystBeanEngine;[Ljava/lang/String;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun registerAllWithValidation ()V
 }
 

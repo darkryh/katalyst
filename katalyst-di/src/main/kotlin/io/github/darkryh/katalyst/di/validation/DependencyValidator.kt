@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.validation
 
+import io.github.darkryh.katalyst.di.extension.ExtensionPoints
+
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.di.analysis.ComponentNode
 import io.github.darkryh.katalyst.di.analysis.Dependency
@@ -158,15 +160,11 @@ class DependencyValidator(private val graph: DependencyGraph) {
         val errors = mutableListOf<MissingDependencyError>()
 
         for ((componentType, node) in graph.nodes) {
-            // Skip validation for KatalystMigration classes
-            // They have a different lifecycle and resolve dependencies lazily
-            try {
-                if (io.github.darkryh.katalyst.migrations.KatalystMigration::class.java.isAssignableFrom(componentType.java)) {
-                    logger.debug("Skipping dependency validation for migration class: {}", componentType.simpleName)
-                    continue
-                }
-            } catch (_: Exception) {
-                // KatalystMigration not available, continue
+            // Extension points outside the dependency graph (migrations) have a different
+            // lifecycle and resolve their dependencies lazily.
+            if (!ExtensionPoints.joinsDependencyGraph(componentType)) {
+                logger.debug("Skipping dependency validation for migration class: {}", componentType.simpleName)
+                continue
             }
 
             for (dependency in node.dependencies) {

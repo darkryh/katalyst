@@ -7,6 +7,7 @@ import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.core.persistence.Table
 import io.github.darkryh.katalyst.conventions.KatalystConventions
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
+import io.github.darkryh.katalyst.di.extension.ExtensionPoints
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
@@ -127,14 +128,8 @@ class AutoBindingRegistrar(
     }
 
     private fun <T : Any> emptyDiscoverySeverity(baseType: Class<T>): EmptyDiscoverySeverity {
-        return when (baseType) {
-            KtorModule::class.java,
-            KatalystMigration::class.java,
-            StartupHook::class.java,
-            ReadyHook::class.java -> EmptyDiscoverySeverity.INFO
-
-            else -> EmptyDiscoverySeverity.WARN
-        }
+        val optional = ExtensionPoints.forType(baseType.kotlin)?.optionalDiscovery ?: false
+        return if (optional) EmptyDiscoverySeverity.INFO else EmptyDiscoverySeverity.WARN
     }
 
     /**
@@ -228,12 +223,13 @@ class AutoBindingRegistrar(
      * Extracts domain-specific interfaces implemented by the component,
      * excluding reserved framework base types to avoid registration conflicts.
      *
-     * **Reserved types (excluded):**
-     * - [Any] (Kotlin/Java base type)
-     * - [Component] (framework marker)
-     * - [Service] (framework marker)
-     * - [CrudRepository] (framework marker)
-     * - [EventHandler] (framework marker)
+     * **Reserved types (excluded):** [Any], [Table], and every framework marker in
+     * [ExtensionPoints.reservedTypes] (Component, Service, CrudRepository, EventHandler,
+     * KtorModule, KatalystMigration, StartupHook, ReadyHook). Framework markers are bound
+     * separately — multibinding markers by [ExtensionPoints.multiBindingTypesOf] in
+     * [registerInstance], which uses a runtime `isInstance` check so that markers reached
+     * through an abstract intermediate are not missed the way this direct-supertype walk
+     * misses them.
      *
      * @param clazz The component class to analyze
      * @param baseType The primary base type being registered
@@ -243,15 +239,7 @@ class AutoBindingRegistrar(
         clazz: KClass<*>,
         baseType: KClass<*>
     ): List<KClass<*>> {
-        val reserved = setOf(
-            Any::class,
-            Component::class,
-            Service::class,
-            CrudRepository::class,
-            EventHandler::class,
-            KatalystMigration::class,
-            Table::class
-        )
+        val reserved = ExtensionPoints.reservedTypes + setOf(Any::class, Table::class)
 
         return clazz.supertypes
             .map { it.jvmErasure }
@@ -599,7 +587,16 @@ class AutoBindingRegistrar(
             secondaryTypes.joinToString { it.qualifiedName ?: it.simpleName.orEmpty() }
         )
 
-        val (multiBindingTypes, singleBindingTypes) = secondaryTypes.partition { it in multiBindingSecondaryTypes }
+        // Multibinding markers are derived from the instance rather than taken from
+        // `secondaryTypes`: the caller computed those by walking DIRECT supertypes, which
+        // silently misses any marker reached through an abstract intermediate. A migration
+        // written as `class AddUsers : SqlMigration()` has exactly one direct supertype —
+        // the abstract class — so KatalystMigration never appears there.
+        val derivedMultiTypes = ExtensionPoints.multiBindingTypesOf(instance)
+        val singleBindingTypes = secondaryTypes.filterNot { ExtensionPoints.isMultiBinding(it) }
+        val multiBindingTypes =
+            (secondaryTypes.filter { ExtensionPoints.isMultiBinding(it) } + derivedMultiTypes)
+                .distinct()
 
         // Check for secondary type collisions BEFORE registering
         singleBindingTypes.forEach { type ->
@@ -635,10 +632,16 @@ class AutoBindingRegistrar(
             ReadyHookRegistry.register(instance)
         }
 
-        beanEngine.registerInstance(instance, primaryType, singleBindingTypes)
+        // Multibinding markers ARE registered as container secondary types. The container
+        // resolves several instances sharing one unqualified secondary type correctly via
+        // `getAll`; only single-resolution `get` is ambiguous, and that is what the
+        // collision check above guards. Registering them is what makes
+        // `getAll<KatalystMigration>()` and friends return anything at all.
+        beanEngine.registerInstance(instance, primaryType, singleBindingTypes + multiBindingTypes)
+
         if (multiBindingTypes.isNotEmpty()) {
             logger.debug(
-                "Skipping container secondary mapping for multibinding types on {}: {}",
+                "Registered multibinding types on {}: {}",
                 primaryType.simpleName,
                 multiBindingTypes.joinToString { it.simpleName.orEmpty() }
             )
@@ -655,11 +658,6 @@ class AutoBindingRegistrar(
 private val schedulerServiceKClass: KClass<*>? = runCatching {
     Class.forName("io.github.darkryh.katalyst.services.service.SchedulerService").kotlin
 }.getOrNull()
-
-private val multiBindingSecondaryTypes: Set<KClass<*>> = setOf(
-    StartupHook::class,
-    ReadyHook::class
-)
 
 /**
  * Wrapper for route function methods to enable ordered installation.
