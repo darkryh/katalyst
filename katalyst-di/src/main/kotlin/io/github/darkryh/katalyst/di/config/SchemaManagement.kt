@@ -21,14 +21,23 @@ enum class SchemaPolicy {
     VALIDATE,
 
     /**
- * Create missing schemas/tables for discovered tables. This is most useful for
- * local/test apps.
+     * Create missing schemas/tables for discovered tables. This is most useful for local/test
+     * apps.
+     *
+     * Creation only ever adds a table that is absent; it never alters one that already exists.
+     * A table whose columns have drifted from its Kotlin definition therefore survives this
+     * policy untouched and unreported — use [CREATE_MISSING_AND_VALIDATE] to catch that.
      */
     CREATE_MISSING,
 
     /**
-     * Create missing schemas/tables and log pending migration statements. This
-     * does not execute generated migration SQL.
+     * Create missing schemas/tables, then verify the result matches the discovered tables.
+     *
+     * Identical to [CREATE_MISSING] on a fresh database. The two diverge against an *existing*
+     * table that has drifted, which creation leaves alone: this policy reports the pending
+     * statements and, like [VALIDATE], **fails startup** unless
+     * [SchemaManagementOptions.failOnPendingStatements] is set to false. It never executes the
+     * generated migration SQL.
      */
     CREATE_MISSING_AND_VALIDATE,
 }
@@ -39,6 +48,10 @@ enum class SchemaPolicy {
  */
 data class SchemaManagementOptions(
     val policy: SchemaPolicy = SchemaPolicy.VALIDATE,
+    /**
+     * Whether pending migration statements abort startup. Applies to both [SchemaPolicy.VALIDATE]
+     * and [SchemaPolicy.CREATE_MISSING_AND_VALIDATE]; set false to log a warning and continue.
+     */
     val failOnPendingStatements: Boolean = true,
 )
 
@@ -60,6 +73,11 @@ class SchemaManagementBuilder {
         policy = SchemaPolicy.CREATE_MISSING
     }
 
+    /**
+     * Create missing tables, then fail startup if the schema still does not match the discovered
+     * tables — which happens when an *existing* table has drifted, since creation never alters
+     * one. Pass `failOnPendingStatements = false` to log a warning instead of aborting.
+     */
     fun createMissingAndValidate(failOnPendingStatements: Boolean = true) {
         policy = SchemaPolicy.CREATE_MISSING_AND_VALIDATE
         this.failOnPendingStatements = failOnPendingStatements
