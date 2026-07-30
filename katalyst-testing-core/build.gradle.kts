@@ -23,7 +23,14 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
-    testRuntimeOnly(project(":katalyst-koin-bean"))
+    // Migration regression fixtures execute SQL through Exposed, and the boot tests assert
+    // against the resulting schema.
+    testImplementation(libs.exposed.core)
+    testImplementation(libs.exposed.jdbc)
+    testImplementation(project(":katalyst-migrations"))
+    // On the compile classpath (not just runtime) so BeanEngineContractTest can assert the
+    // test double and the production Koin engine agree on lookup semantics.
+    testImplementation(project(":katalyst-koin-bean"))
 
     testFixturesImplementation(kotlin("test"))
     testFixturesImplementation(libs.ktor.server.core)

@@ -57,6 +57,8 @@ fun katalystTestEnvironment(
  */
 class KatalystTestEnvironmentBuilder {
     private var databaseConfig: DatabaseConfig = inMemoryDatabaseConfig()
+    private var schemaManagement: SchemaManagementOptions =
+        SchemaManagementOptions(policy = SchemaPolicy.CREATE_MISSING)
     private val scanPackages = linkedSetOf<String>()
     private val extraFeatures = mutableListOf<KatalystFeature>()
     private val overrideModules = mutableListOf<KatalystBeanModule>()
@@ -91,6 +93,24 @@ class KatalystTestEnvironmentBuilder {
      * Convenience alias for [database].
      */
     fun databaseConfig(config: DatabaseConfig) = database(config)
+
+    /**
+     * Configure the schema policy applied after component discovery.
+     *
+     * Defaults to [SchemaPolicy.CREATE_MISSING], which is convenient for tests but also
+     * *masks* schema problems: it creates tables itself, so a test cannot tell whether the
+     * schema came from the code under test or from the policy. Any test asserting that
+     * migrations built the schema must select [SchemaPolicy.NONE] or [SchemaPolicy.VALIDATE].
+     */
+    fun schema(
+        policy: SchemaPolicy,
+        failOnPendingStatements: Boolean = true,
+    ) = apply {
+        schemaManagement = SchemaManagementOptions(
+            policy = policy,
+            failOnPendingStatements = failOnPendingStatements,
+        )
+    }
 
     /**
      * Configure the packages that should be scanned for components.
@@ -243,7 +263,7 @@ class KatalystTestEnvironmentBuilder {
             beanEngine = TestKatalystBeanEngine(),
             scanPackages = scanPackages.toTypedArray(),
             features = effectiveFeatures + TestOverrideFeature(effectiveOverrideModules),
-            schemaManagement = SchemaManagementOptions(policy = SchemaPolicy.CREATE_MISSING),
+            schemaManagement = schemaManagement,
         )
 
         val nativeContainer = KatalystTestBootstrap.bootstrapContainer(
@@ -282,8 +302,14 @@ class KatalystTestEnvironmentBuilder {
         val registryModules = KtorModuleRegistry.consume()
         val containerModules = runCatching { container.getAll(KtorModule::class) }
             .getOrElse { emptyList() }
-            .distinctBy { it::class }
+
+        // Dedup across BOTH sources by identity. A scanned module is present in the registry
+        // and in the container, and installing it twice would register its routes twice
+        // (Ktor then fails on the duplicate path, or silently shadows it). Deduplicating only
+        // within `containerModules`, as this did before, does not catch the overlap.
+        val seen = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<KtorModule, Boolean>())
         return (registryModules + containerModules)
+            .filter { seen.add(it) }
             .sortedBy { it.order }
     }
 
