@@ -260,10 +260,16 @@ fun bootstrapKatalystContainer(
             // Tables from TableRegistry are already org.jetbrains.exposed.sql.Table instances
             val exposedTables = discoveredTables.toTypedArray()
 
-            // Create new DatabaseFactory with discovered tables
-            val databaseFactory = DatabaseFactory.create(databaseConfig)
+            // Reuse the DatabaseFactory already in the container rather than building a second
+            // one. DatabaseFactory.create() opens its own HikariCP pool and takes no tables, so
+            // a second instance bought nothing and cost a connection pool that was never closed
+            // — while also splitting the boot across two pools: anything that ran earlier
+            // (feature onReady hooks, and therefore migrations) used the first pool, schema
+            // validation the second.
+            val databaseFactory = container.getOrNull<DatabaseFactory>()
+                ?: DatabaseFactory.create(databaseConfig)
 
-            // Register it in the active container, replacing the one created by coreDIModule
+            // Rebind the transaction manager so it carries the resolved phase-logging config.
             val databaseModule = katalystBeanModule {
                 single<DatabaseFactory> { databaseFactory }
                 single<DatabaseTransactionManager> {
