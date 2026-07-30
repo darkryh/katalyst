@@ -37,7 +37,15 @@ class MigrationFeature(
 
         val migrations = context.getAll<KatalystMigration>()
         if (migrations.isEmpty()) {
-            logger.info("Migrations feature enabled but no migrations were discovered.")
+            // WARN, not INFO. The migrations feature was switched on deliberately and asked to
+            // run at startup; finding nothing to run is a misconfiguration, not routine. This
+            // being an INFO line is what let issue #16 ship — a boot with zero migrations
+            // executed was indistinguishable from a correct one in the logs.
+            logger.warn(
+                "Migrations feature is enabled with runAtStartup=true but no KatalystMigration " +
+                    "implementations were found. Check that your migrations live under a " +
+                    "scanPackages(...) root."
+            )
             return
         }
 

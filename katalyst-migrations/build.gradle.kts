@@ -14,4 +14,6 @@ dependencies {
 
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.h2)
+    // Captures log output so tests can assert the migrations feature never fails silently.
+    testImplementation(libs.logback)
 }
