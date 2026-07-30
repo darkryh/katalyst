@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.feature
 
+import io.github.darkryh.katalyst.di.internal.distinctByIdentity
+
 import io.github.darkryh.katalyst.di.KatalystFeaturesBuilder
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
@@ -41,13 +43,22 @@ class EventSystemFeature : KatalystFeature {
         runCatching {
             val topology = context.get<EventTopology>()
             val registryHandlers = GlobalEventHandlerRegistry.consumeAll()
-            val koinHandlers = runCatching { context.getAll<EventHandler<*>>() }
+            val containerHandlers = runCatching { context.getAll<EventHandler<*>>() }
                 .getOrElse { emptyList() }
 
-            topology.registerHandlers(registryHandlers + koinHandlers)
+            // Dedup by identity: a handler discovered by scanning is registered in BOTH the
+            // registry and the container, and EventTopology.registerHandlers does not
+            // deduplicate — every duplicate would subscribe again and handle each published
+            // event twice. Identity, not class: two distinct instances of the same handler
+            // class are both legitimate subscribers.
+            val handlers = (registryHandlers + containerHandlers).distinctByIdentity()
+
+            topology.registerHandlers(handlers)
             logger.info(
-                "Registered {} event handler(s) with topology",
-                registryHandlers.size + koinHandlers.size
+                "Registered {} event handler(s) with topology (registry={}, container={})",
+                handlers.size,
+                registryHandlers.size,
+                containerHandlers.size
             )
         }.onFailure { error ->
             logger.warn("Unable to register event handlers: {}", error.message)

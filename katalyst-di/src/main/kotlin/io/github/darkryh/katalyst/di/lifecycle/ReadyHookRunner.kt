@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
+import io.github.darkryh.katalyst.di.internal.distinctByIdentity
+
 import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.di.getAll
 import org.slf4j.LoggerFactory

@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di.lifecycle
 
+import io.github.darkryh.katalyst.di.internal.distinctByIdentity
+
 import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.di.get
 import io.github.darkryh.katalyst.core.di.getAll
@@ -116,14 +118,3 @@ internal class StartupHookRunner(private val container: KatalystContainer) {
 internal val startupHookOrderComparator: Comparator<StartupHook> =
     compareBy<StartupHook> { it.order }
         .thenBy { it::class.qualifiedName ?: it::class.simpleName ?: "" }
-
-/**
- * Removes duplicate elements by reference identity (`===`), unlike [distinct] which relies on
- * [Any.equals]. Two different instances that share a runtime class (and even structural
- * equality) are kept as separate entries; only the exact same object appearing more than once
- * is collapsed.
- */
-internal fun <T> List<T>.distinctByIdentity(): List<T> {
-    val seen = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<T, Boolean>())
-    return filter { seen.add(it) }
-}

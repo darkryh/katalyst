@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.di
 
+import io.github.darkryh.katalyst.di.internal.distinctByIdentity
+
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.core.config.ConfigProvider
@@ -371,11 +373,13 @@ class KatalystApplicationBuilder(
             .onFailure { error -> logger.warn("Unable to inspect auto-discovered components", error) }
 
         // IMPORTANT: Keep all discovered route functions (RouteFunctionModule instances are unique by identity)
-        // Only deduplicate actual KtorModule implementations to avoid installing the same class twice
+        // A scanned module is present in BOTH the registry and the container, so the union has
+        // to be deduplicated across both sources — deduplicating only within `containerModules`
+        // leaves the overlap and installs the same module (and its routes) twice.
+        // Identity, not class: distinct instances sharing a class are separate modules.
         val registryModules = KtorModuleRegistry.consume()
         val containerModules = container.getAll<KtorModule>()
-            .distinctBy { it::class }  // Deduplicate KtorModule implementations only
-        val ktorModules = registryModules + containerModules
+        val ktorModules = (registryModules + containerModules).distinctByIdentity()
 
         logger.info("Discovered {} Ktor module(s) for installation", ktorModules.size)
         val routeFunctionModuleCount = ktorModules.count { it is io.github.darkryh.katalyst.di.internal.RouteModuleMarker }
