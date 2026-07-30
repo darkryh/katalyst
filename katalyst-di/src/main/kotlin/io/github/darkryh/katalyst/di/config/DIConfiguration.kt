@@ -25,6 +25,7 @@ import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRunner
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
+import io.github.darkryh.katalyst.di.registry.RegistryManager
 import io.github.darkryh.katalyst.events.bus.ApplicationEventBus
 import io.github.darkryh.katalyst.events.bus.adapter.EventsTransactionAdapter
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
@@ -138,6 +139,12 @@ fun bootstrapKatalystContainer(
     beanEngine: KatalystBeanEngine? = null,
 ): KatalystContainer {
     val logger = LoggerFactory.getLogger("bootstrapKatalystContainer")
+
+    // Start from clean registry state. stopKatalystStandalone() also resets, but a bootstrap
+    // that threw before completing never reaches shutdown, so entering a fresh boot with
+    // leftovers from a previous (possibly failed) one must not be possible.
+    RegistryManager.resetAll()
+
     val selectedBeanEngine = KatalystBeanEngines.activate(
         beanEngine ?: error(
             "No Katalyst bean engine was selected. Call beanEngine(...) in katalystApplication { } " +
@@ -471,6 +478,11 @@ fun stopKatalystStandalone() {
         val engine = KatalystBeanEngines.activeOrNull()
         if (engine == null) {
             KatalystContainerProvider.reset()
+            // Registries are JVM-global singletons. If they are not cleared here they keep
+            // handing out instances that belong to an already-stopped container: a later
+            // bootstrap in the same JVM would union those stale instances with the fresh
+            // ones and execute every discovered hook twice.
+            RegistryManager.resetAll()
             logger.info("Katalyst DI already stopped")
             return
         }
@@ -480,6 +492,7 @@ fun stopKatalystStandalone() {
         } finally {
             KatalystBeanEngines.clearActive()
             KatalystContainerProvider.reset()
+            RegistryManager.resetAll()
         }
         logger.info("Katalyst DI stopped successfully")
     }

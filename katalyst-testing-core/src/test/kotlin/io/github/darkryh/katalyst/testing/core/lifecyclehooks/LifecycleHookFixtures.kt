@@ -11,8 +11,22 @@ import java.util.concurrent.CopyOnWriteArrayList
 object HookExecutionLog {
     val executed = CopyOnWriteArrayList<String>()
 
+    /**
+     * Identity of every hook instance that actually ran, so tests can tell a freshly
+     * constructed hook apart from one left over in a global registry by an earlier
+     * bootstrap. Comparing ids alone cannot detect that — a stale instance reports the
+     * same id as the fresh one it displaced.
+     */
+    val executedIdentities = CopyOnWriteArrayList<Int>()
+
+    fun record(hook: Any, entry: String) {
+        executed += entry
+        executedIdentities += System.identityHashCode(hook)
+    }
+
     fun reset() {
         executed.clear()
+        executedIdentities.clear()
     }
 }
 
@@ -29,7 +43,7 @@ class BareStartupHook : StartupHook {
     override val id: String = "bare-startup"
 
     override suspend fun onStartup() {
-        HookExecutionLog.executed += id
+        HookExecutionLog.record(this, id)
     }
 }
 
@@ -38,7 +52,7 @@ class InjectingStartupHook(private val dependency: HookDependency) : StartupHook
     override val id: String = "injecting-startup"
 
     override suspend fun onStartup() {
-        HookExecutionLog.executed += "$id:${dependency.marker}"
+        HookExecutionLog.record(this, "$id:${dependency.marker}")
     }
 }
 
@@ -47,7 +61,7 @@ class BareReadyHook : ReadyHook {
     override val id: String = "bare-ready"
 
     override suspend fun onReady() {
-        HookExecutionLog.executed += id
+        HookExecutionLog.record(this, id)
     }
 }
 
@@ -56,7 +70,7 @@ class InjectingReadyHook(private val dependency: HookDependency) : ReadyHook {
     override val id: String = "injecting-ready"
 
     override suspend fun onReady() {
-        HookExecutionLog.executed += "$id:${dependency.marker}"
+        HookExecutionLog.record(this, "$id:${dependency.marker}")
     }
 }
 
@@ -68,7 +82,7 @@ class ComponentMarkedStartupHook(private val dependency: HookDependency) : Start
     override val id: String = "component-marked-startup"
 
     override suspend fun onStartup() {
-        HookExecutionLog.executed += "$id:${dependency.marker}"
+        HookExecutionLog.record(this, "$id:${dependency.marker}")
     }
 }
 
@@ -78,7 +92,7 @@ class EarlyStartupHook : StartupHook {
     override val order: Int = -10
 
     override suspend fun onStartup() {
-        HookExecutionLog.executed += id
+        HookExecutionLog.record(this, id)
     }
 }
 
@@ -88,6 +102,6 @@ class LateStartupHook : StartupHook {
     override val order: Int = 10
 
     override suspend fun onStartup() {
-        HookExecutionLog.executed += id
+        HookExecutionLog.record(this, id)
     }
 }
