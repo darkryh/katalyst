@@ -2,8 +2,8 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("org.jetbrains.intellij.platform") version "2.6.0"
+    kotlin("jvm") version "2.4.10"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 
 group = "io.github.darkryh.katalyst"
@@ -24,7 +24,7 @@ repositories {
 // The framework version this plugin release is aligned with. PluginConventionsParityTest checks the
 // vendored contract against exactly this version, so a future framework rename that isn't mirrored
 // here fails the build.
-val katalystVersion = "1.0.0-alpha02"
+val katalystVersion = "1.0.0-alpha05"
 
 // The canonical katalyst-conventions jar, resolved on its OWN configuration so its newer Kotlin
 // metadata never reaches the plugin's (older, 2.0) Kotlin compile classpath — which would reject it

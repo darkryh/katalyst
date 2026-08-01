@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
     // @Serializable NavKey routes need the kotlinx.serialization compiler plugin to generate
     // serializers so the Dispatch back stack can save/restore and content-key each route.
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.10"
     application
     // Published so `katalyst-starter-core` can carry the embedded inspector as a default
     // runtimeOnly dependency — external (Central-only) consumers need the artifact to resolve.
