@@ -2,7 +2,7 @@ plugins {
     id("io.github.darkryh.katalyst.conventions.common")
     // Real JMH microbenchmarks (Phase 4). Benchmarks live in `src/jmh/kotlin`; run with
     // `./gradlew :katalyst-events-bus:jmh`. This supersedes the interim MicroBench harness.
-    id("me.champeau.jmh") version "0.7.2"
+    id("me.champeau.jmh") version "0.7.3"
 }
 
 dependencies {
