@@ -1,6 +1,6 @@
 [versions]
 # Core toolchain shared across all modules
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 kotlinx-coroutines = "1.10.2"
 kover = "0.9.8"
 ktor = "3.5.0"

@@ -5,7 +5,7 @@ plugins {
     kotlin("jvm")
     // Dispatch runs on the Jetpack Compose runtime, so the Compose compiler plugin is required to
     // compile @Composable functions in this module.
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.10"
     // @Serializable NavKey routes need the kotlinx.serialization compiler plugin to generate
     // serializers so the Dispatch back stack can save/restore and content-key each route.
     kotlin("plugin.serialization") version "2.4.0"
