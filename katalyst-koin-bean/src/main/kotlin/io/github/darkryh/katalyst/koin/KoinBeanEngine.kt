@@ -33,6 +33,10 @@ import kotlin.reflect.KClass
 object KoinBeanEngine : KatalystBeanEngine {
     private val logger = LoggerFactory.getLogger("KoinBeanEngine")
 
+    /** Closeable beans the container created, in registration order. See [closeManagedInstances]. */
+    private val managedInstances = mutableListOf<AutoCloseable>()
+    private val managedLock = Any()
+
     override val id: String = "koin"
 
     override fun start(
@@ -66,6 +70,7 @@ object KoinBeanEngine : KatalystBeanEngine {
         secondaryTypes: List<KClass<*>>,
         qualifier: String?,
     ) {
+        trackManagedInstance(instance)
         val koin = currentKoin()
         val scopeQualifier = koin.scopeRegistry.rootScope.scopeQualifier
         val koinQualifier = qualifier?.let(::named)
@@ -164,9 +169,59 @@ object KoinBeanEngine : KatalystBeanEngine {
 
     override fun stop() {
         try {
-            runCatching { stopKoin() }
+            closeManagedInstances()
         } finally {
-            KatalystContainerProvider.reset()
+            try {
+                runCatching { stopKoin() }
+            } finally {
+                KatalystContainerProvider.reset()
+            }
+        }
+    }
+
+    /**
+     * Closes every [AutoCloseable] the container created, newest first.
+     *
+     * Koin only runs `onClose` callbacks carried on a bean definition, and Katalyst registers plain
+     * instance factories that carry none — so nothing released a bean's resources at shutdown.
+     * `SchedulerService` is the visible casualty: it is `AutoCloseable`, closing it cancels every job
+     * coroutine, and without this its jobs kept firing after the application stopped, against a
+     * torn-down container, until the JVM exited.
+     *
+     * Reverse registration order because a dependent is registered after what it depends on, and it
+     * should be shut down before its dependencies. One failure must not strand the rest, so each
+     * close is isolated.
+     */
+    private fun closeManagedInstances() {
+        val pending = synchronized(managedLock) {
+            val snapshot = managedInstances.toList()
+            managedInstances.clear()
+            snapshot
+        }
+
+        pending.asReversed().forEach { instance ->
+            runCatching { instance.close() }.onFailure { error ->
+                logger.warn(
+                    "Failed to close {} during shutdown; continuing with the rest",
+                    instance::class.qualifiedName ?: instance::class.simpleName,
+                    error,
+                )
+            }
+        }
+    }
+
+    /**
+     * Remembers a closeable registration so [stop] can release it.
+     *
+     * Compared by identity, not equality: one instance is deliberately bound under several types
+     * (the database factory is rebound during boot), and it must be closed exactly once.
+     */
+    private fun trackManagedInstance(instance: Any) {
+        if (instance !is AutoCloseable) return
+        synchronized(managedLock) {
+            if (managedInstances.none { it === instance }) {
+                managedInstances += instance
+            }
         }
     }
 

@@ -50,6 +50,7 @@ internal class TestKatalystBeanEngine : KatalystBeanEngine {
     override fun currentOrNull(): KatalystContainer = container
 
     override fun stop() {
+        container.closeRegistrations()
         container.clear()
         KatalystContainerProvider.reset()
     }
@@ -75,6 +76,22 @@ private class TestKatalystContainer : KatalystContainer {
 
     fun clear() {
         beans.clear()
+    }
+
+    /**
+     * Closes every distinct [AutoCloseable] registration, newest first, exactly as the real engine
+     * does at shutdown. Compared by identity so an instance bound under several types is closed
+     * once — a fake that closed per key would hide a double-close the real engine would not make.
+     */
+    fun closeRegistrations() {
+        val pending = mutableListOf<AutoCloseable>()
+        beans.values.forEach { registration ->
+            val instance = registration.instance
+            if (instance is AutoCloseable && pending.none { it === instance }) {
+                pending += instance
+            }
+        }
+        pending.asReversed().forEach { instance -> runCatching { instance.close() } }
     }
 
     override fun <T : Any> get(type: KClass<T>, qualifier: String?): T =
