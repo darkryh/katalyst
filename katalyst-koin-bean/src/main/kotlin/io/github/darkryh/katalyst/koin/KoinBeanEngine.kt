@@ -14,8 +14,10 @@ import org.koin.core.definition.BeanDefinition
 import org.koin.core.definition.Kind
 import org.koin.core.definition.indexKey
 import org.koin.core.error.DefinitionOverrideException
+import org.koin.core.instance.InstanceFactory
 import org.koin.core.instance.SingleInstanceFactory
 import org.koin.core.qualifier.named
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 /**
@@ -29,6 +31,8 @@ import kotlin.reflect.KClass
  * ```
  */
 object KoinBeanEngine : KatalystBeanEngine {
+    private val logger = LoggerFactory.getLogger("KoinBeanEngine")
+
     override val id: String = "koin"
 
     override fun start(
@@ -71,21 +75,87 @@ object KoinBeanEngine : KatalystBeanEngine {
             qualifier = koinQualifier,
             definition = { instance },
             kind = Kind.Singleton,
-            secondaryTypes = secondaryTypes,
+            secondaryTypes = indexedSecondaryTypes(instance, primaryType, secondaryTypes),
         )
         val factory = SingleInstanceFactory(definition)
-        val primaryKey = indexKey(primaryType, definition.qualifier, scopeQualifier)
 
         runCatching {
-            koin.instanceRegistry.saveMapping(true, primaryKey, factory, logWarning = false)
-            secondaryTypes.forEach { type ->
+            (listOf(primaryType) + definition.secondaryTypes).forEach { type ->
                 val key = indexKey(type, definition.qualifier, scopeQualifier)
+                reportDisplacement(koin, key, factory)
                 koin.instanceRegistry.saveMapping(true, key, factory, logWarning = false)
             }
         }.onFailure { error ->
             if (error !is DefinitionOverrideException) {
                 throw error
             }
+        }
+    }
+
+    /**
+     * The declared secondary types plus the instance's own concrete class.
+     *
+     * The registry is a map, and every key here is written with `override = true`: the last
+     * writer of an index key owns it. A definition whose only bound type is a shared marker —
+     * `single<ReadyHook> { SchedulerInitializer() }` — therefore disappeared from the registry
+     * as soon as any other bean bound that marker, taking every scheduled job with it (#31).
+     * The identity key is the private key that keeps such a definition alive: `getAll` still
+     * returns it afterwards because Koin filters live factories by [BeanDefinition.hasType],
+     * not by index key.
+     */
+    private fun indexedSecondaryTypes(
+        instance: Any,
+        primaryType: KClass<*>,
+        secondaryTypes: List<KClass<*>>,
+    ): List<KClass<*>> {
+        val types = LinkedHashSet(secondaryTypes)
+        types += instance::class
+        types -= primaryType
+        return types.toList()
+    }
+
+    /**
+     * Rebinding an index key is routine; losing a definition to one is the #31 failure mode.
+     * Koin's own override notice is suppressed (every key is written with `override = true`,
+     * so it would fire on every legitimate rebind), so the half that matters is reported here.
+     *
+     * Two displacements are legitimate: the displaced definition keeps another key, or the
+     * write re-declares the very same type — `BeanDefinition.equals` is primary type, qualifier
+     * and scope — which is the module DSL's own replace semantics. Anything else means a
+     * definition was dropped as a side effect of sharing a marker, and should be impossible
+     * given the identity key from [indexedSecondaryTypes].
+     */
+    @OptIn(KoinInternalApi::class)
+    private fun reportDisplacement(koin: Koin, key: String, factory: InstanceFactory<*>) {
+        val displaced = koin.instanceRegistry.instances[key] ?: return
+        if (displaced === factory) return
+
+        val replacesSameDefinition = displaced.beanDefinition == factory.beanDefinition
+        if (replacesSameDefinition || isReachableWithout(koin, displaced, key)) {
+            logger.debug(
+                "Rebound bean index '{}' from {} to {}",
+                key,
+                displaced.beanDefinition,
+                factory.beanDefinition,
+            )
+        } else {
+            logger.warn(
+                "Bean index '{}' was the last key of {}; {} takes it and the displaced definition " +
+                    "is no longer resolvable. Every registration must keep an index key of its own.",
+                key,
+                displaced.beanDefinition,
+                factory.beanDefinition,
+            )
+        }
+    }
+
+    /** Whether [factory] still owns an index key other than [writtenKey]. */
+    @OptIn(KoinInternalApi::class)
+    private fun isReachableWithout(koin: Koin, factory: InstanceFactory<*>, writtenKey: String): Boolean {
+        val definition = factory.beanDefinition
+        return (listOf(definition.primaryType) + definition.secondaryTypes).any { type ->
+            val key = indexKey(type, definition.qualifier, definition.scopeQualifier)
+            key != writtenKey && koin.instanceRegistry.instances[key] === factory
         }
     }
 

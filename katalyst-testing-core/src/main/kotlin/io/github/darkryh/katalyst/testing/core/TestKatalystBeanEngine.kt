@@ -37,8 +37,14 @@ internal class TestKatalystBeanEngine : KatalystBeanEngine {
         secondaryTypes: List<KClass<*>>,
         qualifier: String?,
     ) {
-        container.register(primaryType, qualifier, instance)
-        secondaryTypes.forEach { container.register(it, qualifier, instance) }
+        // The concrete class is always indexed, exactly as KoinBeanEngine does it: a definition
+        // bound only to a shared marker would otherwise lose its only key to the next bean
+        // binding that marker (#31).
+        val types = LinkedHashSet<KClass<*>>()
+        types += primaryType
+        types += secondaryTypes
+        types += instance::class
+        container.register(instance, types, qualifier)
     }
 
     override fun currentOrNull(): KatalystContainer = container
@@ -49,11 +55,22 @@ internal class TestKatalystBeanEngine : KatalystBeanEngine {
     }
 }
 
+/**
+ * Models Koin's registry, not a convenient multimap.
+ *
+ * Koin indexes one factory per (type, qualifier) key and the last writer wins, so a fake that
+ * appends instead cannot represent an eviction — which is how #31 stayed invisible to a green
+ * suite. Lookups mirror Koin's: `get` reads the exact key, `getAll` scans live registrations
+ * by bound type.
+ */
 private class TestKatalystContainer : KatalystContainer {
-    private val beans = linkedMapOf<Pair<KClass<*>, String?>, MutableList<Any>>()
+    private class Registration(val instance: Any, val types: Set<KClass<*>>, val qualifier: String?)
 
-    fun register(type: KClass<*>, qualifier: String? = null, instance: Any) {
-        beans.getOrPut(type to qualifier) { mutableListOf() }.add(instance)
+    private val beans = linkedMapOf<Pair<KClass<*>, String?>, Registration>()
+
+    fun register(instance: Any, types: Set<KClass<*>>, qualifier: String? = null) {
+        val registration = Registration(instance, types, qualifier)
+        types.forEach { type -> beans[type to qualifier] = registration }
     }
 
     fun clear() {
@@ -64,14 +81,13 @@ private class TestKatalystContainer : KatalystContainer {
         getOrNull(type, qualifier) ?: error("No bean registered for ${type.qualifiedName}")
 
     override fun <T : Any> getOrNull(type: KClass<T>, qualifier: String?): T? =
-        beans[type to qualifier]?.lastOrNull()?.let(type::cast)
+        beans[type to qualifier]?.instance?.let(type::cast)
 
     override fun <T : Any> getAll(type: KClass<T>): List<T> =
-        beans
-            .filterKeys { (registeredType, _) -> registeredType == type }
-            .values
-            .flatten()
-            .map(type::cast)
+        beans.values
+            .distinct()
+            .filter { registration -> type in registration.types }
+            .map { registration -> type.cast(registration.instance) }
 
     override fun contains(type: KClass<*>, qualifier: String?): Boolean =
         beans.containsKey(type to qualifier)
