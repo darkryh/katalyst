@@ -7,14 +7,33 @@ import io.github.darkryh.katalyst.scheduler.job.asSchedulerHandle
 import io.github.darkryh.katalyst.scheduler.telemetry.SchedulerTelemetry
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-class SchedulerService(
-    serviceCoroutineContext: CoroutineContext = Dispatchers.Default
+class SchedulerService internal constructor(
+    serviceCoroutineContext: CoroutineContext,
+    /**
+     * Time source for every schedule computation: the fixed-rate anchor, the cron evaluation and
+     * the next-fire values published to telemetry. Injected so tests can drive scheduling on
+     * virtual time — `delay` advances a test dispatcher's virtual clock, but a system clock does
+     * not, so timing behaviour is otherwise only observable through real sleeps.
+     */
+    private val clock: Clock,
 ) : CoroutineScope, AutoCloseable {
+
+    /**
+     * The public constructor. Applications never supply a clock; the system clock is used.
+     *
+     * `@JvmOverloads` preserves the generated no-argument constructor that a primary constructor
+     * with all-default parameters used to emit, keeping the published binary API unchanged.
+     */
+    @JvmOverloads
+    constructor(serviceCoroutineContext: CoroutineContext = Dispatchers.Default) :
+        this(serviceCoroutineContext, Clock.systemDefaultZone())
 
     private val job = SupervisorJob()
     override val coroutineContext: CoroutineContext = serviceCoroutineContext + job
@@ -26,12 +45,23 @@ class SchedulerService(
     }
 
     /**
-     * Schedules a task with fixed rate execution.
-     * Delay is measured between START of executions.
+     * Schedules a task at a fixed rate: the period is measured between the **starts** of
+     * consecutive executions, never from the end of one run to the start of the next.
+     *
+     * The next start is an anchor that accumulates exactly one period per tick and is never
+     * re-anchored to "now" — the same rule as `ScheduledThreadPoolExecutor`'s fixed-rate trigger.
+     * A run that overruns its period therefore leaves the ticks it covered already due, and those
+     * fire back-to-back until the schedule has caught up with its original grid. Runs still never
+     * overlap: the loop below is a single coroutine, so a slow task delays the schedule rather than
+     * forking a second copy of itself. When an overrun should push the whole schedule out instead
+     * of being caught up, use [scheduleFixedDelay].
+     *
+     * The first run happens after [ScheduleConfig.initialDelay]. A [fixedRate] of [Duration.ZERO]
+     * schedules a single execution.
      *
      * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
-     * @param fixedRate Interval between executions (ZERO for one-time execution)
+     * @param fixedRate Interval between the starts of executions (ZERO for one-time execution)
      * @return SchedulerJobHandle that can be cancelled to stop scheduling
      */
     internal fun schedule(
@@ -54,26 +84,39 @@ class SchedulerService(
         )
 
         val handle = launch {
-            delay(config.initialDelay)
-
             if (oneShot) {
                 // One-time execution
+                delay(config.initialDelay)
                 executeTaskOnce(config, task)
-            } else {
-                // Repeating execution
-                var executionCount = 0L
-                logger.debug("Starting repeating task '{}'", config.taskName)
-                while (isActive) {
-                    val shouldContinue = executeTask(config, task, ++executionCount)
-                    if (!shouldContinue) {
-                        logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
-                        break
-                    }
-                    SchedulerTelemetry.setNextFire(
-                        config.taskName, System.currentTimeMillis() + fixedRate.inWholeMilliseconds,
-                    )
-                    delay(fixedRate)
+                return@launch
+            }
+
+            // Repeating execution
+            logger.debug("Starting repeating task '{}'", config.taskName)
+            val periodMillis = fixedRate.inWholeMilliseconds
+            // `now` follows the clock but never runs slower than the delays already issued. Under a
+            // real clock the clock always wins, so the schedule self-corrects against dispatch
+            // latency; under a virtual-time test dispatcher `delay` advances virtual time while a
+            // system clock does not, and an anchor trusting the clock alone would drift a whole
+            // period per tick there.
+            var now = clock.millis()
+            var nextStart = now + config.initialDelay.inWholeMilliseconds
+            var executionCount = 0L
+            while (isActive) {
+                val wait = (nextStart - now).coerceAtLeast(0L)
+                SchedulerTelemetry.setNextFire(config.taskName, now + wait)
+                if (wait > 0) delay(wait)
+                now = maxOf(now + wait, clock.millis())
+
+                val shouldContinue = executeTask(config, task, ++executionCount)
+                if (!shouldContinue) {
+                    logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
+                    break
                 }
+                now = maxOf(now, clock.millis())
+
+                // Accumulate, never re-anchor to `now`: this is what makes a missed tick catch up.
+                nextStart += periodMillis
             }
         }.asSchedulerHandle()
         SchedulerTelemetry.attachJob(config.taskName, handle)
@@ -85,8 +128,11 @@ class SchedulerService(
      * The delay is measured from the end of one execution to the start of the next.
      *
      * **Difference from fixed rate:**
-     * - Fixed Rate: delay between START of executions
-     * - Fixed Delay: delay between END of one execution and START of next
+     * - Fixed Rate: period between the START of consecutive executions; an overrun is caught up.
+     * - Fixed Delay: delay between the END of one execution and the START of the next; an overrun
+     *   simply pushes the whole schedule out, and nothing is ever caught up.
+     *
+     * The first run happens after [ScheduleConfig.initialDelay].
      *
      * @param config Configuration for the task (name, delay, timeout, error handling, etc.)
      * @param task The suspend function to execute
@@ -124,7 +170,7 @@ class SchedulerService(
                 if (isActive) {
                     logger.debug("Delaying fixed delay task '{}' for {}", config.taskName, fixedDelay)
                     SchedulerTelemetry.setNextFire(
-                        config.taskName, System.currentTimeMillis() + fixedDelay.inWholeMilliseconds,
+                        config.taskName, clock.millis() + fixedDelay.inWholeMilliseconds,
                     )
                     delay(fixedDelay)
                 }
@@ -137,6 +183,15 @@ class SchedulerService(
     /**
      * Schedules a task using a cron expression.
      * Calculates the next execution time dynamically based on the cron schedule.
+     *
+     * The job **waits, then runs**: the first execution is the first instant matching the
+     * expression, never the moment of registration. `cron("nightly", "0 0 2 * * ?")` therefore runs
+     * at 02:00 and not additionally at every application boot.
+     *
+     * The expression is evaluated against the wall clock of [ScheduleConfig.timeZone], not the JVM
+     * default zone, so a job configured for `Europe/Madrid` fires at Madrid's 02:00 wherever the
+     * process happens to run. [ScheduleConfig.initialDelay] still applies before the first
+     * evaluation.
      *
      * Uses a single long-running job that is efficient and easy to cancel.
      *
@@ -162,27 +217,36 @@ class SchedulerService(
             delay(config.initialDelay)
 
             var executionCount = 0L
+            // The instant we last scheduled, in the job's own zone. It floors the next evaluation so
+            // the search always moves forward: during a DST fall-back the same local times occur
+            // twice, and evaluating from the clock alone would keep re-matching the repeated hour.
+            var lastScheduled: LocalDateTime? = null
             while (isActive) {
+                val zoned = ZonedDateTime.now(clock.withZone(config.timeZone))
+                val evaluateAfter = lastScheduled?.takeIf { it.isAfter(zoned.toLocalDateTime()) }
+                    ?: zoned.toLocalDateTime()
+                val nextExecution = cronExpression.nextExecutionAfter(evaluateAfter)
+                lastScheduled = nextExecution
+
+                // `atZone` resolves the two zone rule edge cases for us: a local time that falls in
+                // a DST gap is shifted forward to the first valid instant after the gap, and one
+                // that falls in a DST overlap takes the earlier of the two offsets.
+                val fireAt = nextExecution.atZone(config.timeZone).toInstant()
+                // Telemetry reads the same instant the delay below is computed from, so the
+                // announced next fire and the actual fire can never disagree.
+                SchedulerTelemetry.setNextFire(config.taskName, fireAt.toEpochMilli())
+
+                // Wait first, run second: a cron job must never fire at registration.
+                val delayMillis = fireAt.toEpochMilli() - clock.millis()
+                if (delayMillis > 0) {
+                    logger.debug("Next execution of cron task '{}' at {}", config.taskName, nextExecution)
+                    delay(delayMillis.milliseconds)
+                }
+
                 val shouldContinue = executeTask(config, task, ++executionCount)
                 if (!shouldContinue) {
                     logger.info("Stopping task '{}': onError requested no further runs", config.taskName)
                     break
-                }
-
-                // Calculate next execution time
-                if (isActive) {
-                    val now = LocalDateTime.now()
-                    val nextExecution = cronExpression.nextExecutionAfter(now)
-                    SchedulerTelemetry.setNextFire(
-                        config.taskName,
-                        nextExecution.atZone(config.timeZone).toInstant().toEpochMilli(),
-                    )
-                    val delayMillis = java.time.Duration.between(now, nextExecution).toMillis()
-
-                    if (delayMillis > 0) {
-                        logger.debug("Next execution of cron task '{}' at {}", config.taskName, nextExecution)
-                        delay(delayMillis.milliseconds)
-                    }
                 }
             }
         }.asSchedulerHandle()
