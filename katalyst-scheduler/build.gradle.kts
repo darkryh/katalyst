@@ -34,6 +34,9 @@ dependencies {
 
     // Testing
     testImplementation(libs.kotlinx.coroutines.test)
+    // An SLF4J binding on the test classpath: the discovery tests assert that a rejected
+    // scheduler method is reported at WARN, which needs a real appender to capture.
+    testImplementation(libs.logback)
 }
 
 // Per-module coverage floor (ratchet — raise as coverage grows; never lower). See TESTING_STRATEGY.md.
