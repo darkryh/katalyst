@@ -34,7 +34,15 @@ class RunDescriptorWriter(
     private val file: Path? = runCatching { resolveDescriptorPath() }.getOrNull()
 
     @Volatile
-    private var shutdownHookInstalled = false
+    private var shutdownHook: Thread? = null
+
+    /**
+     * The hook currently registered with the JVM, if any. Internal — not part of this module's
+     * public API; it exists so the leak regression test can assert real unregistration rather than
+     * trusting a flag.
+     */
+    internal val shutdownHookOrNull: Thread?
+        get() = shutdownHook
 
     private fun resolveStateDir(): Path {
         val xdg = runCatching { System.getenv("XDG_STATE_HOME") }.getOrNull()?.takeIf { it.isNotBlank() }
@@ -97,16 +105,39 @@ class RunDescriptorWriter(
     /** Flip the descriptor to READY once the app is serving traffic. */
     fun markReady() = write(DescriptorStatus.READY)
 
+    /**
+     * Retires this run's descriptor now and unregisters the hook that would otherwise do it at JVM
+     * exit. Internal — not part of this module's public API.
+     *
+     * A writer is constructed per telemetry attach, and its hook guard is per-instance, so without an
+     * unregister every attach pinned one more hook thread for the life of the process. It also fixes
+     * the visible half: a stopped application stayed advertised as attachable in the run directory
+     * until the JVM exited. Idempotent and never throws.
+     */
+    internal fun stop() {
+        shutdownHook?.let { hook ->
+            shutdownHook = null
+            // Throws once shutdown is already under way — and then the hook is running, or about to,
+            // which is exactly the case it was registered for.
+            runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+                .onFailure { logger.debug("Descriptor shutdown hook already firing: {}", it.message) }
+        }
+        retire()
+    }
+
     private fun installShutdownHook() {
-        if (shutdownHookInstalled) return
-        shutdownHookInstalled = true
+        if (shutdownHook != null) return
         runCatching {
-            Runtime.getRuntime().addShutdownHook(Thread {
-                val target = file ?: return@Thread
-                // Best-effort: delete on clean shutdown; if that fails, leave a STOPPED marker.
-                val deleted = runCatching { Files.deleteIfExists(target) }.getOrDefault(false)
-                if (!deleted) write(DescriptorStatus.STOPPED)
-            })
+            val hook = Thread { retire() }
+            Runtime.getRuntime().addShutdownHook(hook)
+            shutdownHook = hook
         }.onFailure { logger.debug("Could not register descriptor shutdown hook: {}", it.message) }
+    }
+
+    /** Best-effort: delete the descriptor; if that fails, leave a STOPPED marker in its place. */
+    private fun retire() {
+        val target = file ?: return
+        val deleted = runCatching { Files.deleteIfExists(target) }.getOrDefault(false)
+        if (!deleted) write(DescriptorStatus.STOPPED)
     }
 }

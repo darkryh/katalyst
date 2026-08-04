@@ -64,7 +64,20 @@ object TelemetryFeature : KatalystFeature {
     private var server: TelemetryServer? = null
 
     @Volatile
-    private var shutdownHookInstalled = false
+    private var transportShutdownHook: Thread? = null
+
+    /**
+     * Container-owned teardown handle. [KatalystFeature] declares only [provideBeanModules] and
+     * [onReady] — there is no feature teardown callback — but the bean engine closes every
+     * [AutoCloseable] bean the container holds when it stops, so a closeable bean *is* the shutdown
+     * edge. Feature modules are registered before discovered components, and closing runs in reverse
+     * registration order, so telemetry is torn down last and keeps observing the rest of the shutdown.
+     *
+     * Nothing ever resolves this bean; its only job is to be closed.
+     */
+    internal object Teardown : AutoCloseable {
+        override fun close() = detach()
+    }
 
     override fun provideBeanModules(): List<KatalystBeanModule> {
         val config = TelemetryConfig.fromEnvironment()
@@ -80,11 +93,22 @@ object TelemetryFeature : KatalystFeature {
 
         if (config.quiet) applyQuietMode()
 
-        // Expose the live store as a bean so in-process consumers (and the deepen pass) can read it.
-        return listOf(katalystBeanModule { single { store } })
+        // Expose the live store as a bean so in-process consumers (and the deepen pass) can read it,
+        // plus the closeable that hands telemetry's teardown to the container lifecycle.
+        return listOf(
+            katalystBeanModule {
+                single { store }
+                single { Teardown }
+            }
+        )
     }
 
     private fun attach(config: TelemetryConfig): TelemetryStore {
+        // Release whatever a previous attach in this JVM still owns before taking new resources. A
+        // second boot (embedded restart, a test suite booting repeatedly) used to overwrite `server`
+        // in place, stranding the first CIO server on its bound loopback port for the whole process.
+        detach()
+
         val pid = runCatching { ProcessHandle.current().pid() }.getOrDefault(-1L)
         val appName = resolveAppName()
         val wsToken = java.util.UUID.randomUUID().toString()
@@ -136,20 +160,51 @@ object TelemetryFeature : KatalystFeature {
     }
 
     /**
-     * Ensures the loopback transport is stopped when the JVM exits. `TelemetryFeature` is loaded
-     * reflectively, before any Ktor `Application` exists, so it has no direct line to
-     * `ApplicationStopping`/`ApplicationStopped` on the engine monitor and `KatalystFeature` has no
-     * teardown hook of its own (only [provideBeanModules] / [onReady]). A JVM shutdown hook is the
-     * self-contained lifecycle seam that works regardless: it mirrors the shutdown hook
-     * [RunDescriptorWriter] already installs in this same module, fires on both a clean exit and
-     * Ctrl+C, and is fully guarded so a stop failure can never break shutdown.
+     * Releases everything [attach] took: the loopback transport and its bound port, the run
+     * descriptor and its JVM shutdown hook, and the process-global [TelemetryStore].
+     *
+     * Two edges call it. [Teardown] runs it when the bean container stops, which is the application
+     * shutdown path (`ApplicationStopping` -> `stopKatalystStandalone()` -> engine `stop()`), and
+     * [attach] runs it first so a re-attach cannot strand the previous one. Idempotent and never
+     * throws: it executes while something else is shutting down, and a telemetry failure must not
+     * mask that.
+     */
+    private fun detach() {
+        stopTransport()
+        server = null
+        removeTransportShutdownHook()
+        runCatching { descriptorWriter?.stop() }
+            .onFailure { logger.debug("Run descriptor retire failed: {}", it.message) }
+        descriptorWriter = null
+        // `active` is process-global while its snapshot providers read the registries of the container
+        // that just went away, so a stopped app would otherwise keep serving a dead container's state.
+        runCatching { TelemetryStore.clearActive() }
+            .onFailure { logger.debug("Telemetry store clear failed: {}", it.message) }
+    }
+
+    /**
+     * Last-resort net for a JVM that exits without stopping the container — a hard `System.exit`, or
+     * an application bootstrapped without the Ktor lifecycle that never reaches
+     * `stopKatalystStandalone()`. The container-driven [Teardown] is the primary path; this hook only
+     * covers the case where that path never runs, and [detach] unregisters it so the hook itself is
+     * not the thing that leaks.
      */
     private fun installShutdownHook() {
-        if (shutdownHookInstalled) return
-        shutdownHookInstalled = true
+        if (transportShutdownHook != null) return
         runCatching {
-            Runtime.getRuntime().addShutdownHook(Thread { stopTransport() })
+            val hook = Thread { stopTransport() }
+            Runtime.getRuntime().addShutdownHook(hook)
+            transportShutdownHook = hook
         }.onFailure { logger.debug("Could not register telemetry transport shutdown hook: {}", it.message) }
+    }
+
+    private fun removeTransportShutdownHook() {
+        val hook = transportShutdownHook ?: return
+        transportShutdownHook = null
+        // Throws once shutdown is already under way — and then the hook is running, or about to,
+        // which is exactly the case it was registered for.
+        runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+            .onFailure { logger.debug("Telemetry transport shutdown hook already firing: {}", it.message) }
     }
 
     /** Gracefully stops the currently attached transport (small grace/timeout), if any. Never throws. */
