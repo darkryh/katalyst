@@ -127,6 +127,7 @@ class CronExpression(private val expression: String) {
      * - Day-of-week matching
      * - OR logic between them
      * - Invalid days in month (e.g., Feb 31)
+     * - Resetting the time-of-day whenever the search rolls onto another day (see below)
      */
     private fun findNextDayInMonth(startOfMonth: LocalDateTime): LocalDateTime? {
         val daysInCurrentMonth = daysInMonth(startOfMonth.monthValue, startOfMonth.year)
@@ -151,7 +152,17 @@ class CronExpression(private val expression: String) {
                 }
             }
 
+            // Rolling onto another day invalidates the candidate's time-of-day: the earliest fire on
+            // the new day is the first valid hour/minute/second, not whatever time we happened to
+            // carry over from the day we rejected. Without this reset, "0 0 8-17 * * 1-5" evaluated
+            // from Saturday 11:30 would answer Monday 12:00 instead of Monday 08:00 — skipping four
+            // matching instants. Reset only *after* advancing; the first candidate's time-of-day was
+            // already normalised by the second/minute/hour loops in nextExecutionAfter and is
+            // legitimately later in the day. Mirrors the month-advance path in findNextMonthAndDay.
             current = current.plusDays(1)
+                .withHour(hourField.firstValidValue())
+                .withMinute(minuteField.firstValidValue())
+                .withSecond(secondField.firstValidValue())
             dayAttempts++
 
             // If we've gone past the end of the month, we're done
