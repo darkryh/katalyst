@@ -210,6 +210,11 @@ class KatalystTestEnvironmentBuilder {
 
     /**
      * Register override bean modules that are loaded after the core ones.
+     *
+     * The environment owns what it is given: closing it closes every `AutoCloseable` bean in the
+     * container, these included, and it cannot tell an instance the provider constructed from one
+     * it captured. A client shared across tests must therefore not be registered here — build it
+     * per environment, or register a wrapper that is not `AutoCloseable`.
      */
     fun overrideBeanModules(vararg modules: KatalystBeanModule) = apply {
         overrideModules += modules

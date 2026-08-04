@@ -191,6 +191,18 @@ object KoinBeanEngine : KatalystBeanEngine {
      * Reverse registration order because a dependent is registered after what it depends on, and it
      * should be shut down before its dependencies. One failure must not strand the rest, so each
      * close is isolated.
+     *
+     * **Every** closeable bean is closed, including one a caller-supplied module captured rather
+     * than constructed (`single<HttpClient> { myClient }`). Provenance is not recoverable here — by
+     * the time [registerInstance] sees it, a captured instance and a freshly constructed one are the
+     * same thing — nor one level up, since caller modules arrive through
+     * `bootstrapKatalystContainer(additionalModules = ...)` and through
+     * `KatalystFeature.provideBeanModules()`, the same channel every framework feature uses.
+     * Exempting them would silently re-open this leak for an application that registers its own
+     * pool or scheduler through a custom feature; a leak is silent, whereas a shared instance
+     * closed too early fails loudly on first use. The contract is therefore: the container owns the
+     * lifecycle of everything registered in it. An instance that must outlive the container does
+     * not belong in it.
      */
     private fun closeManagedInstances() {
         val pending = synchronized(managedLock) {

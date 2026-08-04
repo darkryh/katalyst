@@ -69,28 +69,36 @@ private class TestKatalystContainer : KatalystContainer {
 
     private val beans = linkedMapOf<Pair<KClass<*>, String?>, Registration>()
 
+    /** Every closeable registration, in registration order. See [closeRegistrations]. */
+    private val managed = mutableListOf<AutoCloseable>()
+
     fun register(instance: Any, types: Set<KClass<*>>, qualifier: String? = null) {
         val registration = Registration(instance, types, qualifier)
         types.forEach { type -> beans[type to qualifier] = registration }
+        if (instance is AutoCloseable && managed.none { it === instance }) {
+            managed += instance
+        }
     }
 
     fun clear() {
         beans.clear()
+        managed.clear()
     }
 
     /**
      * Closes every distinct [AutoCloseable] registration, newest first, exactly as the real engine
      * does at shutdown. Compared by identity so an instance bound under several types is closed
      * once — a fake that closed per key would hide a double-close the real engine would not make.
+     *
+     * Read from the registration log, not from the live index: an override takes the index keys of
+     * the bean it replaces (including its identity key, when both are of the same class), so an
+     * index-derived list drops the displaced instance. `KoinBeanEngine` tracks at registration and
+     * still closes it — a bean the container created stays the container's to release even after it
+     * has been replaced.
      */
     fun closeRegistrations() {
-        val pending = mutableListOf<AutoCloseable>()
-        beans.values.forEach { registration ->
-            val instance = registration.instance
-            if (instance is AutoCloseable && pending.none { it === instance }) {
-                pending += instance
-            }
-        }
+        val pending = managed.toList()
+        managed.clear()
         pending.asReversed().forEach { instance -> runCatching { instance.close() } }
     }
 

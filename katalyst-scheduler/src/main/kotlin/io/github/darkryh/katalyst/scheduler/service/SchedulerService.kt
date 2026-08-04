@@ -10,9 +10,12 @@ import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class SchedulerService internal constructor(
     serviceCoroutineContext: CoroutineContext,
@@ -23,6 +26,11 @@ class SchedulerService internal constructor(
      * not, so timing behaviour is otherwise only observable through real sleeps.
      */
     private val clock: Clock,
+    /**
+     * How long [close] waits for in-flight runs after cancelling them. Injected so the bound can be
+     * asserted in a test without a multi-second wall-clock wait; applications get [DEFAULT_SHUTDOWN_GRACE].
+     */
+    private val shutdownGrace: Duration,
 ) : CoroutineScope, AutoCloseable {
 
     /**
@@ -34,6 +42,14 @@ class SchedulerService internal constructor(
     @JvmOverloads
     constructor(serviceCoroutineContext: CoroutineContext = Dispatchers.Default) :
         this(serviceCoroutineContext, Clock.systemDefaultZone())
+
+    /**
+     * Neither parameter carries a default: a defaulted *internal* constructor makes the compiler
+     * emit a synthetic public bridge, which lands in the published `.api` file. The overloads are
+     * spelled out instead so the binary API stays exactly what it was.
+     */
+    internal constructor(serviceCoroutineContext: CoroutineContext, clock: Clock) :
+        this(serviceCoroutineContext, clock, DEFAULT_SHUTDOWN_GRACE)
 
     private val job = SupervisorJob()
     override val coroutineContext: CoroutineContext = serviceCoroutineContext + job
@@ -354,5 +370,55 @@ class SchedulerService internal constructor(
         }
     }
 
-    override fun close() { stop() }
+    /**
+     * Cancels every scheduled job and then waits, for at most [shutdownGrace], for the runs already
+     * in flight to unwind.
+     *
+     * [stop] only *signals*: cancellation is asynchronous, so on its own it returns while a run is
+     * still on a dispatcher thread. The container closes beans in reverse registration order, which
+     * puts `DatabaseFactory` — registered first — last, so a run that outlives this call finishes
+     * against a connection pool being torn down underneath it ("HikariDataSource has been closed"):
+     * shutdown noise at best, a lost final write at worst. Draining here is what keeps that last
+     * write on a live pool.
+     *
+     * The wait is bounded because a run wedged on a blocking call — an uninterruptible JDBC
+     * statement, say — would otherwise hold the process open indefinitely. Past the grace the
+     * remaining runs are abandoned and shutdown continues, the same trade a server engine makes
+     * with its own shutdown timeout.
+     *
+     * A latch rather than `runBlocking`: this is called from a plain, non-suspending shutdown
+     * thread, and `runBlocking` would install an event loop on it that runs unrelated tasks.
+     * [stop] deliberately keeps its signal-only semantics — it is called from inside coroutines,
+     * where blocking the caller's thread would deadlock it.
+     */
+    override fun close() {
+        stop()
+
+        val terminated = CountDownLatch(1)
+        val registration = job.invokeOnCompletion { terminated.countDown() }
+        try {
+            if (!terminated.await(shutdownGrace.inWholeMilliseconds, TimeUnit.MILLISECONDS)) {
+                logger.warn(
+                    "Scheduler still had runs in flight after {}; continuing shutdown without them",
+                    shutdownGrace,
+                )
+            }
+        } catch (interrupted: InterruptedException) {
+            // A shutdown path stays interruptible: swallow the wait, but hand the flag back to
+            // whoever owns this thread so the rest of the shutdown can honour it.
+            Thread.currentThread().interrupt()
+        } finally {
+            registration.dispose()
+        }
+    }
+
+    private companion object {
+        /**
+         * Matches `ServerDeploymentConfiguration.createDefault().shutdownTimeout` (5s), the budget
+         * the framework already gives a graceful shutdown. The scheduler is closed as part of that
+         * same shutdown, so it must not be allowed to overrun it — and 5s stays comfortably inside
+         * the 30s SIGTERM grace a container runtime gives the process by default.
+         */
+        val DEFAULT_SHUTDOWN_GRACE: Duration = 5.seconds
+    }
 }
