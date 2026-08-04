@@ -7,6 +7,7 @@ import io.github.darkryh.katalyst.core.exception.DependencyInjectionException
 import io.github.darkryh.katalyst.core.persistence.Table
 import io.github.darkryh.katalyst.conventions.KatalystConventions
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
+import io.github.darkryh.katalyst.di.analysis.KnownPlatformTypes
 import io.github.darkryh.katalyst.di.extension.ExtensionPoints
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.events.EventHandler
@@ -211,9 +212,24 @@ class AutoBindingRegistrar(
      */
     private fun propertyAlreadyInitialised(property: KMutableProperty1<Any, Any?>, instance: Any): Boolean =
         try {
-            val current = property.get(instance)
-            current != null
-        } catch (_: UninitializedPropertyAccessException) {
+            property.isAccessible = true
+            property.get(instance) != null
+        } catch (e: Exception) {
+            // Reading a `lateinit` property before it is assigned throws - which is precisely the
+            // state this method exists to detect - but the getter runs through reflection, so what
+            // arrives here is `InvocationTargetException` wrapping the
+            // `UninitializedPropertyAccessException`. Catching that type alone therefore misses it
+            // and the exception escapes registration, aborting the whole boot; the cause chain has
+            // to be inspected instead. Any other read failure means the current value cannot be
+            // observed either, and "not initialised" is the answer that lets injection proceed.
+            if (!e.isUninitialisedLateinit()) {
+                logger.debug(
+                    "Could not read {} on {} before well-known injection: {}",
+                    property.name,
+                    instance::class.qualifiedName,
+                    e.message ?: e.toString()
+                )
+            }
             false
         }
 
@@ -650,14 +666,20 @@ class AutoBindingRegistrar(
 }
 
 /**
- * Safely retrieves an instance from the active container, returning null if not found.
+ * The `SchedulerService` contract, when the scheduler module is on the classpath.
  *
- * @param kClass The class type to retrieve
- * @return The instance if found, null otherwise
+ * Resolved through [KnownPlatformTypes] so this side and
+ * [io.github.darkryh.katalyst.di.analysis.DependencyAnalyzer] always agree on which class that
+ * is: the analyzer reports `var scheduler: SchedulerService` as a *satisfied*
+ * well-known property dependency, so if the two disagree the application boots and the property
+ * is simply never assigned - a `lateinit var` then throws on first use.
  */
-private val schedulerServiceKClass: KClass<*>? = runCatching {
-    Class.forName("io.github.darkryh.katalyst.services.service.SchedulerService").kotlin
-}.getOrNull()
+private val schedulerServiceKClass: KClass<*>? = KnownPlatformTypes.schedulerServiceKClassOrNull()
+
+/** True when this failure is (or wraps) a read of an unassigned `lateinit` property. */
+private fun Throwable.isUninitialisedLateinit(): Boolean =
+    generateSequence(this) { current -> current.cause?.takeIf { it !== current } }
+        .any { it is UninitializedPropertyAccessException }
 
 /**
  * Wrapper for route function methods to enable ordered installation.
