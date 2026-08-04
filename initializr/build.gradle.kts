@@ -14,7 +14,7 @@ version = "1.0.0-SNAPSHOT"
 // so the published site tracks whatever release was just cut — alpha, beta, rc or stable. Falls back
 // to the current line for local and non-release builds.
 val katalystVersion: String =
-    (findProperty("katalystVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.0-alpha08"
+    (findProperty("katalystVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.0-alpha09"
 
 // Emits BuildInfo.KATALYST_VERSION into commonMain so StarterTemplate reads the injected value.
 val generateInitializrBuildInfo by tasks.registering {
