@@ -38,6 +38,7 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Katalyst Application DSL Builder.
@@ -92,6 +93,7 @@ class KatalystApplicationBuilder(
     private var selectedEngine: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>? = null
     private var cachedDeploymentConfiguration: ServerDeploymentConfiguration? = null
     private var schemaManagement: SchemaManagementOptions = SchemaManagementOptions()
+    private var discoveredRegistryModules: List<KtorModule>? = null
 
     /**
      * Provide the database configuration used to bootstrap core persistence infrastructure.
@@ -377,7 +379,11 @@ class KatalystApplicationBuilder(
         // to be deduplicated across both sources — deduplicating only within `containerModules`
         // leaves the overlap and installs the same module (and its routes) twice.
         // Identity, not class: distinct instances sharing a class are separate modules.
-        val registryModules = KtorModuleRegistry.consume()
+        // consume() drains the registry, but this function runs once per Ktor Application and a
+        // dev-mode hot reload builds a new one. Route-function modules live ONLY in the registry,
+        // so without keeping the first snapshot the reloaded Application would come up routeless.
+        val registryModules = discoveredRegistryModules
+            ?: KtorModuleRegistry.consume().also { discoveredRegistryModules = it }
         val containerModules = container.getAll<KtorModule>()
         val ktorModules = (registryModules + containerModules).distinctByIdentity()
 
@@ -495,6 +501,9 @@ fun katalystApplication(
 
     printKatalystBanner()
 
+    // Held outside the try so the finally can still reach the server it started.
+    var startedServer: EmbeddedServer<ApplicationEngine, ApplicationEngine.Configuration>? = null
+
     try {
         logger.info("Starting Katalyst application")
 
@@ -508,7 +517,16 @@ fun katalystApplication(
         val serverConfig = builder.resolveServerConfiguration()
         val embeddedServer = serverConfig.engine ?: throw IllegalStateException("There is not specified embeddedServer")
 
+        // Ktor's application lifecycle events are raised per Application instance, not per process,
+        // while Katalyst's bootstrap and teardown are process-wide. A dev-mode hot reload builds
+        // the replacement Application first and only then raises ApplicationStopping for the
+        // superseded one, so counting live instances is what tells a reload apart from a shutdown:
+        // a reload never drains the count, a real shutdown does.
+        val liveApplications = AtomicInteger()
+
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
+            liveApplications.incrementAndGet()
+
             // PHASE 6: Ktor Engine Startup
             BootstrapProgress.startLifecycle(BootstrapLifecycle.HTTP_SERVER_STARTUP)
             logger.info(
@@ -547,6 +565,18 @@ fun katalystApplication(
         }
 
         embeddedServer.monitor.subscribe(ApplicationStopping) {
+            // A superseded Application leaving is a hot reload, not a shutdown: initializeDI() ran
+            // once, before start(), so tearing Katalyst down here would close the pool, cancel the
+            // scheduler and reset the container with nothing left to bootstrap them again.
+            if (liveApplications.decrementAndGet() > 0) {
+                logger.info("Ktor application instance replaced (reload) - Katalyst DI stays up")
+                return@subscribe
+            }
+
+            // The last instance is gone, so the process really is shutting down. This has to happen
+            // here and not only in the finally below: on SIGINT it is Ktor's own JVM shutdown hook
+            // that calls EmbeddedServer.stop(), and the JVM may halt before the thread blocked in
+            // start(wait = true) unwinds far enough to reach that finally.
             runCatching { stopKatalystStandalone() }
                 .onFailure { error -> logger.warn("Error while stopping Katalyst DI", error) }
         }
@@ -559,6 +589,7 @@ fun katalystApplication(
                 }
         }
 
+        startedServer = embeddedServer
         embeddedServer.start(wait = true)
 
     } catch (e: KatalystDIException) {
@@ -568,6 +599,14 @@ fun katalystApplication(
         logger.error("Failed to start Katalyst application", e)
         throw e
     } finally {
+        // Reaching here means this entry point is done. The shipped engines park inside
+        // start(wait = true) until the server stops, but engine(...) takes any EmbeddedServer and
+        // an engine that ignores `wait` returns straight away — stopping first keeps the teardown
+        // ordered (drain, then drop the DI) instead of pulling the DI out from under a live server.
+        startedServer?.let { server ->
+            runCatching { server.stop() }
+                .onFailure { error -> logger.debug("Error while stopping the embedded server", error) }
+        }
         stopKatalystStandalone()
         BootstrapArgsHolder.clear()
     }
