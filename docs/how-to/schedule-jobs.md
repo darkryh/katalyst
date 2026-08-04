@@ -41,12 +41,28 @@ class CleanupJobs(private val cleanupService: CleanupService) : Service {
 
 The jobs DSL offers four scheduling strategies:
 
-| Type | DSL call | When the next run starts |
-|------|----------|--------------------------|
-| Cron | `cron(name, expression) { … }` | At each time matching the cron expression |
-| Fixed delay | `fixedDelay(name, delay) { … }` | `delay` after the previous run **finishes** |
-| Fixed rate | `fixedRate(name, period) { … }` | Every `period` from the previous run's **start** |
-| One-time | `oneTime(name) { … }` | Once, after the configured initial delay |
+| Type | DSL call | When the first run starts | When the next run starts |
+|------|----------|---------------------------|--------------------------|
+| Cron | `cron(name, expression) { … }` | At the next matching time — **not** at registration | At each subsequent matching time |
+| Fixed delay | `fixedDelay(name, delay) { … }` | Immediately, after `initialDelay` | `delay` after the previous run **finishes** |
+| Fixed rate | `fixedRate(name, period) { … }` | Immediately, after `initialDelay` | Every `period` from the previous run's **start** |
+| One-time | `oneTime(name) { … }` | Once, after `initialDelay` | Never |
+
+A job never overlaps itself: each is a single coroutine that finishes one run before considering
+the next trigger.
+
+Registering a cron job does not run it. `cron("nightly-report", "0 0 2 * * ?")` runs at 02:00,
+not at every application boot.
+
+### fixedRate vs fixedDelay when a run is slow
+
+`fixedRate` measures the period from the **start** of the previous run, so the task's own duration
+is not added to the period. When a run overruns its period, the ticks it covered are still due and
+fire back-to-back (one at a time) until the schedule is back on its original grid.
+
+`fixedDelay` measures from the **end** of the previous run, so a slow run simply pushes the whole
+schedule out and there is always a fixed gap of idle time between runs. Choose `fixedDelay` when
+an overrun should delay the schedule rather than trigger a catch-up burst.
 
 ```kotlin
 fun jobs() = scheduler.jobs {
@@ -57,9 +73,12 @@ fun jobs() = scheduler.jobs {
 }
 ```
 
-Cron expressions are validated at registration. An invalid expression fails startup with a
-`SchedulerValidationException`. See the
-[cron format](../reference/scheduler.md#cronexpression-and-cronvalidator) in the reference.
+Cron expressions are validated at registration. An invalid expression fails startup with an
+`IllegalArgumentException` from `CronExpression`. Expressions use the six-field form
+`second minute hour day-of-month month day-of-week`, and every field must be numeric — day-of-week
+names (`MON-FRI`), `L`, `#`, `W` and `@daily`-style macros are not supported. See the
+[cron format](../reference/scheduler.md#cronexpression-and-cronvalidator) in the reference for the
+full list.
 
 ## Configure a job
 
@@ -78,17 +97,21 @@ fun jobs() = scheduler.jobs {
             tags = setOf("prod"),
             timeZone = ZoneId.of("UTC"),
             maxExecutionTime = 5.minutes,
-            onError = { task, attempt, error -> log.error("$task failed on $attempt", error) }
+            onError = { task, error, runs ->
+                log.error("$task failed on run $runs", error)
+                true // keep scheduling; return false to stop the job
+            }
         ),
-        cronExpression = "0 0/15 * * * ?"
+        expression = "0 0/15 * * * ?"
     ) {
         billing.run()
     }
 }
 ```
 
-Every `ScheduleConfig` field is documented in the
-[scheduler reference](../reference/scheduler.md#scheduleconfig).
+`timeZone` is the zone the cron expression is evaluated in, not just a label: the job above fires
+at 15-minute marks of UTC wherever the process runs. Every `ScheduleConfig` field is documented in
+the [scheduler reference](../reference/scheduler.md#scheduleconfig).
 
 ## Control the lifecycle
 
