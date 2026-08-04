@@ -31,10 +31,10 @@ class SchedulerTelemetryRunHistoryTest {
         val stat = SchedulerTelemetry.jobs().first { it.name == name }
         val runs = stat.recentRuns()
 
-        // Bounded: 40 recorded, only the newest 25 retained, newest first.
-        assertEquals(25, runs.size)
+        // Bounded: 40 recorded, only the newest 8 retained, newest first.
+        assertEquals(8, runs.size)
         assertEquals(39L, runs.first().durationMs)
-        assertEquals(15L, runs.last().durationMs)
+        assertEquals(32L, runs.last().durationMs)
         assertTrue(runs.zipWithNext().all { (a, b) -> a.startedAtEpochMs >= b.startedAtEpochMs })
 
         // Failure detail survives (message first) but is truncated to the memory cap.
