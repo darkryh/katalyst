@@ -96,13 +96,14 @@ internal object RegistryManager : ResettableRegistry {
     fun registryCount(): Int = registries.size
 
     /**
-     * Resets the RegistryManager itself (clears tracked registries).
+     * Resets every managed registry, exactly like [resetAll].
      *
-     * **Warning:** This removes all registries from management. Use with caution.
-     * Primarily intended for testing the RegistryManager itself.
+     * This used to *forget* the tracked registries instead. Registries only ever register
+     * themselves once, from an `init` block that has already run, so dropping the list turned
+     * [resetAll] into a permanent no-op for the rest of the process and silently reopened every
+     * cross-bootstrap leak it exists to prevent. Nothing called it, and there is no legitimate
+     * caller for a method that disables the reset mechanism — so it means what
+     * [ResettableRegistry] says it means.
      */
-    override fun reset() {
-        registries.clear()
-        logger.debug("RegistryManager cleared all tracked registries")
-    }
+    override fun reset() = resetAll()
 }

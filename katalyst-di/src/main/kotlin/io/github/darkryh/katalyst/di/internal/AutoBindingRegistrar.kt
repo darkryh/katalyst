@@ -86,20 +86,14 @@ class AutoBindingRegistrar(
 
     companion object {
         /**
-         * Tracks which component provides each secondary type binding.
-         * Used to detect collisions when multiple components implement the same interface.
-         *
-         * Key: Secondary type (interface)
-         * Value: Primary type (concrete component) that provides the binding
-         */
-        private val secondaryTypeOwners = ConcurrentHashMap<KClass<*>, KClass<*>>()
-
-        /**
          * Resets the secondary type ownership tracking.
-         * Call this in tests to ensure clean state between test cases.
+         *
+         * Bootstrap and shutdown reset [SecondaryTypeOwnerRegistry] through
+         * [io.github.darkryh.katalyst.di.registry.RegistryManager]; this remains for tests that
+         * register instances directly without going through a bootstrap.
          */
         fun resetSecondaryTypeTracking() {
-            secondaryTypeOwners.clear()
+            SecondaryTypeOwnerRegistry.reset()
             logger.debug("Secondary type ownership tracking reset")
         }
     }
@@ -616,7 +610,7 @@ class AutoBindingRegistrar(
 
         // Check for secondary type collisions BEFORE registering
         singleBindingTypes.forEach { type ->
-            val existingOwner = secondaryTypeOwners[type]
+            val existingOwner = SecondaryTypeOwnerRegistry.ownerOf(type)
             if (existingOwner != null && existingOwner != primaryType) {
                 throw DependencyInjectionException(
                     buildString {
@@ -638,7 +632,7 @@ class AutoBindingRegistrar(
 
         // Track ownership of secondary types
         singleBindingTypes.forEach { type ->
-            secondaryTypeOwners[type] = primaryType
+            SecondaryTypeOwnerRegistry.claim(type, primaryType)
         }
 
         if (instance is StartupHook) {
