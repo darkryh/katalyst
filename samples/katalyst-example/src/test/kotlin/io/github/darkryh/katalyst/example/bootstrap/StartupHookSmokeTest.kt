@@ -3,6 +3,8 @@ package io.github.darkryh.katalyst.example.bootstrap
 import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.di.lifecycle.StartupHook
 import io.github.darkryh.katalyst.example.sampleJwtTestConfig
+import io.github.darkryh.katalyst.examplefixtures.SmokeProbe
+import io.github.darkryh.katalyst.examplefixtures.SmokeProbeStartupHook
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import io.github.darkryh.katalyst.testing.ktor.katalystTestApplication
 import kotlin.test.Test
@@ -30,17 +32,3 @@ class StartupHookSmokeTest {
     }
 }
 
-private class SmokeProbe {
-    var executed: Boolean = false
-}
-
-private class SmokeProbeStartupHook(
-    private val probe: SmokeProbe
-) : StartupHook {
-    override val id: String = "sample-smoke-probe-startup-hook"
-    override val order: Int = 5
-
-    override suspend fun onStartup() {
-        probe.executed = true
-    }
-}
