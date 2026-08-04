@@ -114,6 +114,31 @@ errors:
 | `InstantiationFailureError` | A constructor threw during instantiation |
 | `SecondaryTypeBindingError` | A class binds a disallowed secondary interface |
 
+## Bean lifecycle at shutdown
+
+Stopping the application closes every bean in the container that implements `AutoCloseable`, in
+reverse registration order, each instance exactly once. This is what stops a `SchedulerService`
+from firing jobs against a torn-down container and what releases the connection pool.
+
+The container owns the lifecycle of **everything registered in it**, including instances a module
+handed over rather than built:
+
+```kotlin
+// Wrong: the container closes myClient at shutdown, and it is dead for whoever else holds it.
+bootstrapKatalystContainer(
+    additionalModules = listOf(katalystBeanModule { single<HttpClient> { myClient } }),
+    /* ... */
+)
+```
+
+Katalyst cannot tell the two apart — by the time the bean is registered, an instance the provider
+captured and one it constructed are the same thing, and caller modules arrive through the same
+channel (`KatalystFeature.provideBeanModules()`, `additionalModules`) as the framework's own. The
+same rule holds in tests: `overrideBeanModules(...)` beans are closed when the environment closes.
+
+So do not register an instance that has to outlive the container. Build it per container, or
+register a wrapper that does not implement `AutoCloseable`.
+
 ## See also
 
 - [Application DSL](application-dsl.md) — `scanPackages` and the bootstrap.

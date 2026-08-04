@@ -186,6 +186,17 @@ The underlying service (`AutoCloseable`, `CoroutineScope`) that owns job corouti
 managed for you; `stop()` and `close()` shut it down. You normally interact with it only
 through `requireScheduler()`.
 
+The two differ in whether they wait:
+
+| Method | Behaviour |
+|--------|-----------|
+| `stop()` | Cancels every job and returns immediately. Cancellation is asynchronous, so a run already in flight may still be executing when it returns. Safe to call from inside a coroutine. |
+| `close()` | Cancels, then waits up to **5 seconds** for the runs already in flight to unwind before returning. Past that grace they are abandoned and shutdown continues, so a job wedged on a blocking call cannot hold the process open. Blocks the calling thread. |
+
+Shutdown closes beans in reverse registration order, which puts the `DatabaseFactory` last: the
+wait in `close()` is what keeps a job's final write on a live connection pool instead of racing
+`HikariDataSource has been closed`.
+
 ## Exceptions
 
 All extend `SchedulerException`. Only one of them is thrown by the framework today; the rest are

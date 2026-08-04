@@ -43,6 +43,11 @@ val env = katalystTestEnvironment {
 | `get<T>()` | Resolve a bean by type. |
 | `close()` | Tear down the container (call in `@AfterTest`). |
 
+`close()` closes every `AutoCloseable` bean in the container, override modules included — the same
+contract production has (see [Bean lifecycle at shutdown](di-auto-wiring.md#bean-lifecycle-at-shutdown)).
+A client shared across tests must therefore not be registered in an environment: build it per
+environment, or register a wrapper that is not `AutoCloseable`.
+
 The environment installs the same optional features as production — `ConfigProvider`, events,
 migrations, scheduler, and WebSockets when on the classpath — so `requireScheduler()`,
 `EventBus`, and `DatabaseTransactionManager` behave identically.
