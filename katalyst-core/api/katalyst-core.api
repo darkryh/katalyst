@@ -6,14 +6,11 @@ public abstract interface class io/github/darkryh/katalyst/core/component/Compon
 
 public abstract interface class io/github/darkryh/katalyst/core/component/Service : io/github/darkryh/katalyst/core/component/Component {
 	public fun currentTransaction (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun currentTransaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getTransactionManager ()Lio/github/darkryh/katalyst/transactions/manager/DatabaseTransactionManager;
 	public fun transaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun transaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun transaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun workflowTransaction (Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun workflowTransaction$default (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun workflowTransaction$suspendImpl (Lio/github/darkryh/katalyst/core/component/Service;Ljava/lang/String;Lio/github/darkryh/katalyst/transactions/config/TransactionConfig;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/github/darkryh/katalyst/core/component/Service$DefaultImpls {
@@ -125,7 +122,6 @@ public final class io/github/darkryh/katalyst/core/validation/ValidationResult$C
 
 public abstract interface class io/github/darkryh/katalyst/core/validation/Validator : io/github/darkryh/katalyst/core/component/Component {
 	public fun getValidationErrors (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun getValidationErrors$suspendImpl (Lio/github/darkryh/katalyst/core/validation/Validator;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun validate (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

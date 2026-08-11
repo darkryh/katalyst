@@ -500,7 +500,6 @@ public final class io/github/darkryh/katalyst/transactions/sideeffects/SideEffec
 
 public abstract interface class io/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect {
 	public fun compensate (Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun compensate$suspendImpl (Lio/github/darkryh/katalyst/transactions/sideeffects/TransactionalSideEffect;Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun execute (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getHandlingMode ()Lio/github/darkryh/katalyst/transactions/sideeffects/SideEffectHandlingMode;
 	public abstract fun getSideEffectId ()Ljava/lang/String;
@@ -1086,7 +1085,6 @@ public abstract interface class io/github/darkryh/katalyst/transactions/workflow
 	public abstract fun getFailedWorkflows (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getFailedWorkflowsPage (ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun getFailedWorkflowsPage$default (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun getFailedWorkflowsPage$suspendImpl (Lio/github/darkryh/katalyst/transactions/workflow/WorkflowStateManager;ILio/github/darkryh/katalyst/transactions/workflow/WorkflowPageCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getWorkflowState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun markAsUndone (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun startWorkflow (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

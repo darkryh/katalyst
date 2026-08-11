@@ -1,29 +1,29 @@
 [versions]
 # Core toolchain shared across all modules
-kotlin = "2.4.0"
-kotlinx-coroutines = "1.10.2"
-kover = "0.9.8"
-ktor = "3.5.0"
+kotlin = "2.4.10"
+kotlinx-coroutines = "1.11.0"
+kover = "0.9.9"
+ktor = "3.5.2"
 # Dispatch terminal-UI framework (io.github.darkryh.dispatch:dispatch-*), consumed by katalyst-tui.
-dispatch = "1.0.0-beta02"
+dispatch = "1.0.0-beta03"
 koin = "4.2.2"
-exposed = "1.3.0"
-logback = "1.5.13"
-slf4j = "2.0.16"
-jansi = "2.4.0"
+exposed = "1.4.0"
+logback = "1.6.1"
+slf4j = "2.0.17"
+jansi = "2.4.3"
 reflections = "0.10.2"
-junit-platform = "1.10.2"
-junit-jupiter = "5.10.2"
-hikari = "5.1.0"
-h2 = "2.3.232"
-postgres = "42.7.8"
-asm = "9.7"
-rabbitmq-ktor = "1.3.6"
-kourier = "0.2.8"
-kotlinx-serialization = "1.9.0"
-testcontainers = "1.21.3"
-snakeyaml = "2.2"
-vanniktech-maven-publish = "0.36.0"
+junit-platform = "6.1.3"
+junit-jupiter = "6.1.3"
+hikari = "7.1.0"
+h2 = "2.4.240"
+postgres = "42.7.13"
+asm = "9.10.1"
+rabbitmq-ktor = "1.5.0"
+kourier = "0.4.6"
+kotlinx-serialization = "1.11.0"
+testcontainers = "2.0.5"
+snakeyaml = "2.6"
+vanniktech-maven-publish = "0.37.0"
 
 [libraries]
 # --- HTTP stack (Ktor server, serialization, and testing) ---
@@ -100,6 +100,6 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 # --- Messaging adapters ---
 kourier-amqp-robust = { module = "dev.kourier:amqp-client-robust-jvm", version.ref = "kourier" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 vanniktech-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "vanniktech-maven-publish" }

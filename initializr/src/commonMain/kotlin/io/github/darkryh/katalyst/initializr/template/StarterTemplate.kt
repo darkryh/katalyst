@@ -25,10 +25,10 @@ object StarterTemplate {
     val KATALYST_VERSION: String = BuildInfo.KATALYST_VERSION
 
     /** Kotlin version for the generated project — kept in lockstep with the library's own. */
-    const val KOTLIN_VERSION: String = "2.4.0"
+    const val KOTLIN_VERSION: String = "2.4.10"
 
     /** Gradle version the generated wrapper targets (used in the run.sh bootstrap hint). */
-    const val GRADLE_VERSION: String = "9.5.0"
+    const val GRADLE_VERSION: String = "9.5.1"
 
     /** JVM toolchain the generated project compiles against. */
     const val JVM_TARGET: String = "21"

@@ -30,9 +30,9 @@ Replace the generated `app/build.gradle.kts` with this:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.4.0"
-    id("io.ktor.plugin") version "3.5.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.0"
+    kotlin("jvm") version "2.4.10"
+    id("io.ktor.plugin") version "3.5.2"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10"
     application
 }
 
@@ -319,4 +319,3 @@ You now have a complete Katalyst application and have seen its five moving parts
 - Move to a real Postgres database and profiles → [Configure with YAML](how-to/configure-yaml.md).
 - Write tests for this service → [Test your application](how-to/test-applications.md).
 - Understand what happens during boot → [Architecture & bootstrap lifecycle](explanation/architecture.md).
-

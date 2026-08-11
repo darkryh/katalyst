@@ -1,16 +1,16 @@
 plugins {
-    kotlin("jvm") version "2.4.0" apply false
-    id("io.ktor.plugin") version "3.5.0" apply false
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.0" apply false
+    kotlin("jvm") version "2.4.10" apply false
+    id("io.ktor.plugin") version "3.5.2" apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10" apply false
     // Loaded here with `apply false` so the vanniktech plugin's classes (and its shared
     // MavenCentralBuildService) resolve in the root classloader scope. The base convention plugin
     // applies it per-module; without this, each sibling module loads the build service in its own
     // scope, causing "Cannot set the value of task property 'buildService'" on Gradle 9.x.
-    id("com.vanniktech.maven.publish") version "0.36.0" apply false
-    id("org.jetbrains.kotlinx.kover") version "0.9.8"
+    id("com.vanniktech.maven.publish") version "0.37.0" apply false
+    id("org.jetbrains.kotlinx.kover") version "0.9.9"
     // Public/binary API tracking for the published library (Phase 6). `apiDump` snapshots the API
     // into committed `<module>/api/*.api` files; CI runs `apiCheck` to fail any unintended change.
-    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.16.3"
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
 }
 
 apiValidation {

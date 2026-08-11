@@ -20,11 +20,8 @@ public abstract interface class io/github/darkryh/katalyst/events/bus/EventBus {
 
 public abstract interface class io/github/darkryh/katalyst/events/bus/EventBusInterceptor {
 	public fun afterPublish (Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/PublishResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun afterPublish$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lio/github/darkryh/katalyst/events/bus/PublishResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun beforePublish (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun beforePublish$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun onPublishError (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/Throwable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun onPublishError$suspendImpl (Lio/github/darkryh/katalyst/events/bus/EventBusInterceptor;Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/Throwable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/github/darkryh/katalyst/events/bus/EventBusInterceptor$DefaultImpls {

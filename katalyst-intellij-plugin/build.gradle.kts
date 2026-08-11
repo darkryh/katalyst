@@ -2,8 +2,8 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("org.jetbrains.intellij.platform") version "2.6.0"
+    kotlin("jvm") version "2.4.10"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 
 group = "io.github.darkryh.katalyst"
@@ -91,8 +91,8 @@ intellijPlatform {
     // deterministic and never trips over an unreleased EAP build.
     pluginVerification {
         ides {
-            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
-            ide(IntelliJPlatformType.IntellijIdeaCommunity, "2024.3")
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.3")
         }
     }
 }

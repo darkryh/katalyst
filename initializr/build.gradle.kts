@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform") version "2.4.0"
-    id("org.jetbrains.compose") version "1.9.3"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
+    kotlin("multiplatform") version "2.4.10"
+    id("org.jetbrains.compose") version "1.11.1"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.10"
 }
 
 group = "io.github.darkryh.katalyst"

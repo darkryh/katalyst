@@ -82,7 +82,12 @@ class BaseConventionPlugin : Plugin<Project> {
 
             extensions.configure<MavenPublishBaseExtension> {
                 publishToMavenCentral(automaticRelease = true)
-                signAllPublications()
+                // Local consumer validation does not need signatures. Keeping signatures off the
+                // mavenLocal path also lets developers validate samples without a release PGP key;
+                // all Central publication tasks remain signed.
+                if (gradle.startParameter.taskNames.none { it.contains("publishToMavenLocal") }) {
+                    signAllPublications()
+                }
 
                 coordinates(
                     groupId = group.toString(),

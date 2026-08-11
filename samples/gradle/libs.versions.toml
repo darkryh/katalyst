@@ -1,24 +1,24 @@
 [versions]
 # Core toolchain shared across all modules
-kotlin = "2.4.0"
-kotlinx-coroutines = "1.10.2"
-ktor = "3.5.0"
+kotlin = "2.4.10"
+kotlinx-coroutines = "1.11.0"
+ktor = "3.5.2"
 koin = "4.2.2"
-exposed = "1.3.0"
-logback = "1.5.13"
-jansi = "2.4.0"
+exposed = "1.4.0"
+logback = "1.6.1"
+jansi = "2.4.3"
 reflections = "0.10.2"
-junit-platform = "1.10.2"
-hikari = "5.1.0"
-h2 = "2.3.232"
-postgres = "42.7.8"
-asm = "9.7"
-rabbitmq-ktor = "1.3.6"
-kaccelero = "0.6.8"
-kourier = "0.2.8"
-kotlinx-serialization = "1.9.0"
-testcontainers = "1.21.3"
-snakeyaml = "2.2"
+junit-platform = "6.1.3"
+hikari = "7.1.0"
+kaccelero = "0.7.1"
+h2 = "2.4.240"
+postgres = "42.7.13"
+asm = "9.10.1"
+rabbitmq-ktor = "1.5.0"
+kourier = "0.4.6"
+kotlinx-serialization = "1.11.0"
+testcontainers = "2.0.5"
+snakeyaml = "2.6"
 
 [libraries]
 # --- HTTP stack (Ktor server, serialization, and testing) ---
@@ -76,5 +76,5 @@ kaccelero-core = { module = "dev.kaccelero:core-jvm", version.ref = "kaccelero" 
 kaccelero-messaging-amqp = { module = "dev.kaccelero:messaging-amqp-jvm", version.ref = "kaccelero" }
 kourier-amqp-robust = { module = "dev.kourier:amqp-client-robust-jvm", version.ref = "kourier" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }

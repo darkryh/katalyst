@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.testcontainers.DockerClientFactory
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.sql.ResultSet
 import kotlin.test.Test
@@ -97,7 +97,7 @@ class DatabaseTransactionManagerPostgresResilienceTest {
         assertTrue(outcome!!.isFailure, "expected a clean failure once the database was down")
     }
 
-    private fun connect(pg: PostgreSQLContainer<*>): Database =
+    private fun connect(pg: PostgreSQLContainer): Database =
         Database.connect(
             url = pg.jdbcUrl,
             driver = "org.postgresql.Driver",
@@ -110,7 +110,7 @@ class DatabaseTransactionManagerPostgresResilienceTest {
         private val POSTGRES_IMAGE: DockerImageName =
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres")
 
-        private fun newPostgres(): PostgreSQLContainer<*> =
+        private fun newPostgres(): PostgreSQLContainer =
             PostgreSQLContainer(POSTGRES_IMAGE)
                 .withDatabaseName("katalyst")
                 .withUsername("katalyst")

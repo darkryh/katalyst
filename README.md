@@ -4,8 +4,8 @@
 > experience, the Kotlin way.
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh.katalyst/katalyst-core?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.darkryh.katalyst/katalyst-core)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg?logo=kotlin)](https://kotlinlang.org)
-[![Ktor](https://img.shields.io/badge/Ktor-3.5.0-orange.svg?logo=ktor)](https://ktor.io)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg?logo=kotlin)](https://kotlinlang.org)
+[![Ktor](https://img.shields.io/badge/Ktor-3.5.2-orange.svg?logo=ktor)](https://ktor.io)
 
 Katalyst gives a Ktor service the things you would otherwise wire by hand: dependency
 injection, YAML configuration, Exposed + HikariCP persistence, transactions, database
@@ -42,9 +42,9 @@ current version shown on the Maven Central badge above:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.4.0"
-    id("io.ktor.plugin") version "3.5.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.0"
+    kotlin("jvm") version "2.4.10"
+    id("io.ktor.plugin") version "3.5.2"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10"
 }
 
 repositories {

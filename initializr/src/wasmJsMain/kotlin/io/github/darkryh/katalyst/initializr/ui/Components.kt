@@ -243,7 +243,7 @@ fun Panel(
     }
 }
 
-/** A read-only toolchain chip: "Kotlin **2.4.0**". */
+/** A read-only toolchain chip: "Kotlin **2.4.10**". */
 @Composable
 fun Chip(prefix: String, value: String) {
     val p = palette()

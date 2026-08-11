@@ -289,12 +289,12 @@ fun ToolchainPanel(katalystVersion: String) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Chip("Katalyst", katalystVersion)
             Chip("JDK", "21")
-            Chip("Kotlin", "2.4.0")
+            Chip("Kotlin", "2.4.10")
         }
         VGap(9)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Chip("Ktor", "3.5.0")
-            Chip("Gradle", "9.5.0")
+            Chip("Ktor", "3.5.2")
+            Chip("Gradle", "9.5.1")
         }
     }
 }

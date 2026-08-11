@@ -167,9 +167,7 @@ public final class io/github/darkryh/katalyst/database/table/WorkflowStateTable 
 
 public abstract interface class io/github/darkryh/katalyst/repositories/CrudRepository {
 	public fun count (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun count$suspendImpl (Lio/github/darkryh/katalyst/repositories/CrudRepository;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun delete$suspendImpl (Lio/github/darkryh/katalyst/repositories/CrudRepository;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun findAll ()Ljava/util/List;
 	public fun findAll (Lio/github/darkryh/katalyst/repositories/model/QueryFilter;)Lkotlin/Pair;
 	public fun findById (Ljava/lang/Object;)Lio/github/darkryh/katalyst/repositories/Identifiable;

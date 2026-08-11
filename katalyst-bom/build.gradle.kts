@@ -40,7 +40,9 @@ mavenPublishing {
     configure(JavaPlatform())
 
     publishToMavenCentral(automaticRelease = true)
-    signAllPublications()
+    if (gradle.startParameter.taskNames.none { it.contains("publishToMavenLocal") }) {
+        signAllPublications()
+    }
 
     coordinates(
         groupId = group.toString(),

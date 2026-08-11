@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.example.service
 import io.github.darkryh.katalyst.config.DatabaseConfig
 import io.github.darkryh.katalyst.example.api.dto.LoginRequest
 import io.github.darkryh.katalyst.example.api.dto.RegisterRequest
+import io.github.darkryh.katalyst.example.sampleJwtTestConfig
 import io.github.darkryh.katalyst.testing.core.KatalystTestEnvironment
 import io.github.darkryh.katalyst.testing.core.katalystTestEnvironment
 import kotlin.test.AfterTest
@@ -11,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.junit.jupiter.api.Assumptions.assumeTrue
 
 class AuthenticationServicePostgresTest {
@@ -32,6 +33,7 @@ class AuthenticationServicePostgresTest {
 
         environment = katalystTestEnvironment {
             database(config)
+            config(sampleJwtTestConfig())
             scan("io.github.darkryh.katalyst.example")
         }
     }
