@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.telemetry.store
 
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicLongArray
+import java.util.concurrent.atomic.DoubleAdder
 import kotlin.math.ceil
 
 /**
@@ -16,15 +17,40 @@ import kotlin.math.ceil
  *
  * Boundaries default to ~0ms . ~5min across [bucketCount] buckets. Anything larger lands in the top
  * bucket. Thread-safe via atomics; recording is O(log bucketCount) and allocation-free.
+ *
+ * The constructor validates its shape for the same reason [RingBuffer] validates its capacity: a
+ * ladder that cannot be built is not a degraded histogram, it is a broken one. `bucketCount = 1`
+ * divides by `bucketCount - 1`, making every boundary `NaN` and every percentile `NaN` for the life
+ * of the instance; `bucketCount = 0` defers the failure to the first `record`. Both fail here.
+ *
+ * [mean] accumulates in floating point on purpose. The unit is milliseconds and the thing most often
+ * measured — an HTTP handler — routinely finishes in well under one, so summing truncated whole
+ * milliseconds would report a busy service as `0.0 ms`.
  */
 class LatencyHistogram(
     private val bucketCount: Int = 24,
     private val minMs: Double = 1.0,
     private val maxMs: Double = 300_000.0,
 ) {
+    init {
+        require(bucketCount > 1) {
+            "LatencyHistogram bucketCount must be greater than 1 (the boundary ladder is spaced " +
+                "across bucketCount - 1 steps), was $bucketCount"
+        }
+        require(minMs > 0.0) { "LatencyHistogram minMs must be positive, was $minMs" }
+        require(maxMs > minMs) {
+            "LatencyHistogram maxMs ($maxMs) must be greater than minMs ($minMs)"
+        }
+    }
+
     private val counts = AtomicLongArray(bucketCount)
     private val totalCount = AtomicLong(0)
-    private val sumMs = AtomicLong(0)
+
+    /**
+     * Sum of every recorded duration, in floating-point milliseconds. A striped [DoubleAdder] rather
+     * than a CAS loop so that concurrent request threads do not contend on a single cell.
+     */
+    private val sumMs = DoubleAdder()
     private val maxObservedBits = AtomicLong(java.lang.Double.doubleToLongBits(0.0))
 
     // Upper boundary (inclusive) of each bucket, exponentially spaced from minMs to maxMs.
@@ -37,7 +63,7 @@ class LatencyHistogram(
         val v = if (durationMs < 0) 0.0 else durationMs
         counts.incrementAndGet(bucketOf(v))
         totalCount.incrementAndGet()
-        sumMs.addAndGet(v.toLong())
+        sumMs.add(v)
         // Track the true max via CAS.
         while (true) {
             val curBits = maxObservedBits.get()
@@ -61,7 +87,7 @@ class LatencyHistogram(
 
     fun mean(): Double {
         val n = totalCount.get()
-        return if (n == 0L) 0.0 else sumMs.get().toDouble() / n
+        return if (n == 0L) 0.0 else sumMs.sum() / n
     }
 
     /** Approximate percentile in ms. [p] in 0.0..1.0. */
