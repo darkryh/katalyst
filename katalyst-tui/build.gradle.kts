@@ -95,4 +95,24 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
+
+    // ── Testing ──────────────────────────────────────────────────────────────────────────────
+    // This module does NOT apply the convention plugin (see the coordinates comment above), so
+    // the JUnit Platform, the test dependencies and the tag exclusion are all wired by hand here.
+    // Without `useJUnitPlatform()` below, Gradle's Test task defaults to JUnit 4 and every JUnit 5
+    // test in this module is silently NOT executed while the build still reports success — the
+    // exact "green suite, untested code" failure this test suite exists to prevent.
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.kotlinx.coroutines.test)
+    // An SLF4J binding on the test classpath so tests can assert on log output via ListAppender.
+    testImplementation(libs.logback)
+}
+
+tasks.withType<Test>().configureEach {
+    // Mirrors BaseConventionPlugin's gate for the modules that DO apply the convention plugin.
+    // `tty` is reserved for suites needing a real terminal; nothing in CI may require one.
+    useJUnitPlatform { excludeTags("tty") }
+    testLogging { events("passed", "skipped", "failed") }
 }

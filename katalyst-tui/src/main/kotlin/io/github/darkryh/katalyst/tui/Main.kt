@@ -182,6 +182,25 @@ fun App(preferredPid: Long? = null) {
                 if (PaletteState.active) PaletteState.active = false else backStack.popBackStack()
             }
         }
+
+        // ← also goes back, so the inspector reads the way a terminal UI should: Enter descends,
+        // ← ascends. Escape keeps working; this is a pure addition.
+        //
+        // priority = ARROW_BACK_PRIORITY (the LOWEST, the inverse of Escape's 10) so every widget
+        // that wants ArrowLeft wins it first: a focused TextField's cursor sits at -1, always-on
+        // widgets at 0. Verified against dispatch 1.0.0-beta03 — FilterableTable routes keys
+        // through handleSelectorKeyEvent, which maps only Up/Down/Enter/Esc/Tab/Backspace plus
+        // printable characters; ArrowLeft is a Key.Named so `isText` is false and it is neither row
+        // navigation nor filter input. It falls through to here. Should a future Dispatch release
+        // claim ArrowLeft, that widget simply wins and this degrades to Esc-only rather than
+        // breaking.
+        //
+        // UNREGISTERED on Home rather than guarded: the tile grid owns ArrowLeft (HomeScreen.kt),
+        // and a KeyBindings entry consumes its key even when the action no-ops. `enabled = false`
+        // registers no interceptor at all.
+        KeyBindings(enabled = !onHome, priority = ARROW_BACK_PRIORITY) {
+            on(Key.ArrowLeft, "back") { backStack.popBackStack() }
+        }
         if (onHome) {
             KeyBindings(priority = 10) {
                 on(Key.Tab, "focus") {
@@ -228,3 +247,16 @@ fun App(preferredPid: Long? = null) {
         if (onHome) BottomBar(state, theme) else SubFooter(state, theme)
     }
 }
+
+/**
+ * Interceptor priority for the ArrowLeft "back" binding.
+ *
+ * Deliberately below every Dispatch widget tier — focus-gated widgets register at -1
+ * (`TextField`, `Button`, `SelectMenu`, `MultiSelectList`), always-on widgets at 0
+ * (`FilterableTable`, `Tree`, `CommandPalette`, `DecisionPrompt`) — so anything that wants
+ * ArrowLeft for its own purpose consumes it first and this binding only ever sees what nothing
+ * else claimed. A bare 0 would merely TIE with the always-on tier and be resolved by registration
+ * order (`compareByDescending { priority }.thenByDescending { order }`), making the behaviour
+ * depend on composition timing.
+ */
+internal const val ARROW_BACK_PRIORITY = -100

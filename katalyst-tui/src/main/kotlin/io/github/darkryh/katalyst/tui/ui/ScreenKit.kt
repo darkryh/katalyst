@@ -118,7 +118,11 @@ fun NotInstrumentedNote(what: String, theme: DispatchTheme) {
 fun SubFooter(
     state: InspectorUiState,
     theme: DispatchTheme,
-    hint: String = "type to filter · ↑↓ move · Enter open · Esc back · Ctrl+C quit",
+    // Advertises ← rather than Esc: both pop, but ← is the native terminal gesture and the pair
+    // reads as one model (Enter descends, ← ascends). Esc keeps working, unadvertised. Length is
+    // deliberate — at 80 columns the footer leaves ~46 cells beside the heap gauge, and this string
+    // puts "← back" exactly inside that budget, where the old "Esc back" was clipped mid-token.
+    hint: String = "type to filter · ↑↓ move · Enter open · ← back · Ctrl+C quit",
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         val hibernating = LocalHibernation.current?.isHibernating == true

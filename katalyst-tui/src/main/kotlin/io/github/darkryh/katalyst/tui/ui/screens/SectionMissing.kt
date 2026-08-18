@@ -20,7 +20,7 @@ fun SectionMissing(title: String, hint: String, theme: DispatchTheme) {
         Column(verticalArrangement = Arrangement.spacedBy(1)) {
             Text("The attached backend is not reporting this section.", style = theme.secondary)
             Text(hint, style = theme.muted)
-            Text("Esc to go back", style = theme.muted)
+            Text("← or Esc to go back", style = theme.muted)
         }
     }
 }
