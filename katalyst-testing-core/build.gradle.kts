@@ -19,6 +19,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.ktor.server.core)
     implementation(kotlin("reflect"))
+    // The in-memory engine reports index displacement through the framework logger, exactly as
+    // KoinBeanEngine does; a fake that stays silent about an eviction is how #31 hid.
+    implementation(libs.slf4j.api)
     runtimeOnly(libs.h2)
 
     testImplementation(kotlin("test"))
@@ -31,8 +34,16 @@ dependencies {
     // On the compile classpath (not just runtime) so BeanEngineContractTest can assert the
     // test double and the production Koin engine agree on lookup semantics.
     testImplementation(project(":katalyst-koin-bean"))
+    // Displacement reporting is part of the engine contract, so the level it is reported at is
+    // asserted through a logback appender.
+    testImplementation(libs.logback)
 
     testFixturesImplementation(kotlin("test"))
     testFixturesImplementation(libs.ktor.server.core)
     testFixturesImplementation(libs.kotlinx.coroutines.core)
+    // The cross-engine bean contract lives in test fixtures so every module that owns a
+    // KatalystBeanEngine implementation runs the same suite against it. It needs the JUnit 5
+    // flavour of kotlin.test and the marker types the contract is stated over.
+    testFixturesImplementation(libs.kotlin.test.junit5)
+    testFixturesImplementation(project(":katalyst-events"))
 }

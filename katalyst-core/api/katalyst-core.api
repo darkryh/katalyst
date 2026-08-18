@@ -95,7 +95,14 @@ public final class io/github/darkryh/katalyst/core/di/KatalystContainerProvider 
 public abstract interface annotation class io/github/darkryh/katalyst/core/dsl/KatalystDslMarker : java/lang/annotation/Annotation {
 }
 
-public final class io/github/darkryh/katalyst/core/exception/DependencyInjectionException : java/lang/Exception {
+public final class io/github/darkryh/katalyst/core/exception/BeanNotFoundException : io/github/darkryh/katalyst/core/exception/DependencyInjectionException {
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getQualifier ()Ljava/lang/String;
+	public final fun getRequestedType ()Lkotlin/reflect/KClass;
+}
+
+public class io/github/darkryh/katalyst/core/exception/DependencyInjectionException : java/lang/Exception {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }

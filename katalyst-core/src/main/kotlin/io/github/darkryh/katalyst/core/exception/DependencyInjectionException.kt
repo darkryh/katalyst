@@ -1,18 +1,18 @@
 package io.github.darkryh.katalyst.core.exception
 
 /**
- * Exception thrown during automatic dependency injection setup.
+ * Base type for dependency-injection failures.
  *
- * This exception indicates a configuration or registration problem detected
- * by the framework during startup (scanning, DI initialization, etc.).
+ * Covers both halves of the lifecycle: configuration and registration problems detected during
+ * startup (scanning, DI initialization, route wiring), and resolution problems at runtime —
+ * see [BeanNotFoundException] for the latter.
  *
- * Developers should use this to identify missing dependencies, misconfigured
- * services, invalid validators, or other DI-related issues.
+ * Catch this to handle any DI failure uniformly, or a subtype when the distinction matters.
  *
  * @param message Description of what went wrong with dependency injection
  * @param cause The original exception that caused this DI error
  */
-class DependencyInjectionException(
+open class DependencyInjectionException(
     message: String,
     cause: Throwable? = null
 ) : Exception(message, cause)

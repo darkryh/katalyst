@@ -1,178 +1,127 @@
 package io.github.darkryh.katalyst.testing.core
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.di.feature.KatalystBeanEngine
 import io.github.darkryh.katalyst.koin.KoinBeanEngine
 import io.github.darkryh.katalyst.migrations.KatalystMigration
-import kotlin.test.AfterTest
+import io.github.darkryh.katalyst.testing.core.contract.KatalystBeanEngineContract
+import org.koin.core.context.stopKoin
+import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import org.koin.core.context.stopKoin
+import kotlin.test.assertTrue
 
 /**
- * Pins the in-memory test bean engine to the production Koin engine.
+ * The bean-engine contract, run against the two engines Katalyst actually ships.
  *
- * Katalyst integration tests boot [TestKatalystBeanEngine], but applications boot
- * [KoinBeanEngine]. If the two disagree about how instances are looked up, a test suite can
- * be entirely green while production is broken — or the reverse. Issue #16 turned on exactly
- * such a lookup path, so the two engines are held to one contract here.
+ * `KoinBeanEngine` is what every application boots; `TestKatalystBeanEngine` is what
+ * `katalystTestEnvironment` boots for every test, including in consumers' own suites. Issue #31
+ * is the record of what a divergence between them costs: the scheduler's `ReadyHook` was evicted
+ * from the Koin registry in production while the in-memory engine kept it, so no scheduled job ran
+ * and the entire framework suite was green.
  *
- * The contract that matters for extension points: an instance registered under a secondary
- * type must be reachable through `getAll` for that type, several instances may share one
- * unqualified secondary type, and every registration stays reachable by its own concrete type
- * so that sharing a marker never evicts anyone (issue #31).
+ * Every invariant lives in [KatalystBeanEngineContract] so a third engine has one suite to pass.
+ * What is added here is the part that needs a log appender: displacement is only useful if it is
+ * *reported*, and a fake that stays silent about an eviction is precisely how #31 hid.
  */
-class BeanEngineContractTest {
+class BeanEngineContractTest : KatalystBeanEngineContract() {
 
-    class MigrationA : KatalystMigration {
-        override val id: String = "20240101_a"
-        override fun up() = Unit
-    }
-
-    class MigrationB : KatalystMigration {
-        override val id: String = "20240102_b"
-        override fun up() = Unit
-    }
-
-    private fun engines(): List<Pair<String, () -> KatalystBeanEngine>> = listOf(
+    override fun engines(): List<Pair<String, () -> KatalystBeanEngine>> = listOf(
         "TestKatalystBeanEngine" to { TestKatalystBeanEngine() },
         "KoinBeanEngine" to { KoinBeanEngine },
     )
 
-    @AfterTest
-    fun tearDown() {
-        KatalystContainerProvider.reset()
+    override fun resetGlobalState() {
+        super.resetGlobalState()
         runCatching { stopKoin() }
     }
 
-    private fun withEachEngine(block: (String, KatalystBeanEngine) -> Unit) {
-        engines().forEach { (name, factory) ->
-            KatalystContainerProvider.reset()
-            runCatching { stopKoin() }
-            val engine = factory()
-            try {
-                block(name, engine)
-            } finally {
-                runCatching { engine.stop() }
-                KatalystContainerProvider.reset()
-                runCatching { stopKoin() }
+    /** The logger each engine reports index displacement through. */
+    private fun loggerNameOf(engineName: String): String =
+        if (engineName == "KoinBeanEngine") "KoinBeanEngine" else "TestKatalystBeanEngine"
+
+    private fun <T> capturingLogs(engineName: String, block: (ListAppender<ILoggingEvent>) -> T): T {
+        val logger = LoggerFactory.getLogger(loggerNameOf(engineName)) as Logger
+        val previousLevel = logger.level
+        logger.level = Level.DEBUG
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        logger.addAppender(appender)
+        return try {
+            block(appender)
+        } finally {
+            logger.detachAppender(appender)
+            appender.stop()
+            logger.level = previousLevel
+        }
+    }
+
+    @Test
+    fun `rebinding an index key is reported`() = withEachEngine { name, engine, _ ->
+        capturingLogs(name) { appender ->
+            engine.registerInstance(MigrationA(), KatalystMigration::class, emptyList(), null)
+            engine.registerInstance(MigrationB(), KatalystMigration::class, emptyList(), null)
+
+            val messages = appender.list.map { "${it.level}: ${it.formattedMessage}" }
+            assertTrue(
+                appender.list.any { it.formattedMessage.contains("KatalystMigration") },
+                "$name: taking an index key from another definition must leave a trace, got $messages",
+            )
+        }
+    }
+
+    @Test
+    fun `a routine rebind is not reported at WARN`() = withEachEngine { name, engine, _ ->
+        capturingLogs(name) { appender ->
+            // Several beans of one class sharing a marker is a legitimate, common shape (one
+            // `SqlMigration` per script file). Every one of them displaces the previous holder of
+            // the marker key, and every one of them survives in getAll, so none of it is a warning.
+            repeat(6) { index ->
+                engine.registerInstance(SameClassMigration("m$index"), KatalystMigration::class, emptyList(), null)
             }
-        }
-    }
 
-    @Test
-    fun `instance registered under a secondary type is reachable via getAll`() {
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-            val migration = MigrationA()
-
-            engine.registerInstance(migration, MigrationA::class, listOf(KatalystMigration::class), null)
-
-            assertEquals(
-                1,
-                container.getAll(KatalystMigration::class).size,
-                "$name: secondary type must be reachable via getAll"
-            )
-            assertNotNull(
-                container.getOrNull(MigrationA::class, null),
-                "$name: concrete type must stay resolvable"
-            )
-        }
-    }
-
-    @Test
-    fun `several instances may share one unqualified secondary type`() {
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
-            engine.registerInstance(MigrationA(), MigrationA::class, listOf(KatalystMigration::class), null)
-            engine.registerInstance(MigrationB(), MigrationB::class, listOf(KatalystMigration::class), null)
-
-            val all = container.getAll(KatalystMigration::class)
-            assertEquals(2, all.size, "$name: both instances must be returned")
-            assertEquals(
-                listOf("20240101_a", "20240102_b"),
-                all.map { it.id }.sorted(),
-                "$name: getAll must return every instance sharing the secondary type"
-            )
-        }
-    }
-
-    @Test
-    fun `a definition bound only to a multibinding marker survives a later registration binding that marker`() {
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
-            // How a feature bean module binds a framework extension: `single<KatalystMigration> { ... }`
-            // names the marker as the primary type and nothing else.
-            engine.registerInstance(MigrationA(), KatalystMigration::class, emptyList(), null)
-            // How AutoBindingRegistrar binds a scanned application class for the same marker.
-            engine.registerInstance(MigrationB(), MigrationB::class, listOf(KatalystMigration::class), null)
-
-            assertEquals(
-                listOf("20240101_a", "20240102_b"),
-                container.getAll(KatalystMigration::class).map { it.id }.sorted(),
-                "$name: a marker-only definition must not be evicted by a later binder of that marker"
-            )
-        }
-    }
-
-    @Test
-    fun `registration order does not change the getAll result set`() {
-        val results = mutableMapOf<String, List<String>>()
-
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
-            engine.registerInstance(MigrationB(), MigrationB::class, listOf(KatalystMigration::class), null)
-            engine.registerInstance(MigrationA(), KatalystMigration::class, emptyList(), null)
-
-            results["$name:marker-last"] = container.getAll(KatalystMigration::class).map { it.id }.sorted()
-        }
-
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
-            engine.registerInstance(MigrationA(), KatalystMigration::class, emptyList(), null)
-            engine.registerInstance(MigrationB(), MigrationB::class, listOf(KatalystMigration::class), null)
-
-            results["$name:marker-first"] = container.getAll(KatalystMigration::class).map { it.id }.sorted()
-        }
-
-        val distinct = results.values.distinct()
-        assertEquals(
-            1,
-            distinct.size,
-            "registration order must not decide who survives, got $results"
-        )
-        assertEquals(listOf("20240101_a", "20240102_b"), distinct.single())
-    }
-
-    @Test
-    fun `every registered instance is reachable by its own concrete type`() {
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
-            engine.registerInstance(MigrationA(), KatalystMigration::class, emptyList(), null)
-
-            assertNotNull(
-                container.getOrNull(MigrationA::class, null),
-                "$name: an instance bound only to a marker must still be reachable by its own class"
-            )
-        }
-    }
-
-    @Test
-    fun `a type with no registration returns an empty getAll`() {
-        withEachEngine { name, engine ->
-            val container = engine.start(emptyList(), allowOverrides = true)
-
+            val warnings = appender.list.filter { it.level == Level.WARN }.map { it.formattedMessage }
             assertEquals(
                 emptyList(),
-                container.getAll(KatalystMigration::class),
-                "$name: unregistered type must yield an empty list, not an error"
+                warnings,
+                "$name: a displacement that orphans nobody must not be a warning",
             )
         }
+    }
+
+    @Test
+    fun `a bean that refuses to close is reported at WARN naming its class`() =
+        withEachEngine { name, engine, _ ->
+            capturingLogs(name) { appender ->
+                val closed = mutableListOf<String>()
+                engine.registerInstance(FirstProbe(closed), FirstProbe::class)
+                engine.registerInstance(SecondProbe(closed, failOnClose = true), SecondProbe::class)
+                engine.registerInstance(ThirdProbe(closed), ThirdProbe::class)
+
+                engine.stop()
+
+                val warning = appender.list.singleOrNull { it.level == Level.WARN }
+                assertTrue(
+                    warning != null && warning.formattedMessage.contains("SecondProbe"),
+                    "$name: a bean that fails to close must be reported at WARN naming the class, got " +
+                        "${appender.list.map { "${it.level}: ${it.formattedMessage}" }}",
+                )
+            }
+        }
+
+    @Test
+    fun `the test engine is the engine katalystTestEnvironment boots`() {
+        // A contract only helps while the shipped test path actually runs the engine it pins.
+        katalystTestEnvironment().use { environment ->
+            assertEquals(
+                "katalyst-test",
+                environment.options.beanEngine?.id,
+                "katalystTestEnvironment must boot the engine this contract pins",
+            )
+        }
+        KatalystContainerProvider.reset()
     }
 }
