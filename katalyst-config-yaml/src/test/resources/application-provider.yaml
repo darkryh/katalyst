@@ -1,0 +1,120 @@
+# Fixture for YamlConfigProviderTest.
+#
+# Drives the REAL YamlConfigurationSource through YamlProfileLoader + the classpath, so every
+# assertion in that suite exercises production code. Values are deliberately arranged to cover
+# each type-conversion branch of ConfigProvider.
+
+# --- Required by YamlConfigurationSource.validateRequiredKeys(); construction fails without them.
+ktor:
+  deployment:
+    host: 0.0.0.0
+    port: 8080
+    shutdownGracePeriod: 1000
+    shutdownTimeout: 5000
+
+# --- Simple root-level scalars
+name: Katalyst
+version: 1.0.0
+port: 8080
+
+database:
+  url: jdbc:postgresql://localhost:5432/katalyst
+  username: postgres
+  password: secret
+  driver: org.postgresql.Driver
+  pool:
+    maxSize: 20
+    minIdle: 5
+    timeout: 30000
+  ssl:
+    enabled: true
+    cert: /path/to/cert.pem
+
+app:
+  name: Katalyst
+  version: 1.0.0
+  environment: production
+  modules:
+    database:
+      config:
+        pool:
+          size: 10
+          timeout: 30000
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  ssl:
+    enabled: true
+    port: 8443
+
+logging:
+  level: INFO
+  file: /var/log/katalyst.log
+  console: true
+
+features:
+  analytics: false
+  caching: true
+  compression: true
+
+# --- getString() coercion of non-string YAML scalars
+conversions:
+  port: 8080
+  enabled: true
+  version: 1.5
+
+# --- Numeric conversion matrix
+numbers:
+  double: 42.7
+  long: 9876543210
+  count: 42
+  timestamp: 1234567890123
+  zero: 0
+  one: 1
+  negative: -1
+  stringInt: "5000"
+  stringLong: "9876543210"
+  notANumber: not-a-number
+  portWithUnit: 8080ms
+
+# --- Values that are malformed for the requested type (fail-fast accessors)
+malformed:
+  port: eighty
+  analytics: sometimes
+
+timeouts:
+  shutdown: 30s
+
+# --- Boolean parsing from quoted strings (quotes matter: unquoted YES/On/no are YAML 1.1 booleans)
+booleans:
+  trueWord: "true"
+  yesWord: "YES"
+  onWord: "On"
+  oneDigit: "1"
+  falseWord: "false"
+  noWord: "NO"
+  offWord: "Off"
+  zeroDigit: "0"
+  maybe: maybe
+
+# --- List handling
+servers:
+  - server1
+  - server2
+  - server3
+mixed:
+  - 1
+  - 2
+  - 3
+nullable:
+  - value1
+  -
+  - value2
+tags: "tag1,tag2,tag3"
+items: "item1 , item2 , item3"
+
+# --- YAML 1.1 scalar coercion traps (pinned, not endorsed)
+coercion:
+  region: NO
+  2024: rate-for-2024

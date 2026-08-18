@@ -49,16 +49,31 @@ class YamlProfileLoader(
      *
      * @return Merged configuration map
      */
-    fun loadConfiguration(profileOverride: String? = null): Map<String, Any> {
+    fun loadConfiguration(profileOverride: String? = null): Map<String, Any> =
+        loadMerged(profileOverride, substituteEnvironment = true)
+
+    /**
+     * Load and merge YAML configuration files **without** resolving `${VAR}` placeholders.
+     *
+     * Used by [YamlConfigurationSource], which owns the single substitution pass itself.
+     * Substituting here as well would run two passes over the same values and corrupt any
+     * resolved value that legitimately contains a literal `${...}` sequence.
+     *
+     * @return Merged configuration map with placeholders left verbatim
+     */
+    internal fun loadRawConfiguration(profileOverride: String? = null): Map<String, Any> =
+        loadMerged(profileOverride, substituteEnvironment = false)
+
+    private fun loadMerged(profileOverride: String?, substituteEnvironment: Boolean): Map<String, Any> {
         log.debug("Loading YAML configuration...")
-        val baseConfig = loadYamlFile(baseConfigFile)
+        val baseConfig = loadYamlFile(baseConfigFile, substituteEnvironment)
         val profile = (profileOverride ?: propertyReader("katalyst.profile") ?: environmentReader(profileEnvVar))
             ?.takeIf { it.isNotBlank() }
 
         return if (profile != null && profile.isNotBlank()) {
             val profileFile = "application-$profile.yaml"
             log.info("Loading profile-specific configuration: $profileFile")
-            val profileConfig = loadYamlFile(profileFile)
+            val profileConfig = loadYamlFile(profileFile, substituteEnvironment)
             if (profileConfig.isEmpty()) {
                 throw IllegalStateException("Profile '$profile' requested but $profileFile not found or empty. Add the file or remove the profile.")
             }
@@ -80,14 +95,15 @@ class YamlProfileLoader(
      * - Parses YAML content using YamlParser
      *
      * @param filename Filename to load from classpath
+     * @param substituteEnvironment Whether to resolve `${VAR}` placeholders while parsing
      * @return Parsed YAML as map, or empty map if not found
      */
-    private fun loadYamlFile(filename: String): Map<String, Any> {
+    private fun loadYamlFile(filename: String, substituteEnvironment: Boolean): Map<String, Any> {
         val resource = this::class.java.classLoader.getResource(filename)
             ?: return emptyMap()
 
         val content = resource.readText()
-        return YamlParser.parse(content)
+        return if (substituteEnvironment) YamlParser.parse(content) else YamlParser.parseRaw(content)
     }
 
     /**

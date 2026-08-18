@@ -1,0 +1,12 @@
+# Smallest configuration YamlConfigurationSource will accept: the required keys and nothing else.
+# Used by tests that assert default/absent behaviour, and by the exact getAllKeys() assertion.
+ktor:
+  deployment:
+    host: 0.0.0.0
+    port: 8080
+    shutdownGracePeriod: 1000
+    shutdownTimeout: 5000
+database:
+  url: jdbc:h2:mem:minimal
+  username: sa
+  driver: org.h2.Driver

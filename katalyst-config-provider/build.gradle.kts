@@ -13,4 +13,8 @@ dependencies {
     // Reflections library - for bytecode scanning of AutomaticServiceConfigLoader
     implementation(libs.reflections)
     implementation(libs.slf4j.api)
+
+    // An SLF4J binding on the test classpath: the near-miss tests assert that a set-but-unmatched
+    // configuration key is reported, which needs a real appender to capture.
+    testImplementation(libs.logback)
 }

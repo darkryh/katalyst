@@ -23,3 +23,11 @@ dependencies {
     // Testing
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+tasks.withType<Test>().configureEach {
+    // Regression fixture for the double-substitution defect (see YamlConfigurationSource.init):
+    // a secret whose resolved value legitimately contains a literal `${...}` sequence. It has to
+    // be a real process environment variable, because the defect is only observable when the very
+    // same environment feeds the parse-time pass and the init-time pass.
+    environment("KATALYST_TEST_LITERAL_PLACEHOLDER", "abc\${d}ef")
+}

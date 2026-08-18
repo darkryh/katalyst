@@ -58,7 +58,10 @@ object ConfigBinder {
 
             if (!provider.hasKey(key)) {
                 when {
-                    param.isOptional -> continue // let the Kotlin default apply
+                    param.isOptional -> {
+                        warnOnNearMiss(provider, key, type.simpleName, name)
+                        continue // let the Kotlin default apply
+                    }
                     param.type.isMarkedNullable -> args[param] = null
                     else -> throw ConfigException(
                         "Required configuration key '$key' is missing for ${type.simpleName}.$name"
@@ -213,6 +216,47 @@ object ConfigBinder {
     /**
      * camelCase -> kebab-case (e.g. webhookSecret -> webhook-secret, secretApiKey -> secret-api-key).
      */
+    /**
+     * Warn when a key is absent but the configuration carries one that *almost* matches.
+     *
+     * An optional property falling back to its Kotlin default is normal — most applications leave
+     * most optional keys unset, so logging every one would be noise nobody reads. The dangerous
+     * case is narrower and silent: the operator *did* write the setting, spelled it
+     * `notification.baseUrl` instead of `notification.base-url`, and the framework quietly used the
+     * default anyway. Nothing failed, nothing was logged, and the application ran with a value the
+     * operator believes they overrode.
+     *
+     * So the signal is reserved for a near miss: some key in the configuration normalises to the
+     * one that was looked for. Anything else stays at DEBUG.
+     */
+    private fun warnOnNearMiss(
+        provider: ConfigProvider,
+        key: String,
+        typeName: String?,
+        paramName: String,
+    ) {
+        val wanted = normalizeKey(key)
+        val nearMiss = runCatching {
+            provider.getAllKeys().firstOrNull { it != key && normalizeKey(it) == wanted }
+        }.getOrNull()
+
+        if (nearMiss != null) {
+            log.warn(
+                "Configuration key '{}' is set but does not match the expected key '{}' for {}.{}; " +
+                    "the default is being used instead. Keys are kebab-case: rename '{}' to '{}'.",
+                nearMiss, key, typeName, paramName, nearMiss, key,
+            )
+        } else {
+            log.debug(
+                "No value for '{}'; using the declared default for {}.{}", key, typeName, paramName,
+            )
+        }
+    }
+
+    /** Case- and separator-insensitive form, so `baseUrl`, `base_url` and `base-url` collapse. */
+    private fun normalizeKey(key: String): String =
+        key.lowercase().filter { it != '-' && it != '_' }
+
     private fun kebab(name: String): String {
         val sb = StringBuilder()
         for ((index, ch) in name.withIndex()) {

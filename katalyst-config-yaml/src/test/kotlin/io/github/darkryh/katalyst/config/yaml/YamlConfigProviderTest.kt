@@ -13,7 +13,7 @@ import io.github.darkryh.katalyst.core.config.ConfigProvider
 import kotlin.test.*
 
 /**
- * Comprehensive tests for YamlConfigurationSource.
+ * Comprehensive tests for the real [YamlConfigurationSource].
  *
  * Tests cover:
  * - Component interface implementation
@@ -23,127 +23,62 @@ import kotlin.test.*
  * - Type conversion scenarios
  * - hasKey() and getAllKeys() operations
  * - Nested map navigation
+ * - Required-key validation, precedence and environment substitution
  * - Edge cases and error scenarios
  *
  * **Testing Approach:**
- * Uses TestYamlConfigurationSource that bypasses file loading to focus on
- * testing the ConfigProvider interface implementation and path navigation logic.
+ * Every test constructs the production [YamlConfigurationSource] and drives it through its
+ * [YamlProfileLoader] seam against classpath fixtures in `src/test/resources`
+ * (`application-provider*.yaml`, `application-precedence*.yaml`, ...). Nothing here
+ * re-implements the class under test, so deleting or breaking production code turns this
+ * suite red.
  */
 class YamlConfigurationSourceTest {
 
-    /**
-     * Test implementation that bypasses file loading.
-     * Allows testing ConfigProvider logic with controlled test data.
-     */
-    class TestYamlConfigurationSource(testData: Map<String, Any>) : ConfigProvider, Component {
-        private val data: Map<String, Any> = testData
+    private companion object {
+        /**
+         * Profile variable used only by this suite. The loader's real default is
+         * `KATALYST_PROFILE`; overriding it keeps a developer's ambient environment from
+         * steering the fixtures.
+         */
+        const val PROFILE_ENV_VAR = "KATALYST_CONFIG_PROVIDER_TEST_PROFILE"
 
-        override fun <T> get(key: String, defaultValue: T?): T? {
-            val value = navigatePath(key) ?: return defaultValue
-            if (defaultValue != null) {
-                val expectedType = defaultValue::class
-                if (!expectedType.isInstance(value)) {
-                    throw ConfigException(
-                        "Configuration key '$key' has type ${value::class.simpleName}, expected ${expectedType.simpleName}"
-                    )
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            return value as T
-        }
+        /** Rich fixture covering every conversion branch. */
+        const val FULL = "application-provider.yaml"
 
-        override fun getString(key: String, default: String): String {
-            return when (val value = navigatePath(key)) {
-                null -> default
-                is String -> value
-                else -> value.toString()
-            }
-        }
+        /** Required keys and nothing else. */
+        const val MINIMAL = "application-provider-minimal.yaml"
 
-        override fun getInt(key: String, default: Int): Int {
-            val value = navigatePath(key) ?: return default
-            return when (value) {
-                is Int -> value
-                is Number -> value.toInt()
-                is String -> value.toIntOrNull() ?: default
-                else -> default
-            }
-        }
-
-        override fun getLong(key: String, default: Long): Long {
-            val value = navigatePath(key) ?: return default
-            return when (value) {
-                is Long -> value
-                is Number -> value.toLong()
-                is String -> value.toLongOrNull() ?: default
-                else -> default
-            }
-        }
-
-        override fun getBoolean(key: String, default: Boolean): Boolean {
-            val value = navigatePath(key) ?: return default
-            return when (value) {
-                is Boolean -> value
-                is String -> when (value.lowercase()) {
-                    "true", "yes", "on", "1" -> true
-                    "false", "no", "off", "0" -> false
-                    else -> default
-                }
-                is Number -> value.toInt() != 0
-                else -> default
-            }
-        }
-
-        override fun getList(key: String, default: List<String>): List<String> {
-            val value = navigatePath(key) ?: return default
-            return when (value) {
-                is List<*> -> value.map { it?.toString() ?: "" }
-                is String -> value.split(",").map { it.trim() }
-                else -> default
-            }
-        }
-
-        override fun hasKey(key: String): Boolean {
-            return navigatePath(key) != null
-        }
-
-        override fun getAllKeys(): Set<String> {
-            val keys = mutableSetOf<String>()
-            fun traverse(map: Map<*, *>, prefix: String = "") {
-                for ((key, value) in map) {
-                    val fullKey = if (prefix.isEmpty()) key.toString() else "$prefix.$key"
-                    keys.add(fullKey)
-                    if (value is Map<*, *>) {
-                        traverse(value, fullKey)
-                    }
-                }
-            }
-            traverse(data)
-            return keys
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun navigatePath(path: String): Any? {
-            val parts = path.split(".")
-            var current: Any? = data
-
-            for (part in parts) {
-                current = when (current) {
-                    is Map<*, *> -> (current as Map<String, Any>)[part]
-                    else -> return null
-                }
-            }
-
-            return current
-        }
+        /** Required keys plus `app.name`. */
+        const val SPARSE = "application-provider-sparse.yaml"
     }
+
+    /**
+     * Build the production provider over a classpath fixture.
+     *
+     * @param env fake environment used for `${VAR}` substitution; empty means "nothing set",
+     *            which keeps the fixtures deterministic regardless of the host environment.
+     */
+    private fun sourceFor(
+        baseConfigFile: String,
+        profile: String? = null,
+        env: Map<String, String> = emptyMap()
+    ): YamlConfigurationSource = YamlConfigurationSource(
+        profileLoader = YamlProfileLoader(
+            profileEnvVar = PROFILE_ENV_VAR,
+            baseConfigFile = baseConfigFile,
+            environmentReader = { name -> if (name == PROFILE_ENV_VAR) profile else null },
+            propertyReader = { null }
+        ),
+        substitutor = EnvironmentVariableSubstitutor({ name -> env[name] })
+    )
 
     // ========== COMPONENT INTERFACE TESTS ==========
 
     @Test
     fun `YamlConfigurationSource should implement Component interface`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider: Any = sourceFor(MINIMAL)
 
         // Then
         assertTrue(provider is Component)
@@ -152,7 +87,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `YamlConfigurationSource should implement ConfigProvider interface`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider: Any = sourceFor(MINIMAL)
 
         // Then
         assertTrue(provider is ConfigProvider)
@@ -163,13 +98,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `navigatePath should handle simple keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "name" to "Katalyst",
-                "version" to "1.0.0",
-                "port" to 8080
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals("Katalyst", provider.getString("name"))
@@ -180,18 +109,10 @@ class YamlConfigurationSourceTest {
     @Test
     fun `navigatePath should handle nested paths with dot notation`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf(
-                    "url" to "jdbc:postgresql://localhost:5432/db",
-                    "username" to "postgres",
-                    "password" to "secret"
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals("jdbc:postgresql://localhost:5432/db", provider.getString("database.url"))
+        assertEquals("jdbc:postgresql://localhost:5432/katalyst", provider.getString("database.url"))
         assertEquals("postgres", provider.getString("database.username"))
         assertEquals("secret", provider.getString("database.password"))
     }
@@ -199,22 +120,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `navigatePath should handle deeply nested paths`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "app" to mapOf(
-                    "modules" to mapOf(
-                        "database" to mapOf(
-                            "config" to mapOf(
-                                "pool" to mapOf(
-                                    "size" to 10,
-                                    "timeout" to 30000
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals(10, provider.getInt("app.modules.database.config.pool.size"))
@@ -224,7 +130,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `navigatePath should return null for non-existent keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(mapOf("existing" to "value"))
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertNull(provider.get<String>("non.existent"))
@@ -234,13 +140,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `navigatePath should return null for partial paths`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf(
-                    "url" to "value"
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertNull(provider.get<String>("database.url.invalid"))
@@ -252,9 +152,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getString should return string values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("name" to "Katalyst")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals("Katalyst", provider.getString("name"))
@@ -263,7 +161,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getString should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertEquals("default", provider.getString("missing", "default"))
@@ -272,28 +170,18 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getString should convert non-string values to strings`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "port" to 8080,
-                "enabled" to true,
-                "version" to 1.5
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals("8080", provider.getString("port"))
-        assertEquals("true", provider.getString("enabled"))
-        assertEquals("1.5", provider.getString("version"))
+        assertEquals("8080", provider.getString("conversions.port"))
+        assertEquals("true", provider.getString("conversions.enabled"))
+        assertEquals("1.5", provider.getString("conversions.version"))
     }
 
     @Test
     fun `stringOrNull should return nested YAML value or null`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf("password" to "secret")
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals("secret", provider.stringOrNull("database.password"))
@@ -305,9 +193,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getInt should return integer values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("port" to 8080)
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals(8080, provider.getInt("port"))
@@ -316,7 +202,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getInt should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertEquals(9999, provider.getInt("missing", 9999))
@@ -325,29 +211,25 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getInt should parse string to int`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("timeout" to "5000")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals(5000, provider.getInt("timeout"))
+        assertEquals(5000, provider.getInt("numbers.stringInt"))
     }
 
     @Test
     fun `getInt should return default for unparseable strings`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("invalid" to "not-a-number")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals(100, provider.getInt("invalid", 100))
+        assertEquals(100, provider.getInt("numbers.notANumber", 100))
     }
 
     @Test
     fun `intOrNull should return null for missing YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertNull(provider.intOrNull("missing"))
@@ -356,24 +238,22 @@ class YamlConfigurationSourceTest {
     @Test
     fun `intOrNull should fail fast for malformed YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(mapOf("port" to "8080ms"))
+        val provider = sourceFor(FULL)
 
         // Then
         assertFailsWith<ConfigException> {
-            provider.intOrNull("port")
+            provider.intOrNull("numbers.portWithUnit")
         }
     }
 
     @Test
     fun `requiredInt should throw for malformed yaml values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("server" to mapOf("port" to "eighty"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         val exception = assertFailsWith<ConfigException> {
-            provider.requiredInt("server.port")
+            provider.requiredInt("malformed.port")
         }
         assertTrue(exception.message?.contains("must be a valid integer") == true)
         assertTrue(exception.message?.contains("eighty") == true)
@@ -382,27 +262,21 @@ class YamlConfigurationSourceTest {
     @Test
     fun `intOrNull should fail fast for malformed yaml values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("server" to mapOf("port" to "eighty"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertFailsWith<ConfigException> { provider.intOrNull("server.port") }
+        assertFailsWith<ConfigException> { provider.intOrNull("malformed.port") }
     }
 
     @Test
     fun `getInt should convert other number types`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "double" to 42.7,
-                "long" to 123L
-            )
-        )
+        val provider = sourceFor(FULL)
 
-        // Then
-        assertEquals(42, provider.getInt("double"))
-        assertEquals(123, provider.getInt("long"))
+        // Then - a YAML double is truncated...
+        assertEquals(42, provider.getInt("numbers.double"))
+        // ...and a YAML long wider than Int is silently narrowed by Number.toInt().
+        assertEquals(9876543210L.toInt(), provider.getInt("numbers.long"))
     }
 
     // ========== getLong() TESTS ==========
@@ -410,18 +284,16 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getLong should return long values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("timestamp" to 1234567890123L)
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals(1234567890123L, provider.getLong("timestamp"))
+        assertEquals(1234567890123L, provider.getLong("numbers.timestamp"))
     }
 
     @Test
     fun `getLong should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertEquals(999L, provider.getLong("missing", 999L))
@@ -430,31 +302,25 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getLong should parse string to long`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("value" to "9876543210")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals(9876543210L, provider.getLong("value"))
+        assertEquals(9876543210L, provider.getLong("numbers.stringLong"))
     }
 
     @Test
     fun `getLong should convert int to long`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("count" to 42)
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertEquals(42L, provider.getLong("count"))
+        assertEquals(42L, provider.getLong("numbers.count"))
     }
 
     @Test
     fun `requiredLong should throw for malformed yaml values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("timeouts" to mapOf("shutdown" to "30s"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         val exception = assertFailsWith<ConfigException> {
@@ -467,9 +333,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `longOrNull should fail fast for malformed yaml values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("timeouts" to mapOf("shutdown" to "30s"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertFailsWith<ConfigException> { provider.longOrNull("timeouts.shutdown") }
@@ -478,7 +342,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `longOrNull should return null for missing YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertNull(provider.longOrNull("missing"))
@@ -487,9 +351,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `longOrNull should fail fast for malformed YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("timeouts" to mapOf("shutdown" to "30s"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertFailsWith<ConfigException> {
@@ -502,22 +364,17 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getBoolean should return boolean values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "enabled" to true,
-                "disabled" to false
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertTrue(provider.getBoolean("enabled"))
-        assertFalse(provider.getBoolean("disabled"))
+        assertTrue(provider.getBoolean("features.caching"))
+        assertFalse(provider.getBoolean("features.analytics"))
     }
 
     @Test
     fun `getBoolean should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertTrue(provider.getBoolean("missing", true))
@@ -527,63 +384,45 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getBoolean should parse true variations case-insensitively`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "true" to "true",
-                "yes" to "YES",
-                "on" to "On",
-                "one" to "1"
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertTrue(provider.getBoolean("true"))
-        assertTrue(provider.getBoolean("yes"))
-        assertTrue(provider.getBoolean("on"))
-        assertTrue(provider.getBoolean("one"))
+        assertTrue(provider.getBoolean("booleans.trueWord"))
+        assertTrue(provider.getBoolean("booleans.yesWord"))
+        assertTrue(provider.getBoolean("booleans.onWord"))
+        assertTrue(provider.getBoolean("booleans.oneDigit"))
     }
 
     @Test
     fun `getBoolean should parse false variations case-insensitively`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "false" to "false",
-                "no" to "NO",
-                "off" to "Off",
-                "zero" to "0"
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertFalse(provider.getBoolean("false"))
-        assertFalse(provider.getBoolean("no"))
-        assertFalse(provider.getBoolean("off"))
-        assertFalse(provider.getBoolean("zero"))
+        assertFalse(provider.getBoolean("booleans.falseWord"))
+        assertFalse(provider.getBoolean("booleans.noWord"))
+        assertFalse(provider.getBoolean("booleans.offWord"))
+        assertFalse(provider.getBoolean("booleans.zeroDigit"))
     }
 
     @Test
     fun `getBoolean should return default for unparseable values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("invalid" to "maybe")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertTrue(provider.getBoolean("invalid", true))
-        assertFalse(provider.getBoolean("invalid", false))
+        assertTrue(provider.getBoolean("booleans.maybe", true))
+        assertFalse(provider.getBoolean("booleans.maybe", false))
     }
 
     @Test
     fun `requiredBoolean should throw for malformed yaml values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("features" to mapOf("analytics" to "sometimes"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         val exception = assertFailsWith<ConfigException> {
-            provider.requiredBoolean("features.analytics")
+            provider.requiredBoolean("malformed.analytics")
         }
         assertTrue(exception.message?.contains("must be a valid boolean") == true)
         assertTrue(exception.message?.contains("sometimes") == true)
@@ -592,7 +431,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `booleanOrNull should return null for missing YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertNull(provider.booleanOrNull("features.analytics"))
@@ -601,31 +440,23 @@ class YamlConfigurationSourceTest {
     @Test
     fun `booleanOrNull should fail fast for malformed YAML values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("features" to mapOf("analytics" to "sometimes"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertFailsWith<ConfigException> {
-            provider.booleanOrNull("features.analytics")
+            provider.booleanOrNull("malformed.analytics")
         }
     }
 
     @Test
     fun `getBoolean should convert numbers to boolean`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "zero" to 0,
-                "one" to 1,
-                "negative" to -1
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertFalse(provider.getBoolean("zero"))
-        assertTrue(provider.getBoolean("one"))
-        assertTrue(provider.getBoolean("negative"))
+        assertFalse(provider.getBoolean("numbers.zero"))
+        assertTrue(provider.getBoolean("numbers.one"))
+        assertTrue(provider.getBoolean("numbers.negative"))
     }
 
     // ========== getList() TESTS ==========
@@ -633,9 +464,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should return list of strings`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("servers" to listOf("server1", "server2", "server3"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         val servers = provider.getList("servers")
@@ -646,7 +475,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should return default for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         val default = listOf("default1", "default2")
@@ -656,9 +485,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should parse comma-separated string`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("tags" to "tag1,tag2,tag3")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals(listOf("tag1", "tag2", "tag3"), provider.getList("tags"))
@@ -667,9 +494,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should trim whitespace from comma-separated values`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("items" to "item1 , item2 , item3")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals(listOf("item1", "item2", "item3"), provider.getList("items"))
@@ -678,9 +503,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should convert non-string list items to strings`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("mixed" to listOf(1, 2, 3))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertEquals(listOf("1", "2", "3"), provider.getList("mixed"))
@@ -689,9 +512,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getList should handle null values in lists`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("nullable" to listOf("value1", null, "value2"))
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         val result = provider.getList("nullable")
@@ -706,18 +527,16 @@ class YamlConfigurationSourceTest {
     @Test
     fun `hasKey should return true for existing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("existing" to "value")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
-        assertTrue(provider.hasKey("existing"))
+        assertTrue(provider.hasKey("name"))
     }
 
     @Test
     fun `hasKey should return false for missing keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+        val provider = sourceFor(MINIMAL)
 
         // Then
         assertFalse(provider.hasKey("missing"))
@@ -726,17 +545,11 @@ class YamlConfigurationSourceTest {
     @Test
     fun `hasKey should work with nested paths`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf(
-                    "url" to "value"
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertTrue(provider.hasKey("database.url"))
-        assertFalse(provider.hasKey("database.password"))
+        assertFalse(provider.hasKey("database.absent"))
     }
 
     // ========== getAllKeys() TESTS ==========
@@ -744,39 +557,33 @@ class YamlConfigurationSourceTest {
     @Test
     fun `getAllKeys should return all configuration keys`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "name" to "Katalyst",
-                "version" to "1.0.0",
-                "port" to 8080
-            )
-        )
+        val provider = sourceFor(MINIMAL)
 
         // When
         val keys = provider.getAllKeys()
 
         // Then
-        assertEquals(3, keys.size)
-        assertTrue(keys.contains("name"))
-        assertTrue(keys.contains("version"))
-        assertTrue(keys.contains("port"))
+        assertEquals(
+            setOf(
+                "ktor",
+                "ktor.deployment",
+                "ktor.deployment.host",
+                "ktor.deployment.port",
+                "ktor.deployment.shutdownGracePeriod",
+                "ktor.deployment.shutdownTimeout",
+                "database",
+                "database.url",
+                "database.username",
+                "database.driver"
+            ),
+            keys
+        )
     }
 
     @Test
     fun `getAllKeys should return nested keys with dot notation`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf(
-                    "url" to "jdbc:postgresql://localhost",
-                    "username" to "admin",
-                    "pool" to mapOf(
-                        "size" to 10,
-                        "timeout" to 30000
-                    )
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // When
         val keys = provider.getAllKeys()
@@ -786,20 +593,20 @@ class YamlConfigurationSourceTest {
         assertTrue(keys.contains("database.url"))
         assertTrue(keys.contains("database.username"))
         assertTrue(keys.contains("database.pool"))
-        assertTrue(keys.contains("database.pool.size"))
+        assertTrue(keys.contains("database.pool.maxSize"))
         assertTrue(keys.contains("database.pool.timeout"))
     }
 
     @Test
-    fun `getAllKeys should return empty set for empty configuration`() {
-        // Given
-        val provider = TestYamlConfigurationSource(emptyMap())
+    fun `empty configuration is rejected instead of yielding an empty key set`() {
+        // Given - a file that parses to nothing at all
+        val exception = assertFailsWith<ConfigException> {
+            sourceFor("application-provider-empty.yaml")
+        }
 
-        // When
-        val keys = provider.getAllKeys()
-
-        // Then
-        assertTrue(keys.isEmpty())
+        // Then - the source fails fast rather than handing back an empty configuration
+        assertTrue(exception.message?.contains("Missing required configuration keys") == true)
+        assertTrue(exception.message?.contains("database.url") == true)
     }
 
     // ========== TYPE CONVERSION ERROR TESTS ==========
@@ -807,14 +614,121 @@ class YamlConfigurationSourceTest {
     @Test
     fun `get should throw ConfigException for type mismatch`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf("value" to "string")
-        )
+        val provider = sourceFor(FULL)
 
         // Then
         assertFailsWith<ConfigException> {
-            provider.get<Int>("value", 42)
+            provider.get<Int>("name", 42)
         }
+    }
+
+    // ========== REQUIRED KEY VALIDATION ==========
+
+    @Test
+    fun `construction fails fast when a required key is missing`() {
+        // Given - fixture deliberately omits database.url and the ktor deployment block
+        val exception = assertFailsWith<ConfigException> {
+            sourceFor("application-missing-required.yaml")
+        }
+
+        // Then
+        assertTrue(exception.message?.contains("ktor.deployment.host") == true)
+        assertTrue(exception.message?.contains("database.url") == true)
+    }
+
+    // ========== PRECEDENCE / SUBSTITUTION ==========
+
+    @Test
+    fun `precedence chain runs base file then profile file then placeholder default then typed read`() {
+        // Given - base declares server.port=8080 and server.timeoutMs=1000;
+        // the profile overrides server.port with "${KATALYST_TEST_PORT:9443}" and no env is set
+        val provider = sourceFor("application-precedence.yaml", profile = "precedenceprofile")
+
+        // Then - one assertion drives the whole chain: the profile wins over the base, the
+        // placeholder falls back to its inline default, and the typed getter parses the string.
+        assertEquals(9443, provider.getInt("server.port"))
+
+        // And the surrounding layers behave accordingly
+        assertEquals(1000, provider.getInt("server.timeoutMs")) // base-only key survives the merge
+        assertEquals("profile-user", provider.getString("database.username")) // profile wins
+        assertEquals("jdbc:h2:mem:precedence-base", provider.getString("database.url")) // base fallback
+    }
+
+    @Test
+    fun `environment variable wins over the inline placeholder default`() {
+        // Given
+        val provider = sourceFor(
+            "application-precedence.yaml",
+            profile = "precedenceprofile",
+            env = mapOf("KATALYST_TEST_PORT" to "7000", "KATALYST_TEST_DB_USER" to "env-user")
+        )
+
+        // Then
+        assertEquals(7000, provider.getInt("server.port"))
+        assertEquals("env-user", provider.getString("database.username"))
+    }
+
+    @Test
+    fun `environment variables never override a literal file value`() {
+        // Given - the KDoc used to claim env vars are a precedence layer above the files.
+        // They are not: they only fill ${} placeholders the YAML author wrote.
+        val provider = sourceFor(
+            "application-precedence.yaml",
+            env = mapOf(
+                "DATABASE_URL" to "jdbc:postgresql://takeover:5432/db",
+                "KATALYST_TEST_PORT" to "7000"
+            )
+        )
+
+        // Then - database.url is a literal in the file, so the environment is ignored entirely
+        assertEquals("jdbc:h2:mem:precedence-base", provider.getString("database.url"))
+        assertEquals(8080, provider.getInt("server.port"))
+    }
+
+    @Test
+    fun `a resolved value containing a literal placeholder is not substituted twice`() {
+        // Given - KATALYST_TEST_LITERAL_PLACEHOLDER is exported by the module's test task as
+        // the literal text `abc${d}ef`. Uses the default (System.getenv) substitutor on purpose:
+        // the defect only appears when the same environment feeds both substitution passes.
+        val provider = YamlConfigurationSource(
+            profileLoader = YamlProfileLoader(
+                profileEnvVar = PROFILE_ENV_VAR,
+                baseConfigFile = "application-literal-placeholder.yaml",
+                environmentReader = { null },
+                propertyReader = { null }
+            )
+        )
+
+        // Then - the password must survive verbatim. A second substitution pass would see the
+        // `${d}` it just produced, find no variable `d`, and silently yield "abcef".
+        assertEquals("abc\${d}ef", provider.getString("database.password"))
+    }
+
+    // ========== YAML 1.1 SCALAR COERCION TRAPS (pinned, not endorsed) ==========
+
+    @Test
+    fun `unquoted NO is read back as the boolean false not the string NO`() {
+        // Given - the fixture says `region: NO`
+        val provider = sourceFor(FULL)
+
+        // Then - YAML 1.1 resolves it to a Boolean before Katalyst ever sees it
+        assertEquals("false", provider.getString("coercion.region"))
+        assertFalse(provider.getBoolean("coercion.region", default = true))
+        // ...and a caller who asks for a String gets a hard type error rather than "NO"
+        assertFailsWith<ConfigException> { provider.get("coercion.region", "NO") }
+    }
+
+    @Test
+    fun `a numeric YAML key is reported by getAllKeys but is unreachable through navigatePath`() {
+        // Given - the fixture says `2024: rate-for-2024` (an unquoted, therefore Int, key)
+        val provider = sourceFor(FULL)
+
+        // Then - getAllKeys() stringifies it, so the key looks present...
+        assertTrue(provider.getAllKeys().contains("coercion.2024"))
+
+        // ...but navigatePath() indexes the map with a String, so the value silently vanishes.
+        assertFalse(provider.hasKey("coercion.2024"))
+        assertEquals("MISSING", provider.getString("coercion.2024", "MISSING"))
     }
 
     // ========== PRACTICAL USAGE SCENARIOS ==========
@@ -822,28 +736,11 @@ class YamlConfigurationSourceTest {
     @Test
     fun `typical database configuration scenario`() {
         // Given - Real-world database config
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "database" to mapOf(
-                    "url" to "jdbc:postgresql://localhost:5432/katalyst",
-                    "username" to "admin",
-                    "password" to "secret",
-                    "pool" to mapOf(
-                        "maxSize" to 20,
-                        "minIdle" to 5,
-                        "timeout" to 30000L
-                    ),
-                    "ssl" to mapOf(
-                        "enabled" to true,
-                        "cert" to "/path/to/cert.pem"
-                    )
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // When/Then
         assertEquals("jdbc:postgresql://localhost:5432/katalyst", provider.getString("database.url"))
-        assertEquals("admin", provider.getString("database.username"))
+        assertEquals("postgres", provider.getString("database.username"))
         assertEquals("secret", provider.getString("database.password"))
         assertEquals(20, provider.getInt("database.pool.maxSize"))
         assertEquals(5, provider.getInt("database.pool.minIdle"))
@@ -855,33 +752,7 @@ class YamlConfigurationSourceTest {
     @Test
     fun `typical application configuration scenario`() {
         // Given
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "app" to mapOf(
-                    "name" to "Katalyst",
-                    "version" to "1.0.0",
-                    "environment" to "production"
-                ),
-                "server" to mapOf(
-                    "host" to "0.0.0.0",
-                    "port" to 8080,
-                    "ssl" to mapOf(
-                        "enabled" to true,
-                        "port" to 8443
-                    )
-                ),
-                "logging" to mapOf(
-                    "level" to "INFO",
-                    "file" to "/var/log/katalyst.log",
-                    "console" to true
-                ),
-                "features" to mapOf(
-                    "analytics" to false,
-                    "caching" to true,
-                    "compression" to true
-                )
-            )
-        )
+        val provider = sourceFor(FULL)
 
         // Then - Application info
         assertEquals("Katalyst", provider.getString("app.name"))
@@ -907,14 +778,8 @@ class YamlConfigurationSourceTest {
 
     @Test
     fun `configuration with defaults for missing values`() {
-        // Given - Sparse configuration
-        val provider = TestYamlConfigurationSource(
-            mapOf(
-                "app" to mapOf(
-                    "name" to "Katalyst"
-                )
-            )
-        )
+        // Given - Sparse configuration (required keys plus app.name only)
+        val provider = sourceFor(SPARSE)
 
         // When/Then - Using defaults for missing keys
         assertEquals("Katalyst", provider.getString("app.name"))

@@ -1,0 +1,14 @@
+# Base document of the end-to-end precedence chain (see application-precedenceprofile.yaml).
+ktor:
+  deployment:
+    host: 0.0.0.0
+    port: 8080
+    shutdownGracePeriod: 1000
+    shutdownTimeout: 5000
+database:
+  url: jdbc:h2:mem:precedence-base
+  username: base-user
+  driver: org.h2.Driver
+server:
+  port: 8080
+  timeoutMs: 1000

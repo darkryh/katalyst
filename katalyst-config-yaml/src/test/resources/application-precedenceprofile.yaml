@@ -1,0 +1,7 @@
+# Profile document layered over application-precedence.yaml.
+# Both overrides are written as ${VAR:default} placeholders so the chain
+# base file -> profile file -> ${VAR:default} -> typed read is exercised end to end.
+database:
+  username: ${KATALYST_TEST_DB_USER:profile-user}
+server:
+  port: ${KATALYST_TEST_PORT:9443}

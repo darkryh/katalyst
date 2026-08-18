@@ -16,7 +16,13 @@ import org.slf4j.LoggerFactory
  * **Load Order (highest to lowest priority):**
  * 1. `application-{KATALYST_PROFILE}.yaml` (if KATALYST_PROFILE env var set)
  * 2. `application.yaml` (base configuration)
- * 3. Environment variables (override file values)
+ *
+ * There is no third layer. **Environment variables are not a precedence layer** and never
+ * override a value that the YAML file states literally. They are consulted only to fill
+ * `${VAR}` / `${VAR:default}` placeholders that the YAML author wrote. If `application.yaml`
+ * contains `url: jdbc:h2:mem:test`, setting `DATABASE_URL` in the environment changes nothing
+ * and no warning is emitted — the file value wins. To make a key overridable from the
+ * environment, the YAML must opt in by writing it as a placeholder.
  *
  * **Environment Variable Substitution:**
  * YAML values can reference environment variables using `${VAR_NAME:defaultValue}` syntax:
@@ -26,6 +32,10 @@ import org.slf4j.LoggerFactory
  *   username: ${DB_USERNAME:postgres}
  *   password: ${DB_PASSWORD:}
  * ```
+ * Resolution order per placeholder: environment variable → inline default → empty string.
+ * Substitution runs **exactly once**, after the base and profile documents have been merged.
+ * A resolved value that itself contains a literal `${...}` sequence (a password such as
+ * `abc${d}ef`, for example) is therefore preserved verbatim and never re-expanded.
  *
  * **Example Profiles:**
  * - Development: `application-dev.yaml` (less strict validation)
@@ -71,7 +81,11 @@ class YamlConfigurationSource(
     init {
         try {
             log.info("Loading YAML configuration...")
-            data = substitutor.substitute(profileLoader.loadConfiguration())
+            // Load the documents raw and substitute exactly once. Using loadConfiguration()
+            // here would substitute during parsing and then again below: a value resolved on
+            // the first pass that contains a literal `${...}` (e.g. a password `abc${d}ef`)
+            // would be re-expanded on the second pass into `abcef` — silent corruption.
+            data = substitutor.substitute(profileLoader.loadRawConfiguration())
             validateRequiredKeys()
             log.info("✓ Configuration loaded successfully (${data.size} keys)")
         } catch (e: Exception) {

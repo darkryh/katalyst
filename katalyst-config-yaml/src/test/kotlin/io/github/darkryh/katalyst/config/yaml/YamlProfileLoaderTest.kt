@@ -56,6 +56,29 @@ class YamlProfileLoaderTest {
     }
 
     @Test
+    fun `loadRawConfiguration leaves placeholders verbatim while loadConfiguration resolves them`() {
+        // Given - the fixture's password is `${KATALYST_TEST_LITERAL_PLACEHOLDER:}` and the test
+        // task exports that variable as the literal text `abc${d}ef`.
+        val loader = YamlProfileLoader(
+            profileEnvVar = "KTL_PROFILE_TEST",
+            baseConfigFile = "application-literal-placeholder.yaml",
+            environmentReader = { null },
+            propertyReader = { null }
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val raw = loader.loadRawConfiguration()["database"] as Map<String, Any>
+
+        @Suppress("UNCHECKED_CAST")
+        val substituted = loader.loadConfiguration()["database"] as Map<String, Any>
+
+        // Then - exactly one of the two resolves the placeholder. YamlConfigurationSource uses
+        // the raw variant so that it can own the single substitution pass itself.
+        assertEquals("\${KATALYST_TEST_LITERAL_PLACEHOLDER:}", raw["password"])
+        assertEquals("abc\${d}ef", substituted["password"])
+    }
+
+    @Test
     fun `profile overrides base values and falls back when missing`() {
         val loader = YamlProfileLoader(
             profileEnvVar = "KTL_PROFILE_TEST",

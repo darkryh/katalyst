@@ -507,6 +507,161 @@ class YamlParserTest {
         }
     }
 
+    // ========== ADVERSARIAL / HOSTILE DOCUMENT TESTS ==========
+
+    @Test
+    fun `parse should reject duplicate keys instead of silently dropping one`() {
+        // Given - the same key twice. SnakeYAML's own default (allowDuplicateKeys = true) keeps
+        // the LAST value and discards the first without a word, so a config file that shipped
+        // two `url:` lines would connect to whichever one happened to come second.
+        val yaml = """
+            database:
+              url: jdbc:postgresql://primary:5432/db
+              url: jdbc:postgresql://replica:5432/db
+        """.trimIndent()
+
+        // Then - Katalyst pins allowDuplicateKeys = false, so this fails loudly
+        val exception = assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+        assertTrue(exception.message?.contains("duplicate key") == true, exception.message)
+        assertTrue(exception.message?.contains("url") == true, exception.message)
+    }
+
+    @Test
+    fun `parse should reject duplicate keys at the document root`() {
+        // Given
+        val yaml = """
+            profile: dev
+            profile: prod
+        """.trimIndent()
+
+        // Then
+        assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+    }
+
+    @Test
+    fun `parse should reject an alias bomb instead of expanding it`() {
+        // Given - the classic "billion laughs": each level multiplies the previous one by ten.
+        // Fully expanded this is 10^6 leaf nodes; the alias cap must stop it at compose time.
+        val yaml = """
+            a: &a [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            b: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a, *a]
+            c: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b, *b]
+            d: &d [*c, *c, *c, *c, *c, *c, *c, *c, *c, *c]
+            e: &e [*d, *d, *d, *d, *d, *d, *d, *d, *d, *d]
+            f: &f [*e, *e, *e, *e, *e, *e, *e, *e, *e, *e]
+            g: [*f, *f, *f, *f, *f, *f, *f, *f, *f, *f]
+        """.trimIndent()
+
+        // Then - raises rather than hanging or exhausting the heap
+        val exception = assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+        assertTrue(exception.message?.contains("aliases") == true, exception.message)
+    }
+
+    @Test
+    fun `parse should allow alias reuse below the pinned limit`() {
+        // Given - 40 collection aliases, comfortably under the pinned cap of 50.
+        // This is the other half of the pin: the cap must not be so tight that ordinary
+        // anchor reuse in a real application.yaml stops working.
+        val yaml = """
+            a: &a [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            b: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a, *a]
+            c: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b, *b]
+            d: [*c, *c, *c, *c, *c, *c, *c, *c, *c, *c]
+        """.trimIndent()
+
+        // Then
+        val result = parseWithoutSystemEnv(yaml)
+        assertEquals(4, result.size)
+    }
+
+    @Test
+    fun `parse should reject a document nested past the pinned depth limit`() {
+        // Given - 200 levels of nesting, four times the pinned nestingDepthLimit of 50
+        val yaml = buildString {
+            repeat(200) { append("[") }
+            append("1")
+            repeat(200) { append("]") }
+        }.let { "deep: $it" }
+
+        // Then
+        assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+    }
+
+    @Test
+    fun `parse should throw ConfigException for tab indentation`() {
+        // Given - YAML forbids tabs as indentation; an editor that "helpfully" converts spaces
+        // must not produce a half-parsed configuration
+        val yaml = "database:\n\turl: jdbc:h2:mem:test\n"
+
+        // Then
+        val exception = assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+        assertTrue(exception.message?.contains("tab", ignoreCase = true) == true, exception.message)
+    }
+
+    @Test
+    fun `parse should throw ConfigException for a truncated document`() {
+        // Given - a file cut off mid-write (unterminated flow sequence)
+        val yaml = "servers: [alpha, beta,"
+
+        // Then
+        assertFailsWith<ConfigException> {
+            parseWithoutSystemEnv(yaml)
+        }
+    }
+
+    // ========== YAML 1.1 SCALAR COERCION (pinned, not endorsed) ==========
+
+    @Test
+    fun `parse resolves unquoted NO and ON as booleans not strings`() {
+        // Given - a region code and a switch that look like text to a human
+        val yaml = """
+            region: NO
+            mode: ON
+            quoted: "NO"
+        """.trimIndent()
+
+        // When
+        val result = parseWithoutSystemEnv(yaml)
+
+        // Then - YAML 1.1 turns the bare tokens into booleans; only quoting preserves the text
+        assertEquals(false, result["region"])
+        assertEquals(true, result["mode"])
+        assertEquals("NO", result["quoted"])
+    }
+
+    @Test
+    fun `parse produces non-String map keys for unquoted boolean and numeric keys`() {
+        // Given
+        val yaml = """
+            no: disabled
+            2024: annual-rate
+            "yes": kept-as-text
+        """.trimIndent()
+
+        // When
+        @Suppress("UNCHECKED_CAST")
+        val result = parseWithoutSystemEnv(yaml) as Map<Any?, Any?>
+
+        // Then - the keys are Boolean/Int, not String. YamlConfigurationSource.navigatePath()
+        // indexes the map with a String, so these values are unreachable through the dotted API.
+        assertTrue(result.containsKey(false), "expected a Boolean key, got ${result.keys}")
+        assertTrue(result.containsKey(2024), "expected an Int key, got ${result.keys}")
+        assertFalse(result.containsKey("no"))
+        assertFalse(result.containsKey("2024"))
+        // A quoted key stays text
+        assertEquals("kept-as-text", result["yes"])
+    }
+
     // ========== COMPLEX STRUCTURE TESTS ==========
 
     @Test
