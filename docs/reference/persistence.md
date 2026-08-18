@@ -80,6 +80,20 @@ interface CrudRepository<Id, Entity : Identifiable<Id>> where Id : Any, Id : Com
 }
 ```
 
+### What `save()` does with a non-null id
+
+`save()` inserts when `id` is null and updates otherwise. The interesting case is an update that
+matches **no row**, and the answer depends on who owns the primary key:
+
+- **`generatedId(...)`** — the database issued the id, so a non-null id can only have come from a
+  row that once existed. If it is gone, the row was deleted, and `save()` raises
+  `StaleEntityException` naming the table and id rather than re-inserting under that id. Silently
+  recreating it would undo someone else's delete. Recover by re-reading the entity, or by saving
+  with `id = null` if a new row is genuinely wanted.
+- **`assignedId(...)`** — the caller owns the id and every insert arrives with one, so there is
+  nothing suspicious about an update matching no row. `save()` inserts, giving create-or-update
+  semantics.
+
 Implement it and point `table` at your table. Repositories are discovered under scanned
 packages and injected by type. Add custom queries with the Exposed DSL and `map(row)` to
 convert results:

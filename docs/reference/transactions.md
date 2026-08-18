@@ -59,7 +59,7 @@ Passed to any helper to tune a single transaction.
 |-------|------|---------|---------|
 | `timeout` | `Duration` | 30 s | Maximum execution time; exceeding it cancels with a timeout. |
 | `retryPolicy` | `RetryPolicy` | `RetryPolicy()` | How failed transactions retry. |
-| `isolationLevel` | `TransactionIsolationLevel` | `READ_COMMITTED` | Concurrency isolation. |
+| `isolationLevel` | `TransactionIsolationLevel` | `READ_COMMITTED` | Concurrency isolation. Applied to the JDBC connection for the transaction. See [TransactionIsolationLevel](#transactionisolationlevel) for how the default interacts with the pool-wide setting. |
 | `expectedBusinessExceptions` | `Set<KClass<out Exception>>` | empty | Treated as expected failures for log-severity purposes only; does not change retry behavior. |
 | `phaseLoggingEnabled` | `Boolean` | `true` | Verbose phase/adapter logging for this transaction. |
 
@@ -91,6 +91,19 @@ The default policy retries with exponential backoff up to 3 retries.
 ## TransactionIsolationLevel
 
 `READ_UNCOMMITTED`, `READ_COMMITTED` (default), `REPEATABLE_READ`, `SERIALIZABLE`.
+
+A level other than the `READ_COMMITTED` default is applied to the JDBC connection that runs the
+transaction, overriding the pool-wide `database.transactionIsolation` from `application.yaml`
+(HikariCP default: `TRANSACTION_REPEATABLE_READ`).
+
+`READ_COMMITTED` is the default value of the field and there is no separate "unspecified"
+constant, so it means *inherit*: the connection keeps the pool-wide level. Configure
+`database.transactionIsolation` when you want `TRANSACTION_READ_COMMITTED` everywhere.
+
+Isolation is a property of the connection, so it can only be set when a transaction opens. A
+`transaction { … }` nested inside an already-open transaction joins it and keeps that
+transaction's level; if the nested call asked for a different level, the manager logs a warning
+instead of ignoring the request silently.
 
 ## DatabaseTransactionManager
 

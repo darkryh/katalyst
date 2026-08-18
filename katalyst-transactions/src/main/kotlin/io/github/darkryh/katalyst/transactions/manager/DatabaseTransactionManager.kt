@@ -5,6 +5,7 @@ import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapterRegistr
 import io.github.darkryh.katalyst.transactions.config.BackoffStrategy
 import io.github.darkryh.katalyst.transactions.config.RetryPolicy
 import io.github.darkryh.katalyst.transactions.config.TransactionExceptionSeverity
+import io.github.darkryh.katalyst.transactions.config.TransactionIsolationLevel
 import io.github.darkryh.katalyst.transactions.config.TransactionConfig
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.context.TransactionScopeContext
@@ -186,6 +187,7 @@ class DatabaseTransactionManager(
                     currentScope.transactionId
                 )
             } else {
+                warnIfIsolationCannotBeApplied(activeConfig, existingTransaction, workflowId, currentScope)
                 currentScope.depth += 1
                 logger.debug(
                     "Joining existing transaction context (workflowId={}, txScopeId={}, depth={})",
@@ -339,6 +341,52 @@ class DatabaseTransactionManager(
         }
     }
 
+    /**
+     * Translates [TransactionConfig.isolationLevel] into the JDBC constant Exposed expects, or
+     * `null` to keep whatever the connection already carries.
+     *
+     * [TransactionIsolationLevel.READ_COMMITTED] is the *default* value of the setting and there
+     * is no separate "unspecified" constant, so it is treated as "do not override": the level the
+     * connection arrives with - typically the pool-wide `transactionIsolation` configured on
+     * HikariCP by katalyst-persistence - stays in force. Any other value is an explicit request
+     * and is applied to the transaction, overriding the pool default.
+     *
+     * Making READ_COMMITTED an active override instead would silently *weaken* isolation for every
+     * existing application that never touched this setting (the persistence default pool level is
+     * `TRANSACTION_REPEATABLE_READ`), which is why the default is inheriting rather than forcing.
+     */
+    private fun TransactionConfig.jdbcIsolationOverride(): Int? = when (isolationLevel) {
+        TransactionIsolationLevel.READ_COMMITTED -> null
+        TransactionIsolationLevel.READ_UNCOMMITTED -> Connection.TRANSACTION_READ_UNCOMMITTED
+        TransactionIsolationLevel.REPEATABLE_READ -> Connection.TRANSACTION_REPEATABLE_READ
+        TransactionIsolationLevel.SERIALIZABLE -> Connection.TRANSACTION_SERIALIZABLE
+    }
+
+    /**
+     * A joined transaction reuses the connection (and therefore the isolation level) of the
+     * transaction it joins - JDBC cannot change the isolation level of an in-flight transaction.
+     * Rather than silently dropping the request, say so loudly.
+     */
+    private fun warnIfIsolationCannotBeApplied(
+        config: TransactionConfig,
+        existingTransaction: JdbcTransaction,
+        workflowId: String?,
+        currentScope: TransactionScopeContext
+    ) {
+        val requested = config.jdbcIsolationOverride() ?: return
+        if (requested == existingTransaction.transactionIsolation) return
+
+        logger.warn(
+            "Requested isolation level {} cannot be applied while joining an already-open transaction " +
+                "(workflowId={}, txScopeId={}); the joined transaction keeps JDBC isolation level {}. " +
+                "Start a separate root transaction if the level really must differ.",
+            config.isolationLevel,
+            workflowId ?: currentScope.workflowId ?: CurrentWorkflowContext.get() ?: "unknown",
+            currentScope.transactionId,
+            existingTransaction.transactionIsolation
+        )
+    }
+
     internal fun isTransactionJoinable(transaction: JdbcTransaction): Boolean {
         return try {
             val rawConnection = transaction.connection.connection
@@ -388,7 +436,10 @@ class DatabaseTransactionManager(
 
                 // DON'T pass dispatcher to preserve coroutine context inheritance
                 // The context elements must be inherited by the transaction block
-                suspendTransaction(database) {
+                suspendTransaction(
+                    db = database,
+                    transactionIsolation = config.jdbcIsolationOverride()
+                ) {
                     if (config.phaseLoggingEnabled) {
                         logger.debug(
                             "Transaction context established, executing block (workflowId={}, txScopeId={})",
