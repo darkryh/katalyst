@@ -40,8 +40,12 @@ object TelemetryFeature : KatalystFeature {
 
     private val logger = LoggerFactory.getLogger("TelemetryFeature")
 
-    /** Best-effort Katalyst version stamp (kept in sync with gradle.properties `katalystVersion`). */
-    private const val KATALYST_VERSION: String = "1.0.0-alpha02"
+    /**
+     * Katalyst version stamp, generated from the build's `katalystVersion` (see the module's
+     * `build.gradle.kts`). Previously a hand-maintained literal, which drifted nine releases behind
+     * and made every snapshot report a version the running framework was not.
+     */
+    private val KATALYST_VERSION: String = BuildInfo.KATALYST_VERSION
 
     private val capturers: List<SubsystemCapturer>
         get() = listOf(

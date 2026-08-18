@@ -11,7 +11,7 @@ declare for the main dependencies, so add the BOM to the test configuration too 
 starter's version:
 
 ```kotlin
-testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-alpha10"))
+testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-beta01"))
 testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 ```
 

@@ -32,7 +32,7 @@ scheduled jobs under `com.example` are found and wired automatically — no anno
 no module files.
 
 !!! note "Status"
-    Current release line: **`1.0.0-alpha`**. Koin is the only supported dependency-injection
+    Current release line: **`1.0.0-beta`**. Koin is the only supported dependency-injection
     adapter in this alpha, selected explicitly with `beanEngine(KoinBeanEngine)`. The public
     DSL is kept adapter-neutral so a container SPI can land later without changing how your
     code is written.
