@@ -14,10 +14,26 @@ internal class ReadyHookRunner(private val container: KatalystContainer) {
 
     suspend fun invokeAll() {
         val lifecycleStart = System.currentTimeMillis()
+        val registryHooks = ReadyHookRegistry.getAll()
+        // A container-side failure here reduces the hook set to whatever the registry happens to
+        // hold. That is exactly how #31 killed every scheduled job: the scheduler reaches this
+        // runner through the container, so a swallowed failure takes the whole hook set with it and
+        // the application starts looking healthy. WARN, always - there is no routine reason for
+        // enumerating beans of a type to fail.
         val containerHooks = runCatching {
             container.getAll<ReadyHook>()
+        }.onFailure { error ->
+            logger.warn(
+                "Could not enumerate {} beans from the container; only the {} hook(s) already held " +
+                    "by ReadyHookRegistry will run and every container-only ready hook is skipped. " +
+                    "Reason: {}: {}",
+                ReadyHook::class.simpleName,
+                registryHooks.size,
+                error::class.simpleName,
+                error.message,
+                error,
+            )
         }.getOrElse { emptyList() }
-        val registryHooks = ReadyHookRegistry.getAll()
         // Dedup by identity, not by runtime class: the same hook instance can be
         // discovered through both the registry and the container, but two distinct
         // instances that happen to share a class are both legitimate and must both run.

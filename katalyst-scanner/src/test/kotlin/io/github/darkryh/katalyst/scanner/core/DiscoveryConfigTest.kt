@@ -1,5 +1,12 @@
 package io.github.darkryh.katalyst.scanner.core
 
+import io.github.darkryh.katalyst.scanner.pkgfilter.PackageFilterMarker
+import io.github.darkryh.katalyst.scanner.pkgfilter.excluded.ExcludedService
+import io.github.darkryh.katalyst.scanner.pkgfilter.excluded.deeper.DeeplyExcludedService
+import io.github.darkryh.katalyst.scanner.pkgfilter.excludedish.PrefixLookalikeService
+import io.github.darkryh.katalyst.scanner.pkgfilter.included.IncludedRootService
+import io.github.darkryh.katalyst.scanner.pkgfilter.included.nested.IncludedNestedService
+import io.github.darkryh.katalyst.scanner.scanner.ReflectionsTypeScanner
 import kotlin.test.*
 
 /**
@@ -11,11 +18,36 @@ import kotlin.test.*
  * - Callbacks (onDiscover, onError)
  * - Package filtering
  * - Data class behavior
+ *
+ * **Package filtering is asserted through real traversal.** `includeSubPackages` and
+ * `excludePackages` used to be verified by writing a value and reading it back, which passed
+ * happily while the scanner ignored both settings. Every test touching those two fields now runs
+ * an actual [ReflectionsTypeScanner] scan over the `io.github.darkryh.katalyst.scanner.pkgfilter`
+ * fixture tree and asserts on the discovered types.
  */
 class DiscoveryConfigTest {
 
     interface TestService
     interface TestRepository : TestService
+
+    private companion object {
+        const val ROOT = "io.github.darkryh.katalyst.scanner.pkgfilter"
+        const val INCLUDED = "$ROOT.included"
+        const val EXCLUDED = "$ROOT.excluded"
+        const val EXCLUDEDISH = "$ROOT.excludedish"
+
+        val ALL_FIXTURES: Set<Class<out PackageFilterMarker>> = setOf(
+            IncludedRootService::class.java,
+            IncludedNestedService::class.java,
+            ExcludedService::class.java,
+            DeeplyExcludedService::class.java,
+            PrefixLookalikeService::class.java
+        )
+    }
+
+    /** Runs a real classpath traversal for [config] and returns what survived filtering. */
+    private fun discover(config: DiscoveryConfig<PackageFilterMarker>): Set<Class<out PackageFilterMarker>> =
+        ReflectionsTypeScanner(PackageFilterMarker::class.java, config).discover()
 
     // ========== CONSTRUCTION TESTS ==========
 
@@ -33,14 +65,22 @@ class DiscoveryConfigTest {
 
     @Test
     fun `DiscoveryConfig should include sub-packages by default`() {
-        val config = DiscoveryConfig<TestService>()
+        val config = DiscoveryConfig<PackageFilterMarker>(scanPackages = listOf(INCLUDED))
+
         assertTrue(config.includeSubPackages)
+        assertEquals(
+            setOf(IncludedRootService::class.java, IncludedNestedService::class.java),
+            discover(config),
+            "The default includeSubPackages=true must traverse into sub-packages"
+        )
     }
 
     @Test
     fun `DiscoveryConfig should have empty exclude packages by default`() {
-        val config = DiscoveryConfig<TestService>()
+        val config = DiscoveryConfig<PackageFilterMarker>(scanPackages = listOf(ROOT))
+
         assertTrue(config.excludePackages.isEmpty())
+        assertEquals(ALL_FIXTURES, discover(config), "An empty excludePackages must drop nothing")
     }
 
     @Test
@@ -77,17 +117,32 @@ class DiscoveryConfigTest {
 
     @Test
     fun `DiscoveryConfig should support disabling sub-packages`() {
-        val config = DiscoveryConfig<TestService>(includeSubPackages = false)
+        val config = DiscoveryConfig<PackageFilterMarker>(
+            scanPackages = listOf(INCLUDED),
+            includeSubPackages = false
+        )
+
         assertFalse(config.includeSubPackages)
+        assertEquals(
+            setOf(IncludedRootService::class.java),
+            discover(config),
+            "includeSubPackages=false must stop at the named package"
+        )
     }
 
     @Test
     fun `DiscoveryConfig should support exclude packages`() {
-        val config = DiscoveryConfig<TestService>(
-            excludePackages = listOf("com.example.test", "com.example.mock")
+        val config = DiscoveryConfig<PackageFilterMarker>(
+            scanPackages = listOf(ROOT),
+            excludePackages = listOf(EXCLUDED, EXCLUDEDISH)
         )
+
         assertEquals(2, config.excludePackages.size)
-        assertTrue(config.excludePackages.contains("com.example.test"))
+        assertEquals(
+            setOf(IncludedRootService::class.java, IncludedNestedService::class.java),
+            discover(config),
+            "Both excluded packages (and everything below them) must be gone"
+        )
     }
 
     // ========== BUILDER PATTERN TESTS ==========
@@ -135,22 +190,32 @@ class DiscoveryConfigTest {
 
     @Test
     fun `Builder should set includeSubPackages`() {
-        val config = DiscoveryConfig.builder<TestService>()
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(INCLUDED)
             .includeSubPackages(false)
             .build()
 
         assertFalse(config.includeSubPackages)
+        assertEquals(
+            setOf(IncludedRootService::class.java),
+            discover(config),
+            "A builder-configured includeSubPackages=false must reach the traversal"
+        )
     }
 
     @Test
     fun `Builder should set exclude packages`() {
-        val config = DiscoveryConfig.builder<TestService>()
-            .excludePackages("com.test", "com.mock")
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(ROOT)
+            .excludePackages(EXCLUDED, EXCLUDEDISH)
             .build()
 
         assertEquals(2, config.excludePackages.size)
-        assertTrue(config.excludePackages.contains("com.test"))
-        assertTrue(config.excludePackages.contains("com.mock"))
+        assertEquals(
+            setOf(IncludedRootService::class.java, IncludedNestedService::class.java),
+            discover(config),
+            "Builder-configured excludePackages must reach the traversal"
+        )
     }
 
     @Test
@@ -178,14 +243,14 @@ class DiscoveryConfigTest {
 
     @Test
     fun `Builder should chain multiple configurations`() {
-        var discoveredClasses = mutableListOf<Class<*>>()
-        var errors = mutableListOf<Exception>()
+        val discoveredClasses = mutableListOf<Class<*>>()
+        val errors = mutableListOf<Exception>()
 
-        val config = DiscoveryConfig.builder<TestService>()
-            .scanPackages("com.example", "com.test")
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(INCLUDED, EXCLUDED)
             .predicate(DiscoveryPredicate { true })
             .includeSubPackages(false)
-            .excludePackages("com.example.test")
+            .excludePackages(EXCLUDED)
             .onDiscover { discoveredClasses.add(it) }
             .onError { errors.add(it) }
             .emptyResultSeverity(EmptyDiscoverySeverity.INFO)
@@ -197,9 +262,12 @@ class DiscoveryConfigTest {
         assertEquals(1, config.excludePackages.size)
         assertEquals(EmptyDiscoverySeverity.INFO, config.emptyResultSeverity)
 
-        config.onDiscover(TestService::class.java)
+        // Every chained setting must survive into a real traversal: sub-packages are cut off and
+        // the excluded package is dropped, leaving only the type declared directly in `included`.
+        assertEquals(setOf(IncludedRootService::class.java), discover(config))
+        assertEquals(listOf<Class<*>>(IncludedRootService::class.java), discoveredClasses)
+
         config.onError(RuntimeException())
-        assertEquals(1, discoveredClasses.size)
         assertEquals(1, errors.size)
     }
 
@@ -242,35 +310,46 @@ class DiscoveryConfigTest {
 
     @Test
     fun `DiscoveryConfig should support copy`() {
-        val original = DiscoveryConfig<TestService>(
-            scanPackages = listOf("com.example"),
-            includeSubPackages = true
+        val original = DiscoveryConfig<PackageFilterMarker>(
+            scanPackages = listOf(ROOT),
+            excludePackages = listOf(EXCLUDED, EXCLUDEDISH)
         )
 
-        val copied = original.copy(
-            scanPackages = listOf("com.test")
-        )
+        val copied = original.copy(scanPackages = listOf(INCLUDED))
 
-        assertEquals(listOf("com.test"), copied.scanPackages)
-        assertTrue(copied.includeSubPackages)
-        assertEquals(listOf("com.example"), original.scanPackages)
+        assertEquals(listOf(INCLUDED), copied.scanPackages)
+        assertEquals(listOf(ROOT), original.scanPackages)
+
+        // The copy keeps the filters, and they still take effect against the new scan root.
+        assertEquals(
+            setOf(IncludedRootService::class.java, IncludedNestedService::class.java),
+            discover(copied)
+        )
+        assertEquals(
+            setOf(IncludedRootService::class.java, IncludedNestedService::class.java),
+            discover(original)
+        )
     }
 
     @Test
     fun `DiscoveryConfig should support equality`() {
-        val config1 = DiscoveryConfig<TestService>(
-            scanPackages = listOf("com.example"),
-            includeSubPackages = true
+        val config1 = DiscoveryConfig<PackageFilterMarker>(
+            scanPackages = listOf(INCLUDED),
+            includeSubPackages = false
         )
 
-        val config2 = DiscoveryConfig<TestService>(
-            scanPackages = listOf("com.example"),
-            includeSubPackages = true
+        val config2 = DiscoveryConfig<PackageFilterMarker>(
+            scanPackages = listOf(INCLUDED),
+            includeSubPackages = false
         )
 
         // Note: Lambdas won't be equal, so we only test the data properties match
         assertEquals(config1.scanPackages, config2.scanPackages)
         assertEquals(config1.includeSubPackages, config2.includeSubPackages)
+
+        // Equal filter settings must also produce identical discovery results.
+        assertEquals(discover(config1), discover(config2))
+        assertEquals(setOf(IncludedRootService::class.java), discover(config1))
     }
 
     // ========== PRACTICAL USAGE SCENARIOS ==========
@@ -279,20 +358,30 @@ class DiscoveryConfigTest {
     fun `typical service discovery configuration`() {
         val discovered = mutableListOf<String>()
 
-        val config = DiscoveryConfig.builder<TestService>()
-            .scanPackages("com.example.services")
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(ROOT)
             .predicate(DiscoveryPredicate { it.simpleName.endsWith("Service") })
             .includeSubPackages(true)
-            .excludePackages("com.example.services.test")
+            .excludePackages(EXCLUDED)
             .onDiscover { discovered.add(it.simpleName) }
             .build()
 
-        config.onDiscover(TestService::class.java)
+        val result = discover(config)
 
-        assertEquals(listOf("com.example.services"), config.scanPackages)
+        assertEquals(listOf(ROOT), config.scanPackages)
         assertTrue(config.includeSubPackages)
-        assertEquals(listOf("com.example.services.test"), config.excludePackages)
-        assertEquals(1, discovered.size)
+        assertEquals(listOf(EXCLUDED), config.excludePackages)
+        assertEquals(
+            setOf(
+                IncludedRootService::class.java,
+                IncludedNestedService::class.java,
+                PrefixLookalikeService::class.java
+            ),
+            result,
+            "Sub-packages are kept, the excluded package (and everything below it) is not"
+        )
+        assertEquals(3, discovered.size)
+        assertFalse(discovered.contains("ExcludedService"))
     }
 
     @Test
@@ -315,36 +404,37 @@ class DiscoveryConfigTest {
 
     @Test
     fun `multi-package scanning configuration`() {
-        val config = DiscoveryConfig.builder<TestService>()
-            .scanPackages(
-                "com.example.auth",
-                "com.example.payment",
-                "com.example.notification"
-            )
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(INCLUDED, EXCLUDED, EXCLUDEDISH)
             .includeSubPackages(true)
             .build()
 
         assertEquals(3, config.scanPackages.size)
-        assertTrue(config.scanPackages.contains("com.example.auth"))
-        assertTrue(config.scanPackages.contains("com.example.payment"))
-        assertTrue(config.scanPackages.contains("com.example.notification"))
+        assertTrue(config.scanPackages.contains(INCLUDED))
+        assertTrue(config.scanPackages.contains(EXCLUDED))
+        assertTrue(config.scanPackages.contains(EXCLUDEDISH))
+
+        // All three roots plus their sub-packages are traversed.
+        assertEquals(ALL_FIXTURES, discover(config))
     }
 
     @Test
     fun `exclude test and mock packages`() {
-        val config = DiscoveryConfig.builder<TestService>()
-            .scanPackages("com.example")
+        val config = DiscoveryConfig.builder<PackageFilterMarker>()
+            .scanPackages(ROOT)
             .excludePackages(
-                "com.example.test",
-                "com.example.mock",
-                "com.example.fixtures"
+                EXCLUDED,
+                EXCLUDEDISH,
+                "$INCLUDED.nested"
             )
             .build()
 
         assertEquals(3, config.excludePackages.size)
-        assertTrue(config.excludePackages.contains("com.example.test"))
-        assertTrue(config.excludePackages.contains("com.example.mock"))
-        assertTrue(config.excludePackages.contains("com.example.fixtures"))
+        assertEquals(
+            setOf(IncludedRootService::class.java),
+            discover(config),
+            "Each excluded package must be honoured, including a nested one"
+        )
     }
 
     @Test

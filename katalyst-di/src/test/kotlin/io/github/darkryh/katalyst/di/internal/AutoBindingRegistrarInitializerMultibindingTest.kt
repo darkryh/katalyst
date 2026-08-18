@@ -19,6 +19,9 @@ class AutoBindingRegistrarInitializerMultibindingTest {
     @BeforeTest
     fun setUp() {
         engine = TestBeanEngine()
+        // The engine must be started before beans go into it, exactly as production bootstraps
+        // the container before wiring: KatalystBeanEngineContract pins that for every engine.
+        engine.start(emptyList(), allowOverrides = true)
         AutoBindingRegistrar.resetSecondaryTypeTracking()
         RegistryManager.resetAll()
     }

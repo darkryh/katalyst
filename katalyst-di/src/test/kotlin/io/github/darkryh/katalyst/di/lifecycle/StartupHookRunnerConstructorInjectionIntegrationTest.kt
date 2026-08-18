@@ -23,6 +23,9 @@ class StartupHookRunnerConstructorInjectionIntegrationTest {
         val txManager = DatabaseTransactionManager(databaseFactory.database)
 
         engine = TestBeanEngine()
+        // The engine must be started before beans go into it, exactly as production bootstraps
+        // the container before wiring: KatalystBeanEngineContract pins that for every engine.
+        engine.start(emptyList(), allowOverrides = true)
         engine.registerInstance(probe, InitializerProbe::class)
         engine.registerInstance(txManager, DatabaseTransactionManager::class)
         engine.registerInstance(ProbeInitializer(probe), StartupHook::class)

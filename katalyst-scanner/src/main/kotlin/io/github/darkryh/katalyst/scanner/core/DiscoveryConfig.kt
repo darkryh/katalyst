@@ -32,9 +32,15 @@ enum class EmptyDiscoverySeverity {
  * @param T The base type or marker interface being discovered
  * @param scanPackages Packages to scan. Empty list = scan entire classpath
  * @param predicate Optional predicate for filtering discovered classes
- * @param includeSubPackages If true, also scan sub-packages of specified packages
- * @param excludePackages Packages to exclude from scanning
- * @param onDiscover Callback invoked when a type is discovered
+ * @param includeSubPackages If `true` (default) sub-packages of [scanPackages] are discovered too.
+ *   If `false`, only types declared *directly* in one of [scanPackages] are returned. The flag is a
+ *   no-op when [scanPackages] is empty (a whole-classpath scan has no package to anchor to).
+ * @param excludePackages Packages whose types are dropped from the discovery result. A type is
+ *   dropped when its package *is* an excluded package or is nested under one; matching happens on
+ *   package boundaries, so excluding `com.acme.internal` does not drop `com.acme.internalapi`.
+ *   Blank entries are ignored.
+ * @param onDiscover Callback invoked when a type is discovered. Types removed by
+ *   [excludePackages]/[includeSubPackages] never reach this callback.
  * @param onError Callback invoked when an error occurs during discovery
  * @param emptyResultSeverity Log severity when no implementations are discovered
  */

@@ -25,6 +25,7 @@ import io.github.darkryh.katalyst.ktor.KtorModule
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.repositories.CrudRepository
 import org.slf4j.LoggerFactory
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 
 private val logger = LoggerFactory.getLogger("ComponentRegistrationOrchestrator")
@@ -619,6 +620,14 @@ class ComponentRegistrationOrchestrator(
         ).apply { isAccessible = true }
 
         @Suppress("UNCHECKED_CAST")
-        return bindAllMethod.invoke(binderInstance, types, provider) as Map<KClass<*>, Any>
+        return try {
+            bindAllMethod.invoke(binderInstance, types, provider) as Map<KClass<*>, Any>
+        } catch (error: InvocationTargetException) {
+            // `Method.invoke` wraps whatever ConfigBinder.bindAll threw. The wrapper's own message
+            // is null, so without unwrapping the caller's `catch (e: KatalystDIException)` branch
+            // is missed and the generic handler logs "Error during configuration binding: null"
+            // while the real reason - the config class that rejected a value - never appears.
+            throw error.targetException ?: error
+        }
     }
 }

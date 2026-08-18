@@ -176,9 +176,15 @@ class AutoBindingRegistrar(
 
             val value = when {
                 classifier == DatabaseTransactionManager::class ->
-                    container.getFromContainerOrNull(DatabaseTransactionManager::class)
+                    container.getFromContainerOrNull(
+                        kClass = DatabaseTransactionManager::class,
+                        ownerDescription = "property '${property.name}' of ${instance::class.qualifiedName}",
+                    )
                 schedulerServiceKClass != null && classifier == schedulerServiceKClass ->
-                    container.getFromContainerOrNull(schedulerServiceKClass)
+                    container.getFromContainerOrNull(
+                        kClass = schedulerServiceKClass,
+                        ownerDescription = "property '${property.name}' of ${instance::class.qualifiedName}",
+                    )
                 else -> null
             } ?: return@forEach
 
@@ -394,17 +400,36 @@ class AutoBindingRegistrar(
                     if (!markerJava.isAssignableFrom(loadedClass)) return@forEach
 
                     val kClass = loadedClass.kotlin
-                    val instance = loadedClass.instantiateIfPossible() ?: return@forEach
+                    if (Modifier.isAbstract(loadedClass.modifiers) || loadedClass.isInterface) {
+                        // A shared abstract base for several tables is a normal way to declare
+                        // them; only concrete tables are ever registered. Routine -> DEBUG.
+                        logger.debug(
+                            "Skipping abstract table type {}: only concrete tables are registered",
+                            candidate.name
+                        )
+                        return@forEach
+                    }
+
+                    val instance = loadedClass.instantiateTable()
 
                     // Validate that the table's generic Entity type implements Identifiable
                     validateTableEntityIsIdentifiable(kClass, instance)
 
                     results[kClass] = instance
                 }.onFailure { error ->
-                    logger.debug(
-                        "Could not instantiate table {}: {}",
+                    // Previously the constructor failure was swallowed by getOrNull() inside
+                    // instantiateIfPossible() and the `?: return@forEach` skipped the table
+                    // before this handler could ever run: a Table whose constructor throws was
+                    // dropped with no output at any level, and its schema was then never
+                    // created. A discovered concrete table that cannot be built is always worth
+                    // a warning - the application will run against a missing table.
+                    logger.warn(
+                        "Table {} was discovered but could not be instantiated; it will not be " +
+                            "registered and its schema will never be created. Reason: {}: {}",
                         candidate.name,
-                        error.message
+                        error::class.simpleName,
+                        error.message,
+                        error
                     )
                 }
             }
@@ -469,18 +494,22 @@ class AutoBindingRegistrar(
      * - Objects: accesses the static INSTANCE field
      * - Classes: calls the no-arg constructor
      *
-     * @return Instance of the class, or null if instantiation fails
+     * Failures are **propagated**, never swallowed: the caller reports them. Returning null here
+     * is what made a table with a throwing constructor disappear without a single log line.
+     *
+     * @return Instance of the class
+     * @throws Throwable whatever the object initialiser or the no-arg constructor raised
      */
-    private fun Class<*>.instantiateIfPossible(): Any? =
+    private fun Class<*>.instantiateTable(): Any =
         when {
-            isKotlinObject() -> {
-                runCatching {
-                    getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
-                }.getOrNull()
-            }
-            else -> runCatching {
+            isKotlinObject() -> getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
+            else -> try {
                 getDeclaredConstructor().apply { isAccessible = true }.newInstance()
-            }.getOrNull()
+            } catch (error: java.lang.reflect.InvocationTargetException) {
+                // Report what the constructor actually threw, not the reflection wrapper - an
+                // InvocationTargetException carries a null message.
+                throw error.targetException ?: error
+            }
         }
 
     /**

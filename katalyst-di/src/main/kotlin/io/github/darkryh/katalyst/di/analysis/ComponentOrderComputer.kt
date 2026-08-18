@@ -28,26 +28,41 @@ class ComponentOrderComputer(private val graph: DependencyGraph) {
      * - A component appears before any component that depends on it
      * - The order is deterministic
      *
+     * The result is checked with [validateOrder] before it is returned. That post-condition used
+     * to have no caller anywhere in the framework: a sort that silently dropped a component, or
+     * placed a dependency after its dependent, would have been handed straight to the registrar and
+     * surfaced later as an unrelated injection failure. Handing back a corrupted order is worse
+     * than failing here, so a violation aborts.
+     *
      * @return List of component types in safe instantiation order
-     * @throws IllegalStateException if the graph contains cycles
+     * @throws IllegalStateException if the graph contains cycles, or if the computed order does
+     *   not satisfy [validateOrder]
      */
     fun computeOrder(): List<KClass<*>> {
         logger.info("Computing component instantiation order")
 
-        try {
+        val order = try {
             // Use the graph's built-in topological sort
-            val order = graph.topologicalSort()
-
-            logger.info("Computed order for {} components:", order.size)
-            order.forEachIndexed { index, type ->
-                logger.debug("  [{}] {}", index + 1, type.simpleName)
-            }
-
-            return order
+            graph.topologicalSort()
         } catch (e: IllegalStateException) {
             logger.error("Cannot compute order: graph contains cycles")
             throw e
         }
+
+        logger.info("Computed order for {} components:", order.size)
+        order.forEachIndexed { index, type ->
+            logger.debug("  [{}] {}", index + 1, type.simpleName)
+        }
+
+        if (!validateOrder(order)) {
+            throw IllegalStateException(
+                "Computed instantiation order failed its post-condition check: it does not contain " +
+                    "every ordered component exactly once with each dependency before its dependent. " +
+                    "See the preceding ComponentOrderComputer error for the specific violation."
+            )
+        }
+
+        return order
     }
 
     /**

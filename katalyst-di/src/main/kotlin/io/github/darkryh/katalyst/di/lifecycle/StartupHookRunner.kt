@@ -49,11 +49,25 @@ internal class StartupHookRunner(private val container: KatalystContainer) {
                 StartupValidator(container.get())
             )
 
-            // Discover feature-provided hooks from the container.
+            val registryHooks = StartupHookRegistry.getAll()
+            // Discover feature-provided hooks from the container. A container-side failure here
+            // silently shrinks the hook set to whatever the registry holds - the same swallow that
+            // let #31 drop every container-registered lifecycle hook without a line of output.
+            // WARN, always: enumerating beans of a type has no routine failure mode.
             val containerHooks = runCatching {
                 container.getAll<StartupHook>()
+            }.onFailure { error ->
+                logger.warn(
+                    "Could not enumerate {} beans from the container; only the {} hook(s) already " +
+                        "held by StartupHookRegistry will run and every container-only startup hook " +
+                        "is skipped. Reason: {}: {}",
+                    StartupHook::class.simpleName,
+                    registryHooks.size,
+                    error::class.simpleName,
+                    error.message,
+                    error,
+                )
             }.getOrElse { emptyList() }
-            val registryHooks = StartupHookRegistry.getAll()
             // Dedup by identity, not by runtime class: the same hook instance can be
             // discovered through both the registry and the container, but two distinct
             // instances that happen to share a class are both legitimate and must both run.

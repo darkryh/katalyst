@@ -141,11 +141,26 @@ class ReflectionsTypeScanner<T>(
             val reflections = reflectionsFor(config.scanPackages)
 
             // Get all subtypes of the base type
-            var implementations = reflections.getSubTypesOf(baseType)
+            val candidates = reflections.getSubTypesOf(baseType)
                 .filterNot { clazz ->
                     clazz.isAnonymousClass || clazz.isLocalClass || clazz.isSynthetic || clazz.canonicalName == null
                 }
                 .toSet()
+
+            // Honour the configured package filters (excludePackages / includeSubPackages).
+            // These are applied to the traversal result rather than to the Reflections index so
+            // that the (expensive) index stays shareable across scanners with different filters.
+            var implementations = candidates.filter { clazz -> matchesPackageFilters(clazz) }.toSet()
+
+            val filteredOut = candidates.size - implementations.size
+            if (filteredOut > 0) {
+                logger.debug(
+                    "Package filters removed {} candidate(s) (excludePackages={}, includeSubPackages={})",
+                    filteredOut,
+                    config.excludePackages,
+                    config.includeSubPackages
+                )
+            }
 
             logger.info(
                 "✓ Discovered {} {} implementation(s) in {} ms",
@@ -187,6 +202,38 @@ class ReflectionsTypeScanner<T>(
             emptySet()
         }
     }
+
+    /**
+     * Applies the configured package filters to a discovered type.
+     *
+     * - [DiscoveryConfig.excludePackages]: a type is dropped when its package *is* an excluded
+     *   package or is nested under one. Matching is done on package boundaries, so excluding
+     *   `com.acme.internal` does not drop `com.acme.internalapi`.
+     * - [DiscoveryConfig.includeSubPackages]: when `false` (and at least one scan package is
+     *   configured) only types declared *directly* in one of [DiscoveryConfig.scanPackages]
+     *   survive; descendants are dropped. With no configured scan packages the whole classpath
+     *   is scanned and there is no package to anchor the restriction to, so the flag is a no-op.
+     *
+     * Blank entries are ignored so a stray empty string in YAML/DSL config cannot silently
+     * discard every discovered type.
+     */
+    private fun matchesPackageFilters(clazz: Class<*>): Boolean {
+        val typePackage = clazz.packageName
+
+        if (!config.includeSubPackages) {
+            val roots = config.scanPackages.map { it.trim() }.filter { it.isNotEmpty() }
+            if (roots.isNotEmpty() && roots.none { it == typePackage }) {
+                return false
+            }
+        }
+
+        val excluded = config.excludePackages.map { it.trim() }.filter { it.isNotEmpty() }
+        return excluded.none { isSamePackageOrNested(typePackage, it) }
+    }
+
+    /** True when [typePackage] is [candidate] itself or one of its sub-packages. */
+    private fun isSamePackageOrNested(typePackage: String, candidate: String): Boolean =
+        typePackage == candidate || typePackage.startsWith("$candidate.")
 
     override fun discoverWithMetadata(): Map<Class<out T>, DiscoveryMetadata> {
         val discovered = discover()

@@ -46,7 +46,10 @@ dependencies {
     testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.junit.platform.launcher)
     testImplementation(testFixtures(projects.katalystTestingCore))
-    testRuntimeOnly(projects.katalystKoinBean)
+    // Compile-scope, not runtime-only: the shutdown close-order contract
+    // (BeanEngineCloseContractTest) must run against the real KoinBeanEngine as well as the
+    // in-module TestBeanEngine, so it needs the type at compile time.
+    testImplementation(projects.katalystKoinBean)
     testImplementation(libs.logback)
 }
 
