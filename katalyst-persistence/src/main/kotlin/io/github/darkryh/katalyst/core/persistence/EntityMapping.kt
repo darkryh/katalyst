@@ -26,6 +26,19 @@ interface EntityMapping<Id, Entity : Identifiable<Id>> where Id : Any, Id : Comp
 
 internal interface WritableEntityMapping<Id, Entity : Identifiable<Id>> : EntityMapping<Id, Entity>
     where Id : Any, Id : Comparable<Id> {
+    /**
+     * `true` when the mapping declares [EntityMappingBuilder.assignedId], i.e. the
+     * application - not the database - owns primary keys.
+     *
+     * This decides what a non-null [Identifiable.id] means to
+     * [io.github.darkryh.katalyst.repositories.CrudRepository.save]. For an assigned id
+     * it carries no claim that the row already exists, so an update that matches nothing
+     * must fall back to an insert. For a database-generated id it can only have come from
+     * a row the database already created, so an update that matches nothing means the row
+     * was deleted and re-inserting it would silently undo that delete.
+     */
+    val idIsCallerAssigned: Boolean
+
     fun writeInsert(
         statement: UpdateBuilder<*>,
         entity: Entity
@@ -79,20 +92,32 @@ class EntityMappingBuilder<Id, Entity : Identifiable<Id>> where Id : Any, Id : C
     private val bindings = mutableListOf<WriteBinding<Entity>>()
     private var constructor: (MappedRow.() -> Entity)? = null
     private var idConfigured: Boolean = false
+    private var idIsCallerAssigned: Boolean = false
 
+    /**
+     * Declares a primary key produced by the database. `save` treats a non-null id as
+     * proof that the row already exists.
+     */
     fun generatedId(
         column: Column<EntityID<Id>>,
         property: KProperty1<Entity, Id?>
     ) {
         idConfigured = true
+        idIsCallerAssigned = false
         bindings += GeneratedIdBinding(column, property)
     }
 
+    /**
+     * Declares a primary key supplied by the application. `save` keeps create-or-update
+     * semantics for such tables, because a non-null id says nothing about whether the row
+     * has been written yet.
+     */
     fun assignedId(
         column: Column<EntityID<Id>>,
         property: KProperty1<Entity, Id>
     ) {
         idConfigured = true
+        idIsCallerAssigned = true
         bindings += AssignedIdBinding(column, property)
     }
 
@@ -171,7 +196,8 @@ class EntityMappingBuilder<Id, Entity : Identifiable<Id>> where Id : Any, Id : C
         return DefaultEntityMapping(
             constructor = constructor,
             bindings = bindings.toList(),
-            idConfigured = idConfigured
+            idConfigured = idConfigured,
+            idIsCallerAssigned = idIsCallerAssigned
         )
     }
 }
@@ -179,7 +205,8 @@ class EntityMappingBuilder<Id, Entity : Identifiable<Id>> where Id : Any, Id : C
 private class DefaultEntityMapping<Id, Entity : Identifiable<Id>>(
     private val constructor: MappedRow.() -> Entity,
     private val bindings: List<WriteBinding<Entity>>,
-    private val idConfigured: Boolean
+    private val idConfigured: Boolean,
+    override val idIsCallerAssigned: Boolean
 ) : WritableEntityMapping<Id, Entity> where Id : Any, Id : Comparable<Id> {
     override fun read(row: ResultRow): Entity =
         MappedRow(row).constructor()

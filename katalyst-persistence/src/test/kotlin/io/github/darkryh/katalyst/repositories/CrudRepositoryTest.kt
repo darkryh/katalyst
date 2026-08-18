@@ -11,6 +11,7 @@ import io.github.darkryh.katalyst.repositories.model.SortOrder
 import io.github.darkryh.katalyst.testing.core.inMemoryDatabaseConfig
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.javatime.timestamp
@@ -223,6 +224,9 @@ class CrudRepositoryTest {
         var validateCallCount: Int = 0
             private set
 
+        override val idIsCallerAssigned: Boolean
+            get() = delegate.idIsCallerAssigned
+
         override fun read(row: ResultRow): Entity = delegate.read(row)
 
         override fun validate(table: ExposedTable) {
@@ -314,6 +318,97 @@ class CrudRepositoryTest {
             blockingTx { super<CrudRepository>.findById(id) }
     }
 
+    // ---- Table whose primary keys are assigned by the application, not the database ----
+
+    data class LicenseKey(
+        override val id: String,
+        val owner: String
+    ) : Identifiable<String>
+
+    object LicenseKeysTable : IdTable<String>("license_keys"), Table<String, LicenseKey> {
+        override val id = varchar("id", 64).entityId()
+        val owner = varchar("owner", 255)
+
+        override val primaryKey = PrimaryKey(id)
+
+        override val mapping = mapping<String, LicenseKey> {
+            assignedId(id, LicenseKey::id)
+            field(owner, LicenseKey::owner)
+
+            construct {
+                LicenseKey(id = this[id], owner = this[owner])
+            }
+        }
+    }
+
+    class LicenseKeyRepository(private val db: Database) : CrudRepository<String, LicenseKey> {
+        override val table = LicenseKeysTable
+
+        private fun <T> blockingTx(block: () -> T): T =
+            transaction(db) { block() }
+
+        override fun save(entity: LicenseKey): LicenseKey =
+            blockingTx { super<CrudRepository>.save(entity) }
+
+        override fun findById(id: String): LicenseKey? =
+            blockingTx { super<CrudRepository>.findById(id) }
+
+        override fun findAll(): List<LicenseKey> =
+            blockingTx { super<CrudRepository>.findAll() }
+    }
+
+    // ---- Two distinct tables that share a table name, used to prove the ----
+    // ---- validation cache is keyed by table identity and not by table name ----
+
+    data class SharedNameEntity(
+        override val id: Long? = null,
+        val label: String
+    ) : Identifiable<Long>
+
+    object SharedNameValidTable : LongIdTable("shared_name_collision"), Table<Long, SharedNameEntity> {
+        val label = varchar("label", 255)
+
+        override val mapping = mapping<Long, SharedNameEntity> {
+            generatedId(id, SharedNameEntity::id)
+            field(label, SharedNameEntity::label)
+
+            construct {
+                SharedNameEntity(id = this[id], label = this[label])
+            }
+        }
+    }
+
+    /**
+     * Same `tableName` as [SharedNameValidTable] but a deliberately broken mapping:
+     * the non-null `label` column has no write binding.
+     */
+    object SharedNameBrokenTable : LongIdTable("shared_name_collision"), Table<Long, SharedNameEntity> {
+        val label = varchar("label", 255)
+
+        override val mapping = mapping<Long, SharedNameEntity> {
+            generatedId(id, SharedNameEntity::id)
+            // `label` deliberately left unbound
+
+            construct {
+                SharedNameEntity(id = this[id], label = this[label])
+            }
+        }
+    }
+
+    class SharedNameValidRepository(private val db: Database) : CrudRepository<Long, SharedNameEntity> {
+        override val table = SharedNameValidTable
+
+        override fun save(entity: SharedNameEntity): SharedNameEntity =
+            transaction(db) { super<CrudRepository>.save(entity) }
+    }
+
+    class SharedNameBrokenRepository(private val db: Database) : CrudRepository<Long, SharedNameEntity> {
+        override val table = SharedNameBrokenTable
+
+        override fun save(entity: SharedNameEntity): SharedNameEntity =
+            transaction(db) { super<CrudRepository>.save(entity) }
+    }
+
     private lateinit var databaseFactory: DatabaseFactory
     private lateinit var database: Database
     private lateinit var repository: TestUserRepository
@@ -397,6 +492,98 @@ class CrudRepositoryTest {
         val saved = repository.saveAll(emptyList())
         assertTrue(saved.isEmpty())
         assertEquals(0, repository.findAll().size)
+    }
+
+    // ========== SAVE OF A ROW THAT NO LONGER EXISTS ==========
+
+    @Test
+    fun `save should not resurrect a row that was deleted`() = runTest {
+        // Given - a row that another actor deleted while this entity was still in memory
+        val saved = repository.save(TestUser(name = "Ann", email = "ann@example.com", age = 30))
+        val deletedId = saved.id!!
+        repository.delete(deletedId)
+
+        // When - the stale copy is saved again
+        val failure = assertFailsWith<StaleEntityException> {
+            repository.save(saved.copy(name = "Ann Updated"))
+        }
+
+        // Then - the delete stands and the caller is told why
+        assertEquals("test_users", failure.tableName)
+        assertEquals(deletedId, failure.id)
+        assertTrue(
+            failure.message.orEmpty().contains("test_users") &&
+                failure.message.orEmpty().contains(deletedId.toString()),
+            "message must name the table and the id, was: ${failure.message}"
+        )
+        assertNull(repository.findById(deletedId), "deleted row must stay deleted")
+        assertEquals(0L, repository.count())
+    }
+
+    @Test
+    fun `save should reject a generated id that was never persisted`() = runTest {
+        // When
+        val failure = assertFailsWith<StaleEntityException> {
+            repository.save(TestUser(id = 4_242L, name = "Ghost", email = "ghost@example.com", age = 1))
+        }
+
+        // Then - nothing was written under the caller-supplied key
+        assertEquals(4_242L, failure.id)
+        assertEquals(0L, repository.count())
+        assertNull(repository.findById(4_242L))
+    }
+
+    @Test
+    fun `save should still insert then update when the mapping assigns ids itself`() = runTest {
+        // Regression guard: for `assignedId(...)` mappings a non-null id says nothing about
+        // whether the row exists, so save() must keep its create-or-update semantics.
+        transaction(database) {
+            SchemaUtils.create(LicenseKeysTable)
+        }
+        try {
+            val licenses = LicenseKeyRepository(database)
+
+            // Insert - the row does not exist yet even though the id is non-null
+            val inserted = licenses.save(LicenseKey(id = "KEY-1", owner = "Ann"))
+            assertEquals("KEY-1", inserted.id)
+            assertEquals("Ann", inserted.owner)
+
+            // Update - same key, new owner, still a single row
+            val updated = licenses.save(LicenseKey(id = "KEY-1", owner = "Bob"))
+            assertEquals("KEY-1", updated.id)
+            assertEquals("Bob", updated.owner)
+            assertEquals(1, licenses.findAll().size)
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(LicenseKeysTable)
+            }
+        }
+    }
+
+    @Test
+    fun `mapping validation cache must not be shared by tables that only share a name`() = runTest {
+        // Exposed's Table.equals/hashCode compare only `tableName`, so an equality-keyed
+        // cache would let the second table skip validation entirely.
+        transaction(database) {
+            SchemaUtils.create(SharedNameValidTable)
+        }
+        try {
+            SharedNameValidRepository(database).save(SharedNameEntity(label = "ok"))
+
+            val failure = assertFailsWith<IllegalArgumentException> {
+                SharedNameBrokenRepository(database).save(SharedNameEntity(label = "broken"))
+            }
+
+            assertTrue(
+                failure.message.orEmpty().contains("missing required write bindings") &&
+                    failure.message.orEmpty().contains("label"),
+                "broken mapping must fail validation, was: ${failure.message}"
+            )
+        } finally {
+            transaction(database) {
+                SchemaUtils.drop(SharedNameValidTable)
+            }
+        }
     }
 
     @Test

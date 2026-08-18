@@ -620,12 +620,16 @@ class OperationLogRepositoryTest {
 
     @Test
     fun `getFailedOperations should order by createdAt`() = runTest {
-        // Given - Create operations with delays to ensure different timestamps
+        // Given - explicit, distinct creation timestamps. `getFailedOperations` sorts with
+        // `ORDER BY created_at` and no tiebreaker, so two rows sharing a millisecond would
+        // come back in an undefined order; sleeping between inserts only made that unlikely,
+        // not impossible.
         repository.logOperation("wf-100", 0, createTestOperation("wf-100", 0, "INSERT", "User"))
-        Thread.sleep(10)
+        stampCreatedAt("wf-100", FIXED_NOW)
         repository.logOperation("wf-200", 0, createTestOperation("wf-200", 0, "INSERT", "Order"))
-        Thread.sleep(10)
+        stampCreatedAt("wf-200", FIXED_NOW + 1_000)
         repository.logOperation("wf-300", 0, createTestOperation("wf-300", 0, "INSERT", "Payment"))
+        stampCreatedAt("wf-300", FIXED_NOW + 2_000)
 
         // Mark as failed in reverse order
         repository.markAsFailed("wf-300", 0, "Error 3")
@@ -640,6 +644,41 @@ class OperationLogRepositoryTest {
         assertEquals("wf-100", failedOps[0].workflowId)
         assertEquals("wf-200", failedOps[1].workflowId)
         assertEquals("wf-300", failedOps[2].workflowId)
+    }
+
+    @Test
+    fun `getFailedOperations should break created_at ties by workflowId`() = runTest {
+        // Given - three failures that share one millisecond, inserted in descending
+        // workflowId order so insertion order and the documented order disagree.
+        listOf("wf-503", "wf-502", "wf-501").forEach { workflowId ->
+            repository.logOperation(workflowId, 0, createTestOperation(workflowId, 0, "INSERT", "User"))
+            stampCreatedAt(workflowId, FIXED_NOW)
+            repository.markAsFailed(workflowId, 0, "boom")
+        }
+
+        // When
+        val first = repository.getFailedOperations().map { it.workflowId }
+        val second = repository.getFailedOperations().map { it.workflowId }
+
+        // Then - stable, total order: (created_at, workflow_id, operation_index, id)
+        assertEquals(listOf("wf-501", "wf-502", "wf-503"), first)
+        assertEquals(first, second, "repeated calls must return the same order")
+    }
+
+    @Test
+    fun `getFailedOperations should break created_at ties within a workflow by operation index`() = runTest {
+        // Given - one workflow whose operations all share a created_at, logged out of order
+        listOf(2, 0, 1).forEach { index ->
+            repository.logOperation("wf-600", index, createTestOperation("wf-600", index, "INSERT", "User"))
+            repository.markAsFailed("wf-600", index, "boom")
+        }
+        stampCreatedAt("wf-600", FIXED_NOW)
+
+        // When
+        val failedOps = repository.getFailedOperations()
+
+        // Then
+        assertEquals(listOf(0, 1, 2), failedOps.map { it.operationIndex })
     }
 
     @Test
@@ -669,15 +708,14 @@ class OperationLogRepositoryTest {
     @Test
     fun `deleteOldOperations should delete non-PENDING operations before timestamp`() = runTest {
         // Given
+        val cutoffTime = FIXED_NOW
         repository.logOperation("wf-old", 0, createTestOperation("wf-old", 0, "INSERT", "User"))
         repository.markAsCommitted("wf-old", 0)
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
-        Thread.sleep(50)
+        stampCreatedAt("wf-old", cutoffTime - 1_000)
 
         repository.logOperation("wf-new", 0, createTestOperation("wf-new", 0, "INSERT", "User"))
         repository.markAsCommitted("wf-new", 0)
+        stampCreatedAt("wf-new", cutoffTime + 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -691,10 +729,9 @@ class OperationLogRepositoryTest {
     @Test
     fun `deleteOldOperations should not delete PENDING operations`() = runTest {
         // Given
+        val cutoffTime = FIXED_NOW
         repository.logOperation("wf-pending", 0, createTestOperation("wf-pending", 0, "INSERT", "User"))
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-pending", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -707,11 +744,10 @@ class OperationLogRepositoryTest {
     @Test
     fun `deleteOldOperations should delete COMMITTED operations before timestamp`() = runTest {
         // Given
+        val cutoffTime = FIXED_NOW
         repository.logOperation("wf-001", 0, createTestOperation("wf-001", 0, "INSERT", "User"))
         repository.markAsCommitted("wf-001", 0)
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-001", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -723,11 +759,10 @@ class OperationLogRepositoryTest {
     @Test
     fun `deleteOldOperations should delete UNDONE operations before timestamp`() = runTest {
         // Given
+        val cutoffTime = FIXED_NOW
         repository.logOperation("wf-002", 0, createTestOperation("wf-002", 0, "INSERT", "User"))
         repository.markAsUndone("wf-002", 0)
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-002", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -739,11 +774,10 @@ class OperationLogRepositoryTest {
     @Test
     fun `deleteOldOperations should delete FAILED operations before timestamp`() = runTest {
         // Given
+        val cutoffTime = FIXED_NOW
         repository.logOperation("wf-003", 0, createTestOperation("wf-003", 0, "INSERT", "User"))
         repository.markAsFailed("wf-003", 0, "Error")
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-003", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -778,8 +812,9 @@ class OperationLogRepositoryTest {
         repository.markAsCommitted("wf-old-1", 1)
         repository.markAsCommitted("wf-old-2", 0)
 
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
+        stampCreatedAt("wf-old-1", cutoffTime - 1_000)
+        stampCreatedAt("wf-old-2", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -795,8 +830,9 @@ class OperationLogRepositoryTest {
         repository.logOperation("wf-old-committed", 0, createTestOperation("wf-old-committed", 0, "INSERT", "User"))
         repository.markAsCommitted("wf-old-committed", 0)
 
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
+        stampCreatedAt("wf-old-pending", cutoffTime - 1_000)
+        stampCreatedAt("wf-old-committed", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldOperations(cutoffTime)
@@ -916,5 +952,28 @@ class OperationLogRepositoryTest {
             operationData = operationData,
             undoData = undoData
         )
+    }
+
+    /**
+     * Overwrites the `created_at` stamped by production code for every row of [workflowId].
+     *
+     * [OperationLogRepository] stamps `created_at` from `System.currentTimeMillis()` with no
+     * injectable clock, so tests that depend on creation order or on a cutoff timestamp used
+     * to sleep between inserts. That is both slow and unsound: `getFailedOperations` sorts by
+     * `created_at` with no tiebreaker, so two rows landing in the same millisecond have an
+     * undefined order. Rewriting the column afterwards makes those tests deterministic without
+     * changing production behaviour.
+     */
+    private fun stampCreatedAt(workflowId: String, createdAt: Long) {
+        transaction(database) {
+            OperationLogTable.update({ OperationLogTable.workflowId eq workflowId }) {
+                it[OperationLogTable.createdAt] = createdAt
+            }
+        }
+    }
+
+    private companion object {
+        /** Arbitrary fixed instant so cutoff arithmetic never touches the wall clock. */
+        const val FIXED_NOW = 1_700_000_000_000L
     }
 }

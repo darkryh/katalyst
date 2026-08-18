@@ -6,6 +6,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.core.eq
@@ -24,6 +25,7 @@ import kotlin.test.*
  * - Connection pool usage
  * - AutoCloseable interface
  * - Error handling
+ * - Unregistration from Exposed's process-global TransactionManager registry on close
  */
 class DatabaseFactoryTest {
 
@@ -597,15 +599,153 @@ class DatabaseFactoryTest {
         // Then - Should complete without errors
     }
 
+    // ========== EXPOSED REGISTRY LIFECYCLE ==========
+    //
+    // `Database.connect(dataSource)` registers the Database in Exposed's *process-global*
+    // TransactionManager containers (a databases deque, a manager map and a coroutine
+    // context-key map) and makes the most recently connected instance the implicit default
+    // for a bare `transaction { }`. Closing only the HikariDataSource therefore leaks one
+    // Database + manager + context key per create/close cycle, and leaves a closed pool
+    // installed as the process default.
+
+    @Test
+    fun `close should unregister the database from Exposed's transaction manager registry`() {
+        // Given
+        val before = exposedRegistrySizes()
+        val factory = DatabaseFactory.create(createTestConfig())
+        assertTrue(isRegisteredWithExposed(factory.database))
+        assertEquals(before.databases + 1, exposedRegistrySizes().databases)
+
+        // When
+        factory.close()
+
+        // Then
+        assertFalse(
+            isRegisteredWithExposed(factory.database),
+            "closed database is still registered with Exposed's TransactionManager"
+        )
+        assertEquals(before, exposedRegistrySizes())
+    }
+
+    @Test
+    fun `repeated create-close cycles should not grow the Exposed registry`() {
+        // Given
+        val before = exposedRegistrySizes()
+
+        // When - simulate repeated hot reloads / repeated test-suite factories
+        repeat(10) {
+            DatabaseFactory.create(createTestConfig()).close()
+        }
+
+        // Then - nothing accumulated
+        assertEquals(
+            before,
+            exposedRegistrySizes(),
+            "each create/close cycle leaked a Database, a TransactionManager or a context key"
+        )
+    }
+
+    @Test
+    fun `a bare transaction after close should not resolve to the closed database`() {
+        // Given - two factories; Exposed treats the most recent one as the implicit default
+        val survivor = DatabaseFactory.create(createTestConfig())
+        val doomed = DatabaseFactory.create(createTestConfig())
+        try {
+            assertSame(doomed.database, TransactionManager.primaryDatabase)
+
+            // When
+            doomed.close()
+
+            // Then - the closed pool must no longer be the process default...
+            assertNotSame(
+                doomed.database,
+                TransactionManager.primaryDatabase,
+                "a closed DatabaseFactory is still Exposed's implicit default database"
+            )
+            assertSame(survivor.database, TransactionManager.primaryDatabase)
+
+            // ...and a bare `transaction { }` - which InsertUndoStrategy, DeleteUndoStrategy
+            // and UpdateUndoStrategy all use when their `database` is null - must still work
+            // instead of failing with "HikariDataSource has been closed".
+            val ok = transaction { exec("SELECT 1") { it.next() } }
+            assertEquals(true, ok)
+        } finally {
+            survivor.close()
+            doomed.close() // idempotent
+        }
+    }
+
+    @Test
+    fun `close should stay idempotent when unregistering`() {
+        // Given
+        val before = exposedRegistrySizes()
+        val factory = DatabaseFactory.create(createTestConfig())
+
+        // When
+        factory.close()
+        factory.close()
+        factory.close()
+
+        // Then
+        assertEquals(before, exposedRegistrySizes())
+    }
+
     // ========== HELPER METHODS ==========
 
     private fun createTestConfig(): DatabaseConfig {
         return DatabaseConfig(
-            url = "jdbc:h2:mem:test_db_${System.currentTimeMillis()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:test_db_${System.nanoTime()};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
             username = "sa",
             password = ""
         )
+    }
+
+    /**
+     * Cardinalities of Exposed's three process-global registries. They are private to
+     * Exposed, so the only way to observe a leak is reflection; the alternative (asserting
+     * only on [TransactionManager.managerFor]) would miss the databases deque and the
+     * coroutine context-key map, which are exactly what grows unbounded across hot reloads.
+     */
+    private data class RegistrySizes(val databases: Int, val managers: Int, val contextKeys: Int)
+
+    /**
+     * `TransactionManager.managerFor` *throws* for an unregistered database rather than
+     * returning null, so registration is probed rather than asserted on directly.
+     */
+    private fun isRegisteredWithExposed(database: org.jetbrains.exposed.v1.jdbc.Database): Boolean =
+        runCatching { TransactionManager.managerFor(database) }.getOrNull() != null
+
+    private fun exposedRegistrySizes(): RegistrySizes {
+        val databasesManager = staticFieldValue(TransactionManager::class.java, "databases")
+        val managersContainer = staticFieldValue(TransactionManager::class.java, "transactionManagers")
+        val contextKeys = staticFieldValue(TransactionManager::class.java, "contextKeys") as Map<*, *>
+        return RegistrySizes(
+            databases = (instanceFieldValue(databasesManager, "databases") as Collection<*>).size,
+            managers = (instanceFieldValue(managersContainer, "registeredDatabases") as Map<*, *>).size,
+            contextKeys = contextKeys.size
+        )
+    }
+
+    private fun staticFieldValue(owner: Class<*>, name: String): Any {
+        val field = owner.getDeclaredField(name)
+        field.isAccessible = true
+        return requireNotNull(field.get(null)) { "static field '$name' on ${owner.name} was null" }
+    }
+
+    private fun instanceFieldValue(target: Any, name: String): Any {
+        var type: Class<*>? = target.javaClass
+        while (type != null) {
+            val field = try {
+                type.getDeclaredField(name)
+            } catch (_: NoSuchFieldException) {
+                type = type.superclass
+                continue
+            }
+            field.isAccessible = true
+            return requireNotNull(field.get(target)) { "field '$name' on ${target.javaClass.name} was null" }
+        }
+        fail("No field named '$name' found on ${target.javaClass.name} or its supertypes")
     }
 
     // ========== TEST TABLE DEFINITIONS ==========

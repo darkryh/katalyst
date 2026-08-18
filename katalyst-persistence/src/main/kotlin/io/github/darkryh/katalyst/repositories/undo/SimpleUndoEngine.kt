@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.repositories.undo
 import io.github.darkryh.katalyst.transactions.workflow.TransactionOperation
 import io.github.darkryh.katalyst.transactions.workflow.UndoEngine
 import org.slf4j.LoggerFactory
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Simple implementation of the UndoEngine.
@@ -76,6 +77,15 @@ internal class SimpleUndoEngine : UndoEngine {
                     )
                     failedCount++
                 }
+            } catch (e: CancellationException) {
+                // CancellationException *is* an Exception, so the generic handler below would
+                // record a shutdown-cancelled rollback as an ordinary failed operation and keep
+                // iterating over the remaining operations in a scope that is already dead.
+                logger.warn(
+                    "Undo cancelled while processing operation: index={}, type={}; propagating",
+                    operation.operationIndex, operation.operationType
+                )
+                throw e
             } catch (e: Exception) {
                 logger.error(
                     "Exception while undoing operation: index={}, error={}",

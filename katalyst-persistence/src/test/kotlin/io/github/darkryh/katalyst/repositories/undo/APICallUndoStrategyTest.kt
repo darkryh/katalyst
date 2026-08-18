@@ -9,10 +9,14 @@ import kotlin.test.*
  *
  * Tests cover:
  * - canHandle() for API_CALL, EXTERNAL_CALL, NOTIFICATION
- * - undo() with valid undoData (undo endpoint info)
- * - undo() with missing undoData
- * - Exception handling
  * - Case insensitivity
+ * - undo() failing closed for every shape of undoData
+ *
+ * Like [InsertUndoStrategyTest], this suite is written so it cannot be satisfied by a
+ * strategy that merely claims success. APICallUndoStrategy has no HTTP transport, so the
+ * only honest answer it can give is "not undone"; every `undo` case asserts `false`, and
+ * replacing the body with `return operation.undoData != null` (its previous behaviour)
+ * fails eleven of them.
  */
 class APICallUndoStrategyTest {
 
@@ -123,10 +127,19 @@ class APICallUndoStrategyTest {
     }
 
     // ========== undo() TESTS ==========
+    //
+    // APICallUndoStrategy has NO transport wired: it never opens a connection, never calls an
+    // undo endpoint, and therefore never reverses the external side effect. Every case below
+    // asserts that it says so — `undo` must return false regardless of how complete the
+    // undoData looks. An earlier revision returned `true` whenever `undoData != null`, which
+    // made EnhancedUndoEngine count the operation as succeeded and WorkflowStateRepository
+    // record the workflow as UNDONE while the charge/email/record still stood on the remote
+    // system. These tests are the guard against that regression: they must fail the moment
+    // `undo` claims success without a real compensating call.
 
     @Test
-    fun `undo should return true when undoData contains undo endpoint`() = runTest {
-        // Given - undoData with undo endpoint information
+    fun `undo should report failure even when undoData contains an undo endpoint`() = runTest {
+        // Given - undoData with complete undo endpoint information
         val operation = createOperation(
             operationType = "API_CALL",
             resourceType = "EmailService",
@@ -142,8 +155,8 @@ class APICallUndoStrategyTest {
         // When
         val result = strategy.undo(operation)
 
-        // Then
-        assertTrue(result)
+        // Then - nothing was called, so the strategy must not claim success
+        assertFalse(result, "undo() must not report success without performing a compensating call")
     }
 
     @Test
@@ -165,7 +178,7 @@ class APICallUndoStrategyTest {
     }
 
     @Test
-    fun `undo should return true when undoData is empty map`() = runTest {
+    fun `undo should report failure when undoData is an empty map`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "API_CALL",
@@ -178,13 +191,12 @@ class APICallUndoStrategyTest {
         // When
         val result = strategy.undo(operation)
 
-        // Then
-        // Empty map is still considered "present"
-        assertTrue(result)
+        // Then - "undoData is present" is not evidence that anything was undone
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle EXTERNAL_CALL operation`() = runTest {
+    fun `undo should report failure for EXTERNAL_CALL operation`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "EXTERNAL_CALL",
@@ -203,11 +215,11 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle NOTIFICATION operation`() = runTest {
+    fun `undo should report failure for NOTIFICATION operation`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "NOTIFICATION",
@@ -225,11 +237,11 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle operation with retry information`() = runTest {
+    fun `undo should report failure even when retry information is supplied`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "API_CALL",
@@ -250,11 +262,11 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle operation with authentication headers`() = runTest {
+    fun `undo should report failure even when authentication headers are supplied`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "API_CALL",
@@ -276,11 +288,11 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle operation with null resourceId`() = runTest {
+    fun `undo should report failure for an operation with null resourceId`() = runTest {
         // Given
         val operation = createOperation(
             operationType = "API_CALL",
@@ -294,11 +306,11 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle multiple API calls sequentially`() = runTest {
+    fun `undo should report failure for every operation in a sequence`() = runTest {
         // Given
         val operations = listOf(
             createOperation(
@@ -327,12 +339,12 @@ class APICallUndoStrategyTest {
         // When
         val results = operations.map { strategy.undo(it) }
 
-        // Then
-        assertTrue(results.all { it })
+        // Then - not one of them was actually undone
+        assertTrue(results.none { it }, "no API call can be undone until a transport is wired in")
     }
 
     @Test
-    fun `undo should handle operation without undo_endpoint key`() = runTest {
+    fun `undo should report failure when undo_endpoint key is missing`() = runTest {
         // Given - undoData exists but doesn't have undo_endpoint
         val operation = createOperation(
             operationType = "API_CALL",
@@ -350,13 +362,13 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        // Current implementation checks containsKey, so this should still succeed
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle email cancellation scenario`() = runTest {
-        // Given - Real-world email cancellation
+    fun `undo should report failure for the email cancellation scenario`() = runTest {
+        // Given - Real-world email cancellation. The email is still in the recipient's inbox
+        // after this call, so reporting success here would be a lie in the audit log.
         val operation = createOperation(
             operationType = "NOTIFICATION",
             resourceType = "EmailService",
@@ -376,12 +388,13 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test
-    fun `undo should handle payment refund scenario`() = runTest {
-        // Given - Real-world payment refund
+    fun `undo should report failure for the payment refund scenario`() = runTest {
+        // Given - Real-world payment refund. No refund is issued by this strategy; the
+        // customer is still charged, so the workflow must end up FAILED_UNDO, not UNDONE.
         val operation = createOperation(
             operationType = "EXTERNAL_CALL",
             resourceType = "PaymentGateway",
@@ -402,6 +415,30 @@ class APICallUndoStrategyTest {
         val result = strategy.undo(operation)
 
         // Then
-        assertTrue(result)
+        assertFalse(result, "a charge that was never refunded must not be reported as undone")
+    }
+
+    @Test
+    fun `undo should never claim success for any handled operation type`() = runTest {
+        // Given - every operation type this strategy claims to handle, with rich undoData
+        val handledTypes = listOf("API_CALL", "EXTERNAL_CALL", "NOTIFICATION", "api_call")
+
+        // When / Then
+        handledTypes.forEach { type ->
+            assertTrue(strategy.canHandle(type, "AnyService"))
+            val result = strategy.undo(
+                createOperation(
+                    operationType = type,
+                    resourceType = "AnyService",
+                    resourceId = "res-1",
+                    undoData = mapOf(
+                        "undo_endpoint" to "https://example.com/undo",
+                        "remote_resource_id" to "res-1",
+                        "method" to "DELETE"
+                    )
+                )
+            )
+            assertFalse(result, "undo() claimed success for $type without performing any call")
+        }
     }
 }

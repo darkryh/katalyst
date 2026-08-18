@@ -10,8 +10,10 @@ import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Database factory for managing database connections with HikariCP connection pooling.
@@ -57,6 +59,8 @@ class DatabaseFactory private constructor(
     val database: Database,
     private val dataSource: HikariDataSource
 ) : AutoCloseable {
+
+    private val closed = AtomicBoolean(false)
 
     /**
      * Creates a managed SQL executor backed by this factory's datasource.
@@ -151,9 +155,37 @@ class DatabaseFactory private constructor(
      * Closes the database connection and shuts down the connection pool.
      *
      * Should be called when the application shuts down to properly clean up resources.
+     *
+     * Two things are released, in this order:
+     * 1. The Exposed registration. `Database.connect(dataSource)` put [database] into Exposed's
+     *    *process-global* `TransactionManager` containers (a databases deque, a manager map and
+     *    a coroutine context-key map) and made the most recently connected instance the implicit
+     *    default for a bare `transaction { }`. Closing only the pool would leak one
+     *    Database + manager + context key per create/close cycle — unbounded across hot reloads
+     *    and across a test suite — and would leave a *closed* pool installed as the process
+     *    default, so a later bare `transaction { }` (which the undo strategies use when their
+     *    `database` is null) would fail with "HikariDataSource has been closed" and report a
+     *    workflow rollback as FAILED_UNDO with no usable cause. Unregistering first also closes
+     *    the window in which a new transaction could still resolve to a pool that is going away.
+     * 2. The HikariCP pool itself.
+     *
+     * Idempotent: repeated calls are no-ops.
      */
     override fun close() {
+        if (!closed.compareAndSet(false, true)) {
+            logger.debug("DatabaseFactory already closed; ignoring repeated close()")
+            return
+        }
+
         logger.info("Closing DatabaseFactory and HikariDataSource")
+
+        try {
+            TransactionManager.closeAndUnregister(database)
+            logger.debug("Unregistered database from Exposed TransactionManager registry")
+        } catch (e: Exception) {
+            logger.error("Error unregistering database from Exposed TransactionManager", e)
+        }
+
         try {
             dataSource.close()
             logger.info("HikariDataSource closed successfully")

@@ -13,6 +13,8 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import io.github.darkryh.katalyst.core.persistence.Table as KatalystTable
 import org.jetbrains.exposed.v1.core.SortOrder as ExposedSortOder
@@ -90,18 +92,27 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
     /**
      * Saves or updates an entity.
      *
-     * When the entity has a null identifier it is inserted, otherwise it is updated.
+     * An entity with a null identifier is inserted. An entity that carries an identifier
+     * is updated, and what happens when that `UPDATE` matches no row depends on who owns
+     * primary keys for this table:
+     *
+     * - **Database-generated ids** ([io.github.darkryh.katalyst.core.persistence.EntityMappingBuilder.generatedId]):
+     *   a non-null id can only have come from a row the database already created, so a
+     *   zero-row update means that row has since been deleted. Re-inserting it would
+     *   silently undo the delete, so [StaleEntityException] is raised instead.
+     * - **Application-assigned ids** ([io.github.darkryh.katalyst.core.persistence.EntityMappingBuilder.assignedId]):
+     *   a non-null id says nothing about whether the row exists yet, so a zero-row update
+     *   falls back to an insert and `save` behaves as create-or-update.
+     *
      * The entity is reloaded from the database and the mapped version is returned
      * to ensure fresh values (including generated columns).
+     *
+     * @throws StaleEntityException when a generated-id entity refers to a row that no
+     *   longer exists.
      */
     fun save(entity: IdentifiableEntityId): IdentifiableEntityId {
         val id = entity.id
-        val persistedId = if (id != null) {
-            val updated = updateEntity(id, entity) // returns rows updated
-            if (updated > 0) id else insertEntity(entity)
-        } else {
-            insertEntity(entity)
-        }
+        val persistedId = if (id != null) updateOrInsert(id, entity) else insertEntity(entity)
 
         return findById(persistedId)
             ?: error("Entity with id=$persistedId could not be loaded after persistence")
@@ -178,16 +189,25 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
      * The mapping shape (duplicate/missing-column checks) never changes for a given
      * table instance, so re-running [io.github.darkryh.katalyst.core.persistence.EntityMapping.validate]
      * on every [save]/[insertEntity]/[updateEntity] call is wasted work. Successful
-     * validations are cached process-wide by table identity; a validation failure is
-     * NOT cached, so a genuinely bad mapping keeps failing loudly on every call.
+     * validations are cached process-wide, keyed by the table's *reference identity*; a
+     * validation failure is NOT cached, so a genuinely bad mapping keeps failing loudly on
+     * every call.
      */
     private fun writableMapping(): WritableEntityMapping<Id, IdentifiableEntityId> {
         val mapping = table.asKatalystTable<Id, IdentifiableEntityId>().mapping.asWritable()
-        if (!validatedTables.contains(table)) {
-            mapping.validate(table)
-            validatedTables.add(table)
-        }
+        purgeCollectedTables()
+        if (validatedTables.containsKey(TableIdentityKey.lookup(table))) return mapping
+        mapping.validate(table)
+        validatedTables[TableIdentityKey.retaining(table, collectedTables)] = true
         return mapping
+    }
+
+    /** Drops cache entries whose table has been garbage collected. */
+    private fun purgeCollectedTables() {
+        while (true) {
+            val collected = collectedTables.poll() ?: break
+            (collected as? TableIdentityKey)?.let(validatedTables::remove)
+        }
     }
 
     private fun resolveSortColumn(name: String?): Column<*>? {
@@ -197,20 +217,39 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
         }
     }
 
-    private fun insertEntity(entity: IdentifiableEntityId): Id {
+    /**
+     * Applies [entity] to the row identified by [id], returning the persisted identifier.
+     *
+     * Falls back to an insert only for mappings that own their primary keys; otherwise a
+     * zero-row update is reported as a [StaleEntityException] rather than silently
+     * re-creating a deleted row.
+     */
+    private fun updateOrInsert(id: Id, entity: IdentifiableEntityId): Id {
         val mapping = writableMapping()
-        val generatedId = table.insertAndGetId { insertStatement ->
-            mapping.writeInsert(insertStatement, entity)
-        }.value
-        return generatedId
-    }
-
-    private fun updateEntity(id: Id, entity: IdentifiableEntityId): Int {
-        val mapping = writableMapping()
-        return table.update({ table.id eq entityId(id) }) { updateStatement ->
-            mapping.writeUpdate(updateStatement, entity)
+        val updatedRows = updateEntity(id, entity, mapping)
+        return when {
+            updatedRows > 0 -> id
+            mapping.idIsCallerAssigned -> insertEntity(entity, mapping)
+            else -> throw StaleEntityException(table.tableName, id)
         }
     }
+
+    private fun insertEntity(
+        entity: IdentifiableEntityId,
+        mapping: WritableEntityMapping<Id, IdentifiableEntityId> = writableMapping()
+    ): Id =
+        table.insertAndGetId { insertStatement ->
+            mapping.writeInsert(insertStatement, entity)
+        }.value
+
+    private fun updateEntity(
+        id: Id,
+        entity: IdentifiableEntityId,
+        mapping: WritableEntityMapping<Id, IdentifiableEntityId> = writableMapping()
+    ): Int =
+        table.update({ table.id eq entityId(id) }) { updateStatement ->
+            mapping.writeUpdate(updateStatement, entity)
+        }
 
     private fun SortOrder.toExposed(): ExposedSortOder =
         when (this) {
@@ -223,11 +262,22 @@ interface CrudRepository<Id, IdentifiableEntityId : Identifiable<Id>> where Id :
          * Tables whose mapping has already passed
          * [io.github.darkryh.katalyst.core.persistence.EntityMapping.validate].
          *
-         * Shared process-wide (keyed by table identity) so validation runs once per
-         * table rather than on every [save]/[insertEntity]/[updateEntity] call.
+         * Shared process-wide so validation runs once per table rather than on every
+         * [save]/[insertEntity]/[updateEntity] call.
+         *
+         * Keys compare by *reference identity*, never by [Any.equals]: Exposed's
+         * [org.jetbrains.exposed.v1.core.Table.equals]/[org.jetbrains.exposed.v1.core.Table.hashCode]
+         * only compare `tableName`, so an equality-keyed cache would let a second table
+         * that merely shares a name - another schema, a multi-tenant variant, a test
+         * double - skip validation entirely and surface a broken mapping as a raw SQL
+         * error instead of a clear [IllegalArgumentException]. Keys are also weak, so a
+         * cached table never outlives its own last reference (nor pins the class loader
+         * that defined it across a hot reload).
          */
-        val validatedTables: MutableSet<IdTable<*>> =
-            ConcurrentHashMap.newKeySet()
+        val validatedTables: MutableMap<TableIdentityKey, Boolean> = ConcurrentHashMap()
+
+        /** Receives [TableIdentityKey] instances whose table has been collected. */
+        val collectedTables: ReferenceQueue<IdTable<*>> = ReferenceQueue()
     }
 }
 
@@ -244,3 +294,35 @@ private fun <Id, Entity : Identifiable<Id>> io.github.darkryh.katalyst.core.pers
     where Id : Any, Id : Comparable<Id> =
     this as? WritableEntityMapping<Id, Entity>
         ?: error("Table mapping must be created with io.github.darkryh.katalyst.core.persistence.mapping { ... }")
+
+/**
+ * Weak, identity-based cache key for an Exposed table.
+ *
+ * Exposed tables compare equal whenever their `tableName` matches, which makes them unfit
+ * as keys for a per-table cache. This key restores reference semantics while holding the
+ * table weakly.
+ */
+private class TableIdentityKey private constructor(
+    table: IdTable<*>,
+    queue: ReferenceQueue<IdTable<*>>?
+) : WeakReference<IdTable<*>>(table, queue) {
+    private val identityHash: Int = System.identityHashCode(table)
+
+    override fun hashCode(): Int = identityHash
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is TableIdentityKey) return false
+        val table = get() ?: return false
+        return table === other.get()
+    }
+
+    companion object {
+        /** Key used for lookups only; never stored, so it is not registered with a queue. */
+        fun lookup(table: IdTable<*>): TableIdentityKey = TableIdentityKey(table, null)
+
+        /** Key meant to be stored, registered with [queue] so it can be purged after collection. */
+        fun retaining(table: IdTable<*>, queue: ReferenceQueue<IdTable<*>>): TableIdentityKey =
+            TableIdentityKey(table, queue)
+    }
+}

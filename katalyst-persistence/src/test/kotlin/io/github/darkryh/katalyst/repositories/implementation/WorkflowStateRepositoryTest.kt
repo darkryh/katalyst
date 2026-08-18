@@ -8,6 +8,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import kotlin.test.*
 
 /**
@@ -453,12 +454,16 @@ class WorkflowStateRepositoryTest {
 
     @Test
     fun `getFailedWorkflows should order by createdAt`() = runTest {
-        // Given - Create workflows with slight delay to ensure different timestamps
+        // Given - explicit, distinct creation timestamps. `getFailedWorkflows` sorts with
+        // `ORDER BY created_at` and no tiebreaker, so two rows sharing a millisecond would
+        // come back in an undefined order; sleeping between inserts only made that unlikely,
+        // not impossible.
         repository.startWorkflow("wf-200", "workflow_1")
-        Thread.sleep(10)
+        stampCreatedAt("wf-200", FIXED_NOW)
         repository.startWorkflow("wf-201", "workflow_2")
-        Thread.sleep(10)
+        stampCreatedAt("wf-201", FIXED_NOW + 1_000)
         repository.startWorkflow("wf-202", "workflow_3")
+        stampCreatedAt("wf-202", FIXED_NOW + 2_000)
 
         // Fail them in reverse order
         repository.failWorkflow("wf-202", failedAtOperation = 1, error = "Error 3")
@@ -475,22 +480,39 @@ class WorkflowStateRepositoryTest {
         assertEquals("wf-202", failedWorkflows[2].workflowId)
     }
 
+    @Test
+    fun `getFailedWorkflows should break created_at ties by workflowId`() = runTest {
+        // Given - three failures that share one millisecond, inserted in descending
+        // workflowId order so insertion order and the documented order disagree.
+        listOf("wf-303", "wf-302", "wf-301").forEach { workflowId ->
+            repository.startWorkflow(workflowId, "same_millisecond")
+            stampCreatedAt(workflowId, FIXED_NOW)
+            repository.failWorkflow(workflowId, failedAtOperation = 0, error = "boom")
+        }
+
+        // When
+        val first = repository.getFailedWorkflows().map { it.workflowId }
+        val second = repository.getFailedWorkflows().map { it.workflowId }
+
+        // Then - stable, total order: (created_at, workflow_id)
+        assertEquals(listOf("wf-301", "wf-302", "wf-303"), first)
+        assertEquals(first, second, "repeated calls must return the same order")
+    }
+
     // ========== DELETE OLD WORKFLOWS TESTS ==========
 
     @Test
     fun `deleteOldWorkflows should delete COMMITTED workflows before timestamp`() = runTest {
         // Given
-        val now = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
 
         repository.startWorkflow("wf-old", "old_workflow")
         repository.commitWorkflow("wf-old")
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
-        Thread.sleep(50)
+        stampCreatedAt("wf-old", cutoffTime - 1_000)
 
         repository.startWorkflow("wf-new", "new_workflow")
         repository.commitWorkflow("wf-new")
+        stampCreatedAt("wf-new", cutoffTime + 1_000)
 
         // When
         val deletedCount = repository.deleteOldWorkflows(cutoffTime)
@@ -504,13 +526,11 @@ class WorkflowStateRepositoryTest {
     @Test
     fun `deleteOldWorkflows should not delete FAILED workflows`() = runTest {
         // Given
-        val now = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
 
         repository.startWorkflow("wf-failed", "failed_workflow")
         repository.failWorkflow("wf-failed", failedAtOperation = 1, error = "Error")
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-failed", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldWorkflows(cutoffTime)
@@ -523,12 +543,10 @@ class WorkflowStateRepositoryTest {
     @Test
     fun `deleteOldWorkflows should not delete STARTED workflows`() = runTest {
         // Given
-        val now = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
 
         repository.startWorkflow("wf-started", "started_workflow")
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-started", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldWorkflows(cutoffTime)
@@ -541,14 +559,12 @@ class WorkflowStateRepositoryTest {
     @Test
     fun `deleteOldWorkflows should not delete UNDONE workflows`() = runTest {
         // Given
-        val now = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
 
         repository.startWorkflow("wf-undone", "undone_workflow")
         repository.failWorkflow("wf-undone", failedAtOperation = 1, error = "Error")
         repository.markAsUndone("wf-undone")
-
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        stampCreatedAt("wf-undone", cutoffTime - 1_000)
 
         // When
         val deletedCount = repository.deleteOldWorkflows(cutoffTime)
@@ -576,7 +592,7 @@ class WorkflowStateRepositoryTest {
     @Test
     fun `deleteOldWorkflows should delete multiple old COMMITTED workflows`() = runTest {
         // Given
-        val now = System.currentTimeMillis()
+        val cutoffTime = FIXED_NOW
 
         repository.startWorkflow("wf-old-1", "old_workflow_1")
         repository.commitWorkflow("wf-old-1")
@@ -587,8 +603,7 @@ class WorkflowStateRepositoryTest {
         repository.startWorkflow("wf-old-3", "old_workflow_3")
         repository.commitWorkflow("wf-old-3")
 
-        Thread.sleep(50)
-        val cutoffTime = System.currentTimeMillis()
+        listOf("wf-old-1", "wf-old-2", "wf-old-3").forEach { stampCreatedAt(it, cutoffTime - 1_000) }
 
         // When
         val deletedCount = repository.deleteOldWorkflows(cutoffTime)
@@ -680,5 +695,30 @@ class WorkflowStateRepositoryTest {
         repository.markAsUndone(workflowId)
         state = repository.getWorkflowState(workflowId)
         assertEquals(WorkflowStatus.UNDONE, state?.status)
+    }
+
+    // ========== HELPER METHODS ==========
+
+    /**
+     * Overwrites the `created_at` stamped by production code for [workflowId].
+     *
+     * [WorkflowStateRepository] stamps `created_at` from `System.currentTimeMillis()` with no
+     * injectable clock, so tests that depend on creation order or on a cutoff timestamp used
+     * to sleep between inserts. That is both slow and unsound: `getFailedWorkflows` sorts by
+     * `created_at` with no tiebreaker, so two rows landing in the same millisecond have an
+     * undefined order. Rewriting the column afterwards makes those tests deterministic without
+     * changing production behaviour.
+     */
+    private fun stampCreatedAt(workflowId: String, createdAt: Long) {
+        transaction(database) {
+            WorkflowStateTable.update({ WorkflowStateTable.workflowId eq workflowId }) {
+                it[WorkflowStateTable.createdAt] = createdAt
+            }
+        }
+    }
+
+    private companion object {
+        /** Arbitrary fixed instant so cutoff arithmetic never touches the wall clock. */
+        const val FIXED_NOW = 1_700_000_000_000L
     }
 }

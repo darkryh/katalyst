@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.repositories.undo
 import io.github.darkryh.katalyst.transactions.workflow.SimpleTransactionOperation
 import io.github.darkryh.katalyst.transactions.workflow.TransactionOperation
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.*
 
 /**
@@ -398,6 +399,30 @@ class SimpleUndoEngineTest {
         assertEquals("Payment", result.results[0].resourceType)
         assertEquals("Order", result.results[1].resourceType)
         assertEquals("User", result.results[2].resourceType)
+    }
+
+    // ========== COROUTINE CANCELLATION ==========
+
+    @Test
+    fun `undoWorkflow should propagate cancellation instead of recording it as a failed operation`() = runTest {
+        // Given - the second (LIFO-first) operation is cancelled
+        var laterOperationRan = false
+        val operations = listOf(
+            createOperation(workflowId = "wf1", index = 0) {
+                laterOperationRan = true
+                true
+            },
+            createOperation(workflowId = "wf1", index = 1) {
+                throw CancellationException("shutdown")
+            }
+        )
+
+        // When / Then - `catch (e: Exception)` would have swallowed the cancellation, recorded a
+        // bogus failed operation and kept iterating in an already-dead scope.
+        assertFailsWith<CancellationException> {
+            engine.undoWorkflow("wf1", operations)
+        }
+        assertFalse(laterOperationRan, "undo kept running after the scope was cancelled")
     }
 
     // ========== HELPER METHODS ==========

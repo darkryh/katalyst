@@ -2,6 +2,7 @@ package io.github.darkryh.katalyst.repositories.undo
 
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
 /**
@@ -12,6 +13,10 @@ import kotlin.math.min
  * - Exponential backoff with jitter to prevent thundering herd
  * - Maximum backoff cap to prevent excessive waits
  * - Custom retry predicates (which exceptions to retry)
+ *
+ * **Cancellation is never retried**: `CancellationException` is propagated untouched, so a
+ * rollback interrupted by shutdown surfaces as cancellation rather than as a spurious
+ * "failed after N retries".
  *
  * **Example**:
  * ```kotlin
@@ -38,6 +43,9 @@ internal class RetryPolicy(
      *
      * @param operation The operation to execute
      * @return true if operation succeeded, false if all retries exhausted
+     * @throws CancellationException if [operation] or a backoff delay is cancelled. Never
+     * swallowed and never retried: doing so would break structured concurrency and would
+     * report a cancelled shutdown rollback as a genuine failure.
      */
     suspend fun execute(operation: suspend () -> Boolean): Boolean {
         var currentDelayMs = initialDelayMs
@@ -58,6 +66,14 @@ internal class RetryPolicy(
                     currentDelayMs = applyBackoffDelay(attempt, currentDelayMs, "returned false")
                     continue
                 }
+            } catch (e: CancellationException) {
+                // MUST precede `catch (e: Exception)`: CancellationException *is* an Exception,
+                // and the default retryPredicate is `{ true }`. Without this clause a cancelled
+                // undo would be retried (each retry's delay() cancelling again) and, on the last
+                // attempt, reported as `false` instead of propagating - breaking structured
+                // concurrency and turning "cancelled at shutdown" into "rollback failed".
+                logger.debug("Operation cancelled; propagating cancellation without retrying")
+                throw e
             } catch (e: Exception) {
                 // Check if we should retry on this exception
                 if (!retryPredicate(e)) {

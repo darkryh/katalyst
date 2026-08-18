@@ -1,12 +1,16 @@
 package io.github.darkryh.katalyst.repositories.undo
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -21,6 +25,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * - Retry predicate filtering
  * - Predefined policy configurations
  * - Edge cases (zero retries, false returns, exceptions)
+ * - Coroutine cancellation (must propagate, never be retried or reported as `false`)
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class RetryPolicyTest {
@@ -641,5 +646,102 @@ class RetryPolicyTest {
         }
 
         assertTrue(result)
+    }
+
+    // ========== COROUTINE CANCELLATION ==========
+    //
+    // CancellationException IS a subclass of Exception, so a `catch (e: Exception)` that does
+    // not re-throw it turns a cancelled undo into a retried-then-"failed" undo. That breaks
+    // structured concurrency (the coroutine keeps running after its scope was cancelled) and
+    // mislabels a shutdown-time rollback as a genuine failure with no usable cause.
+
+    @Test
+    fun `execute should rethrow CancellationException instead of retrying it`() = runTest {
+        // Given - the default retryPredicate is `{ true }`, i.e. "retry on anything"
+        val policy = RetryPolicy(maxRetries = 3, initialDelayMs = 1)
+        var callCount = 0
+
+        // When / Then - cancellation must escape, not be swallowed into a retry loop
+        assertFailsWith<CancellationException> {
+            policy.execute {
+                callCount++
+                throw CancellationException("undo cancelled")
+            }
+        }
+        assertEquals(1, callCount, "a cancelled operation must not be retried")
+    }
+
+    @Test
+    fun `execute should not convert cancellation into a false result on the final attempt`() = runTest {
+        // Given - no retries left, so the exhausted-retries branch is the one that runs
+        val policy = RetryPolicy(maxRetries = 0, initialDelayMs = 1)
+        var attempts = 0
+        var returnedValue: Boolean? = null
+        val started = CompletableDeferred<Unit>()
+
+        // When - the enclosing scope is cancelled while the operation is suspended
+        val job = launch {
+            returnedValue = policy.execute {
+                attempts++
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        started.await()
+        job.cancel()
+        job.join()
+
+        // Then - execute() must not return at all; it must let the cancellation through
+        assertEquals(1, attempts)
+        assertNull(
+            returnedValue,
+            "RetryPolicy swallowed cancellation and returned a value; the caller would record " +
+                "a shutdown-cancelled rollback as a genuine failure"
+        )
+        assertTrue(job.isCancelled)
+    }
+
+    @Test
+    fun `execute should stop retrying once the enclosing scope is cancelled`() = runTest {
+        // Given - plenty of retries configured
+        val policy = RetryPolicy(maxRetries = 10, initialDelayMs = 50)
+        var attempts = 0
+        var returnedValue: Boolean? = null
+        val started = CompletableDeferred<Unit>()
+
+        // When - cancelled during the very first attempt
+        val job = launch {
+            returnedValue = policy.execute {
+                attempts++
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        started.await()
+        job.cancel()
+        job.join()
+
+        // Then - no further attempts, and no value produced
+        assertEquals(1, attempts, "cancellation must not trigger further retry attempts")
+        assertNull(returnedValue)
+        assertTrue(job.isCancelled)
+    }
+
+    @Test
+    fun `execute should still retry ordinary exceptions after the cancellation guard`() = runTest {
+        // Given - the cancellation guard must not disable normal retry behaviour
+        val policy = RetryPolicy(maxRetries = 3, initialDelayMs = 1)
+        var callCount = 0
+
+        // When
+        val result = policy.execute {
+            callCount++
+            if (callCount < 3) throw IllegalStateException("transient")
+            true
+        }
+
+        // Then
+        assertTrue(result)
+        assertEquals(3, callCount)
     }
 }

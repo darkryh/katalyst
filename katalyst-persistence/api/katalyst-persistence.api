@@ -192,6 +192,12 @@ public abstract interface class io/github/darkryh/katalyst/repositories/Identifi
 	public abstract fun getId ()Ljava/lang/Object;
 }
 
+public final class io/github/darkryh/katalyst/repositories/StaleEntityException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun getId ()Ljava/lang/Object;
+	public final fun getTableName ()Ljava/lang/String;
+}
+
 public final class io/github/darkryh/katalyst/repositories/model/PageInfo {
 	public fun <init> (III)V
 	public final fun component1 ()I

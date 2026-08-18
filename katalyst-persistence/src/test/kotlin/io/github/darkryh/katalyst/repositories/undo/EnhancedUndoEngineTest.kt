@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.repositories.undo
 import io.github.darkryh.katalyst.transactions.workflow.SimpleTransactionOperation
 import io.github.darkryh.katalyst.transactions.workflow.TransactionOperation
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -114,10 +115,16 @@ class EnhancedUndoEngineTest {
             // When
             val result = engine.undoWorkflow("wf1", operations)
 
-            // Then
-            assertEquals(4, result.succeededCount)
-            assertEquals(0, result.failedCount)
-            assertTrue(result.isFullySuccessful)
+            // Then - the three SQL strategies really performed their compensating mutation;
+            // APICallUndoStrategy has no transport, so it fails closed and the workflow is
+            // NOT fully successful. Counting it as succeeded would let the caller mark a
+            // workflow UNDONE while the external side effect still stands.
+            assertEquals(3, result.succeededCount)
+            assertEquals(1, result.failedCount)
+            assertFalse(result.isFullySuccessful)
+            val apiResult = result.results.single { it.operationIndex == 3 }
+            assertFalse(apiResult.succeeded)
+            assertNotNull(apiResult.error)
         } finally {
             transaction(database) { SchemaUtils.drop(StrategyTestTable) }
         }
@@ -495,6 +502,25 @@ class EnhancedUndoEngineTest {
         assertEquals(simpleResult.totalOperations, enhancedResult.totalOperations)
         assertEquals(simpleResult.succeededCount, enhancedResult.succeededCount)
         assertEquals(simpleResult.failedCount, enhancedResult.failedCount)
+    }
+
+    // ========== COROUTINE CANCELLATION ==========
+
+    @Test
+    fun `undoWorkflow should propagate cancellation instead of recording it as a failed operation`() = runTest {
+        // Given - an undo that is cancelled on its final attempt (no retries left)
+        val engine = delegatingEngine(retryPolicy = RetryPolicy(maxRetries = 0, initialDelayMs = 1))
+        val operations = listOf(
+            createOperation(workflowId = "wf-cancel", index = 0) {
+                throw CancellationException("shutdown")
+            }
+        )
+
+        // When / Then - a shutdown-cancelled rollback must surface as cancellation, not as a
+        // FAILED_UNDO with "Undo operation returned false after retries" as its only cause.
+        assertFailsWith<CancellationException> {
+            engine.undoWorkflow("wf-cancel", operations)
+        }
     }
 
     // ========== HELPER METHODS ==========

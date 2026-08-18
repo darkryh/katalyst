@@ -271,6 +271,12 @@ internal class OperationLogRepository(private val database: Database) : Operatio
     /**
      * Get all failed operations.
      *
+     * Ordered by `created_at`, then by `workflow_id`, `operation_index` and finally the
+     * primary key. `created_at` is only millisecond-precise, so operations written in the
+     * same millisecond would otherwise come back in an undefined order and a paging or
+     * retry loop over this result could skip or repeat a row. The primary key makes the
+     * ordering total even if a workflow logs the same operation index twice.
+     *
      * @return Operations with FAILED status
      */
     override suspend fun getFailedOperations(): List<TransactionOperation> {
@@ -280,6 +286,9 @@ internal class OperationLogRepository(private val database: Database) : Operatio
                     .selectAll()
                     .where(OperationLogTable.status eq OperationStatus.FAILED.name)
                     .orderBy(OperationLogTable.createdAt)
+                    .orderBy(OperationLogTable.workflowId)
+                    .orderBy(OperationLogTable.operationIndex)
+                    .orderBy(OperationLogTable.id)
                     .map { row ->
                         SimpleTransactionOperation(
                             workflowId = row[OperationLogTable.workflowId],

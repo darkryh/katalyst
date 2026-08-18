@@ -167,6 +167,11 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
     /**
      * Get all failed workflows that need recovery.
      *
+     * Ordered by `created_at`, then by the unique `workflow_id`, matching
+     * [getFailedWorkflowsPage]. `created_at` is only millisecond-precise, so workflows
+     * started in the same millisecond would otherwise come back in an undefined order and
+     * a paging or retry loop over this result could skip or repeat a row.
+     *
      * @return List of failed workflows
      */
     override suspend fun getFailedWorkflows(): List<WorkflowState> {
@@ -179,6 +184,7 @@ internal class WorkflowStateRepository(private val database: Database) : Workflo
                                 (WorkflowStateTable.status eq WorkflowStatus.FAILED_UNDO.name)
                     )
                     .orderBy(WorkflowStateTable.createdAt)
+                    .orderBy(WorkflowStateTable.workflowId)
                     .map { row ->
                         WorkflowState(
                             workflowId = row[WorkflowStateTable.workflowId],
