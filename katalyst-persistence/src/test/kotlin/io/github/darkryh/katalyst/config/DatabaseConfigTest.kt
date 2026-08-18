@@ -628,6 +628,55 @@ class DatabaseConfigTest {
         assertTrue(string.contains("jdbc:h2:mem:test"))
         assertTrue(string.contains("org.h2.Driver"))
         assertTrue(string.contains("sa"))
-        // Password may be included in toString (not a security issue in tests)
+    }
+
+    @Test
+    fun `toString must never expose the password`() {
+        // A data class prints every property verbatim, so the generated toString put the database
+        // password into any log line, exception message or debugger frame holding this object.
+        // The previous version of this test asserted the readable fields and then waved the
+        // password through with "not a security issue in tests" — but this object is constructed
+        // and logged in production, not only in tests.
+        val config = DatabaseConfig(
+            url = "jdbc:h2:mem:test",
+            driver = "org.h2.Driver",
+            username = "sa",
+            password = "hunter2-should-never-appear"
+        )
+
+        val string = config.toString()
+
+        assertFalse(
+            string.contains("hunter2-should-never-appear"),
+            "password leaked through toString: $string",
+        )
+        assertTrue(string.contains("password=***"), "expected a redaction marker in: $string")
+    }
+
+    @Test
+    fun `toString redacts credentials carried in the URL itself`() {
+        // The URL is a second credential channel: userinfo travels inside it.
+        val config = DatabaseConfig(
+            url = "jdbc:postgresql://appuser:urlSecret123@db.internal:5432/orders",
+            driver = "org.postgresql.Driver",
+            username = "appuser",
+            password = "fieldSecret456"
+        )
+
+        val string = config.toString()
+
+        assertFalse(string.contains("urlSecret123"), "URL credential leaked: $string")
+        assertFalse(string.contains("fieldSecret456"), "password field leaked: $string")
+        assertTrue(string.contains("db.internal"), "the host must remain visible: $string")
+    }
+
+    @Test
+    fun `equals and hashCode still distinguish configs that differ only by password`() {
+        // Redaction is a rendering concern; identity must not change. Two configs with different
+        // credentials are different configs, and collapsing them would let a stale pool be reused.
+        val a = DatabaseConfig("jdbc:h2:mem:test", "org.h2.Driver", "sa", "one")
+        val b = DatabaseConfig("jdbc:h2:mem:test", "org.h2.Driver", "sa", "two")
+
+        assertTrue(a != b, "configs differing by password must not be equal")
     }
 }

@@ -1,5 +1,7 @@
 package io.github.darkryh.katalyst.config
 
+import io.github.darkryh.katalyst.database.sanitizeJdbcUrl
+
 /**
  * Database configuration data class.
  *
@@ -54,4 +56,31 @@ data class DatabaseConfig(
         require(minIdleConnections >= 0) { "Min idle connections cannot be negative" }
         require(connectionTimeout > 0) { "Connection timeout must be greater than 0" }
     }
+
+    /**
+     * Credential-safe rendering.
+     *
+     * A `data class` generates a `toString()` that prints every property verbatim, so the default
+     * put the database password into any log line, exception message or debugger frame that touched
+     * this object — the single most likely place for a config object to surface. The URL is passed
+     * through the same redactor used for boot logging, because it can carry userinfo credentials of
+     * its own.
+     *
+     * `equals`/`hashCode` are deliberately left generated: two configs differing only by password
+     * are genuinely different configs.
+     */
+    override fun toString(): String =
+        "DatabaseConfig(" +
+            "url=${sanitizeJdbcUrl(url)}, " +
+            "driver=$driver, " +
+            "username=$username, " +
+            "password=***, " +
+            "maxPoolSize=$maxPoolSize, " +
+            "minIdleConnections=$minIdleConnections, " +
+            "connectionTimeout=$connectionTimeout, " +
+            "idleTimeout=$idleTimeout, " +
+            "maxLifetime=$maxLifetime, " +
+            "autoCommit=$autoCommit, " +
+            "transactionIsolation=$transactionIsolation" +
+            ")"
 }
