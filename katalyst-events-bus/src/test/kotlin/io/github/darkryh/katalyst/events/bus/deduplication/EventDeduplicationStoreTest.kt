@@ -3,6 +3,7 @@ package io.github.darkryh.katalyst.events.bus.deduplication
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,6 +18,7 @@ import kotlin.test.assertTrue
 @DisplayName("Event Deduplication Store Tests")
 class EventDeduplicationStoreTest {
 
+    @Nested
     @DisplayName("InMemoryEventDeduplicationStore Tests")
     inner class InMemoryStoreTests {
         private lateinit var store: InMemoryEventDeduplicationStore
@@ -246,6 +248,7 @@ class EventDeduplicationStoreTest {
         }
     }
 
+    @Nested
     @DisplayName("NoOpEventDeduplicationStore Tests")
     inner class NoOpStoreTests {
         private lateinit var store: NoOpEventDeduplicationStore

@@ -7,7 +7,7 @@ import io.github.darkryh.katalyst.events.bus.deduplication.EventDeduplicationSto
 import io.github.darkryh.katalyst.events.bus.deduplication.NoOpEventDeduplicationStore
 import io.github.darkryh.katalyst.events.bus.validation.DefaultEventPublishingValidator
 import io.github.darkryh.katalyst.events.bus.validation.EventPublishingValidator
-import io.github.darkryh.katalyst.events.bus.validation.EventPublishingException
+import io.github.darkryh.katalyst.events.bus.validation.EventPublishingValidationException
 import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapter
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
@@ -82,7 +82,7 @@ class EventsTransactionAdapter(
      * the entire transaction is rolled back.
      *
      * @param context The transaction context containing pending events
-     * @throws EventPublishingException if any event fails validation
+     * @throws EventPublishingValidationException if any event fails validation
      */
     private suspend fun validateAllEvents(context: TransactionEventContext) {
         val pendingEvents = context.getPendingEvents()
@@ -101,7 +101,7 @@ class EventsTransactionAdapter(
                     event::class.simpleName,
                     result.error
                 )
-                throw EventPublishingException(
+                throw EventPublishingValidationException(
                     event,
                     result.error ?: "Validation failed"
                 )

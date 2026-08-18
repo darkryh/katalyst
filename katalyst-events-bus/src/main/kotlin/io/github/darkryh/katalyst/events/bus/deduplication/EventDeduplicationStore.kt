@@ -103,13 +103,20 @@ class InMemoryEventDeduplicationStore(
     }
 
     override suspend fun deletePublishedBefore(beforeMillis: Long): Int {
-        val keysToDelete = publishedEvents
-            .filter { it.value < beforeMillis }
-            .keys
+        var deletedCount = 0
 
-        keysToDelete.forEach { publishedEvents.remove(it) }
+        for (entry in publishedEvents.entries) {
+            val publishedAt = entry.value
+            if (publishedAt >= beforeMillis) continue
 
-        val deletedCount = keysToDelete.size
+            // Compare-and-remove against the timestamp we just observed - the same discipline the
+            // eviction path in markAsPublished() uses. A key-only remove() would drop the entry even
+            // if another thread re-marked the event with a FRESH timestamp in between, making
+            // isEventPublished() report false for an event that was just published: the exact
+            // duplicate-publish this store exists to prevent.
+            if (publishedEvents.remove(entry.key, publishedAt)) deletedCount++
+        }
+
         if (deletedCount > 0) {
             logger.info("Cleaned up {} old published event records", deletedCount)
         }

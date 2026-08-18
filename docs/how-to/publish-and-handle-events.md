@@ -29,7 +29,9 @@ data class UserRegisteredEvent(
 
 `DomainEvent` supplies `eventId`, metadata, and an `eventType()` with sensible defaults, so
 a plain data class is enough. To group related events, use a sealed hierarchy — a handler of
-the sealed parent automatically receives every subtype.
+the sealed parent automatically receives every subtype. Any base type works the same way: an
+abstract class, an interface, or `EventHandler<DomainEvent>` as a catch-all. A handler runs at
+most once per event however many of its registered types match.
 
 ## Publish an event
 

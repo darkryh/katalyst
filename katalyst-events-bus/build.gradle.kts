@@ -17,6 +17,9 @@ dependencies {
     implementation(libs.slf4j.api)
 
     testImplementation(libs.kotlinx.coroutines.test)
+    // Logback's ListAppender is how the tests assert that the framework *reports* a problem
+    // (dropped registrations, dropped observation events) instead of failing silently.
+    testImplementation(libs.logback)
 }
 
 jmh {

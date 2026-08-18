@@ -53,6 +53,21 @@ import kotlin.reflect.KClass
  * // Because they are concrete subtypes of sealed UserEvent
  * ```
  *
+ * **Multiple Event Types (Any Base Type):**
+ *
+ * The same works for an abstract/open base class or an interface, and for `DomainEvent` itself -
+ * a handler receives every published event that is an instance of its declared `eventType`,
+ * exactly once:
+ *
+ * ```kotlin
+ * @Component
+ * class EventAuditLogger : EventHandler<DomainEvent> {
+ *     override val eventType = DomainEvent::class  // ← receives every event
+ *
+ *     override suspend fun handle(event: DomainEvent) = auditLog.record(event)
+ * }
+ * ```
+ *
  * **Important Notes:**
  *
  * - Handlers are discovered and registered during application startup
@@ -68,9 +83,16 @@ interface EventHandler<T : DomainEvent> {
     /**
      * The event type this handler listens to.
      *
-     * Can be:
-     * - A concrete event class (e.g., UserCreatedEvent::class)
-     * - A sealed parent class (automatically registers for all subtypes)
+     * The handler receives every published event that is an instance of this type. It can be:
+     * - A concrete event class (e.g., `UserCreatedEvent::class`)
+     * - A sealed parent class (all of its concrete subtypes are delivered)
+     * - An abstract or open base class, or an interface (all implementations are delivered)
+     * - `DomainEvent::class` itself, for a catch-all audit/logging handler
+     *
+     * However many of those routes match a given event, the handler is invoked **once** per event.
+     *
+     * The one shape that cannot work is a sealed type with no subclasses: nothing can ever be an
+     * instance of it. Registering such a handler is reported at WARN rather than failing silently.
      */
     val eventType: KClass<T>
 

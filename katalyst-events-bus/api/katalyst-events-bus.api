@@ -264,12 +264,6 @@ public final class io/github/darkryh/katalyst/events/bus/validation/DefaultEvent
 	public fun validate (Lio/github/darkryh/katalyst/events/DomainEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/github/darkryh/katalyst/events/bus/validation/EventPublishingException : java/lang/RuntimeException {
-	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;)V
-	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
-}
-
 public final class io/github/darkryh/katalyst/events/bus/validation/EventPublishingResult {
 	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -286,6 +280,12 @@ public final class io/github/darkryh/katalyst/events/bus/validation/EventPublish
 	public fun hashCode ()I
 	public final fun isValid ()Z
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/darkryh/katalyst/events/bus/validation/EventPublishingValidationException : java/lang/RuntimeException {
+	public fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;)V
+	public synthetic fun <init> (Lio/github/darkryh/katalyst/events/DomainEvent;Ljava/lang/String;Ljava/lang/Exception;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEvent ()Lio/github/darkryh/katalyst/events/DomainEvent;
 }
 
 public abstract interface class io/github/darkryh/katalyst/events/bus/validation/EventPublishingValidator {

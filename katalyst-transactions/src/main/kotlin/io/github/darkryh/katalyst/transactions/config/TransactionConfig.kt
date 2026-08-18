@@ -186,7 +186,7 @@ object DefaultTransactionExceptionSeverityClassifier : TransactionExceptionSever
      * Kept as FQCN strings to avoid cross-module compile/runtime coupling from transactions module.
      */
     private val knownKatalystExpectedExceptionNames = setOf(
-        "io.github.darkryh.katalyst.events.bus.validation.EventPublishingException",
+        "io.github.darkryh.katalyst.events.bus.validation.EventPublishingValidationException",
         "io.github.darkryh.katalyst.events.exception.EventValidationException",
         "io.github.darkryh.katalyst.scheduler.exception.SchedulerValidationException"
     )
@@ -350,9 +350,20 @@ data class TransactionConfig(
     /**
      * Isolation level for the transaction.
      *
-     * Determines how this transaction interacts with concurrent transactions.
+     * Determines how this transaction interacts with concurrent transactions. Any level other
+     * than the default is applied to the JDBC connection that runs the transaction, overriding
+     * the pool-wide `database.transactionIsolation` setting.
      *
-     * Default: READ_COMMITTED
+     * The default [TransactionIsolationLevel.READ_COMMITTED] means *inherit*: the connection keeps
+     * whatever the pool configured (katalyst-persistence defaults HikariCP to
+     * `TRANSACTION_REPEATABLE_READ`). Set `database.transactionIsolation` to
+     * `TRANSACTION_READ_COMMITTED` to make read-committed the application-wide level.
+     *
+     * A transaction that joins an already-open transaction cannot change the isolation level -
+     * JDBC fixes it when the transaction begins - so the request is logged as a warning instead of
+     * being applied.
+     *
+     * Default: READ_COMMITTED (inherit the pool/connection level)
      */
     val isolationLevel: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
 

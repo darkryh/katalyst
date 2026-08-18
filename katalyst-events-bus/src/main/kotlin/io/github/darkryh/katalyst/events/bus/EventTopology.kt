@@ -61,22 +61,30 @@ class EventTopology(
 
         logger.info("Registering {} event handler(s)", handlers.size)
 
+        var registered = 0
+        val failed = mutableListOf<String>()
+
         for (handler in handlers) {
+            val handlerName = handler::class.qualifiedName
+                ?: handler::class.simpleName
+                ?: handler::class.java.name
             try {
                 @Suppress("UNCHECKED_CAST")
                 eventBus.register(handler as EventHandler<out DomainEvent>)
 
                 registry.register(handler)
+                registered++
 
                 logger.info(
                     "Registered event handler: {} (for event type: {})",
-                    handler::class.qualifiedName,
+                    handlerName,
                     handler.eventType.qualifiedName
                 )
             } catch (e: Exception) {
+                failed += handlerName
                 logger.error(
                     "Failed to register event handler {}: {}",
-                    handler::class.qualifiedName,
+                    handlerName,
                     e.message,
                     e
                 )
@@ -84,7 +92,20 @@ class EventTopology(
             }
         }
 
-        logger.info("Event handler registration completed successfully")
+        // A dropped handler means an event type silently stops being handled at runtime, so the
+        // summary reports what really happened instead of unconditionally claiming success.
+        if (failed.isEmpty()) {
+            logger.info("Event handler registration completed: {} of {} registered", registered, handlers.size)
+        } else {
+            logger.error(
+                "Event handler registration completed with failures: {} of {} registered, {} failed: {}. " +
+                    "Events for the failed handler(s) will not be delivered.",
+                registered,
+                handlers.size,
+                failed.size,
+                failed.joinToString()
+            )
+        }
     }
 
     /**

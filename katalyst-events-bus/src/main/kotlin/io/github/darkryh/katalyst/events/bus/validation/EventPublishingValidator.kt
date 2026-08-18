@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  * Used automatically in EventsTransactionAdapter during BEFORE_COMMIT_VALIDATION phase
  *
  * **Error Handling:**
- * If validation fails, throws EventPublishingException which will rollback the transaction
+ * If validation fails, throws EventPublishingValidationException which will rollback the transaction
  */
 interface EventPublishingValidator {
 
@@ -24,7 +24,7 @@ interface EventPublishingValidator {
      *
      * @param event The event to validate
      * @return EventPublishingResult with isValid flag and optional error message
-     * @throws EventPublishingException if validation fails
+     * @throws EventPublishingValidationException if validation fails
      */
     suspend fun validate(event: DomainEvent): EventPublishingResult
 }
@@ -74,7 +74,7 @@ class DefaultEventPublishingValidator(
  * Exception thrown when event validation fails.
  * This is caught by the transaction system and causes the transaction to rollback.
  */
-class EventPublishingException(
+class EventPublishingValidationException(
     val event: DomainEvent,
     message: String,
     cause: Exception? = null

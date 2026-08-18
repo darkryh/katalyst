@@ -31,16 +31,22 @@ data class UserRegisteredEvent(
 delivered twice. `EventMetadata` carries the event type, correlation id, causation id,
 timestamps, version, and source.
 
-### Sealed hierarchies
+### Event hierarchies
 
-Group related events with a sealed class. A handler of the sealed parent automatically
-receives every concrete subtype:
+A handler registered for a base type receives every event assignable to it. Sealed classes are
+the usual way to group related events, and a handler of the sealed parent receives every concrete
+subtype:
 
 ```kotlin
 sealed class UserEvent : DomainEvent
 data class UserCreatedEvent(val id: Long) : UserEvent()
 data class UserDeletedEvent(val id: Long) : UserEvent()
 ```
+
+The same holds for an abstract class, an open class, an interface, or a leaf below a non-sealed
+intermediate — and an `EventHandler<DomainEvent>` therefore acts as a catch-all that sees every
+published event. A handler is invoked **at most once per event**, even when several of the types
+it is registered under match.
 
 ## EventHandler
 
