@@ -67,10 +67,12 @@ class MigrationRunner(
             logger.info("{} Starting migration (tags={}, blocking={})", context, migration.tags, migration.blocking)
 
             MigrationTelemetry.begin(migration.id)
+            // The history write now happens INSIDE executeMigration, in the migration's own
+            // transaction, and therefore inside this try: a bookkeeping failure is a migration
+            // failure and is reported as one. Previously recordSuccess sat after the catch, so a
+            // failed history write escaped uncaught — after the schema change had already landed.
             val duration = try {
-                measureTimeMillis {
-                    executeMigration(migration)
-                }
+                executeMigration(historyTable, migration)
             } catch (error: Exception) {
                 MigrationTelemetry.recordFailure(migration.id, error.message)
                 logger.error("{} Migration failed: {}", context, error.message)
@@ -83,7 +85,6 @@ class MigrationRunner(
                 }
             }
 
-            recordSuccess(historyTable, migration, duration)
             MigrationTelemetry.end()
             applied[migration.id] = AppliedMigration(migration.checksum)
             logger.info("{} Completed in {} ms", context, duration)
@@ -157,14 +158,37 @@ class MigrationRunner(
         return MigrationDryRunReport(status(migrations).pending)
     }
 
-    private fun executeMigration(migration: KatalystMigration) {
-        if (migration.transactional) {
-            transaction(databaseFactory.database) {
-                migration.up()
-            }
-        } else {
-            migration.up()
+    /**
+     * Run one migration and record it, returning how long the body took.
+     *
+     * For a transactional migration the body and its history row commit **together**, so the pair
+     * is all-or-nothing: a crash mid-way rolls both back and the next boot simply re-runs the
+     * migration cleanly. A non-transactional migration cannot be made atomic — there is no
+     * transaction to enlist the bookkeeping in — so it keeps the older two-step behaviour, and the
+     * caller is warned that the window exists.
+     */
+    private fun executeMigration(
+        historyTable: MigrationHistoryTable,
+        migration: KatalystMigration,
+    ): Long {
+        if (!migration.transactional) {
+            logger.warn(
+                "[{}] transactional=false: the schema change and its history row cannot commit " +
+                    "atomically, so a crash between them will leave the migration recorded as " +
+                    "un-applied and it will re-run on the next boot",
+                migration.id,
+            )
+            val elapsed = measureTimeMillis { migration.up() }
+            recordSuccess(historyTable, migration, elapsed)
+            return elapsed
         }
+
+        var elapsed = 0L
+        transaction(databaseFactory.database) {
+            elapsed = measureTimeMillis { migration.up() }
+            writeHistoryRow(historyTable, migration, elapsed)
+        }
+        return elapsed
     }
 
     private fun matchesTags(migration: KatalystMigration): Boolean {
@@ -304,15 +328,33 @@ class MigrationRunner(
         durationMs: Long
     ) {
         transaction(databaseFactory.database) {
-            table.insert {
-                it[migrationId] = migration.id
-                it[checksum] = migration.checksum
-                it[description] = migration.description
-                it[executionTimeMs] = durationMs
-                it[executedAtEpochMs] = System.currentTimeMillis()
-                it[tags] = migration.tags.joinToString(",").ifBlank { null }
-                it[status] = STATUS_SUCCESS
-            }
+            writeHistoryRow(table, migration, durationMs)
+        }
+    }
+
+    /**
+     * Insert the history row **using whatever transaction is already open**.
+     *
+     * Kept separate from [recordSuccess] so a transactional migration can commit its schema change
+     * and its bookkeeping row together. Previously the two were always separate transactions: the
+     * body committed, then a second transaction wrote the row, leaving a window in which a crash
+     * left the schema changed with no record of it. On the next boot `shouldRun` saw no row,
+     * re-ran a non-idempotent `up()`, and the process died on a duplicate object — recoverable
+     * only by hand-editing the database.
+     */
+    private fun writeHistoryRow(
+        table: MigrationHistoryTable,
+        migration: KatalystMigration,
+        durationMs: Long
+    ) {
+        table.insert {
+            it[migrationId] = migration.id
+            it[checksum] = migration.checksum
+            it[description] = migration.description
+            it[executionTimeMs] = durationMs
+            it[executedAtEpochMs] = System.currentTimeMillis()
+            it[tags] = migration.tags.joinToString(",").ifBlank { null }
+            it[status] = STATUS_SUCCESS
         }
     }
 
@@ -349,7 +391,7 @@ class MigrationRunner(
         val status: String? = null,
     )
 
-    private companion object {
+    internal companion object {
         val migrationComparator: Comparator<KatalystMigration> =
             compareBy<KatalystMigration> { it.version }
                 .thenComparator { left, right -> compareMigrationKeys(left.id, right.id) }
@@ -369,11 +411,50 @@ class MigrationRunner(
                 val comparison = if (leftNumber != null && rightNumber != null) {
                     leftNumber.compareTo(rightNumber)
                 } else {
-                    leftPart.compareTo(rightPart)
+                    compareNatural(leftPart, rightPart)
                 }
                 if (comparison != 0) return comparison
             }
             return 0
+        }
+
+        /**
+         * Compare two id segments the way a human reads a version: digit runs numerically, the
+         * text between them lexicographically.
+         *
+         * A plain `String.compareTo` is wrong for the Flyway-style ids this framework itself
+         * recommends (`SchemaDiffService` documents `V2__add_primary_key.sql`). `KatalystMigration
+         * .version` parses a *leading* numeric prefix, so `V2__…` and `V10__…` both yield
+         * `Long.MAX_VALUE` and tie, dropping through to this comparison — where `"V10" < "V2"`
+         * character-by-character, and **V10 applied before V2**. Comparing the digit run `10`
+         * against `2` as numbers fixes the whole family (`V`, `v`, `R`, or any other prefix)
+         * without changing what `version` means for ids that do start with digits.
+         */
+        fun compareNatural(left: String, right: String): Int {
+            var l = 0
+            var r = 0
+            while (l < left.length && r < right.length) {
+                val lDigit = left[l].isDigit()
+                val rDigit = right[r].isDigit()
+                if (lDigit && rDigit) {
+                    val lStart = l
+                    val rStart = r
+                    while (l < left.length && left[l].isDigit()) l++
+                    while (r < right.length && right[r].isDigit()) r++
+                    // Compare by value, not width, so `007` and `7` are equal in magnitude. Use the
+                    // digit strings with leading zeros stripped to stay safe past Long range.
+                    val lNum = left.substring(lStart, l).trimStart('0')
+                    val rNum = right.substring(rStart, r).trimStart('0')
+                    if (lNum.length != rNum.length) return lNum.length - rNum.length
+                    val byValue = lNum.compareTo(rNum)
+                    if (byValue != 0) return byValue
+                } else {
+                    if (left[l] != right[r]) return left[l].compareTo(right[r])
+                    l++
+                    r++
+                }
+            }
+            return (left.length - l) - (right.length - r)
         }
     }
 }

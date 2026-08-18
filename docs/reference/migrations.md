@@ -30,11 +30,30 @@ class CreateUsersTable : KatalystMigration {
 ```
 
 - `id` must be unique across all migrations.
-- `version` controls primary ordering and defaults to the numeric prefix of `id`.
+- `version` controls primary ordering and defaults to the numeric prefix of `id`. Ids that do not
+  start with a digit — the Flyway-style `V2__add_users` — all share the default version and are
+  ordered by `id`, comparing digit runs **numerically**: `V2__…` applies before `V10__…`.
 - `checksum` is stored in the history table; a changed checksum for an applied migration is a
   validation error.
 - `down()` exists on the interface, but the current runtime runner does not orchestrate
   rollbacks.
+
+### Atomicity
+
+A `transactional` migration (the default) commits its body **and** its history row in a single
+transaction, so a crash between the two cannot leave a change applied with nothing recording it.
+The next boot either sees the migration applied or re-runs it cleanly.
+
+Two limits are worth knowing. First, this covers whatever the database can actually roll back:
+PostgreSQL has transactional DDL, while H2 and MySQL implicitly commit around `CREATE`/`ALTER`, so
+a schema statement on those engines is not undone regardless of how the runner is written. Second,
+`transactional = false` opts out entirely — the body and the record are then separate, and the
+runner warns when a migration declares it.
+
+Because the history row and the body share a transaction, the primary key on `migration_id` also
+serialises concurrent instances: if two application instances start together and both apply the
+same migration, one commits and the other is rejected and rolled back whole, leaving exactly one
+history row and one set of effects.
 
 ## Enabling at startup
 
