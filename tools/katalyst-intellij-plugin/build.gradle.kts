@@ -49,6 +49,12 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
+    // IntelliJ Platform Gradle Plugin 2.x no longer contributes JUnit 4 to the test classpath
+    // transitively through testFramework(TestFrameworkType.Platform); it must be declared
+    // explicitly. Without it every test source file fails to compile ("Unresolved reference
+    // 'junit'"), which went unnoticed because plugin-ci.yml only runs on plugin/conventions changes.
+    testImplementation("junit:junit:4.13.2")
+
     // Canonical discovery contract for the parity test — kept off the compile classpath (see above).
     katalystConventions("io.github.darkryh.katalyst:katalyst-conventions:$katalystVersion")
 
