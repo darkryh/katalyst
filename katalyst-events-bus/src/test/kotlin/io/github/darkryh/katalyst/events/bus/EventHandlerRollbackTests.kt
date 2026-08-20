@@ -10,6 +10,7 @@ import io.github.darkryh.katalyst.transactions.adapter.TransactionAdapter
 import io.github.darkryh.katalyst.transactions.context.TransactionEventContext
 import io.github.darkryh.katalyst.transactions.hooks.TransactionPhase
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CopyOnWriteArrayList
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -206,7 +207,10 @@ class EventHandlerRollbackTests {
             override fun eventType(): String = "SyncEvent"
         }
 
-        val executionOrder = mutableListOf<String>()
+        // ApplicationEventBus launches handlers in parallel, so this list is written from
+        // several coroutines at once. A plain ArrayList races there and can silently drop an
+        // entry, making the assertions below fail at random.
+        val executionOrder = CopyOnWriteArrayList<String>()
 
         val handler1 = object : EventHandler<SyncEvent> {
             override val eventType = SyncEvent::class
@@ -268,7 +272,8 @@ class EventHandlerRollbackTests {
             override fun eventType(): String = "SendEmailEvent"
         }
 
-        val executionLog = mutableListOf<String>()
+        // Written from parallel handlers — see the note above; must be thread-safe.
+        val executionLog = CopyOnWriteArrayList<String>()
 
         val userHandler = object : EventHandler<UserCreatedEvent> {
             override val eventType = UserCreatedEvent::class
