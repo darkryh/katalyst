@@ -6,6 +6,17 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Local machine configuration ###
+# Contains absolute paths from whoever ran the build (its own header says it must
+# never be committed). Nothing in this repo reads it -- Katalyst has no Android/SDK
+# dependency -- but IDEs recreate it anyway, so keep it ignored rather than deleted.
+local.properties
+
+### Stray Gradle / JVM output ###
+# Daemon diagnostics and OOM heap dumps land in whatever directory the build ran from.
+gradle-info.log
+*.hprof
+
 ### STS ###
 .apt_generated
 .classpath

@@ -2,6 +2,14 @@
 build/
 .gradle/
 
+# IntelliJ Platform Gradle Plugin working directory: the test sandbox, downloaded
+# product releases, the layout index and the generated Ivy descriptors. ~200 MB and
+# tied to one IDE build number, and the descriptors are regenerated with different
+# XML formatting every run, so tracking them produces pure churn.
+# Verified regenerable: wiping the whole directory and running `test` rebuilds it
+# and passes 36/36.
+.intellijPlatform/
+
 # Plugin signing material — NEVER commit these.
 chain.crt
 private.pem
