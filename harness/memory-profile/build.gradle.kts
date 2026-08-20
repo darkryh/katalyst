@@ -19,9 +19,12 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
-val sampleInstallDir = layout.projectDirectory.dir("../samples/katalyst-example/build/install/katalyst-example")
+// Resolved from the repository root, not by directory depth: this module has moved once already
+// (root -> harness/) and a relative "../samples" silently breaks on the next move.
+val samplesDir = rootProject.layout.projectDirectory.dir("samples")
+val sampleInstallDir = samplesDir.dir("katalyst-example/build/install/katalyst-example")
 val prepareSample by tasks.registering(Exec::class) {
-    workingDir(layout.projectDirectory.dir("../samples"))
+    workingDir(samplesDir)
     commandLine("./gradlew", "--no-daemon", "--console=plain", ":katalyst-example:installDist")
 }
 

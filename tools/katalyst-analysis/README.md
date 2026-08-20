@@ -20,7 +20,7 @@ module mirrors those exact rules **without booting the app** so tooling can reas
 
 ## Single source of truth
 
-- Discovery **names** come from [`katalyst-conventions`](../katalyst-conventions) — the same
+- Discovery **names** come from [`katalyst-conventions`](../../katalyst-conventions) — the same
   constants the runtime uses, so analysis and runtime can't disagree about what an entrypoint is.
 - The **DI dependency graph and validation** are produced by *reusing* `katalyst-di`'s own
   `DependencyAnalyzer` and `DependencyValidator`, driven with a no-op container

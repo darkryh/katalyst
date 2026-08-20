@@ -5,25 +5,45 @@ Katalyst is a multi-module Kotlin/Gradle **library** — there is no root applic
 `src/` directory; the root `build.gradle.kts` only configures shared plugins and public-API
 tracking. Each `katalyst-*` module keeps sources under `src/main/kotlin` and tests under
 `src/test/kotlin`, mirroring its package (`io.github.darkryh.katalyst.<feature>`). See
-`settings.gradle.kts` for the authoritative module list; the main groups are:
+`settings.gradle.kts` for the authoritative module list and for where each module lives on disk.
 
-- **Core:** `katalyst-core`, `katalyst-di`, `katalyst-koin-bean`, `katalyst-scanner`
-- **HTTP/engines:** `katalyst-ktor`, `katalyst-ktor-engine-{netty,jetty,cio}`, `katalyst-websockets`
-- **Data:** `katalyst-persistence`, `katalyst-transactions`, `katalyst-migrations`
-- **Configuration:** `katalyst-config-provider`, `katalyst-config-spi`, `katalyst-config-yaml`
-- **Events:** `katalyst-events`, `katalyst-events-bus`
-- **Observability:** `katalyst-telemetry-model`, `katalyst-telemetry`, `katalyst-tui`
-- **Testing:** `katalyst-testing-core`, `katalyst-testing-ktor`
-- **Starters** (dependency bundles, under `starter/`): `katalyst-starter-{core,web,persistence,
-  migrations,scheduler,websockets,test,observability,engine-netty,engine-jetty,engine-cio}`
-- **Packaging:** `katalyst-bom`, `katalyst-gradle-plugin`, `katalyst-conventions`
+**Directories group modules; they never define them.** A Gradle project's name and its directory
+are independent, and this build relies on that: every module keeps a flat project path
+(`:katalyst-core`) no matter which folder holds it, because `BaseConventionPlugin` derives the
+published coordinate from the project *name* (`artifactId = target.name`). Moving a module between
+folders therefore changes nothing observable — same artifactId, same `projects.katalystCore`
+accessor, same `api/*.api` dump, same `:module:task` path. **To regroup a module, change only its
+directory in `settings.gradle.kts`; never rename the project.**
 
-A runnable reference application lives in the separate `samples` composite build
-(`samples/katalyst-example`). The IntelliJ plugin (`katalyst-intellij-plugin`) and the
-Kotlin/Wasm project generator (`initializr`) are each their own standalone Gradle builds —
-opt into the samples/plugin composites with `-PincludeSamplesComposite=true` /
+```
+katalyst/
+├── katalyst-core/  katalyst-di/  katalyst-scanner/  katalyst-koin-bean/
+├── katalyst-conventions/  katalyst-events/  katalyst-events-bus/  katalyst-scheduler/
+│                                     framework core — what an application boots on
+├── http/          katalyst-ktor, katalyst-ktor-engine-{netty,jetty,cio}, katalyst-websockets
+├── data/          katalyst-persistence, katalyst-transactions, katalyst-migrations
+├── config/        katalyst-config-{spi,provider,yaml}
+├── observability/ katalyst-telemetry-model, katalyst-telemetry, katalyst-tui
+├── testing/       katalyst-testing-core, katalyst-testing-ktor
+├── starter/       katalyst-starter-{core,web,persistence,migrations,scheduler,websockets,
+│                                    test,observability,engine-netty,engine-jetty,engine-cio}
+├── platform/      katalyst-bom, katalyst-gradle-plugin        packaging, not runtime code
+├── tools/         katalyst-analysis, katalyst-intellij-plugin  developer tooling
+├── web/           initializr                                   the browser project generator
+├── harness/       consumer-smoke, memory-profile               verification outside `check`
+├── samples/       katalyst-example                             runnable reference application
+└── build-logic/   convention plugins (included build)
+```
+
+`samples/`, `web/initializr/`, `tools/katalyst-intellij-plugin/` and `harness/consumer-smoke/` are
+each their own standalone Gradle builds, deliberately outside the library build. Opt into the
+samples/plugin composites with `-PincludeSamplesComposite=true` /
 `-PincludeIntellijPluginComposite=true`, or build the generator directly with
-`./gradlew -p initializr wasmJsBrowserDistribution`.
+`./gradlew -p web/initializr wasmJsBrowserDistribution`.
+
+`harness/memory-profile` is the one project in the root build that is intentionally NOT named
+`katalyst-*`: `platform/katalyst-bom` builds its constraint list by that name prefix, so staying
+outside the namespace keeps a never-published module out of the BOM by construction.
 
 ## Build, Test, and Development Commands
 - `./gradlew build` — compiles every module and runs checks (tests, public-API compatibility).

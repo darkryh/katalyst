@@ -19,7 +19,9 @@ javaPlatform {
 //  - katalyst-bom: the platform itself.
 //  - katalyst-gradle-plugin: a Gradle plugin, resolved via pluginManagement (a marker artifact),
 //    not via `implementation` — constraining it would be meaningless and misleading.
-// (memory-validation is excluded by the `katalyst-` name filter and is not published anyway.)
+// The filter is by NAME PREFIX, so any never-published module must stay outside the `katalyst-`
+// namespace (today: `harness/memory-profile`) or be listed below — otherwise the BOM would ship a
+// constraint pointing at an artifact that does not exist on Maven Central.
 val nonLibraryModules = setOf(
     project.name,
     "katalyst-gradle-plugin",

@@ -21,9 +21,9 @@ apiValidation {
     // Exclude aggregator / test-helper / sample modules from public API tracking — most of these
     // ARE published to Maven Central (starters, testing-core/ktor, the BOM, the plugin marker);
     // they're just thin dependency bundles or non-library artifacts with no meaningful API surface
-    // to snapshot. katalyst-tui and memory-validation are the only modules NOT published at all.
+    // to snapshot. katalyst-tui and memory-profile are the only modules NOT published at all.
     ignoredProjects += listOf(
-        "memory-validation",
+        "memory-profile",
         // The terminal-UI inspector is a runnable application, not a published library.
         "katalyst-tui",
         "katalyst-testing-core",
@@ -47,7 +47,7 @@ apiValidation {
 tasks.register("memoryBaseline") {
     group = "verification"
     description = "Runs the canonical full-backend memory validation workload"
-    dependsOn(":memory-validation:memoryBaseline")
+    dependsOn(":memory-profile:memoryBaseline")
 }
 
 val starterBoundaries = mapOf(

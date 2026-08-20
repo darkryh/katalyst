@@ -53,7 +53,7 @@ jobs:
       # Pin the generated projects (and the header version) to the released Katalyst version, so the
       # live generator tracks whatever tag was cut. On a release it is the release tag; otherwise the
       # most recent release (incl. pre-releases). Empty falls back to the build default in
-      # initializr/build.gradle.kts.
+      # web/initializr/build.gradle.kts.
       - name: Resolve Katalyst version to pin
         id: ver
         env:
@@ -69,12 +69,12 @@ jobs:
           echo "Pinning generated projects to Katalyst version: ${V:-<build default>}"
 
       - name: Build initializr Wasm distribution
-        run: ./gradlew -p initializr wasmJsBrowserDistribution -PkatalystVersion="${{ steps.ver.outputs.version }}" --stacktrace
+        run: ./gradlew -p web/initializr wasmJsBrowserDistribution -PkatalystVersion="${{ steps.ver.outputs.version }}" --stacktrace
 
       - name: Place the initializr under /new
         run: |
           mkdir -p site/new
-          cp -R initializr/build/dist/wasmJs/productionExecutable/. site/new/
+          cp -R web/initializr/build/dist/wasmJs/productionExecutable/. site/new/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

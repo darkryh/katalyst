@@ -7,7 +7,7 @@
 # iTerm, the IntelliJ Terminal tab, or an ssh session on the machine where the backend runs.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BIN_FILE="$SCRIPT_DIR/katalyst-tui/build/install/katalyst-tui/bin/katalyst-tui"
+BIN_FILE="$SCRIPT_DIR/observability/katalyst-tui/build/install/katalyst-tui/bin/katalyst-tui"
 
 echo "Building katalyst-tui..."
 cd "$SCRIPT_DIR" || exit 1
@@ -26,6 +26,6 @@ if [ -t 0 ] && [ -t 1 ]; then
 else
     echo "Non-interactive terminal detected; skipping launch."
     echo "Run ./tui.sh from a real terminal, or validate the attach chain headlessly with:"
-    echo "  java -cp \"$SCRIPT_DIR/katalyst-tui/build/install/katalyst-tui/lib/*\" io.github.darkryh.katalyst.tui.AttachDoctorKt"
+    echo "  java -cp \"$SCRIPT_DIR/observability/katalyst-tui/build/install/katalyst-tui/lib/*\" io.github.darkryh.katalyst.tui.AttachDoctorKt"
     exit 0
 fi

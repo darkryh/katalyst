@@ -27,7 +27,7 @@ point of the observability starter.
 ## Architecture
 
 ```
-initializr/                         standalone Gradle build (NOT in the root settings.gradle.kts)
+web/initializr/                     standalone Gradle build (NOT in the root settings.gradle.kts)
   src/commonMain/kotlin/.../
     model/        ProjectConfig, FeatureSelection, Derivation, ProjectConfigValidator   pure, JVM-tested
     template/     StarterTemplate (feature-aware, placeholdered)                         the app, as data
@@ -62,16 +62,16 @@ initializr/                         standalone Gradle build (NOT in the root set
 
 ```bash
 # From the repository root:
-./gradlew -p initializr jvmTest                     # fast unit tests of the generator
-./gradlew -p initializr wasmJsBrowserDistribution   # build the static site
-./gradlew -p initializr wasmJsBrowserDevelopmentRun # serve with hot reload at http://localhost:8080
+./gradlew -p web/initializr jvmTest                     # fast unit tests of the generator
+./gradlew -p web/initializr wasmJsBrowserDistribution   # build the static site
+./gradlew -p web/initializr wasmJsBrowserDevelopmentRun # serve with hot reload at http://localhost:8080
 ```
 
-The production distribution lands in `initializr/build/dist/wasmJs/productionExecutable/`.
+The production distribution lands in `web/initializr/build/dist/wasmJs/productionExecutable/`.
 
 ## Deploy
 
-Deployment is handled by [`.github/workflows/docs.yml`](../.github/workflows/docs.yml): it builds the
+Deployment is handled by [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml): it builds the
 MkDocs site **and** this Wasm distribution and publishes them together to GitHub Pages — docs at the
 root, the initializr under `/new/`. The generated projects are pinned to the released Katalyst version
 (`-PkatalystVersion`, derived from the release tag), so cutting any release republishes the generator

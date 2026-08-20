@@ -9,7 +9,7 @@ The plugin installs into IntelliJ IDEA / Android Studio from the JetBrains Marke
   push a tag `plugin-v<version>` (e.g. `plugin-v0.1.0`). The tag drives the published version.
 - `.github/workflows/release-plugin.yml` then builds, signs (with the secrets below) and publishes.
 - `.github/workflows/plugin-ci.yml` separately validates the plugin on every push/PR **that touches
-  `katalyst-intellij-plugin/**` or `katalyst-conventions/**`**, so a plugin change is always built
+  `tools/katalyst-intellij-plugin/**` or `katalyst-conventions/**`**, so a plugin change is always built
   before it can be released, and unrelated commits don't pay the IntelliJ-SDK download cost.
 
 ```bash

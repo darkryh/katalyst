@@ -21,11 +21,11 @@ What it proves:
 ./gradlew publishToMavenLocal
 
 # 2. Validate every engine:
-validation/consumer-smoke/run-all-engines.sh
+harness/consumer-smoke/run-all-engines.sh
 
 # …or a single engine:
-./gradlew -p validation/consumer-smoke check -PkatalystEngine=jetty
+./gradlew -p harness/consumer-smoke check -PkatalystEngine=jetty
 
 # …or boot it for real on H2 (Ctrl-C to stop):
-./gradlew -p validation/consumer-smoke run -PkatalystEngine=netty
+./gradlew -p harness/consumer-smoke run -PkatalystEngine=netty
 ```

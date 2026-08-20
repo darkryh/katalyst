@@ -30,66 +30,89 @@ includeBuild("build-logic")
 // library, so it must not be pulled into the main library build by default. Opt in with
 // -PincludeIntellijPluginComposite=true (e.g. when developing the plugin).
 if (providers.gradleProperty("includeIntellijPluginComposite").orNull == "true") {
-    includeBuild("katalyst-intellij-plugin")
+    includeBuild("tools/katalyst-intellij-plugin")
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// Shared conventions / contracts (zero-dependency single source of truth)
-include(":katalyst-conventions")
+// ---------------------------------------------------------------------------------------------
+// Module layout
+//
+// Gradle project NAMES and their DIRECTORIES are independent, and this build relies on that:
+// every project keeps its flat name (`:katalyst-core`), while its sources live in a directory
+// that groups it with its peers. Because `BaseConventionPlugin` derives the published
+// coordinate from the project NAME (`artifactId = target.name`), moving a module between
+// directories changes nothing a consumer can observe — the artifactId, the `projects.*`
+// accessor, the committed `api/*.api` dump and every `:module:task` path all stay put.
+//
+// So: to regroup a module, change ONLY its directory below. Never rename the project.
+// ---------------------------------------------------------------------------------------------
 
-// Core infrastructure modules
-include(":katalyst-scanner")
-include(":katalyst-ktor")
+/** Declares [modules] as flat root-level projects whose sources live under `dir/`. */
+fun includeIn(dir: String, vararg modules: String) {
+    modules.forEach { name ->
+        include(":$name")
+        project(":$name").projectDir = file("$dir/$name")
+    }
+}
 
-// Dependency Injection and Orchestration
-include(":katalyst-di")
-include(":katalyst-koin-bean")
-
-// Domain modules
+// ── Framework core — the modules an application boots on (kept at the repository root) ────────
+// Discovery contracts, the bootstrap/DI engine, classpath scanning, the Koin adapter, the
+// zero-dependency convention contract shared with tooling, events, and scheduling.
 include(":katalyst-core")
-include(":katalyst-persistence")
-include(":katalyst-scheduler")
-include(":katalyst-websockets")
-
-// Configuration management modules
-include(":katalyst-config-provider")
-include(":katalyst-config-yaml")
-include(":katalyst-config-spi")
-
-include(":katalyst-migrations")
-
-// Event domain + local bus
+include(":katalyst-di")
+include(":katalyst-scanner")
+include(":katalyst-koin-bean")
+include(":katalyst-conventions")
 include(":katalyst-events")
 include(":katalyst-events-bus")
+include(":katalyst-scheduler")
 
-include(":katalyst-transactions")
+// ── HTTP: the Ktor integration, the three swappable engines, and WebSockets ───────────────────
+includeIn(
+    "http",
+    "katalyst-ktor",
+    "katalyst-ktor-engine-netty",
+    "katalyst-ktor-engine-jetty",
+    "katalyst-ktor-engine-cio",
+    "katalyst-websockets",
+)
 
-// Semantic analysis layer consumed by Gradle tooling, CLIs, tests and the IDE plugin
-include(":katalyst-analysis")
+// ── Data: Exposed/HikariCP persistence, transaction management, schema migrations ─────────────
+includeIn(
+    "data",
+    "katalyst-persistence",
+    "katalyst-transactions",
+    "katalyst-migrations",
+)
 
-// Observability: bounded in-process telemetry capture + the terminal-UI inspector that reads it.
-// -model is the zero-dependency wire contract shared by the backend feature and the TUI.
-include(":katalyst-telemetry-model")
-include(":katalyst-telemetry")
-include(":katalyst-tui")
+// ── Configuration: the loader SPI, typed binding, and the YAML loader ─────────────────────────
+includeIn(
+    "config",
+    "katalyst-config-spi",
+    "katalyst-config-provider",
+    "katalyst-config-yaml",
+)
 
-include(":katalyst-testing-core")
-include(":katalyst-testing-ktor")
-include(":katalyst-bom")
-include(":katalyst-starter-core")
-include(":katalyst-starter-web")
-include(":katalyst-starter-persistence")
-include(":katalyst-starter-migrations")
-include(":katalyst-starter-scheduler")
-include(":katalyst-starter-websockets")
-include(":katalyst-starter-test")
-include(":katalyst-starter-observability")
-include(":katalyst-starter-engine-netty")
-include(":katalyst-starter-engine-jetty")
-include(":katalyst-starter-engine-cio")
+// ── Observability: bounded in-process telemetry capture plus the terminal-UI inspector that
+// reads it. -model is the zero-dependency wire contract shared by the backend feature and the TUI.
+includeIn(
+    "observability",
+    "katalyst-telemetry-model",
+    "katalyst-telemetry",
+    "katalyst-tui",
+)
 
-listOf(
+// ── Test-time libraries consumers depend on from `testImplementation` ─────────────────────────
+includeIn(
+    "testing",
+    "katalyst-testing-core",
+    "katalyst-testing-ktor",
+)
+
+// ── Starters: dependency bundles that give an application a capability in one coordinate ──────
+includeIn(
+    "starter",
     "katalyst-starter-core",
     "katalyst-starter-web",
     "katalyst-starter-persistence",
@@ -101,15 +124,33 @@ listOf(
     "katalyst-starter-engine-netty",
     "katalyst-starter-engine-jetty",
     "katalyst-starter-engine-cio",
-).forEach { starter ->
-    project(":$starter").projectDir = file("starter/$starter")
-}
+)
 
-include(":katalyst-ktor-engine-netty")
-include(":katalyst-ktor-engine-jetty")
-include(":katalyst-ktor-engine-cio")
-include(":memory-validation")
+// ── Packaging: what a consumer build applies, never on an application's runtime classpath.
+// The BOM aligns every katalyst-* version; the Gradle plugin (id "io.github.darkryh.katalyst")
+// applies kotlin.jvm + serialization + application so consumer builds wire no third-party plugins.
+includeIn(
+    "platform",
+    "katalyst-bom",
+    "katalyst-gradle-plugin",
+)
 
-// Consumer-facing Gradle plugin (id "io.github.darkryh.katalyst"). Applies kotlin.jvm +
-// serialization + application so consumer builds never wire third-party plugins themselves.
-include(":katalyst-gradle-plugin")
+// ── Tooling: the semantic analysis layer consumed by Gradle tasks, CLIs, tests and the IDE
+// plugin. (The IntelliJ plugin itself is the separate composite build included above.)
+includeIn(
+    "tools",
+    "katalyst-analysis",
+)
+
+// ── Harnesses: not part of the `check` gate. They stand up a REAL running application and
+// verify Katalyst from the outside. `memory-profile` drives a full backend under load and
+// samples RSS/heap/threads (`./gradlew memoryBaseline`); its sibling `harness/consumer-smoke`
+// is a standalone build and is deliberately NOT a project of this one.
+//
+// Note it is intentionally NOT named `katalyst-*`: `platform/katalyst-bom` builds its constraint
+// list by that name prefix, so an unprefixed name keeps a never-published module out of the BOM
+// by construction.
+includeIn(
+    "harness",
+    "memory-profile",
+)

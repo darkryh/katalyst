@@ -7,13 +7,13 @@ on:
   push:
     branches: [master]
     paths:
-      - "katalyst-intellij-plugin/**"
+      - "tools/katalyst-intellij-plugin/**"
       - "katalyst-conventions/**"        # the plugin mirrors these discovery constants
       - ".github/workflows/plugin-ci.yml"
   pull_request:
     branches: [master]
     paths:
-      - "katalyst-intellij-plugin/**"
+      - "tools/katalyst-intellij-plugin/**"
       - "katalyst-conventions/**"
       - ".github/workflows/plugin-ci.yml"
 
@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: katalyst-intellij-plugin
+        working-directory: tools/katalyst-intellij-plugin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: plugin-test-reports
-          path: katalyst-intellij-plugin/build/reports/tests/
+          path: tools/katalyst-intellij-plugin/build/reports/tests/
           if-no-files-found: warn
 
       - name: Upload built plugin artifact
@@ -73,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: katalyst-intellij-plugin-ci
-          path: katalyst-intellij-plugin/build/distributions/*.zip
+          path: tools/katalyst-intellij-plugin/build/distributions/*.zip
           if-no-files-found: warn

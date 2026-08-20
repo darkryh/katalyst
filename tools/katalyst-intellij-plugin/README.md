@@ -3,7 +3,7 @@
 Editor support for the Katalyst framework in **IntelliJ IDEA** and **Android Studio**.
 
 Katalyst is annotation-free: it discovers entrypoints by interface, by routing-DSL bytecode, by
-return type and by dual-binding (see [`katalyst-conventions`](../katalyst-conventions)). The IDE
+return type and by dual-binding (see [`katalyst-conventions`](../../katalyst-conventions)). The IDE
 can't see those reflective usages, so it reports framework code as *unused* and developers reach for
 `@Suppress("unused")`. This plugin removes that friction.
 
