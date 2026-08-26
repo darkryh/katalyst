@@ -33,7 +33,7 @@ import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarting
-import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.ServerReady
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
@@ -520,9 +520,9 @@ fun katalystApplication(
 
         // Ktor's application lifecycle events are raised per Application instance, not per process,
         // while Katalyst's bootstrap and teardown are process-wide. A dev-mode hot reload builds
-        // the replacement Application first and only then raises ApplicationStopping for the
-        // superseded one, so counting live instances is what tells a reload apart from a shutdown:
-        // a reload never drains the count, a real shutdown does.
+        // the replacement Application first and only then raises ApplicationStopping/Stopped for
+        // the superseded one, so counting live instances is what tells a reload apart from a
+        // shutdown: a reload never drains the count, a real shutdown does.
         val liveApplications = AtomicInteger()
 
         embeddedServer.monitor.subscribe(ApplicationStarting) { application ->
@@ -565,10 +565,23 @@ fun katalystApplication(
             )
         }
 
-        embeddedServer.monitor.subscribe(ApplicationStopping) {
+        // ApplicationStopped, NOT ApplicationStopping. Ktor's destroyApplication() runs
+        //     raise(ApplicationStopping) -> disposeAndJoin() -> raise(ApplicationStopped)
+        // and dispatches both to the same handler list in subscription order. Katalyst subscribes
+        // here, before start(), while an application's own KtorModules subscribe later - they are
+        // installed from inside the ApplicationStarting handler above. Tearing down on
+        // ApplicationStopping therefore closed the connection pool BEFORE the application's own
+        // stop-my-background-work handlers ran, and every one of them found a dead pool. Waiting for
+        // ApplicationStopped puts Katalyst last, where a framework belongs: the application gets the
+        // whole Stopping phase with everything still working, and only then is any of it taken away.
+        // Both events are raised inside EmbeddedServer.stop(), so this keeps the SIGINT property the
+        // previous placement was chosen for.
+        embeddedServer.monitor.subscribe(ApplicationStopped) {
             // A superseded Application leaving is a hot reload, not a shutdown: initializeDI() ran
             // once, before start(), so tearing Katalyst down here would close the pool, cancel the
-            // scheduler and reset the container with nothing left to bootstrap them again.
+            // scheduler and reset the container with nothing left to bootstrap them again. A reload
+            // raises Starting(new) before Stopped(old), so the count never drains and this still
+            // tells the two apart.
             if (liveApplications.decrementAndGet() > 0) {
                 logger.info("Ktor application instance replaced (reload) - Katalyst DI stays up")
                 return@subscribe
@@ -594,9 +607,10 @@ fun katalystApplication(
 
         // Publish how this application stops, so something inside the process can ask for it — today
         // the telemetry transport, on behalf of the inspector's `/shutdown`. Stopping the embedded
-        // server IS the shutdown: it releases start(wait = true), raises ApplicationStopping (which
-        // runs stopKatalystStandalone below) and then unwinds through the finally. That is the exact
-        // path SIGINT takes, so a requested shutdown and Ctrl+C are the same shutdown.
+        // server IS the shutdown: it releases start(wait = true), raises ApplicationStopping and
+        // then ApplicationStopped (which runs stopKatalystStandalone above) and then unwinds
+        // through the finally. That is the exact path SIGINT takes, so a requested shutdown and
+        // Ctrl+C are the same shutdown.
         ApplicationShutdown.install(description = "embedded server stop") {
             embeddedServer.stop(REQUESTED_SHUTDOWN_GRACE_MILLIS, REQUESTED_SHUTDOWN_TIMEOUT_MILLIS)
         }
