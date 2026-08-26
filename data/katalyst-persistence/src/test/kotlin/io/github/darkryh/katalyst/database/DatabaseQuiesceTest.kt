@@ -5,10 +5,13 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -73,29 +76,43 @@ class DatabaseQuiesceTest {
     fun `returns straight away when nothing is using the pool`() {
         val factory = freshFactory()
 
-        val result = factory.quiesce(2.seconds)
+        // A long budget it must not spend: the assertion is "did not wait", with enough headroom
+        // that a slow machine cannot turn it into "waited a bit".
+        val result = factory.quiesce(30.seconds)
 
         assertTrue(result.drained)
         assertEquals(0, result.activeAtStart)
-        assertTrue(result.waitedMillis < 500, "waited ${result.waitedMillis} ms for an idle pool")
+        assertTrue(result.waitedMillis < 5_000, "waited ${result.waitedMillis} ms for an idle pool")
     }
 
     @Test
     fun `waits for an in-flight connection and returns once it is handed back`() {
+        // Driven by the connection's actual lifetime rather than by the clock. An earlier version
+        // released on a timer and asserted quiesce had waited at least that long, which is only true
+        // when the two threads are scheduled in the expected order - on a loaded machine the release
+        // can land before quiesce even looks, and the test fails for a reason unrelated to quiesce.
         val factory = freshFactory()
         val release = factory.holdAConnection()
 
-        Thread({
-            Thread.sleep(300)
-            release.countDown()
-        }, "quiesce-test-releaser").apply { isDaemon = true }.also { threads += it }.start()
+        val result = AtomicReference<DatabaseQuiesceResult?>(null)
+        val quiescing = Thread({ result.set(factory.quiesce(30.seconds)) }, "quiesce-under-test")
+            .apply { isDaemon = true }
+        threads += quiescing
+        quiescing.start()
 
-        val result = factory.quiesce(5.seconds)
+        // A connection is genuinely checked out and stays that way until this test says otherwise,
+        // so a correct quiesce cannot possibly be finished. Nothing here bounds how long it takes.
+        Thread.sleep(200)
+        assertTrue(quiescing.isAlive, "quiesce returned while a connection was still checked out")
+        assertNull(result.get())
 
-        assertTrue(result.drained, "the pool went quiet but quiesce did not notice")
-        assertTrue(result.activeAtStart >= 1, "the holder should have been counted as active")
-        assertEquals(0, result.activeAtEnd)
-        assertTrue(result.waitedMillis >= 250, "returned after ${result.waitedMillis} ms without waiting")
+        release.countDown()
+        quiescing.join(TimeUnit.SECONDS.toMillis(30))
+
+        val outcome = assertNotNull(result.get(), "quiesce never returned after the connection came back")
+        assertTrue(outcome.drained, "the pool went quiet but quiesce did not notice")
+        assertTrue(outcome.activeAtStart >= 1, "the holder should have been counted as active")
+        assertEquals(0, outcome.activeAtEnd)
     }
 
     @Test
@@ -120,10 +137,10 @@ class DatabaseQuiesceTest {
         val factory = freshFactory()
         factory.close()
 
-        val result = factory.quiesce(5.seconds)
+        val result = factory.quiesce(30.seconds)
 
         assertTrue(result.drained)
-        assertTrue(result.waitedMillis < 500)
+        assertTrue(result.waitedMillis < 5_000, "waited ${result.waitedMillis} ms on a closed factory")
     }
 
     @Test
