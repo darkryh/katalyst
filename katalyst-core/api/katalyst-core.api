@@ -107,6 +107,24 @@ public class io/github/darkryh/katalyst/core/exception/DependencyInjectionExcept
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
+public final class io/github/darkryh/katalyst/core/lifecycle/ApplicationShutdown {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/core/lifecycle/ApplicationShutdown;
+	public final fun install (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun isRequested ()Z
+	public final fun isSupported ()Z
+	public final fun request (Ljava/lang/String;)Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+	public final fun uninstall ()V
+}
+
+public final class io/github/darkryh/katalyst/core/lifecycle/ShutdownRequest : java/lang/Enum {
+	public static final field Accepted Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+	public static final field AlreadyRequested Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+	public static final field Unsupported Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+	public static fun values ()[Lio/github/darkryh/katalyst/core/lifecycle/ShutdownRequest;
+}
+
 public final class io/github/darkryh/katalyst/core/validation/ValidationResult {
 	public static final field Companion Lio/github/darkryh/katalyst/core/validation/ValidationResult$Companion;
 	public fun <init> (ZLjava/util/List;)V

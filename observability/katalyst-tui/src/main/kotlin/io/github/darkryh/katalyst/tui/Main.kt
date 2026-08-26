@@ -244,7 +244,7 @@ fun App(preferredPid: Long? = null) {
         HorizontalDivider()
         // The command prompt is a dashboard-only affordance; subsystem screens get the one-line
         // hint footer so their tables keep every key and the extra rows.
-        if (onHome) BottomBar(state, theme) else SubFooter(state, theme)
+        if (onHome) BottomBar(state, theme, inspector.shutdownCoordinator) else SubFooter(state, theme)
     }
 }
 

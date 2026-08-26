@@ -5,6 +5,7 @@ import io.github.darkryh.katalyst.telemetry.model.DescriptorStatus
 import io.github.darkryh.katalyst.telemetry.model.RunDescriptor
 import io.github.darkryh.katalyst.telemetry.model.TelemetrySnapshot
 import io.github.darkryh.katalyst.tui.attach.RunDiscovery
+import io.github.darkryh.katalyst.tui.attach.ShutdownCoordinator
 import io.github.darkryh.katalyst.tui.attach.TelemetryClient
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -49,6 +50,15 @@ class InspectorViewModel(
 ) : StateViewModel<InspectorUiState>(InspectorUiState()) {
 
     private val client = TelemetryClient()
+
+    /**
+     * Stops the attached backend on request, over the same client that polls it.
+     *
+     * Deliberately not built where it is used: the footer composes and recomposes, and a coordinator
+     * created there would either leak an HTTP client per composition or need a lifecycle the footer
+     * has no way to own. Here it inherits the one the view model already closes.
+     */
+    val shutdownCoordinator: ShutdownCoordinator = ShutdownCoordinator(client)
 
     init {
         addCloseable(client)

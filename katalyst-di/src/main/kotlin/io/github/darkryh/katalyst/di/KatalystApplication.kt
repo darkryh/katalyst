@@ -20,6 +20,7 @@ import io.github.darkryh.katalyst.di.config.SchemaManagementBuilder
 import io.github.darkryh.katalyst.di.config.SchemaManagementOptions
 import io.github.darkryh.katalyst.di.config.initializeKatalystStandalone
 import io.github.darkryh.katalyst.di.config.runRuntimeReadyInitializers
+import io.github.darkryh.katalyst.core.lifecycle.ApplicationShutdown
 import io.github.darkryh.katalyst.di.config.stopKatalystStandalone
 import io.github.darkryh.katalyst.di.config.wrap
 import io.github.darkryh.katalyst.di.exception.KatalystDIException
@@ -590,6 +591,16 @@ fun katalystApplication(
         }
 
         startedServer = embeddedServer
+
+        // Publish how this application stops, so something inside the process can ask for it — today
+        // the telemetry transport, on behalf of the inspector's `/shutdown`. Stopping the embedded
+        // server IS the shutdown: it releases start(wait = true), raises ApplicationStopping (which
+        // runs stopKatalystStandalone below) and then unwinds through the finally. That is the exact
+        // path SIGINT takes, so a requested shutdown and Ctrl+C are the same shutdown.
+        ApplicationShutdown.install(description = "embedded server stop") {
+            embeddedServer.stop(REQUESTED_SHUTDOWN_GRACE_MILLIS, REQUESTED_SHUTDOWN_TIMEOUT_MILLIS)
+        }
+
         embeddedServer.start(wait = true)
 
     } catch (e: KatalystDIException) {
@@ -603,6 +614,7 @@ fun katalystApplication(
         // start(wait = true) until the server stops, but engine(...) takes any EmbeddedServer and
         // an engine that ignores `wait` returns straight away — stopping first keeps the teardown
         // ordered (drain, then drop the DI) instead of pulling the DI out from under a live server.
+        ApplicationShutdown.uninstall()
         startedServer?.let { server ->
             runCatching { server.stop() }
                 .onFailure { error -> logger.debug("Error while stopping the embedded server", error) }
@@ -611,6 +623,18 @@ fun katalystApplication(
         BootstrapArgsHolder.clear()
     }
 }
+
+/**
+ * How long a requested shutdown lets in-flight requests finish before the connectors close.
+ *
+ * A shutdown asked for by a human at an inspector prompt is not an emergency — the point is that it
+ * drains, so a request already being served is not cut off mid-response. Long enough to finish
+ * ordinary work, short enough that nobody waits on a stuck one.
+ */
+private const val REQUESTED_SHUTDOWN_GRACE_MILLIS: Long = 1_000
+
+/** Hard ceiling on a requested shutdown: past this the engine stops regardless of what is in flight. */
+private const val REQUESTED_SHUTDOWN_TIMEOUT_MILLIS: Long = 5_000
 
 private fun printKatalystBanner() {
     // "false" means a console-owning feature (the embedded TUI) renders the banner itself —
