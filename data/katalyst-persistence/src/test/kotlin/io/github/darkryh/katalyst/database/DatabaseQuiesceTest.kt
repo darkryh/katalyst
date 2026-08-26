@@ -1,0 +1,138 @@
+package io.github.darkryh.katalyst.database
+
+import io.github.darkryh.katalyst.config.DatabaseConfig
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * Pins [DatabaseFactory.quiesce] — the last thing standing between a still-busy background worker
+ * and a connection pool that is about to be closed underneath it.
+ *
+ * The guarantee is deliberately modest, and both halves of it matter: wait while the pool is still
+ * being used, and stop waiting when that stops being true or takes too long. A quiesce that never
+ * gave up would turn a noisy shutdown into one that never finishes.
+ */
+class DatabaseQuiesceTest {
+
+    private val factories = mutableListOf<DatabaseFactory>()
+    private val latches = mutableListOf<CountDownLatch>()
+    private val threads = mutableListOf<Thread>()
+
+    @AfterTest
+    fun tearDown() {
+        latches.forEach { it.countDown() }
+        threads.forEach { it.join(TimeUnit.SECONDS.toMillis(10)) }
+        factories.forEach { runCatching { it.close() } }
+        factories.clear()
+        latches.clear()
+        threads.clear()
+    }
+
+    private fun freshFactory(): DatabaseFactory =
+        DatabaseFactory.create(
+            DatabaseConfig(
+                url = "jdbc:h2:mem:quiesce_${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+                driver = "org.h2.Driver",
+                username = "sa",
+                password = "",
+                maxPoolSize = 4,
+                minIdleConnections = 1,
+            )
+        ).also { factories += it }
+
+    /**
+     * Checks out a pooled connection and keeps it until the returned latch is released, the way an
+     * in-flight statement holds one during a shutdown.
+     */
+    private fun DatabaseFactory.holdAConnection(): CountDownLatch {
+        val release = CountDownLatch(1).also { latches += it }
+        val acquired = CountDownLatch(1)
+        val thread = Thread({
+            transaction(database) {
+                exec("SELECT 1")
+                acquired.countDown()
+                release.await(30, TimeUnit.SECONDS)
+            }
+        }, "quiesce-test-connection-holder").apply { isDaemon = true }
+        threads += thread
+        thread.start()
+        assertTrue(acquired.await(10, TimeUnit.SECONDS), "the holder never got a connection")
+        return release
+    }
+
+    @Test
+    fun `returns straight away when nothing is using the pool`() {
+        val factory = freshFactory()
+
+        val result = factory.quiesce(2.seconds)
+
+        assertTrue(result.drained)
+        assertEquals(0, result.activeAtStart)
+        assertTrue(result.waitedMillis < 500, "waited ${result.waitedMillis} ms for an idle pool")
+    }
+
+    @Test
+    fun `waits for an in-flight connection and returns once it is handed back`() {
+        val factory = freshFactory()
+        val release = factory.holdAConnection()
+
+        Thread({
+            Thread.sleep(300)
+            release.countDown()
+        }, "quiesce-test-releaser").apply { isDaemon = true }.also { threads += it }.start()
+
+        val result = factory.quiesce(5.seconds)
+
+        assertTrue(result.drained, "the pool went quiet but quiesce did not notice")
+        assertTrue(result.activeAtStart >= 1, "the holder should have been counted as active")
+        assertEquals(0, result.activeAtEnd)
+        assertTrue(result.waitedMillis >= 250, "returned after ${result.waitedMillis} ms without waiting")
+    }
+
+    @Test
+    fun `gives up at the timeout and reports what is still using the pool`() {
+        // The case the WARN exists for: something is still talking to the database and no amount of
+        // waiting will change that. Bounded, and honest about what it found.
+        val factory = freshFactory()
+        factory.holdAConnection()
+
+        val result = factory.quiesce(300.milliseconds)
+
+        assertFalse(result.drained)
+        assertTrue(result.activeAtEnd >= 1, "a connection is still checked out and must be reported")
+        assertTrue(
+            result.waitedMillis < 5_000,
+            "quiesce waited ${result.waitedMillis} ms past a 300 ms budget",
+        )
+    }
+
+    @Test
+    fun `is a no-op once the factory is closed`() {
+        val factory = freshFactory()
+        factory.close()
+
+        val result = factory.quiesce(5.seconds)
+
+        assertTrue(result.drained)
+        assertTrue(result.waitedMillis < 500)
+    }
+
+    @Test
+    fun `leaves the pool usable - it waits, it does not close anything`() {
+        val factory = freshFactory()
+
+        factory.quiesce(1.seconds)
+
+        assertEquals(1, transaction(factory.database) { exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) } })
+        assertFalse(factory.poolSnapshot().closed)
+    }
+}
