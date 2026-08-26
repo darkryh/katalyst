@@ -23,6 +23,10 @@ import io.github.darkryh.dispatch.widget.Surface
 import io.github.darkryh.dispatch.widget.SurfaceStyle
 import io.github.darkryh.dispatch.widget.Text
 import io.github.darkryh.dispatch.widget.TextField
+import io.github.darkryh.katalyst.telemetry.model.RunDescriptor
+import io.github.darkryh.katalyst.tui.attach.ShutdownCoordinator
+import io.github.darkryh.katalyst.tui.attach.ShutdownRequestOutcome
+import io.github.darkryh.katalyst.tui.attach.ShutdownResult
 import io.github.darkryh.katalyst.tui.embedded.EmbeddedTuiSession
 import io.github.darkryh.katalyst.tui.viewmodel.InspectorUiState
 
@@ -45,7 +49,11 @@ object PaletteState {
  * `shutdown` stops the backend and quits; `help` explains both inline.
  */
 @Composable
-fun BottomBar(state: InspectorUiState, theme: DispatchTheme) {
+fun BottomBar(
+    state: InspectorUiState,
+    theme: DispatchTheme,
+    shutdownCoordinator: ShutdownCoordinator,
+) {
     val scope = requireDispatchScope()
     var value by remember { mutableStateOf("") }
 
@@ -55,6 +63,37 @@ fun BottomBar(state: InspectorUiState, theme: DispatchTheme) {
         value = ""
     }
 
+    /**
+     * `/shutdown` outside the backend's own process: ask it to stop, watch until it has, and only
+     * then quit.
+     *
+     * Embedded, this is not needed — the inspector IS the backend's console, so `scope.exit(0)` ends
+     * the process and with it the server. Standalone the two are separate processes, and quitting
+     * the inspector used to be all that happened while the menu promised otherwise.
+     *
+     * Runs on the Dispatch background scope because it waits: the shutdown takes as long as the
+     * backend's own drain, and the UI has to keep painting the progress line while it does.
+     */
+    fun requestBackendShutdown(descriptor: RunDescriptor?) {
+        PaletteState.message = when (descriptor) {
+            null -> NO_BACKEND_MESSAGE
+            else -> "stopping ${descriptor.appName} (pid ${descriptor.pid})…"
+        }
+        scope.launch {
+            when (val result = shutdownCoordinator.shutdown(descriptor)) {
+                // Confirmed gone. Quitting now is the honest end of "stop the server and quit".
+                // detachRequested is left alone: it only means anything to the embedded feature,
+                // which by definition is not running in this branch.
+                ShutdownResult.Stopped -> scope.exit(0)
+                ShutdownResult.NoBackend -> PaletteState.message = NO_BACKEND_MESSAGE
+                is ShutdownResult.StillRunning -> PaletteState.message =
+                    "${result.descriptor.appName} (pid ${result.descriptor.pid}) took the request but " +
+                        "is still answering — the inspector stays open so you can watch it"
+                is ShutdownResult.Refused -> PaletteState.message = refusalMessage(result)
+            }
+        }
+    }
+
     fun run(command: String) {
         PaletteState.active = false
         when (command) {
@@ -62,10 +101,16 @@ fun BottomBar(state: InspectorUiState, theme: DispatchTheme) {
                 EmbeddedTuiSession.detachRequested = true
                 scope.exit(0)
             }
-            "shutdown" -> {
-                EmbeddedTuiSession.detachRequested = false
-                scope.exit(0)
-            }
+            "shutdown" ->
+                if (EmbeddedTuiSession.embedded) {
+                    // One process: quitting the inspector runs the JVM's shutdown and stops the
+                    // server with it. Asking over the loopback socket would be the same process
+                    // asking itself.
+                    EmbeddedTuiSession.detachRequested = false
+                    scope.exit(0)
+                } else {
+                    requestBackendShutdown(state.selected)
+                }
             "help", "" -> PaletteState.message =
                 "/exit — close the inspector, keep the server running   " +
                     "/shutdown — stop the server and quit"
@@ -139,6 +184,33 @@ fun BottomBar(state: InspectorUiState, theme: DispatchTheme) {
         }
     }
 }
+
+/**
+ * Why a refusal is spelled out rather than reduced to "failed": each of these needs a different
+ * thing done about it, and the user is the only one who can do it.
+ */
+private fun refusalMessage(refused: ShutdownResult.Refused): String {
+    val target = "${refused.descriptor.appName} (pid ${refused.descriptor.pid})"
+    return when (refused.outcome) {
+        ShutdownRequestOutcome.Disabled ->
+            "$target has remote shutdown turned off " +
+                "(-Dkatalyst.telemetry.shutdownControl=false) — stop it where it runs"
+        ShutdownRequestOutcome.Unsupported ->
+            "$target does not accept a shutdown request — it may predate the endpoint, or run " +
+                "without the katalystApplication entry point"
+        ShutdownRequestOutcome.Unauthorized ->
+            "$target rejected the token — its discovery descriptor is stale; restart the inspector"
+        ShutdownRequestOutcome.Unreachable ->
+            "$target did not answer — it may already be gone, or its telemetry port has closed"
+        ShutdownRequestOutcome.Accepted ->
+            // Unreachable by construction: an accepted request is not a refusal. Kept total rather
+            // than thrown, so a future outcome can never take the footer down with it.
+            "$target accepted the shutdown request"
+    }
+}
+
+private const val NO_BACKEND_MESSAGE =
+    "no backend attached — nothing to stop. Use /exit to close the inspector"
 
 private val COMMANDS = listOf(
     CommandOption(label = "exit", description = "Close the inspector — the server keeps running", data = "exit"),

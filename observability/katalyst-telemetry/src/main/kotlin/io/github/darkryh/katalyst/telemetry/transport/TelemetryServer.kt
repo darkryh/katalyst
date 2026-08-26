@@ -1,5 +1,6 @@
 package io.github.darkryh.katalyst.telemetry.transport
 
+import io.github.darkryh.katalyst.core.lifecycle.ApplicationShutdown
 import io.github.darkryh.katalyst.telemetry.model.TelemetrySnapshot
 import io.github.darkryh.katalyst.telemetry.store.TelemetryStore
 import io.ktor.http.ContentType
@@ -10,6 +11,7 @@ import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.webSocket
@@ -23,10 +25,16 @@ import org.slf4j.LoggerFactory
 
 /**
  * Loopback-only telemetry transport. Serves the current [TelemetryStore] snapshot over
- * `GET /snapshot` (JSON) and pushes it periodically over `WS /stream?token=<wsToken>` (text frames).
+ * `GET /snapshot` (JSON), pushes it periodically over `WS /stream?token=<wsToken>` (text frames),
+ * and — when [shutdownControlEnabled] — accepts `POST /shutdown?token=<wsToken>`.
  *
  * The server binds `127.0.0.1` only and never crashes the app: [start] wraps binding in a guard and
  * returns the actually-bound port (via `resolvedConnectors()`), or `null` if the transport failed.
+ *
+ * `/shutdown` is the one endpoint that *changes* something, and it is deliberately the thinnest
+ * possible thing: it decides whether the caller is allowed to ask, and then asks
+ * [ApplicationShutdown]. It owns no teardown of its own — the application stops itself, through the
+ * same path SIGINT takes.
  */
 class TelemetryServer(
     private val store: TelemetryStore,
@@ -34,6 +42,7 @@ class TelemetryServer(
     private val requestedPort: Int,
     private val wsToken: String,
     private val pollIntervalMs: Long = 1_000L,
+    private val shutdownControlEnabled: Boolean = true,
 ) {
     private val logger = LoggerFactory.getLogger("TelemetryServer")
     private val json = Json { encodeDefaults = true; explicitNulls = false }
@@ -82,6 +91,41 @@ class TelemetryServer(
                         return@get
                     }
                     call.respondText(encode(), ContentType.Application.Json)
+                }
+                post("/shutdown") {
+                    if (call.request.queryParameters["token"] != wsToken) {
+                        call.respondText("unauthorized", status = HttpStatusCode.Unauthorized)
+                        return@post
+                    }
+                    if (!shutdownControlEnabled) {
+                        logger.info("Refused a shutdown request: remote shutdown control is disabled")
+                        call.respondText(
+                            "shutdown control disabled",
+                            status = HttpStatusCode.Forbidden,
+                        )
+                        return@post
+                    }
+                    if (!ApplicationShutdown.isSupported) {
+                        // Not every application publishes a way to stop itself — one bootstrapped
+                        // without the katalystApplication entry point has no server to stop. Say so,
+                        // so the caller can tell the user instead of appearing to have worked.
+                        logger.info("Refused a shutdown request: this application published no shutdown action")
+                        call.respondText(
+                            "shutdown unsupported",
+                            status = HttpStatusCode.ServiceUnavailable,
+                        )
+                        return@post
+                    }
+
+                    // Respond BEFORE asking. The shutdown that follows takes this very server down
+                    // with the application, so a response written afterwards would race the socket
+                    // closing. Accepted, not OK: this reports that the request was taken, never that
+                    // the application has stopped — only observing it stop can tell anyone that, and
+                    // that is the caller's job.
+                    call.respondText("stopping", status = HttpStatusCode.Accepted)
+
+                    val outcome = ApplicationShutdown.request(reason = "telemetry transport")
+                    logger.info("Shutdown requested over the loopback transport: {}", outcome)
                 }
                 webSocket("/stream") {
                     val token = call.request.queryParameters["token"]

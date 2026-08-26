@@ -6,6 +6,7 @@ import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.core.di.KatalystContainerProvider
 import io.github.darkryh.katalyst.core.di.get
 import io.github.darkryh.katalyst.core.di.getOrNull
+import io.github.darkryh.katalyst.core.lifecycle.ApplicationShutdown
 import io.github.darkryh.katalyst.transactions.manager.DatabaseTransactionManager
 import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.database.adapter.PersistenceTransactionAdapter
@@ -539,6 +540,11 @@ fun stopKatalystStandalone() {
  *   reached still read as completed.
  */
 private fun resetBootScopedGlobals() {
+    // Withdrawn here as well as in katalystApplication's finally: on SIGINT it is Ktor's own shutdown
+    // hook that stops the server, and the JVM can halt before the thread parked in start(wait = true)
+    // unwinds far enough to reach that finally. Leaving the action installed would advertise a
+    // shutdown seam for a container that is already gone.
+    ApplicationShutdown.uninstall()
     RegistryManager.resetAll()
     GlobalEventHandlerRegistry.consumeAll()
     BootstrapProgress.clear()

@@ -85,6 +85,9 @@ object EmbeddedTuiFeature : KatalystFeature {
             // use) the main thread dies and the JVM must exit WITH it — a non-daemon renderer
             // would keep a dead backend on screen forever.
             thread(name = "katalyst-tui", isDaemon = true) {
+                // Told before the UI composes: the command palette reads it to decide what
+                // `/shutdown` means, and it must never observe the default.
+                EmbeddedTuiSession.embedded = true
                 runCatching {
                     runInspectorTui(
                         preferredPid = runCatching { ProcessHandle.current().pid() }.getOrNull(),

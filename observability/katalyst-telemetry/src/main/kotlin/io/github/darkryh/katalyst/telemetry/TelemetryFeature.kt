@@ -140,7 +140,13 @@ object TelemetryFeature : KatalystFeature {
                 .onFailure { logger.debug("Capturer '{}' install failed: {}", capturer.id, it.message) }
         }
 
-        val transport = TelemetryServer(store, config.host, chosenPort, wsToken)
+        val transport = TelemetryServer(
+            store = store,
+            host = config.host,
+            requestedPort = chosenPort,
+            wsToken = wsToken,
+            shutdownControlEnabled = config.shutdownControlEnabled,
+        )
         val boundPort = runCatching { transport.start() }.getOrNull() ?: chosenPort
         server = transport
         installShutdownHook()

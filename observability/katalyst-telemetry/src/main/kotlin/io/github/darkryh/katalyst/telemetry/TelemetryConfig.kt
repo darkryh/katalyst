@@ -18,6 +18,20 @@ data class TelemetryConfig(
      * and errors still print; loggers pinned explicitly in the app's logback config are untouched.
      */
     val quiet: Boolean,
+    /**
+     * Whether the loopback transport exposes `POST /shutdown`, on by default.
+     *
+     * That endpoint is what lets the TUI inspector's `/shutdown` command actually stop the backend
+     * instead of only closing itself. It is guarded exactly as `/snapshot` and `/stream` already are
+     * — bound to loopback, and gated on the per-run token that lives in a 0600 descriptor file — so
+     * anyone who can reach it can already read the application's full internal state.
+     *
+     * It is still a switch, because "read my state" and "stop me" are not the same permission to
+     * everyone. Turn it off with `-Dkatalyst.telemetry.shutdownControl=false` or
+     * `KATALYST_TELEMETRY_SHUTDOWN_CONTROL=false`; the inspector then reports that the backend does
+     * not accept remote shutdown rather than appearing to do nothing.
+     */
+    val shutdownControlEnabled: Boolean,
 ) {
     companion object {
         /** ~12 MB default budget for the bounded store. */
@@ -53,6 +67,11 @@ data class TelemetryConfig(
             val quiet = resolve("katalyst.telemetry.quiet", "KATALYST_TELEMETRY_QUIET")
                 ?.let { it.equals("true", ignoreCase = true) } ?: false
 
+            val shutdownControl = resolve(
+                "katalyst.telemetry.shutdownControl",
+                "KATALYST_TELEMETRY_SHUTDOWN_CONTROL",
+            )?.let { !it.equals("false", ignoreCase = true) } ?: true
+
             return TelemetryConfig(
                 enabled = enabled,
                 host = host,
@@ -60,6 +79,7 @@ data class TelemetryConfig(
                 memoryBudgetBytes = budget,
                 snapshotSpillEnabled = spill,
                 quiet = quiet,
+                shutdownControlEnabled = shutdownControl,
             )
         }
     }
