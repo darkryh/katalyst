@@ -142,7 +142,7 @@ class ComponentRegistrationOrchestrator(
 
         // Discover each component type (methods are now internal - no reflection needed)
         // Lifecycle hooks are discovered as first-class categories: implementing
-        // StartupHook/ReadyHook alone is enough to be validated and constructor-injected,
+        // StartupHook/ReadyHook/ShutdownHook alone is enough to be validated and constructor-injected,
         // without also having to implement Component/Service.
         ExtensionPoints.all.forEach { extensionPoint ->
             val types = registrar.discoverConcreteTypes(extensionPoint.type.java)
@@ -448,7 +448,7 @@ class ComponentRegistrationOrchestrator(
         // Determine which base class this component implements.
         // Hook categories are checked last so a type that is both a Component/Service and a
         // lifecycle hook keeps its richer base class; registerInstance registers the hook
-        // side regardless, via its `is StartupHook` / `is ReadyHook` checks.
+        // side regardless, via its `is StartupHook` / `is ReadyHook` / `is ShutdownHook` checks.
         val baseClass = baseClassResolutionOrder
             .firstOrNull { componentType in discovered.types(it.id) }
             ?.type

@@ -644,6 +644,7 @@ public final class io/github/darkryh/katalyst/di/feature/EventSystemFeature : io
 	public fun <init> ()V
 	public fun getId ()Ljava/lang/String;
 	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public fun provideBeanModules ()Ljava/util/List;
 }
 
@@ -701,11 +702,13 @@ public final class io/github/darkryh/katalyst/di/feature/KatalystBeanModuleBuild
 public abstract interface class io/github/darkryh/katalyst/di/feature/KatalystFeature {
 	public abstract fun getId ()Ljava/lang/String;
 	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public fun provideBeanModules ()Ljava/util/List;
 }
 
 public final class io/github/darkryh/katalyst/di/feature/KatalystFeature$DefaultImpls {
 	public static fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public static fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public static fun provideBeanModules (Lio/github/darkryh/katalyst/di/feature/KatalystFeature;)Ljava/util/List;
 }
 
@@ -717,6 +720,7 @@ public final class io/github/darkryh/katalyst/di/feature/ServerConfigurationFeat
 	public static final field INSTANCE Lio/github/darkryh/katalyst/di/feature/ServerConfigurationFeature;
 	public fun getId ()Ljava/lang/String;
 	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public fun provideBeanModules ()Ljava/util/List;
 }
 
@@ -813,6 +817,16 @@ public class io/github/darkryh/katalyst/di/lifecycle/LifecycleException : java/l
 	public fun getPhase ()Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
 }
 
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/LifecycleHook {
+	public fun getId ()Ljava/lang/String;
+	public fun getOrder ()I
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/LifecycleHook$DefaultImpls {
+	public static fun getId (Lio/github/darkryh/katalyst/di/lifecycle/LifecycleHook;)Ljava/lang/String;
+	public static fun getOrder (Lio/github/darkryh/katalyst/di/lifecycle/LifecycleHook;)I
+}
+
 public final class io/github/darkryh/katalyst/di/lifecycle/LifecyclePhase : java/lang/Enum {
 	public static final field COMPONENT_DISCOVERY Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
 	public static final field DATABASE_VALIDATION Lio/github/darkryh/katalyst/di/lifecycle/LifecyclePhase;
@@ -834,9 +848,7 @@ public final class io/github/darkryh/katalyst/di/lifecycle/LifecycleStatusReport
 	public final fun snapshot ()Lio/github/darkryh/katalyst/di/lifecycle/StartupLifecycleReport;
 }
 
-public abstract interface class io/github/darkryh/katalyst/di/lifecycle/ReadyHook {
-	public fun getId ()Ljava/lang/String;
-	public fun getOrder ()I
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/ReadyHook : io/github/darkryh/katalyst/di/lifecycle/LifecycleHook {
 	public abstract fun onReady (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -865,9 +877,23 @@ public final class io/github/darkryh/katalyst/di/lifecycle/ServiceInitialization
 	public final fun getServiceName ()Ljava/lang/String;
 }
 
-public abstract interface class io/github/darkryh/katalyst/di/lifecycle/StartupHook {
-	public fun getId ()Ljava/lang/String;
-	public fun getOrder ()I
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/ShutdownHook : io/github/darkryh/katalyst/di/lifecycle/LifecycleHook {
+	public abstract fun onShutdown (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ShutdownHook$DefaultImpls {
+	public static fun getId (Lio/github/darkryh/katalyst/di/lifecycle/ShutdownHook;)Ljava/lang/String;
+	public static fun getOrder (Lio/github/darkryh/katalyst/di/lifecycle/ShutdownHook;)I
+}
+
+public final class io/github/darkryh/katalyst/di/lifecycle/ShutdownHookRegistry : io/github/darkryh/katalyst/di/registry/ResettableRegistry {
+	public static final field INSTANCE Lio/github/darkryh/katalyst/di/lifecycle/ShutdownHookRegistry;
+	public final fun getAll ()Ljava/util/List;
+	public final fun register (Lio/github/darkryh/katalyst/di/lifecycle/ShutdownHook;)V
+	public fun reset ()V
+}
+
+public abstract interface class io/github/darkryh/katalyst/di/lifecycle/StartupHook : io/github/darkryh/katalyst/di/lifecycle/LifecycleHook {
 	public abstract fun onStartup (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

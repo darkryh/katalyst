@@ -1,6 +1,7 @@
 public final class io/github/darkryh/katalyst/conventions/KatalystConventions {
 	public static final field APPLICATION_INITIALIZER Ljava/lang/String;
 	public static final field APPLICATION_READY_INITIALIZER Ljava/lang/String;
+	public static final field APPLICATION_SHUTDOWN_HOOK Ljava/lang/String;
 	public static final field COMPONENT Ljava/lang/String;
 	public static final field CONFIG_BINDING Ljava/lang/String;
 	public static final field CONFIG_PREFIX Ljava/lang/String;

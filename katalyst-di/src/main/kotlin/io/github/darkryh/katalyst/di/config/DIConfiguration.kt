@@ -23,6 +23,7 @@ import io.github.darkryh.katalyst.di.lifecycle.BootstrapLifecycle
 import io.github.darkryh.katalyst.di.lifecycle.BootstrapProgress
 import io.github.darkryh.katalyst.di.lifecycle.StartupHookRunner
 import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRunner
+import io.github.darkryh.katalyst.di.lifecycle.ShutdownHookRunner
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarnings
 import io.github.darkryh.katalyst.di.lifecycle.StartupWarningsAggregator
 import io.github.darkryh.katalyst.di.module.coreDIModule
@@ -54,6 +55,17 @@ import kotlin.time.toDuration
  */
 private val logger = LoggerFactory.getLogger("DIConfiguration")
 private val shutdownLock = Any()
+
+/**
+ * The features this bootstrap installed, kept so the shutdown phase can stop them.
+ *
+ * Features are supplied to [initializeKatalystStandalone] and never reach the container, so without
+ * holding on to them here there is nothing left at teardown to call [KatalystFeature.onShutdown] on.
+ * Boot-scoped like every other global in [resetBootScopedGlobals]: cleared on both edges so one
+ * bootstrap can never stop another's features.
+ */
+@Volatile
+private var activeFeatures: List<KatalystFeature> = emptyList()
 
 /**
  * Configuration options for Katalyst dependency injection.
@@ -222,6 +234,9 @@ fun bootstrapKatalystContainer(
     }
 
     val beanContext = KatalystBeanContext(KatalystContainerProvider.current())
+    // Recorded before the ready hooks run: from here on a feature is live and has to be stopped,
+    // including when a later bootstrap phase throws and the entry point unwinds into teardown.
+    activeFeatures = features
     features.forEach { feature ->
         logger.debug("Executing onReady hook for feature '{}'", feature.id)
         feature.onReady(beanContext)
@@ -513,6 +528,7 @@ fun stopKatalystStandalone() {
         }
 
         try {
+            runShutdownPhase(engine)
             engine.stop()
         } finally {
             KatalystBeanEngines.clearActive()
@@ -545,10 +561,61 @@ private fun resetBootScopedGlobals() {
     // unwinds far enough to reach that finally. Leaving the action installed would advertise a
     // shutdown seam for a container that is already gone.
     ApplicationShutdown.uninstall()
+    activeFeatures = emptyList()
     RegistryManager.resetAll()
     GlobalEventHandlerRegistry.consumeAll()
     BootstrapProgress.clear()
     StartupWarnings.clear()
+}
+
+/**
+ * Stops everything the application owns, while everything the framework owns still works.
+ *
+ * This is the phase whose absence made shutdowns noisy. Katalyst used to go straight from "the
+ * server stopped" to closing the connection pool and unregistering the database, with application
+ * background work — the polling loops and queue consumers [ReadyHook] explicitly invites — still
+ * running. The pool would close under an in-flight statement and the shutdown would fill with
+ * `SQLSTATE 08006 / Socket closed` followed by `No transaction manager for db ExposedDatabase[...]`,
+ * from work the application had every intention of stopping and was simply never asked to.
+ *
+ * Three steps, narrowest contract first:
+ * 1. [ShutdownHook]s, awaited, so a worker can *join* what it cancelled rather than only signal it.
+ * 2. [KatalystFeature.onShutdown], in reverse installation order.
+ * 3. A bounded wait for the connection pool to go quiet, covering whatever declared neither.
+ *
+ * Nothing here may throw. Every step is a best effort whose failure is reported and stepped over,
+ * because the alternative — an exception escaping into [stopKatalystStandalone] — would skip the
+ * teardown that follows and leak the pool, the container and the engine.
+ */
+private fun runShutdownPhase(engine: KatalystBeanEngine) {
+    val container = engine.currentOrNull() ?: KatalystContainerProvider.currentOrNull()
+
+    runCatching {
+        runBlocking { ShutdownHookRunner(container).invokeAll() }
+    }.onFailure { error ->
+        logger.warn("Shutdown hook lifecycle failed: {}: {}", error::class.simpleName, error.message, error)
+    }
+
+    if (container != null) {
+        val beanContext = KatalystBeanContext(container)
+        // Reverse installation order, matching the hooks: a feature is stopped before the ones it
+        // was installed after, so nothing is torn down while something that needs it is still up.
+        activeFeatures.asReversed().forEach { feature ->
+            runCatching { feature.onShutdown(beanContext) }
+                .onFailure { error ->
+                    logger.warn(
+                        "Feature '{}' failed to stop: {}: {}",
+                        feature.id,
+                        error::class.simpleName,
+                        error.message,
+                        error,
+                    )
+                }
+        }
+    }
+
+    runCatching { container?.getOrNull<DatabaseFactory>()?.quiesce() }
+        .onFailure { error -> logger.debug("Could not wait for the connection pool to go quiet", error) }
 }
 
 fun runPreStartInitializers(container: KatalystContainer = KatalystContainerProvider.current()) {
