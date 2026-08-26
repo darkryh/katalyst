@@ -155,18 +155,21 @@ katalystApplication(args) {
 
 ## Application lifecycle hooks
 
-Katalyst has two lifecycle hook interfaces. Implementing one is the only signal needed — a hook
+Katalyst has three lifecycle hook interfaces. Implementing one is the only signal needed — a hook
 is scanned, dependency-validated and constructor-injected on its own, and does **not** need to
-also implement `Component` or `Service`.
+also implement `Component` or `Service`. All three share `id` and `order`, declared on their common
+`LifecycleHook` supertype, so one class can implement several without restating either.
 
 - **`StartupHook`** — runs before the server binds, after all components are instantiated and
   the database schema is initialized. A built-in `StartupValidator` (`order = -100`) always
   runs first to verify database connectivity and schema.
 - **`ReadyHook`** — runs once the HTTP server is up and accepting traffic. Use it for runtime
   activations such as scheduler registration or background consumers.
+- **`ShutdownHook`** — runs while the application is shutting down, before Katalyst tears anything
+  down. Stop here whatever a `ReadyHook` started.
 
 Multiple hooks of each kind are allowed and run in deterministic order (`order` ascending,
-ties broken by qualified class name):
+ties broken by qualified class name). Shutdown walks the same numbers in reverse:
 
 ```kotlin
 class CacheWarmup(
@@ -188,6 +191,53 @@ class SchemaWarmupCheck : StartupHook {
     }
 }
 ```
+
+### Stopping background work
+
+Anything a `ReadyHook` starts has to be stopped again, and `ShutdownHook` is where. It runs while
+the framework is still completely usable — the connection pool is open, the container resolves, a
+final `transaction { }` works — and Katalyst **awaits** it before closing anything.
+
+That `suspend` matters. Ktor's own `ApplicationStopping` subscribers are ordinary synchronous
+functions, so a `job.cancel()` there returns immediately while the coroutine is still parked inside
+a blocking JDBC call. Cancelling is not joining:
+
+```kotlin
+class OutboxPublisher(private val outbox: OutboxRepository) : Service, ReadyHook, ShutdownHook {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var job: Job? = null
+
+    override val id = "outboxPublisher"
+    override val order = 60
+
+    override suspend fun onReady() {
+        job = scope.launch {
+            while (isActive) {
+                outbox.publishPending()
+                delay(200)
+            }
+        }
+    }
+
+    override suspend fun onShutdown() {
+        job?.cancelAndJoin()   // awaited: the in-flight pass finishes before the pool closes
+        scope.cancel()
+    }
+}
+```
+
+Shutdown proceeds in three steps, each finishing before the next begins:
+
+1. Ktor drains in-flight HTTP requests, then raises `ApplicationStopping` — application subscribers
+   run here, with the database still open.
+2. Katalyst runs every `ShutdownHook` in descending `order`, awaiting each one. A hook that throws is
+   logged and the rest still run; a hook that never returns is abandoned after a timeout so it cannot
+   hang the process.
+3. Katalyst stops its features, waits briefly for the connection pool to go quiet, and tears down.
+
+The wait in step 3 is a safety net for work that was cancelled but not joined, and it is bounded. If
+something is still holding a connection when it expires, Katalyst logs a warning naming how many —
+that is the signal that some background work needs a `ShutdownHook`.
 
 Hooks take part in the same dependency graph as components, so a hook whose constructor
 dependency cannot be resolved fails the bootstrap with a validation error naming the hook,

@@ -36,7 +36,7 @@ itself adds no runtime classes.
 | Module | Purpose | Key API |
 |--------|---------|---------|
 | `katalyst-core` | Discovery interfaces and shared contracts | `Component`, `Service`, `ConfigProvider`, `Table`, `Validator` |
-| `katalyst-di` | Bootstrap, discovery, dependency analysis, lifecycle | `katalystApplication`, `KatalystFeature`, `StartupHook`, `ReadyHook`, `@InjectNamed` |
+| `katalyst-di` | Bootstrap, discovery, dependency analysis, lifecycle | `katalystApplication`, `KatalystFeature`, `StartupHook`, `ReadyHook`, `ShutdownHook`, `@InjectNamed` |
 | `katalyst-koin-bean` | Koin dependency-injection adapter | `KoinBeanEngine` |
 | `katalyst-scanner` | Classpath scanning that backs discovery | (internal; pulled in transitively) |
 
