@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Arrangement
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
@@ -19,6 +20,7 @@ import io.github.darkryh.dispatch.theme.DispatchTheme
 import io.github.darkryh.dispatch.widget.BasicTextFieldRenderer
 import io.github.darkryh.dispatch.widget.CommandOption
 import io.github.darkryh.dispatch.widget.CommandPalette
+import io.github.darkryh.dispatch.widget.CommandPaletteTextStyles
 import io.github.darkryh.dispatch.widget.Surface
 import io.github.darkryh.dispatch.widget.SurfaceStyle
 import io.github.darkryh.dispatch.widget.Text
@@ -155,6 +157,8 @@ fun BottomBar(
                 onOptionSelected = { option -> run(option.data) },
                 onInputTransform = { value = it },
                 modifier = Modifier.fillMaxWidth(),
+                selectionIndicator = SELECTION_INDICATOR,
+                textStyles = COMMAND_STYLES,
             )
         }
 
@@ -216,4 +220,39 @@ private val COMMANDS = listOf(
     CommandOption(label = "exit", description = "Close the inspector — the server keeps running", data = "exit"),
     CommandOption(label = "shutdown", description = "Stop the server and quit", data = "shutdown"),
     CommandOption(label = "help", description = "Show what each command does", data = "help"),
+)
+
+/**
+ * Marks the row Enter will run. Two columns wide, and the widget reserves the same two columns on
+ * every other row, so turning selection on and off never shifts the list sideways.
+ */
+private const val SELECTION_INDICATOR = "❯ "
+
+/**
+ * Three commands of nearly equal length, one keystroke apart, all reachable by Enter: the palette
+ * has to answer "which one am I about to run?" at a glance, and the widget's plain-white defaults
+ * did not — every label rendered identically, leaving only two adjacent greys on the description
+ * column to carry the selection.
+ *
+ * So selection is stated three times over, each redundant with the others:
+ *  - the `❯` indicator, which works with no colour at all (a piped terminal, a monochrome profile);
+ *  - a full-width blue bar, keyed to the same family as the prompt surface directly above it so it
+ *    reads as part of the footer chrome rather than a stray highlight;
+ *  - the label itself, white and bold on the selected row against a muted grey on the rest, so the
+ *    contrast direction matches everything else in the inspector (bright = live, grey = context).
+ *
+ * The unselected rows are deliberately dimmed rather than the selected one merely brightened: with
+ * one row per command and no other content nearby, dimming is what makes the chosen row pop without
+ * having to shout.
+ */
+private val COMMAND_STYLES = CommandPaletteTextStyles(
+    prefix = rgb("#6E7681"),
+    selectedPrefix = rgb("#58A6FF") + TextStyle(bold = true),
+    label = rgb("#8B949E"),
+    selectedLabel = rgb("#FFFFFF") + TextStyle(bold = true),
+    description = rgb("#6E7681"),
+    selectedDescription = rgb("#C9D1D9"),
+    disabledLabel = rgb("#484F58"),
+    noResultsText = rgb("#8B949E"),
+    selectedRowFill = rgb("#1F3A5F"),
 )
