@@ -10,8 +10,10 @@ import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.exists
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.vendors.currentDialectMetadata
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -148,6 +150,79 @@ class DatabaseFactory private constructor(
     fun createTable(vararg table : Table, inBatch: Boolean = false) {
         transaction(database) {
             SchemaUtils.create(*table, inBatch = inBatch)
+        }
+    }
+
+    /**
+     * Adds every column a [table] declares that the live table does not have yet, together with the
+     * indices those new columns are part of.
+     *
+     * This is what makes "create what is missing" mean the same thing for a column as it does for a
+     * table. [SchemaUtils.create] only ever issues `CREATE TABLE IF NOT EXISTS`, so a table that
+     * already exists is skipped whole — a column added to the Kotlin [Table] afterwards never
+     * reaches the database, and the first query that selects it fails at runtime instead of at boot.
+     *
+     * **Additive by construction, not by filtering.** The diff is computed here — live column names
+     * from [currentDialectMetadata] against the ones the [Table] declares — and only genuinely
+     * absent columns are turned into DDL. A [Column]'s own `ddl` is always the `ALTER TABLE ... ADD`
+     * form, so nothing else can come out of this. That is deliberately NARROWER than Exposed's
+     * [SchemaUtils.addMissingColumnsStatements], which despite the name also emits `ALTER COLUMN`
+     * for an existing column whose type, nullability or default drifted, and drop/recreate pairs for
+     * foreign keys whose rules changed. Those are not "missing" anything: they rewrite a column that
+     * already holds data, they routinely fail outright (`ALTER COLUMN ... NOT NULL` against rows
+     * that are null), and deciding them is a migration's job. Katalyst reports them instead — that
+     * is what `CREATE_MISSING_AND_VALIDATE` is for — and never executes them at boot.
+     *
+     * The one failure this CAN produce is `ADD COLUMN x NOT NULL` with no default against a table
+     * that already has rows, which every database rejects. That is a genuine "your schema and your
+     * code disagree in a way only you can settle" and is surfaced as such by the caller.
+     *
+     * Tables that do not exist are filtered out first. Creating them is [createTable]'s job, and
+     * Exposed's metadata reader throws a bare `IllegalStateException` rather than returning nothing
+     * when asked for the columns of a table that is not there.
+     *
+     * Runs in its own transaction and commits, so callers see the new columns immediately (the
+     * dialect metadata cache is reset for the same reason). Statements are executed one at a time
+     * rather than as a JDBC batch: this only runs when something is genuinely missing, so the volume
+     * is tiny, and a failure then names the exact statement the database rejected.
+     *
+     * @return the statements that were executed; empty when the live schema already had every column.
+     */
+    @KatalystInternalApi
+    fun addMissingColumns(vararg table: Table): List<String> {
+        if (table.isEmpty()) return emptyList()
+        return transaction(database) {
+            // SQLite (and anything else without ALTER TABLE ADD COLUMN) cannot do this at all;
+            // emitting the DDL anyway would just trade a missing column for a boot failure.
+            if (!db.supportsAlterTableWithAddColumn) return@transaction emptyList()
+
+            val existingTables = table.filter { it.exists() }
+            if (existingTables.isEmpty()) return@transaction emptyList()
+
+            val liveColumns = currentDialectMetadata.tableColumns(*existingTables.toTypedArray())
+            val statements = buildList {
+                existingTables.forEach { target ->
+                    val live = liveColumns[target].orEmpty()
+                    if (live.isEmpty()) return@forEach
+
+                    val missing = target.columns.filter { column ->
+                        live.none { it.name.equals(column.nameUnquoted(), ignoreCase = true) }
+                    }
+                    if (missing.isEmpty()) return@forEach
+
+                    missing.forEach { column -> addAll(column.ddl) }
+                    target.indices
+                        .filter { index -> index.columns.any { it in missing } }
+                        .forEach { index -> addAll(index.createStatement()) }
+                }
+            }
+
+            if (statements.isNotEmpty()) {
+                statements.forEach { statement -> exec(statement) }
+                commit()
+                currentDialectMetadata.resetCaches()
+            }
+            statements
         }
     }
 

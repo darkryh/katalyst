@@ -106,13 +106,15 @@ fun main(args: Array<String>) = katalystApplication(args) {
     }
     database { fromConfiguration() }
     scanPackages("com.example")
-    schema { createMissing() }          // create tables that don't exist yet
+    schema { createMissing() }          // create schemas, tables and columns that don't exist yet
 }
 ```
 
-`schema { createMissing() }` tells Katalyst to create any table it discovers but cannot
-find in the database — convenient for local development. In production you use
-`validateOnStartup()` and run [migrations](how-to/run-migrations.md).
+`schema { createMissing() }` tells Katalyst to create whatever a discovered table needs and the
+database does not have — the table itself, and any column it is missing — which is what makes adding
+a column to your Kotlin `Table` during development just work. It never drops or retypes anything.
+Convenient for local development; in production you use `validateOnStartup()` and run
+[migrations](how-to/run-migrations.md).
 
 ## Step 4: Define the table and entity
 
