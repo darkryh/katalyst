@@ -218,11 +218,17 @@ class ShutdownPhaseOrderingTest {
         bootFailure.get()?.let { throw it }
         assertTrue(reachedStart, "the application never reached the engine start")
 
-        // Let the worker get into its loop so a query really is in flight around the shutdown.
-        Thread.sleep(POLL_WARMUP_MILLIS)
+        // Wait for the worker to have actually completed a pass, rather than sleeping a fixed
+        // interval and hoping. A pass is forty statements, and on a loaded CI runner that took
+        // longer than a hand-picked sleep allowed - which made this an assertion about the runner's
+        // speed instead of about the shutdown.
+        val warmupDeadlineNanos = System.nanoTime() + POLL_WARMUP_TIMEOUT_MILLIS * 1_000_000
+        while (pollsCompleted.get() == 0 && pollFailures.isEmpty() && System.nanoTime() < warmupDeadlineNanos) {
+            Thread.sleep(SETTLE_POLL_MILLIS)
+        }
         assertTrue(
             pollsCompleted.get() > 0 || pollFailures.isNotEmpty(),
-            "the worker never started: featureReady=${featureReadyRan.get()} " +
+            "the worker never started, so this run proves nothing: featureReady=${featureReadyRan.get()} " +
                 "readyHook=${readyHookRan.get()} polls=${pollsCompleted.get()} " +
                 "failures=${pollFailures.toList()}",
         )
@@ -311,7 +317,7 @@ class ShutdownPhaseOrderingTest {
         const val CYCLES = 12
         const val BOOT_WAIT_SLICES = 100
         const val BOOT_WAIT_SLICE_MILLIS = 200L
-        const val POLL_WARMUP_MILLIS = 150L
+        const val POLL_WARMUP_TIMEOUT_MILLIS = 30_000L
         const val SETTLE_TIMEOUT_MILLIS = 3_000L
         const val SETTLE_POLL_MILLIS = 10L
     }
