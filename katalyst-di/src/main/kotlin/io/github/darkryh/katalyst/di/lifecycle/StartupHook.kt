@@ -28,26 +28,11 @@ package io.github.darkryh.katalyst.di.lifecycle
  *
  * Runtime activations (scheduler, background consumers) should use
  * [ReadyHook], not this interface.
+ *
+ * `id` and `order` come from [LifecycleHook]. The standard order values here are
+ * `StartupValidator` at -100 (always first) and custom pre-start hooks at 0 or above.
  */
-interface StartupHook {
-    /**
-     * Unique identifier for this hook.
-     * Used for logging and debugging.
-     */
-    val id: String
-        get() = this::class.simpleName ?: "StartupHook"
-
-    /**
-     * Execution order relative to other hooks.
-     * Lower numbers execute first.
-     *
-     * Standard values:
-     * - StartupValidator: -100 (always first)
-     * - Custom pre-start hooks: 0+ (default, in any order)
-     */
-    val order: Int
-        get() = 0
-
+interface StartupHook : LifecycleHook {
     /**
      * Invoked when this hook's turn comes during startup.
      *

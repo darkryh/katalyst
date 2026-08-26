@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.conventions.KatalystConventions
 import io.github.darkryh.katalyst.core.component.Component
 import io.github.darkryh.katalyst.core.component.Service
 import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
+import io.github.darkryh.katalyst.di.lifecycle.ShutdownHook
 import io.github.darkryh.katalyst.di.lifecycle.StartupHook
 import io.github.darkryh.katalyst.events.EventHandler
 import io.github.darkryh.katalyst.ktor.KtorModule
@@ -167,6 +168,14 @@ internal object ExtensionPoints {
         ExtensionPoint(
             id = "ready hooks",
             type = ReadyHook::class,
+            cardinality = Cardinality.MULTI,
+            optionalDiscovery = true,
+            joinsDependencyGraph = true,
+            registrationPhase = RegistrationPhase.WITH_COMPONENTS,
+        ),
+        ExtensionPoint(
+            id = "shutdown hooks",
+            type = ShutdownHook::class,
             cardinality = Cardinality.MULTI,
             optionalDiscovery = true,
             joinsDependencyGraph = true,

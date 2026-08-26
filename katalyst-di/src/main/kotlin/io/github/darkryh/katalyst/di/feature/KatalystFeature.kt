@@ -27,6 +27,19 @@ interface KatalystFeature {
      * Optional hook executed after the bean container is fully initialized.
      */
     fun onReady(context: KatalystBeanContext) {}
+
+    /**
+     * Optional teardown, executed while the container and the connection pool are still alive.
+     *
+     * The counterpart to [onReady]. Until this existed a feature could only be torn down by the
+     * bean engine closing its `AutoCloseable` singletons, which happens after Katalyst has already
+     * begun dismantling itself — too late for anything that needs a working container, and with no
+     * say in the order.
+     *
+     * Failures are logged and the remaining features are still stopped: a shutdown that abandons
+     * the rest of its cleanup because one feature threw is worse than the throw.
+     */
+    fun onShutdown(context: KatalystBeanContext) {}
 }
 
 /**

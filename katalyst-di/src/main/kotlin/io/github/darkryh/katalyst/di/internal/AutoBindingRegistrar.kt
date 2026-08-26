@@ -16,6 +16,8 @@ import io.github.darkryh.katalyst.di.lifecycle.StartupHook
 import io.github.darkryh.katalyst.di.lifecycle.StartupHookRegistry
 import io.github.darkryh.katalyst.di.lifecycle.ReadyHook
 import io.github.darkryh.katalyst.di.lifecycle.ReadyHookRegistry
+import io.github.darkryh.katalyst.di.lifecycle.ShutdownHook
+import io.github.darkryh.katalyst.di.lifecycle.ShutdownHookRegistry
 import io.github.darkryh.katalyst.di.invocation.CallableInvoker
 import io.github.darkryh.katalyst.di.invocation.ParameterResolver
 import io.github.darkryh.katalyst.di.invocation.getFromContainerOrNull
@@ -241,7 +243,7 @@ class AutoBindingRegistrar(
      *
      * **Reserved types (excluded):** [Any], [Table], and every framework marker in
      * [ExtensionPoints.reservedTypes] (Component, Service, CrudRepository, EventHandler,
-     * KtorModule, KatalystMigration, StartupHook, ReadyHook). Framework markers are bound
+     * KtorModule, KatalystMigration, StartupHook, ReadyHook, ShutdownHook). Framework markers are bound
      * separately — multibinding markers by [ExtensionPoints.multiBindingTypesOf] in
      * [registerInstance], which uses a runtime `isInstance` check so that markers reached
      * through an abstract intermediate are not missed the way this direct-supertype walk
@@ -606,8 +608,8 @@ class AutoBindingRegistrar(
      * If a secondary type is already bound to a different primary type, this method
      * throws a [DependencyInjectionException] to fail-fast on ambiguous bindings.
      *
-     * Selected lifecycle extension points (such as [StartupHook] and
-     * [ReadyHook]) are treated as multibinding types and are
+     * Selected lifecycle extension points (such as [StartupHook], [ReadyHook] and
+     * [ShutdownHook]) are treated as multibinding types and are
      * tracked via dedicated registries instead of Koin secondary key mappings.
      *
      * @param instance The component instance to register
@@ -669,6 +671,9 @@ class AutoBindingRegistrar(
         }
         if (instance is ReadyHook) {
             ReadyHookRegistry.register(instance)
+        }
+        if (instance is ShutdownHook) {
+            ShutdownHookRegistry.register(instance)
         }
 
         // Multibinding markers ARE registered as container secondary types. The container

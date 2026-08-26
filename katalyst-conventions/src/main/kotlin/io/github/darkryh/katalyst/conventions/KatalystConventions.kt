@@ -46,6 +46,8 @@ object KatalystConventions {
         "io.github.darkryh.katalyst.di.lifecycle.StartupHook"
     const val APPLICATION_READY_INITIALIZER: String =
         "io.github.darkryh.katalyst.di.lifecycle.ReadyHook"
+    const val APPLICATION_SHUTDOWN_HOOK: String =
+        "io.github.darkryh.katalyst.di.lifecycle.ShutdownHook"
     const val CONFIG_BINDING: String =
         "io.github.darkryh.katalyst.config.provider.ConfigBinding"
 
@@ -94,6 +96,7 @@ object KatalystConventions {
         KATALYST_MIGRATION,
         APPLICATION_INITIALIZER,
         APPLICATION_READY_INITIALIZER,
+        APPLICATION_SHUTDOWN_HOOK,
         CONFIG_BINDING,
     )
 

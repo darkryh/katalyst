@@ -7,6 +7,7 @@ public final class io/github/darkryh/katalyst/migrations/feature/MigrationFeatur
 	public fun <init> (Lio/github/darkryh/katalyst/migrations/options/MigrationOptions;)V
 	public fun getId ()Ljava/lang/String;
 	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public fun provideBeanModules ()Ljava/util/List;
 }
 

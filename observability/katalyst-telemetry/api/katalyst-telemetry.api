@@ -32,6 +32,7 @@ public final class io/github/darkryh/katalyst/telemetry/TelemetryFeature : io/gi
 	public static final field INSTANCE Lio/github/darkryh/katalyst/telemetry/TelemetryFeature;
 	public fun getId ()Ljava/lang/String;
 	public fun onReady (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
+	public fun onShutdown (Lio/github/darkryh/katalyst/di/feature/KatalystBeanContext;)V
 	public fun provideBeanModules ()Ljava/util/List;
 }
 

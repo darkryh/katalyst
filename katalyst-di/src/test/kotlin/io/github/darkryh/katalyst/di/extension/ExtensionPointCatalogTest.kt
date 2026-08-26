@@ -58,6 +58,7 @@ class ExtensionPointCatalogTest {
             KatalystConventions.KATALYST_MIGRATION,
             KatalystConventions.APPLICATION_INITIALIZER,
             KatalystConventions.APPLICATION_READY_INITIALIZER,
+            KatalystConventions.APPLICATION_SHUTDOWN_HOOK,
         )
 
         val catalogFqns = ExtensionPoints.all.mapNotNull { it.type.qualifiedName }.toSet()
