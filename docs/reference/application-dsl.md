@@ -105,7 +105,7 @@ discovered must live under one of these roots.
 ```kotlin
 schema {
     validateOnStartup()   // default when schema { ... } is omitted
-    // createMissing()    // create discovered tables that don't exist (local/test)
+    // createMissing()    // create discovered schemas, tables and columns (local/test)
     // none()             // an external job owns the schema lifecycle
 }
 ```
@@ -115,8 +115,31 @@ Sets the schema-management policy. Omitting the block is equivalent to `validate
 | Policy | Behavior |
 |--------|----------|
 | `validateOnStartup()` | Verify discovered tables exist and match; do not create them. The default. |
-| `createMissing()` | Create any discovered table not present in the database. For local development and tests. |
+| `createMissing()` | Create every missing schema, table **and column** for the discovered tables. For local development and tests. |
+| `createMissingAndValidate()` | The same, then fail startup if anything still does not match. |
 | `none()` | Do nothing; migrations or operations own the schema. |
+
+### What "missing" means
+
+`CREATE TABLE IF NOT EXISTS` skips an existing table *whole*, so creating tables alone is not
+enough: add a column to a `Table` after the first boot and it never reaches the database, and the
+first query that selects it fails at runtime. `createMissing()` therefore also issues
+`ALTER TABLE … ADD COLUMN` for columns an existing table lacks, along with the indices those columns
+are part of.
+
+It stays strictly additive. A column the database has and your code does not is never dropped, and
+a column whose *type* drifted is never altered — both would risk data, so both are left to a real
+migration. Use `createMissingAndValidate()` to be told about them instead of carrying on silently.
+
+Turn column creation off with:
+
+```kotlin
+schema { createMissing(createMissingColumns = false) }
+```
+
+which restores table-only creation. Worth doing when migrations own your columns, or when the
+generated `ALTER TABLE … ADD COLUMN … NOT NULL` cannot succeed because the table already has rows
+(give the column a default, make it nullable, or add it with a migration).
 
 ## Custom features
 

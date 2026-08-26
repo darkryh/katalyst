@@ -105,10 +105,12 @@ class KatalystTestEnvironmentBuilder {
     fun schema(
         policy: SchemaPolicy,
         failOnPendingStatements: Boolean = true,
+        createMissingColumns: Boolean = true,
     ) = apply {
         schemaManagement = SchemaManagementOptions(
             policy = policy,
             failOnPendingStatements = failOnPendingStatements,
+            createMissingColumns = createMissingColumns,
         )
     }
 

@@ -33,6 +33,7 @@ import io.github.darkryh.katalyst.transactions.config.TransactionConfig
 import io.github.darkryh.katalyst.transactions.config.TransactionIsolationLevel
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Schema
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.slf4j.LoggerFactory
@@ -309,6 +310,21 @@ fun bootstrapKatalystContainer(
                             if (exposedTables.isNotEmpty()) {
                                 databaseFactory.createTable(*exposedTables, inBatch = exposedTables.size > 1)
                                 logger.info("Created {} table(s)", exposedTables.size)
+
+                                // "Missing" has to mean the same thing for a column as it does for
+                                // a table. CREATE TABLE IF NOT EXISTS skips an existing table
+                                // WHOLE, so without this step a column added to a Table after the
+                                // first boot never reaches the database and only surfaces as a
+                                // query-time SQL error. Additive only — see
+                                // DatabaseFactory.addMissingColumns — and switchable for schemas
+                                // whose columns are owned by migrations.
+                                if (schemaManagement.createMissingColumns) {
+                                    addMissingColumns(databaseFactory, exposedTables)
+                                } else {
+                                    logger.debug(
+                                        "createMissingColumns = false - leaving columns of existing tables alone"
+                                    )
+                                }
                             }
                         }
                     }
@@ -572,5 +588,39 @@ private fun resolveTransactionPhaseLoggingEnabled(container: KatalystContainer):
             "ConfigProvider unavailable for transaction phase logging toggle; using default enabled=true"
         )
         true
+    }
+}
+
+/**
+ * Applies the additive column half of the creating schema policies.
+ *
+ * Split out of the boot block so the failure it can produce gets a diagnosis rather than a raw
+ * `SQLException`: the one statement Exposed generates that a database routinely refuses is
+ * `ALTER TABLE ... ADD COLUMN x NOT NULL` against a table that already has rows, and the SQLSTATE
+ * alone does not tell a developer which of the three fixes they want.
+ */
+private fun addMissingColumns(
+    databaseFactory: DatabaseFactory,
+    exposedTables: Array<Table>,
+) {
+    val added = runCatching { databaseFactory.addMissingColumns(*exposedTables) }
+        .getOrElse { failure ->
+            throw IllegalStateException(
+                "Schema policy could not add a missing column: ${failure.message}. " +
+                    "A NOT NULL column with no default cannot be added to a table that already has " +
+                    "rows — make the column nullable, give it a default, add it with a migration, " +
+                    "or turn column creation off with schema { createMissing(createMissingColumns = false) }.",
+                failure,
+            )
+        }
+
+    if (added.isEmpty()) {
+        logger.debug("No missing columns to add - every existing table already matches its definition")
+    } else {
+        logger.info(
+            "Added {} missing column/constraint statement(s): {}",
+            added.size,
+            added.joinToString("; "),
+        )
     }
 }
