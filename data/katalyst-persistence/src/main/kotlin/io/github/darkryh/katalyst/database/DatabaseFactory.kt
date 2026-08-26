@@ -16,6 +16,9 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.vendors.currentDialectMetadata
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Database factory for managing database connections with HikariCP connection pooling.
@@ -227,6 +230,69 @@ class DatabaseFactory private constructor(
     }
 
     /**
+     * Waits, for at most [timeout], until nothing is holding a pooled connection.
+     *
+     * The last line of defence in Katalyst's shutdown, and the only one that does not depend on the
+     * application having declared anything. [ShutdownHook][io.github.darkryh.katalyst.di.lifecycle]
+     * covers work that says how to stop itself, and running the application's teardown before this
+     * one covers work wired to Ktor's events — but a `job.cancel()` is not a `join()`, and a
+     * coroutine parked inside a blocking JDBC call does not observe cancellation until that call
+     * returns. Between "stop was requested" and "the driver came back" there is a window in which
+     * closing the pool severs a live socket, and the application sees `SQLSTATE 08006` from work it
+     * had already told to stop.
+     *
+     * So the pool is asked to go quiet before it is closed. In the ordinary case every connection is
+     * already back and this returns on the first check.
+     *
+     * Bounded on purpose. Waiting forever would trade a noisy shutdown for one that never finishes,
+     * and background work that is *still running* is not something this can fix — only report, which
+     * it does: the returned [DatabaseQuiesceResult] names how many connections were still checked
+     * out, and that is a far better diagnosis than the stack trace their next statement would throw.
+     *
+     * Never throws: it is called on the way out, where an exception can only make things worse.
+     */
+    @KatalystInternalApi
+    fun quiesce(timeout: Duration = DEFAULT_QUIESCE_TIMEOUT): DatabaseQuiesceResult {
+        val startedAt = System.nanoTime()
+        fun elapsedMillis() = (System.nanoTime() - startedAt) / 1_000_000
+
+        val activeAtStart = runCatching { activeConnections() }.getOrDefault(0)
+        if (closed.get() || activeAtStart == 0) {
+            return DatabaseQuiesceResult(activeAtStart, activeAtStart, elapsedMillis(), drained = activeAtStart == 0)
+        }
+
+        logger.debug("Waiting up to {} for {} active connection(s) to be returned", timeout, activeAtStart)
+        val deadlineNanos = startedAt + timeout.inWholeNanoseconds
+        var active = activeAtStart
+        while (active > 0 && System.nanoTime() < deadlineNanos) {
+            runCatching { Thread.sleep(QUIESCE_POLL_INTERVAL.inWholeMilliseconds) }
+                .onFailure {
+                    Thread.currentThread().interrupt()
+                    return DatabaseQuiesceResult(activeAtStart, active, elapsedMillis(), drained = false)
+                }
+            active = runCatching { activeConnections() }.getOrDefault(0)
+        }
+
+        val result = DatabaseQuiesceResult(activeAtStart, active, elapsedMillis(), drained = active == 0)
+        if (result.drained) {
+            logger.debug("Connection pool went quiet after {} ms", result.waitedMillis)
+        } else {
+            logger.warn(
+                "Connection pool still has {} active connection(s) after waiting {} ms - something is " +
+                    "still using the database during shutdown. Give that work a ShutdownHook so it is " +
+                    "stopped before the pool closes; otherwise its next statement will fail as the " +
+                    "pool goes away.",
+                result.activeAtEnd,
+                result.waitedMillis,
+            )
+        }
+        return result
+    }
+
+    private fun activeConnections(): Int =
+        if (dataSource.isClosed) 0 else dataSource.hikariPoolMXBean?.activeConnections ?: 0
+
+    /**
      * Closes the database connection and shuts down the connection pool.
      *
      * Should be called when the application shuts down to properly clean up resources.
@@ -269,6 +335,26 @@ class DatabaseFactory private constructor(
         }
     }
 }
+
+/**
+ * How long a shutdown waits for in-flight database work before the pool is closed anyway.
+ *
+ * Short: by the time this runs the application's own teardown has already been given its turn, so a
+ * connection still checked out means something is misbehaving, and the wait exists to make that
+ * case survivable rather than to accommodate it.
+ */
+private val DEFAULT_QUIESCE_TIMEOUT: Duration = 2.seconds
+
+/** How often [DatabaseFactory.quiesce] re-checks the pool while waiting. */
+private val QUIESCE_POLL_INTERVAL: Duration = 25.milliseconds
+
+/** What [DatabaseFactory.quiesce] observed. */
+data class DatabaseQuiesceResult(
+    val activeAtStart: Int,
+    val activeAtEnd: Int,
+    val waitedMillis: Long,
+    val drained: Boolean,
+)
 
 data class DatabasePoolSnapshot(
     val active: Int,

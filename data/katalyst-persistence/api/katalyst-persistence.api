@@ -90,6 +90,23 @@ public final class io/github/darkryh/katalyst/database/DatabasePoolSnapshot {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/github/darkryh/katalyst/database/DatabaseQuiesceResult {
+	public fun <init> (IIJZ)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()Z
+	public final fun copy (IIJZ)Lio/github/darkryh/katalyst/database/DatabaseQuiesceResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/katalyst/database/DatabaseQuiesceResult;IIJZILjava/lang/Object;)Lio/github/darkryh/katalyst/database/DatabaseQuiesceResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActiveAtEnd ()I
+	public final fun getActiveAtStart ()I
+	public final fun getDrained ()Z
+	public final fun getWaitedMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/github/darkryh/katalyst/database/ManagedSqlExecutor : io/github/darkryh/katalyst/database/SqlExecutor {
 	public static final field Companion Lio/github/darkryh/katalyst/database/ManagedSqlExecutor$Companion;
 	public fun <init> (Ljavax/sql/DataSource;)V
