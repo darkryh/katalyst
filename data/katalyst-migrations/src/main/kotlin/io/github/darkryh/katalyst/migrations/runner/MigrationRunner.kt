@@ -4,13 +4,13 @@ import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.migrations.internal.MigrationHistoryTable
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
+import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
-import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
+import java.sql.SQLException
 import kotlin.system.measureTimeMillis
 
 private const val STATUS_SUCCESS = "SUCCESS"
@@ -85,7 +85,7 @@ class MigrationRunner(
                 }
             }
 
-            MigrationTelemetry.end()
+            MigrationTelemetry.end(statusChanged = true)
             applied[migration.id] = AppliedMigration(migration.checksum)
             logger.info("{} Completed in {} ms", context, duration)
         }
@@ -97,7 +97,8 @@ class MigrationRunner(
      */
     fun status(migrations: List<KatalystMigration>): MigrationStatusReport {
         val historyTable = MigrationHistoryTable(options.schemaTable)
-        val applied = loadAppliedOrEmpty(historyTable)
+        val historyRead = readAppliedHistory(historyTable)
+        val applied = historyRead.applied
         val sourceIds = migrations.map { it.id }.toSet()
 
         val sourceStatuses = migrations
@@ -126,11 +127,17 @@ class MigrationRunner(
                     historyStatus = history.status,
                     executionTimeMs = history.executionTimeMs,
                     executedAtEpochMs = history.executedAtEpochMs,
+                    checksumCode = null,
+                    checksumDb = history.checksum,
                 )
             }
             .sortedWith(compareBy { it.id })
 
-        return MigrationStatusReport(sourceStatuses + unknownApplied)
+        return MigrationStatusReport(
+            migrations = sourceStatuses + unknownApplied,
+            historyReadable = historyRead.readable,
+            historyError = historyRead.error,
+        )
     }
 
     /**
@@ -143,8 +150,12 @@ class MigrationRunner(
         collectMigrationDefinitionErrors(migrations, errors)
 
         val historyTable = MigrationHistoryTable(options.schemaTable)
-        val applied = loadAppliedOrEmpty(historyTable)
-        collectAppliedChecksumErrors(migrations, applied, errors)
+        val historyRead = readAppliedHistory(historyTable)
+        if (historyRead.readable) {
+            collectAppliedChecksumErrors(migrations, historyRead.applied, errors)
+        } else {
+            errors += "Migration history is unreadable: ${historyRead.error ?: "unknown database error"}"
+        }
 
         return MigrationValidationResult(errors)
     }
@@ -290,9 +301,21 @@ class MigrationRunner(
                 }
         }
 
-    private fun loadAppliedOrEmpty(table: MigrationHistoryTable): Map<String, AppliedMigration> =
-        runCatching { loadApplied(table) }
-            .getOrElse { emptyMap() }
+    private fun readAppliedHistory(table: MigrationHistoryTable): AppliedHistoryRead =
+        runCatching { AppliedHistoryRead(applied = loadApplied(table)) }
+            .getOrElse { error ->
+                // A fresh database legitimately has no history table yet. status()/validate() are
+                // read-only and must treat that as an empty, readable history without creating it.
+                if (error.isMissingHistoryTable()) {
+                    AppliedHistoryRead(applied = emptyMap())
+                } else {
+                    AppliedHistoryRead(
+                        applied = emptyMap(),
+                        readable = false,
+                        error = error.message ?: error::class.simpleName,
+                    )
+                }
+            }
 
     private fun applyBaseline(
         table: MigrationHistoryTable,
@@ -305,21 +328,44 @@ class MigrationRunner(
             .filter { compareMigrationKeys(it.id, baseline) <= 0 && applied[it.id] == null }
         if (candidates.isEmpty()) return
 
-        transaction(databaseFactory.database) {
-            candidates.forEach { migration ->
-                table.insertIgnore {
-                    it[migrationId] = migration.id
-                    it[checksum] = migration.checksum
-                    it[description] = "Baseline: ${migration.description}"
-                    it[executionTimeMs] = 0
-                    it[executedAtEpochMs] = System.currentTimeMillis()
-                    it[tags] = migration.tags.joinToString(",")
-                    it[status] = STATUS_BASELINED
+        var historyChanged = false
+        candidates.forEach { migration ->
+            val executedAt = System.currentTimeMillis()
+            try {
+                // One transaction per candidate is deliberate. A concurrent process can win the
+                // primary-key race; on PostgreSQL that aborts the transaction, so recovery must
+                // reload history from a fresh transaction rather than continue in this one.
+                transaction(databaseFactory.database) {
+                    table.insert {
+                        it[migrationId] = migration.id
+                        it[checksum] = migration.checksum
+                        it[description] = "Baseline: ${migration.description}"
+                        it[executionTimeMs] = 0
+                        it[executedAtEpochMs] = executedAt
+                        it[tags] = migration.tags.joinToString(",")
+                        it[status] = STATUS_BASELINED
+                    }
                 }
-                applied[migration.id] = AppliedMigration(migration.checksum)
+                historyChanged = true
+                applied[migration.id] = AppliedMigration(
+                    checksum = migration.checksum,
+                    description = "Baseline: ${migration.description}",
+                    executionTimeMs = 0,
+                    executedAtEpochMs = executedAt,
+                    tags = migration.tags.joinToString(","),
+                    status = STATUS_BASELINED,
+                )
                 logger.info("[{}] Baseline applied (baselineVersion={})", migration.id, baseline)
+            } catch (error: Exception) {
+                // Treat only a row that now genuinely exists as a concurrent winner. Any other
+                // insert failure remains fatal and retains its original cause.
+                val concurrent = runCatching { loadApplied(table)[migration.id] }.getOrNull()
+                    ?: throw error
+                applied[migration.id] = concurrent
+                logger.info("[{}] Baseline already recorded by a concurrent runner", migration.id)
             }
         }
+        if (historyChanged) MigrationTelemetry.statusChanged()
     }
 
     private fun recordSuccess(
@@ -372,6 +418,8 @@ class MigrationRunner(
             historyStatus = history?.status,
             executionTimeMs = history?.executionTimeMs,
             executedAtEpochMs = history?.executedAtEpochMs,
+            checksumCode = checksum,
+            checksumDb = history?.checksum,
         )
 
     private fun parseTags(value: String?): Set<String> =
@@ -390,6 +438,22 @@ class MigrationRunner(
         val tags: String? = null,
         val status: String? = null,
     )
+
+    private data class AppliedHistoryRead(
+        val applied: Map<String, AppliedMigration>,
+        val readable: Boolean = true,
+        val error: String? = null,
+    )
+
+    private fun Throwable.isMissingHistoryTable(): Boolean =
+        generateSequence(this) { it.cause }
+            .filterIsInstance<SQLException>()
+            .any {
+                // PostgreSQL undefined_table, ANSI/driver table-not-found, and H2's two variants
+                // (existing schema vs completely empty database).
+                it.sqlState in setOf("42P01", "42S02", "42S04") ||
+                    it.errorCode == 42102 || it.errorCode == 42104
+            }
 
     internal companion object {
         val migrationComparator: Comparator<KatalystMigration> =

@@ -5,6 +5,7 @@ import io.github.darkryh.katalyst.database.DatabaseFactory
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
 import io.github.darkryh.katalyst.migrations.runner.MigrationState
 import io.github.darkryh.katalyst.migrations.runner.MigrationRunner
+import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -24,6 +25,7 @@ class MigrationRunnerTest {
 
     @BeforeTest
     fun setup() {
+        MigrationTelemetry.reset()
         databaseFactory = DatabaseFactory.create(
             DatabaseConfig(
                 url = "jdbc:h2:mem:katalyst-migrations-test-${System.nanoTime()};DB_CLOSE_DELAY=-1",
@@ -98,6 +100,10 @@ class MigrationRunnerTest {
 
         assertFalse(result.valid)
         assertTrue(result.errors.single().contains("Checksum mismatch for migration checksum_drift"))
+
+        val status = runner.status(listOf(ChecksumMigration(checksum = "changed"))).migrations.single()
+        assertEquals("original", status.checksumDb)
+        assertEquals("changed", status.checksumCode)
     }
 
     @Test
@@ -108,9 +114,16 @@ class MigrationRunnerTest {
 
         val report = runner.status(listOf(StatusAppliedMigration, StatusPendingMigration))
 
-        assertEquals(MigrationState.APPLIED, report.migrations.single { it.id == "status_applied" }.state)
-        assertEquals(MigrationState.PENDING, report.migrations.single { it.id == "status_pending" }.state)
+        val applied = report.migrations.single { it.id == "status_applied" }
+        val pending = report.migrations.single { it.id == "status_pending" }
+        assertEquals(MigrationState.APPLIED, applied.state)
+        assertEquals(StatusAppliedMigration.checksum, applied.checksumCode)
+        assertEquals(StatusAppliedMigration.checksum, applied.checksumDb)
+        assertEquals(MigrationState.PENDING, pending.state)
+        assertEquals(StatusPendingMigration.checksum, pending.checksumCode)
+        assertEquals(null, pending.checksumDb)
         assertEquals(listOf("status_pending"), report.pending.map { it.id })
+        assertTrue(report.historyReadable)
     }
 
     @Test
@@ -120,6 +133,72 @@ class MigrationRunnerTest {
         val report = runner.status(listOf(DevSeedMigration))
 
         assertEquals(MigrationState.FILTERED, report.migrations.single().state)
+    }
+
+    @Test
+    fun `status reports baselined migration with both checksums`() {
+        val migration = RecordingMigration("1_baselined")
+        val runner = MigrationRunner(
+            databaseFactory,
+            MigrationOptions(baselineVersion = migration.id),
+        )
+
+        val revisionBefore = MigrationTelemetry.statusRevision
+        runner.runMigrations(listOf(migration))
+        val status = runner.status(listOf(migration)).migrations.single()
+
+        assertFalse(migration.executed)
+        assertEquals(MigrationState.BASELINED, status.state)
+        assertEquals(migration.checksum, status.checksumCode)
+        assertEquals(migration.checksum, status.checksumDb)
+        assertTrue(MigrationTelemetry.statusRevision > revisionBefore)
+    }
+
+    @Test
+    fun `status reports genuine database-only row as unknown applied`() {
+        val runner = MigrationRunner(databaseFactory, MigrationOptions())
+        runner.runMigrations(listOf(StatusAppliedMigration))
+
+        val status = runner.status(emptyList()).migrations.single()
+
+        assertEquals(MigrationState.UNKNOWN_APPLIED, status.state)
+        assertEquals(null, status.checksumCode)
+        assertEquals(StatusAppliedMigration.checksum, status.checksumDb)
+    }
+
+    @Test
+    fun `missing history table is a readable empty history`() {
+        val runner = MigrationRunner(databaseFactory, MigrationOptions())
+
+        val report = runner.status(listOf(StatusPendingMigration))
+
+        assertTrue(report.historyReadable)
+        assertEquals(null, report.historyError)
+        assertEquals(MigrationState.PENDING, report.migrations.single().state)
+    }
+
+    @Test
+    fun `unavailable database marks history unreadable instead of fabricating pending state`() {
+        val runner = MigrationRunner(databaseFactory, MigrationOptions())
+        databaseFactory.close()
+
+        val report = runner.status(listOf(StatusPendingMigration))
+        val validation = runner.validateMigrations(listOf(StatusPendingMigration))
+
+        assertFalse(report.historyReadable)
+        assertTrue(report.historyError?.isNotBlank() == true)
+        assertFalse(validation.valid)
+        assertTrue(validation.errors.any { it.startsWith("Migration history is unreadable:") })
+    }
+
+    @Test
+    fun `successful migration advances the status revision after history commits`() {
+        val runner = MigrationRunner(databaseFactory, MigrationOptions())
+        val revisionBefore = MigrationTelemetry.statusRevision
+
+        runner.runMigrations(listOf(StatusAppliedMigration))
+
+        assertTrue(MigrationTelemetry.statusRevision > revisionBefore)
     }
 
     @Test

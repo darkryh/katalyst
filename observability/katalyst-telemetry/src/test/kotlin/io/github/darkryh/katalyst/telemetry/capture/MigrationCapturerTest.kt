@@ -4,6 +4,7 @@ import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import io.github.darkryh.katalyst.telemetry.store.TelemetryIdentity
 import io.github.darkryh.katalyst.telemetry.store.TelemetryStore
 import kotlin.test.Test
+import kotlin.test.AfterTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -19,6 +20,11 @@ import kotlin.test.assertTrue
  * from other tests sharing the same JVM.
  */
 class MigrationCapturerTest {
+
+    @AfterTest
+    fun cleanup() {
+        MigrationTelemetry.reset()
+    }
 
     private fun identity() = TelemetryIdentity(
         appName = "migration-capturer-test",

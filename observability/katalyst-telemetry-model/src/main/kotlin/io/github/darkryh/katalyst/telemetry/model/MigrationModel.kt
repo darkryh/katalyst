@@ -16,7 +16,8 @@ data class MigrationEntry(
     val executedAtEpochMs: Long? = null,
     val checksumDb: String? = null,
     val checksumCode: String? = null,
-    val transactional: Boolean = true,
+    /** Null for a database-only history row because its source execution mode is unknowable. */
+    val transactional: Boolean? = null,
     /** True when the stored checksum differs from the shipped code checksum. */
     val checksumDrift: Boolean = false,
 )
@@ -43,7 +44,14 @@ data class MigrationSnapshot(
     /** Statements the live DB still needs vs code — non-zero means drift even if history says applied. */
     val schemaDriftStatements: Int = 0,
     val historyReadable: Boolean = true,
+    /** Guarded diagnostic when [historyReadable] is false. */
+    val historyError: String? = null,
     val runAtStartup: Boolean = true,
+    /**
+     * False while component discovery is still building the source migration set. Entries and
+     * tallies are deliberately empty until this becomes true.
+     */
+    val statusReady: Boolean = true,
     /** Bounded ring of recent migration failures for this process — see `MigrationTelemetry.failures()`. */
     val recentFailures: List<MigrationFailure> = emptyList(),
 )

@@ -1,12 +1,14 @@
 package io.github.darkryh.katalyst.migrations.feature
 
 import io.github.darkryh.katalyst.di.feature.KatalystBeanContext
+import io.github.darkryh.katalyst.di.feature.KatalystBeanModule
 import io.github.darkryh.katalyst.di.feature.KatalystFeature
 import io.github.darkryh.katalyst.di.feature.katalystBeanModule
 import io.github.darkryh.katalyst.migrations.service.SchemaDiffService
 import io.github.darkryh.katalyst.migrations.KatalystMigration
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
 import io.github.darkryh.katalyst.migrations.runner.MigrationRunner
+import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import org.slf4j.LoggerFactory
 
 class MigrationFeature(
@@ -17,13 +19,18 @@ class MigrationFeature(
 
     override val id: String = "migrations"
 
-    override fun provideBeanModules() = listOf(
-        katalystBeanModule {
-            single { options }
-            single { SchemaDiffService(get(), options.scriptDirectory) }
-            single { MigrationRunner(get(), options) }
-        }
-    )
+    override fun provideBeanModules(): List<KatalystBeanModule> {
+        // The telemetry holder is process-global but its failures/running marker describe one boot.
+        // Reset before the container is built so an in-process restart cannot inherit old failures.
+        MigrationTelemetry.reset()
+        return listOf(
+            katalystBeanModule {
+                single { options }
+                single { SchemaDiffService(get(), options.scriptDirectory) }
+                single { MigrationRunner(get(), options) }
+            }
+        )
+    }
 
     override fun onReady(context: KatalystBeanContext) {
         if (!options.runAtStartup) {

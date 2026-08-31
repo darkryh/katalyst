@@ -30,6 +30,8 @@ dependencies {
     implementation(libs.ktor.server.web.sockets)
 
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.h2)
+    testImplementation(projects.katalystKoinBean)
 }
 
 // Emits BuildInfo.KATALYST_VERSION so the telemetry version stamp is derived from the build rather

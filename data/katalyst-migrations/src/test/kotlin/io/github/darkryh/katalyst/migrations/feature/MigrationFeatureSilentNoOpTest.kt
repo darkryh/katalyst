@@ -7,10 +7,12 @@ import ch.qos.logback.core.read.ListAppender
 import io.github.darkryh.katalyst.core.di.KatalystContainer
 import io.github.darkryh.katalyst.di.feature.KatalystBeanContext
 import io.github.darkryh.katalyst.migrations.options.MigrationOptions
+import io.github.darkryh.katalyst.migrations.telemetry.MigrationTelemetry
 import kotlin.reflect.KClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.slf4j.LoggerFactory
 
@@ -37,6 +39,7 @@ class MigrationFeatureSilentNoOpTest {
     @AfterTest
     fun tearDown() {
         featureLogger.detachAppender(appender)
+        MigrationTelemetry.reset()
     }
 
     /** A container with nothing registered, standing in for "no migrations discovered". */
@@ -73,5 +76,16 @@ class MigrationFeatureSilentNoOpTest {
             appender.list.none { it.level == Level.WARN },
             "explicitly disabling startup migrations is a deliberate choice and must stay quiet"
         )
+    }
+
+    @Test
+    fun `feature module preparation clears migration telemetry from a previous boot`() {
+        MigrationTelemetry.begin("old_running")
+        MigrationTelemetry.recordFailure("old_running", "old failure")
+
+        MigrationFeature(MigrationOptions()).provideBeanModules()
+
+        assertEquals(null, MigrationTelemetry.runningId)
+        assertTrue(MigrationTelemetry.failures().isEmpty())
     }
 }

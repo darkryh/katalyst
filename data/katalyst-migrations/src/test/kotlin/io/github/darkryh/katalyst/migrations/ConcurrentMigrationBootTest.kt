@@ -78,6 +78,13 @@ class ConcurrentMigrationBootTest {
         }
     }
 
+    private class BaselineOnly(private val started: AtomicInteger) : KatalystMigration {
+        override val id = "1_baseline_only"
+        override fun up() {
+            started.incrementAndGet()
+        }
+    }
+
     @Test
     fun `two instances booting together leave exactly one history row and one set of effects`() {
         val started = AtomicInteger(0)
@@ -173,5 +180,48 @@ class ConcurrentMigrationBootTest {
             payloadCount(),
             "effects duplicated across ${started.get()} bodies; failures: $failures",
         )
+    }
+
+    @Test
+    fun `concurrent baseline runners converge without executing the migration`() {
+        val started = AtomicInteger(0)
+        val ready = CountDownLatch(2)
+        val go = CountDownLatch(1)
+        val failures = java.util.Collections.synchronizedList(mutableListOf<String>())
+
+        val threads = (1..2).map {
+            thread {
+                val f = factory()
+                try {
+                    ready.countDown()
+                    go.await(10, TimeUnit.SECONDS)
+                    MigrationRunner(
+                        f,
+                        MigrationOptions(baselineVersion = "1_baseline_only"),
+                    ).runMigrations(listOf(BaselineOnly(started)))
+                } catch (e: Exception) {
+                    failures += (e.message ?: e::class.simpleName ?: "unknown")
+                } finally {
+                    runCatching { f.close() }
+                }
+            }
+        }
+
+        assertTrue(ready.await(10, TimeUnit.SECONDS))
+        go.countDown()
+        threads.forEach { it.join(30_000) }
+
+        assertTrue(failures.isEmpty(), "both baseline runners should converge, got $failures")
+        assertEquals(0, started.get(), "a baselined migration body must never execute")
+        assertEquals(listOf("1_baseline_only"), historyIds())
+        val status = transaction(keepAlive.database) {
+            var value = ""
+            exec("SELECT status FROM katalyst_schema_migrations WHERE migration_id = '1_baseline_only'") { rs ->
+                rs.next()
+                value = rs.getString(1)
+            }
+            value
+        }
+        assertEquals("BASELINED", status)
     }
 }

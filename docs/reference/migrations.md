@@ -105,7 +105,22 @@ report.applied        // already applied
 report.baselined      // marked applied via baseline
 report.filtered       // excluded by tags/target
 report.unknownApplied // in history but not in source
+
+if (!report.historyReadable) {
+    error("Migration history unavailable: ${report.historyError}")
+}
+
+report.migrations.forEach { migration ->
+    migration.checksumCode // checksum shipped by the registered migration, if present
+    migration.checksumDb   // checksum stored in history, if present
+}
 ```
+
+`UNKNOWN_APPLIED` means a genuine database-only history row after source discovery has completed.
+An unavailable database is instead reported with `historyReadable == false`; it is never converted
+into pending or unknown-applied entries. The legacy `MigrationStatus.checksum` property remains for
+compatibility, but new status consumers should use `checksumCode` and `checksumDb` because their
+meaning does not change with state.
 
 ### validateMigrations(migrations) → MigrationValidationResult
 
@@ -139,4 +154,3 @@ configuration loading.
 
 - [Run database migrations](../how-to/run-migrations.md)
 - [Persistence](persistence.md) — the schema migrations evolve.
-
