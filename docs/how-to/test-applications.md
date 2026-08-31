@@ -11,7 +11,7 @@ declare for the main dependencies, so add the BOM to the test configuration too 
 starter's version:
 
 ```kotlin
-testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-beta04"))
+testImplementation(platform("io.github.darkryh.katalyst:katalyst-bom:1.0.0-beta05"))
 testImplementation("io.github.darkryh.katalyst:katalyst-starter-test")
 ```
 
@@ -157,4 +157,3 @@ Kover is applied at the root. Generate an HTML report per module:
 - [Testing reference](../reference/testing.md) — the helper signatures and builder methods.
 - [Publish and handle events](publish-and-handle-events.md) — testing event flows.
 - [Schedule background jobs](schedule-jobs.md) — testing scheduled jobs.
-
