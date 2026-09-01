@@ -24,7 +24,7 @@ repositories {
 // The framework version this plugin release is aligned with. PluginConventionsParityTest checks the
 // vendored contract against exactly this version, so a future framework rename that isn't mirrored
 // here fails the build.
-val katalystVersion = "1.0.0-alpha02"
+val katalystVersion = "1.0.0-beta04"
 
 // The canonical katalyst-conventions jar, resolved on its OWN configuration so its newer Kotlin
 // metadata never reaches the plugin's (older, 2.0) Kotlin compile classpath — which would reject it
