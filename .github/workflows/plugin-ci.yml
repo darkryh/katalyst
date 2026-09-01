@@ -31,16 +31,16 @@ jobs:
         working-directory: tools/katalyst-intellij-plugin
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Compiles the plugin and assembles the distributable ZIP; fails the check on any error.
       - name: Build plugin
@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plugin-test-reports
           path: tools/katalyst-intellij-plugin/build/reports/tests/
@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload built plugin artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: katalyst-intellij-plugin-ci
           path: tools/katalyst-intellij-plugin/build/distributions/*.zip
