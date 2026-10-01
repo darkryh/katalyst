@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.4.10" apply false
-    id("io.ktor.plugin") version "3.5.2" apply false
+    kotlin("jvm") version "2.4.20" apply false
+    id("io.ktor.plugin") version "3.6.0" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10" apply false
     // Loaded here with `apply false` so the vanniktech plugin's classes (and its shared
     // MavenCentralBuildService) resolve in the root classloader scope. The base convention plugin
